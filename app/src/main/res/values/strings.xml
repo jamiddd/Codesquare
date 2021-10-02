@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Codesquare</string>
+    <string name="create_project">Create project</string>
+    <string name="web_client_id">39101350371-gpoo1j5m3l972tloq1dov43ckd8s11f3.apps.googleusercontent.com</string>
+    <string name="about_me">An Android Developer is a Software Developer who specializes in designing applications for the Android marketplace. The Android marketplace is the direct competitor to Apple’s app store. This means most of an Android Developer’s job revolves around creating the apps we use on our smartphones and tablets. Android Developers can either work in-house for a large organization, or they can be employed by an App Development agency.</string>
+</resources>
