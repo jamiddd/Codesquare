@@ -27,11 +27,13 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
 import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.ProjectClickListener
+import com.jamid.codesquare.listeners.ProjectRequestListener
 
-class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener {
+class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
@@ -284,6 +286,14 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onProjectJoinClick(project: Project) {
         viewModel.onJoinProject(project)
+    }
+
+    override fun onProjectRequestAccept(projectRequest: ProjectRequest) {
+        //
+    }
+
+    override fun onProjectRequestCancel(projectRequest: ProjectRequest) {
+        //
     }
 
 }
