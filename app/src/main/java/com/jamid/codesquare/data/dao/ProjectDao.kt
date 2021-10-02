@@ -18,4 +18,7 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Query("SELECT * FROM projects WHERE isMadeByMe = 1")
     abstract fun getCurrentUserPagedProjects(): PagingSource<Int, Project>
 
+    @Query("SELECT * FROM projects WHERE id = :projectId")
+    abstract suspend fun getProject(projectId: String): Project?
+
 }

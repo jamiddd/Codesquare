@@ -176,19 +176,27 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             joinBtn.setOnClickListener {
                 projectClickListener.onProjectJoinClick(project.copy())
+                if (joinBtn.isSelected) {
+                    joinBtn.text = "Join"
+                    joinBtn.isSelected = false
+                } else {
+                    joinBtn.text = "Undo"
+                    joinBtn.isSelected = true
+                }
             }
 
-            if (project.isMadeByMe) {
-                joinBtn.hide()
-            }
-
-            if (project.isRequested) {
-                joinBtn.show()
-                joinBtn.text = "Undo"
-            }
-
-            if (project.isCollaboration) {
-                joinBtn.hide()
+            when {
+                project.isMadeByMe -> {
+                    joinBtn.hide()
+                }
+                project.isRequested -> {
+                    joinBtn.show()
+                    joinBtn.text = "Undo"
+                }
+                project.isCollaboration -> {
+                    joinBtn.hide()
+                }
+                else -> joinBtn.show()
             }
 
         }

@@ -16,10 +16,11 @@ import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.ProjectRequestListener
+import com.jamid.codesquare.show
 
-class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((projectRequest: ProjectRequest) -> Unit)? = null): RecyclerView.ViewHolder(view) {
 
-    private val projectTitle = view.findViewById<TextView>(R.id.project_title)
+    private val projectTitle = view.findViewById<TextView>(R.id.project_name)
     private val requestContent = view.findViewById<TextView>(R.id.request_content)
     private val requestAcceptBtn = view.findViewById<Button>(R.id.request_accept)
     private val requestCancelBtn = view.findViewById<Button>(R.id.request_cancel)
@@ -31,7 +32,8 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     fun bind(projectRequest: ProjectRequest?) {
         if (projectRequest != null) {
 
-            Firebase.firestore.collection("projects").document(projectRequest.projectId)
+            Firebase.firestore.collection("projects")
+                .document(projectRequest.projectId)
                 .get()
                 .addOnSuccessListener {
                     if (it != null && it.exists()) {
@@ -42,7 +44,8 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         projectTitle.text = project.title
                         projectImage.setImageURI(project.images.first())
 
-                        Firebase.firestore.collection("users").document(projectRequest.senderId)
+                        Firebase.firestore.collection("users")
+                            .document(projectRequest.senderId)
                             .get()
                             .addOnSuccessListener { it1 ->
                                 if (it1 != null && it1.exists()) {
@@ -55,19 +58,24 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
                                     requestTime.text = getTextForTime(projectRequest.createdAt)
 
+                                    requestAcceptBtn.show()
+
                                     requestAcceptBtn.setOnClickListener {
                                         projectRequestListener.onProjectRequestAccept(projectRequest)
                                     }
+
+                                    requestCancelBtn.show()
 
                                     requestCancelBtn.setOnClickListener {
                                         projectRequestListener.onProjectRequestCancel(projectRequest)
                                     }
 
+                                    onRequestLoaded?.let { it2 -> it2(projectRequest) }
+
                                 }
                             }.addOnFailureListener { it1 ->
                                 Log.e(TAG, it1.localizedMessage.orEmpty())
                             }
-
                     }
                 }.addOnFailureListener {
                     Log.e(TAG, it.localizedMessage.orEmpty())
@@ -80,8 +88,8 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private const val TAG = "RequestViewHolder"
 
-        fun newInstance(parent: ViewGroup): ProjectRequestViewHolder {
-            return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false))
+        fun newInstance(parent: ViewGroup, onRequestLoaded: ((projectRequest: ProjectRequest) -> Unit)? = null): ProjectRequestViewHolder {
+            return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false), onRequestLoaded)
         }
 
     }

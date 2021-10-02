@@ -11,6 +11,8 @@ import androidx.paging.*
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.db.*
 import kotlinx.coroutines.Dispatchers
@@ -123,7 +125,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         insertUser(localUser)
     }
 
-    fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
+    private fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertUser(localUser)
     }
 
@@ -149,9 +151,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             if (it.isSuccessful) {
                 val existingList = currentUser.projects.toMutableList()
                 existingList.add(project.id)
+
+                val chatChannels = currentUser.chatChannels.toMutableList()
+                chatChannels.add(project.chatChannel)
+
                 val changes = mapOf(
                     "projectsCount" to currentUser.projectsCount + 1,
-                    "projects" to existingList
+                    "projects" to existingList,
+                    "chatChannels" to chatChannels
                 )
 
                 updateUserLocally(changes)
@@ -235,6 +242,34 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 }
             }
 
+            if (changes.containsKey("collaborations")) {
+                val newCollaborations = changes["collaborations"] as List<String>
+                if (existingUser.collaborations != newCollaborations) {
+                    existingUser.collaborations = newCollaborations
+                }
+            }
+
+            if (changes.containsKey("collaborationsCount")) {
+                val newCollaborationsCount = changes["collaborationsCount"] as Long
+                if (existingUser.collaborationsCount != newCollaborationsCount) {
+                    existingUser.collaborationsCount = newCollaborationsCount
+                }
+            }
+
+            if (changes.containsKey("projectRequests")) {
+                val newProjectRequests = changes["projectRequests"] as List<String>
+                if (existingUser.projectRequests != newProjectRequests) {
+                    existingUser.projectRequests = newProjectRequests
+                }
+            }
+
+            if (changes.containsKey("chatChannels")) {
+                val newChatChannels = changes["chatChannels"] as List<String>
+                if (existingUser.chatChannels != newChatChannels) {
+                    existingUser.chatChannels = newChatChannels
+                }
+            }
+
             repo.insertCurrentUser(existingUser)
         }
 
@@ -254,8 +289,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun insertProject(currentProject: Project) = viewModelScope.launch(Dispatchers.IO) {
-        repo.insertProjects(listOf(currentProject))
+    private fun insertProject(project: Project) = viewModelScope.launch(Dispatchers.IO) {
+        repo.insertProjects(listOf(project))
     }
 
     @ExperimentalPagingApi
@@ -288,6 +323,16 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
+    @ExperimentalPagingApi
+    fun getPagedProjectRequests(query: Query): Flow<PagingData<ProjectRequest>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRequestRemoteMediator(query, repo)
+        ) {
+            repo.projectRequestDao.getPagedProjectRequests()
+        }.flow.cachedIn(viewModelScope)
+    }
+
     fun onLikePressed(project: Project) = viewModelScope.launch (Dispatchers.IO) {
         repo.onLikePressed(project)
     }
@@ -298,6 +343,134 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun onJoinProject(project: Project) = viewModelScope.launch (Dispatchers.IO) {
         repo.onJoinProject(project)
+    }
+
+    fun insertUserAndProject(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
+        projectRequest.sender?.let { repo.insertUser(it) }
+        val project = projectRequest.project
+        if (project != null) {
+            repo.insertProjects(listOf(project))
+        }
+    }
+
+    fun acceptRequest(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
+
+        suspend fun onSender(project: Project, sender: User) {
+            val existingCollaborations = sender.collaborations.toMutableList()
+            existingCollaborations.add(projectRequest.projectId)
+
+            var existingCollaborationsCount = sender.collaborationsCount
+            existingCollaborationsCount += 1
+
+            val existingProjectRequests = sender.projectRequests.toMutableList()
+            existingProjectRequests.remove(projectRequest.projectId)
+
+            val existingChatChannels = sender.chatChannels.toMutableList()
+            existingChatChannels.add(project.chatChannel)
+
+            repo.insertUser(sender)
+        }
+
+        suspend fun onProject(project: Project) {
+            when (val res = FireUtility.acceptProjectRequest(project, projectRequest)) {
+                is Result.Error -> {
+                    setCurrentError(res.exception)
+                }
+                is Result.Success -> {
+                    val existingRequests = project.requests.toMutableList()
+                    existingRequests.remove(projectRequest.requestId)
+
+                    project.requests = existingRequests
+
+                    val existingContributors = project.contributors.toMutableList()
+                    existingContributors.add(projectRequest.senderId)
+
+                    project.contributors = existingContributors
+
+                    insertProject(project)
+
+                    val chatChannel = repo.getChatChannel(project.chatChannel)
+
+                    if (chatChannel != null) {
+                        chatChannel.contributors = existingContributors
+                        chatChannel.contributorsCount += 1
+                        repo.insertChatChannels(listOf(chatChannel))
+                    } else {
+                        val ref = Firebase.firestore.collection("chatChannels")
+                            .document(project.chatChannel)
+
+                        when (val res1 = FireUtility.getDocument(ref)) {
+                            is Result.Error -> {
+                                setCurrentError(res1.exception)
+                            }
+                            is Result.Success -> {
+                                val chatChannel1 = res1.data.toObject(ChatChannel::class.java)!!
+                                repo.insertChatChannels(listOf(chatChannel1))
+                            }
+                        }
+                    }
+
+                    val sender = repo.getUser(projectRequest.senderId)
+
+                    if (sender != null) {
+                        onSender(project, sender)
+                    } else {
+                        val ref = Firebase.firestore.collection("users")
+                            .document(projectRequest.senderId)
+
+                        when (val result = FireUtility.getDocument(ref)) {
+                            is Result.Error -> {
+                                setCurrentError(result.exception)
+                            }
+                            is Result.Success -> {
+                                // already updated
+                                val sender1 = result.data.toObject(User::class.java)!!
+                                repo.insertUser(sender1)
+                            }
+                        }
+                    }
+
+                    repo.deleteProjectRequest(projectRequest)
+
+                }
+            }
+        }
+
+        val localProject = repo.getProject(projectRequest.projectId)
+        if (localProject != null) {
+            onProject(localProject)
+        } else {
+            val projectRef = Firebase.firestore.collection("projects")
+                .document(projectRequest.projectId)
+
+            when (val res = FireUtility.getDocument(projectRef)) {
+                is Result.Error -> {
+                    setCurrentError(res.exception)
+                }
+                is Result.Success -> {
+                    val project = res.data.toObject(Project::class.java)!!
+                    onProject(project)
+                }
+            }
+        }
+    }
+
+    fun rejectRequest(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
+        when (val res = FireUtility.rejectRequest(projectRequest)) {
+            is Result.Error -> {
+                setCurrentError(res.exception)
+            }
+            is Result.Success -> {
+                val project = repo.getProject(projectRequest.projectId)
+                if (project != null) {
+                    val existingRequests = project.requests.toMutableList()
+                    existingRequests.remove(projectRequest.requestId)
+                    project.requests = existingRequests
+
+                    insertProject(project)
+                }
+            }
+        }
     }
 
 }

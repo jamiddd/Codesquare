@@ -72,6 +72,16 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
+    suspend fun getDocument(documentRef: DocumentReference): Result<DocumentSnapshot> {
+        return try {
+            val task = documentRef.get()
+            val result = task.await()
+            Result.Success(result)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
     fun signInWithGoogle(credential: AuthCredential, onComplete: (task: Task<AuthResult>) -> Unit) {
         Firebase.auth.signInWithCredential(credential)
             .addOnCompleteListener(onComplete)
@@ -160,7 +170,8 @@ object FireUtility {
 
         val userChanges = mapOf<String, Any?>(
             "projectsCount" to FieldValue.increment(1),
-            "projects" to FieldValue.arrayUnion(project.id)
+            "projects" to FieldValue.arrayUnion(project.id),
+            "chatChannels" to FieldValue.arrayUnion(project.chatChannel)
         )
 
         batch.update(Firebase.firestore.collection("users").document(currentUser.id), userChanges)
@@ -385,6 +396,77 @@ object FireUtility {
         } catch (e: Exception) {
             Result.Error(e)
         }
+    }
+
+    fun acceptProjectRequest(project: Project, projectRequest: ProjectRequest): Result<Void> {
+        return try {
+            val projectRef = Firebase.firestore.collection("projects").document(projectRequest.projectId)
+            val senderRef = Firebase.firestore.collection("users").document(projectRequest.senderId)
+            val chatChannelRef = Firebase.firestore.collection("chatChannels").document(project.chatChannel)
+            val requestRef = Firebase.firestore.collection("projectRequests").document(projectRequest.requestId)
+
+            val projectChanges = mapOf(
+                "requests" to FieldValue.arrayRemove(projectRequest.requestId),
+                "contributors" to FieldValue.arrayUnion(projectRequest.senderId)
+            )
+
+            val chatChannelChanges = mapOf(
+                "contributors" to FieldValue.arrayUnion(projectRequest.senderId),
+                "contributorsCount" to FieldValue.increment(1)
+            )
+
+            val senderChanges = mapOf(
+                "collaborations" to FieldValue.arrayUnion(projectRequest.projectId),
+                "collaborationsCount" to FieldValue.increment(1),
+                "projectRequests" to FieldValue.arrayRemove(projectRequest.projectId),
+                "chatChannels" to FieldValue.arrayUnion(project.chatChannel)
+            )
+
+            val batch = Firebase.firestore.batch()
+
+            batch.update(projectRef, projectChanges)
+            batch.update(chatChannelRef, chatChannelChanges)
+            batch.update(senderRef, senderChanges)
+            batch.delete(requestRef)
+
+            val task = batch.commit()
+
+            Result.Success(task.result)
+
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun rejectRequest(projectRequest: ProjectRequest): Result<Void> {
+        return try {
+
+            val projectRef = Firebase.firestore.collection("projects").document(projectRequest.projectId)
+            val senderRef = Firebase.firestore.collection("users").document(projectRequest.senderId)
+            val requestRef = Firebase.firestore.collection("projectRequests").document(projectRequest.requestId)
+
+            val projectChanges = mapOf(
+                "requests" to FieldValue.arrayRemove(projectRequest.requestId),
+            )
+
+            val senderChanges = mapOf(
+                "projectRequests" to FieldValue.arrayRemove(projectRequest.projectId)
+            )
+
+            val batch = Firebase.firestore.batch()
+
+            batch.update(projectRef, projectChanges)
+            batch.update(senderRef, senderChanges)
+            batch.delete(requestRef)
+
+            val task = batch.commit()
+
+            Result.Success(task.result)
+
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+
     }
 
 }

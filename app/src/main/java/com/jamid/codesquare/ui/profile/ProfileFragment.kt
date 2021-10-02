@@ -44,7 +44,7 @@ class ProfileFragment: Fragment() {
                 true
             }
             R.id.project_requests -> {
-
+                findNavController().navigate(R.id.action_profileFragment_to_projectRequestFragment, null, slideRightNavOptions())
                 true
             }
             R.id.settings -> {

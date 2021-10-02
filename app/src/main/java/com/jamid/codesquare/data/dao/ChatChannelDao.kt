@@ -14,4 +14,7 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels ORDER BY createdAt DESC")
     abstract fun getPagedChatChannels(): PagingSource<Int, ChatChannel>
 
+    @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannel")
+    abstract suspend fun getChatChannel(chatChannel: String): ChatChannel?
+
 }

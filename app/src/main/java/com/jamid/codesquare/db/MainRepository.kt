@@ -196,6 +196,26 @@ class MainRepository(db: CodesquareDatabase) {
         }
     }
 
+    suspend fun insertProjectRequests(projectRequests: List<ProjectRequest>) {
+        projectRequestDao.insert(projectRequests)
+    }
+
+    suspend fun getProject(projectId: String): Project? {
+        return projectDao.getProject(projectId)
+    }
+
+    suspend fun getUser(userId: String): User? {
+        return userDao.getUser(userId)
+    }
+
+    suspend fun getChatChannel(chatChannel: String): ChatChannel? {
+        return chatChannelDao.getChatChannel(chatChannel)
+    }
+
+    suspend fun deleteProjectRequest(projectRequest: ProjectRequest) {
+        projectRequestDao.deleteProjectRequest(projectRequest.requestId)
+    }
+
     companion object {
 
         private const val TAG = "MainRepository"

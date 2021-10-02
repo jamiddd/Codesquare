@@ -213,6 +213,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideReset()
                 }
+                R.id.projectRequestFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
             }
         }
 
@@ -289,11 +295,11 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     override fun onProjectRequestAccept(projectRequest: ProjectRequest) {
-        //
+        viewModel.acceptRequest(projectRequest)
     }
 
     override fun onProjectRequestCancel(projectRequest: ProjectRequest) {
-        //
+        viewModel.rejectRequest(projectRequest)
     }
 
 }

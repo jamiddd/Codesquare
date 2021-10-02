@@ -13,5 +13,8 @@ abstract class UserDao: BaseDao<User>() {
 
     @Query("DELETE FROM users")
     abstract suspend fun clearTable()
-    //
+
+    @Query("SELECT * FROM users WHERE id = :userId")
+    abstract suspend fun getUser(userId: String): User?
+
 }
