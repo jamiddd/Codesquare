@@ -197,7 +197,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 }
                 R.id.profileFragment -> {
                     userInfoLayout?.show()
-                    userInfoLayout?.updateLayout(marginTop = convertDpToPx(70))
+                    userInfoLayout?.updateLayout(marginTop = convertDpToPx(56))
                     binding.mainToolbar.show()
                     binding.mainTabLayout.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
@@ -214,6 +214,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainPrimaryAction.slideReset()
                 }
                 R.id.projectRequestFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.savedProjectsFragment -> {
                     userInfoLayout?.hide()
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
@@ -300,6 +306,22 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onProjectRequestCancel(projectRequest: ProjectRequest) {
         viewModel.rejectRequest(projectRequest)
+    }
+
+    override fun onProjectCreatorClick(project: Project) {
+        if (project.creator.userId == viewModel.currentUser.value?.id) {
+            navController.navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
+        } else {
+            viewModel.getOtherUser(project.creator.userId) {
+                if (it.isSuccessful) {
+                    val user = it.result.toObject(User::class.java)
+                    val bundle = bundleOf("user" to user)
+                    navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        }
     }
 
 }

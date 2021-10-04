@@ -80,6 +80,9 @@
         <action
             android:id="@+id/action_profileFragment_to_projectRequestFragment"
             app:destination="@id/projectRequestFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_savedProjectsFragment"
+            app:destination="@id/savedProjectsFragment" />
     </fragment>
     <fragment
         android:id="@+id/editProfileFragment"
@@ -101,4 +104,9 @@
         android:name="com.jamid.codesquare.ui.profile.ProjectRequestFragment"
         android:label="Project Requests"
         tools:layout="@layout/fragment_pager" />
+    <fragment
+        android:id="@+id/savedProjectsFragment"
+        android:name="com.jamid.codesquare.ui.profile.SavedProjectsFragment"
+        tools:layout="@layout/fragment_pager"
+        android:label="Saved projects" />
 </navigation>

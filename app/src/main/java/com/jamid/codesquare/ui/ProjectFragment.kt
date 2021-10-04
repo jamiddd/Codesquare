@@ -6,13 +6,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.data.Project
@@ -26,6 +26,7 @@ class ProjectFragment: Fragment() {
     private lateinit var project: Project
     private var totalImageCount = 1
     private lateinit var projectClickListener: ProjectClickListener
+    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,6 +76,14 @@ class ProjectFragment: Fragment() {
         binding.userImg.setImageURI(project.creator.photo)
         binding.userName.text = project.creator.name
 
+        binding.userImg.setOnClickListener {
+            projectClickListener.onProjectCreatorClick(project)
+        }
+
+        binding.userName.setOnClickListener {
+            projectClickListener.onProjectCreatorClick(project)
+        }
+
         binding.projectTime.text = getTextForTime(project.createdAt)
 
         binding.projectContent.text = project.content
@@ -118,7 +127,26 @@ class ProjectFragment: Fragment() {
         }
 
         if (project.isMadeByMe) {
-            binding.starBtn.hide()
+            binding.userLikeBtn.hide()
+        }
+
+        val currentUser = viewModel.currentUser.value!!
+
+        binding.userLikeBtn.isSelected = currentUser.likedUsers.contains(project.creator.userId)
+        if (binding.userLikeBtn.isSelected) {
+            binding.userLikeBtn.text = "Dislike"
+        } else {
+            binding.userLikeBtn.text = "Like"
+        }
+
+        binding.userLikeBtn.setOnClickListener {
+            if (binding.userLikeBtn.isSelected) {
+                binding.userLikeBtn.text = "Like"
+                viewModel.dislikeUser(project.creator.userId)
+            } else {
+                binding.userLikeBtn.text = "Dislike"
+                viewModel.likeUser(project.creator.userId)
+            }
         }
 
     }

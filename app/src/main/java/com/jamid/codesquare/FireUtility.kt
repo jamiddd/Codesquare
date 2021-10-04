@@ -317,6 +317,10 @@ object FireUtility {
 
             batch.update(userRef, "savedProjects", FieldValue.arrayUnion(project.id))
 
+            val savedProjectRef = userRef.collection("savedProjects").document(project.id)
+
+            batch.set(savedProjectRef, project)
+
             val task = batch.commit()
             task.await()
             Result.Success(project)
@@ -334,6 +338,8 @@ object FireUtility {
             val batch = Firebase.firestore.batch()
 
             batch.update(userRef, "savedProjects", FieldValue.arrayRemove(project.id))
+
+            batch.delete(userRef.collection("savedProjects").document(project.id))
 
             val task = batch.commit()
             task.await()
@@ -467,6 +473,52 @@ object FireUtility {
             Result.Error(e)
         }
 
+    }
+
+    suspend fun likeUser(currentUser: User, userId: String): Result<User> {
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+
+            val ref1 = db.collection("users").document(userId)
+            batch.update(ref1, mapOf("starsCount" to FieldValue.increment(1)))
+
+            val ref2 = db.collection("users").document(currentUser.id)
+            batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayUnion(userId)))
+
+            val existingList = currentUser.likedUsers.toMutableList()
+            existingList.add(userId)
+            currentUser.likedUsers = existingList
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(currentUser)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    suspend fun dislikeUser(currentUser: User, userId: String): Result<User> {
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+
+            val ref1 = db.collection("users").document(userId)
+            batch.update(ref1, mapOf("starsCount" to FieldValue.increment(-1)))
+
+            val ref2 = db.collection("users").document(currentUser.id)
+            batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayRemove(userId)))
+
+            val existingList = currentUser.likedUsers.toMutableList()
+            existingList.remove(userId)
+            currentUser.likedUsers = existingList
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(currentUser)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
 }

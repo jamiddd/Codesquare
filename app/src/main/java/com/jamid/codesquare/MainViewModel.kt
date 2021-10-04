@@ -9,6 +9,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.paging.*
 import com.google.android.gms.tasks.Task
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
@@ -471,6 +473,77 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    @ExperimentalPagingApi
+    fun getCollaborations(query: Query): Flow<PagingData<Project>> {
+        val currentUser = currentUser.value!!
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo)
+        ) {
+            repo.projectDao.getPagedCollaborations("%${currentUser.id}%", currentUser.id)
+        }.flow.cachedIn(viewModelScope)
+    }
+
+
+    @ExperimentalPagingApi
+    fun getOtherUserProjects(query: Query, otherUser: User): Flow<PagingData<Project>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo)
+        ) {
+            repo.projectDao.getPagedOtherUserProjects(otherUser.id)
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    @ExperimentalPagingApi
+    fun getOtherUserCollaborations(query: Query, otherUser: User): Flow<PagingData<Project>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo)
+        ) {
+            repo.projectDao.getOtherUserPagedCollaborations("%${otherUser.id}%", otherUser.id)
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    fun getOtherUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        val ref = Firebase.firestore.collection("users").document(userId)
+        FireUtility.getDocument(ref, onComplete)
+    }
+
+    fun likeUser(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+        val currentUser = currentUser.value!!
+        when (val likeUserResult = FireUtility.likeUser(currentUser, userId)) {
+            is Result.Error -> {
+                setCurrentError(likeUserResult.exception)
+            }
+            is Result.Success -> {
+                insertCurrentUser(likeUserResult.data)
+            }
+        }
+    }
+
+    fun dislikeUser(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+        val currentUser = currentUser.value!!
+        when (val likeUserResult = FireUtility.dislikeUser(currentUser, userId)) {
+            is Result.Error -> {
+                setCurrentError(likeUserResult.exception)
+            }
+            is Result.Success -> {
+                insertCurrentUser(likeUserResult.data)
+            }
+        }
+    }
+
+    @ExperimentalPagingApi
+    fun getSavedProjects(query: Query): Flow<PagingData<Project>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo)
+        ) {
+            repo.projectDao.getPagedSavedProjects()
+        }.flow.cachedIn(viewModelScope)
     }
 
 }

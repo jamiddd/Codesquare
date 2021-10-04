@@ -268,7 +268,7 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="16sp"
             app:layout_constraintBottom_toTopOf="@+id/project_time"
-            app:layout_constraintEnd_toStartOf="@+id/star_btn"
+            app:layout_constraintEnd_toStartOf="@+id/user_like_btn"
             app:layout_constraintStart_toEndOf="@+id/user_img"
             app:layout_constraintTop_toTopOf="@+id/user_img" />
 
@@ -283,11 +283,12 @@
             app:layout_constraintTop_toBottomOf="@+id/user_name" />
 
         <Button
-            android:id="@+id/star_btn"
+            android:id="@+id/user_like_btn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:text="Like"
+            app:icon="@drawable/thumb_selector"
             app:layout_constraintBottom_toBottomOf="@+id/project_time"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/user_name" />

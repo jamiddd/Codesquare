@@ -21,4 +21,16 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Query("SELECT * FROM projects WHERE id = :projectId")
     abstract suspend fun getProject(projectId: String): Project?
 
+    @Query("SELECT * FROM projects WHERE contributors LIKE :formattedUid AND project_userId != :uid ORDER BY createdAt DESC")
+    abstract fun getPagedCollaborations(formattedUid: String, uid: String): PagingSource<Int, Project>
+
+    @Query("SELECT * FROM projects WHERE project_userId = :id ORDER BY createdAt DESC")
+    abstract fun getPagedOtherUserProjects(id: String): PagingSource<Int, Project>
+
+    @Query("SELECT * FROM projects WHERE contributors LIKE :formattedUid AND project_userId != :id ORDER BY createdAt DESC")
+    abstract fun getOtherUserPagedCollaborations(formattedUid: String, id: String): PagingSource<Int, Project>
+
+    @Query("SELECT * FROM projects WHERE isSaved = 1 ORDER BY createdAt DESC")
+    abstract fun getPagedSavedProjects(): PagingSource<Int, Project>
+
 }

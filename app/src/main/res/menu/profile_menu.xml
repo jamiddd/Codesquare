@@ -4,5 +4,6 @@
     <item android:title="Edit" android:icon="@drawable/ic_round_edit_24" android:id="@+id/edit_profile" app:showAsAction="always"/>
     <item android:id="@+id/log_out" android:title="Log out"  app:showAsAction="never" />
     <item android:id="@+id/project_requests" android:title="Requests" app:showAsAction="never" />
+    <item android:id="@+id/saved_projects" android:title="Saved Projects" app:showAsAction="never" />
     <item android:id="@+id/settings" android:title="Settings" app:showAsAction="never" />
 </menu>

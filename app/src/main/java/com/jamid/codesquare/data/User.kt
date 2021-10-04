@@ -21,6 +21,7 @@ data class User(
     var about: String,
     var photo: String?,
     var interests: List<String>,
+    var likedUsers: List<String>,
     var likedProjects: List<String>,
     var likedComments: List<String>,
     var savedProjects: List<String>,
@@ -41,11 +42,11 @@ data class User(
     @Exclude @set: Exclude @get: Exclude
     var isCurrentUser: Boolean
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
+    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
 
     companion object {
         fun newUser(id: String, name: String, email: String) =
-            User(id, name, randomId(), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
+            User(id, name, randomId(), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
 
     }
 

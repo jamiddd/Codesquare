@@ -21,11 +21,15 @@ import android.text.style.ClickableSpan
 import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.text.set
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.viewpager2.widget.ViewPager2
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.ScrollTouchListener
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
@@ -60,6 +64,14 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             userImg.setImageURI(creator.photo)
             userName.text = creator.name
 
+            userImg.setOnClickListener {
+                projectClickListener.onProjectCreatorClick(project)
+            }
+
+            userName.setOnClickListener {
+                projectClickListener.onProjectCreatorClick(project)
+            }
+
             if (project.location.address.isNotBlank()) {
                 location.text = project.location.address
             } else {
@@ -93,7 +105,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         }
                     }
 
-
                     truncatedSpannableString.setSpan(cs1,
                         startIndex,
                         startIndex + moreString.length,
@@ -107,7 +118,11 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         projectClickListener.onProjectClick(project.copy())
                     }
 
-                    content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
+                    view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
+                        delay(200)
+                        content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
+                    }
+
                 }
             }
 

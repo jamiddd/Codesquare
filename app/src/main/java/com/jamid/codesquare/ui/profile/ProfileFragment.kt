@@ -12,9 +12,11 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.ProfilePagerAdapter
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.databinding.UserInfoLayoutBinding
 
+@ExperimentalPagingApi
 class ProfileFragment: Fragment() {
 
     private lateinit var binding: FragmentProfileBinding
@@ -47,6 +49,10 @@ class ProfileFragment: Fragment() {
                 findNavController().navigate(R.id.action_profileFragment_to_projectRequestFragment, null, slideRightNavOptions())
                 true
             }
+            R.id.saved_projects -> {
+                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null, slideRightNavOptions())
+                true
+            }
             R.id.settings -> {
                 toast("Settings")
                 true
@@ -64,13 +70,16 @@ class ProfileFragment: Fragment() {
         return binding.root
     }
 
-    @ExperimentalPagingApi
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
 
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
-        binding.profileViewPager.adapter = ProfilePagerAdapter(activity)
+
+        val otherUser = arguments?.getParcelable<User>("user")
+        binding.profileViewPager.adapter = ProfilePagerAdapter(activity, otherUser)
+
+        binding.profileViewPager.isUserInputEnabled = false
 
         TabLayoutMediator(tabLayout, binding.profileViewPager) { tab, pos ->
             if (pos == 0) {
@@ -85,41 +94,52 @@ class ProfileFragment: Fragment() {
             val userStub = activity.findViewById<ViewStub>(R.id.user_profile_view_stub)
             val newView = userStub.inflate()
 
-            newView.updateLayout(marginTop = convertDpToPx(70))
-
-            onViewGenerated(newView)
+            newView.updateLayout(marginTop = convertDpToPx(56))
+            onViewGenerated(newView, otherUser)
         } else {
-            onViewGenerated(userProfileView)
+            onViewGenerated(userProfileView, otherUser)
         }
 
     }
 
-    private fun onViewGenerated(view: View) {
+    private fun onViewGenerated(view: View, otherUser: User? = null) {
         val userLayoutBinding = UserInfoLayoutBinding.bind(view)
 
         userLayoutBinding.apply {
-            viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
-                if (currentUser != null) {
-                    userImg.setImageURI(currentUser.photo)
-                    userName.text = currentUser.name
-                    if (currentUser.tag.isNotBlank()) {
-                        userTag.text = currentUser.tag
-                    } else {
-                        userTag.hide()
-                    }
 
-                    if (currentUser.about.isNotBlank()) {
-                        userAbout.text = currentUser.about
+            if (otherUser == null) {
+                viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
+                    if (currentUser != null) {
+                        setUser(currentUser)
                     } else {
-                        userAbout.hide()
+                        findNavController().navigate(R.id.action_profileFragment_to_loginFragment)
                     }
-
-                    projectsCount.text = currentUser.projectsCount.toString() + " Projects"
-                    collaborationsCount.text = currentUser.collaborationsCount.toString() + " Collaborations"
-                    starsCount.text = currentUser.starsCount.toString() + " Stars"
                 }
+            } else {
+                setUser(otherUser)
             }
+
         }
+    }
+
+    private fun UserInfoLayoutBinding.setUser(user: User) {
+        userImg.setImageURI(user.photo)
+        userName.text = user.name
+        if (user.tag.isNotBlank()) {
+            userTag.text = user.tag
+        } else {
+            userTag.hide()
+        }
+
+        if (user.about.isNotBlank()) {
+            userAbout.text = user.about
+        } else {
+            userAbout.hide()
+        }
+
+        projectsCount.text = user.projectsCount.toString() + " Projects"
+        collaborationsCount.text = user.collaborationsCount.toString() + " Collaborations"
+        starsCount.text = user.starsCount.toString() + " Stars"
     }
 
 }

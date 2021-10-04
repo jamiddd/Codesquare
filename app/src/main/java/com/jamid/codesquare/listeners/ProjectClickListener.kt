@@ -8,5 +8,6 @@ interface ProjectClickListener {
     fun onProjectLikeClick(project: Project)
     fun onProjectSaveClick(project: Project)
     fun onProjectJoinClick(project: Project)
+    fun onProjectCreatorClick(project: Project)
 
 }
