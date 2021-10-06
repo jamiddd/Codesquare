@@ -1,7 +1,9 @@
 package com.jamid.codesquare
 
 import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.Patterns
@@ -9,6 +11,7 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
@@ -29,6 +32,10 @@ fun View.show() {
 
 fun View.hide() {
     this.visibility = View.GONE
+}
+
+fun View.disappear() {
+    this.visibility = View.INVISIBLE
 }
 
 fun Fragment.toast(msg: String) {
@@ -216,6 +223,33 @@ fun View.slideDown(offset: Float) {
     animator.duration = 300
     animator.interpolator = AccelerateDecelerateInterpolator()
     animator.start()
+}
+
+fun Fragment.showKeyboard() {
+    view?.let { activity?.showKeyboard() }
+}
+
+private fun Context.showKeyboard() {
+    val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    if (Build.VERSION.SDK_INT > 30) {
+        inputMethodManager.showSoftInput((this as Activity).window.decorView, 0)
+    } else {
+        inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0)
+    }
+}
+
+fun Fragment.hideKeyboard() {
+    view?.let { activity?.hideKeyboard(it) }
+}
+
+/**
+ * Extension function to hide the keyboard from the given context
+ *
+ * @param view
+ */
+fun Context.hideKeyboard(view: View) {
+    val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+    inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 private const val TAG = "UtilityTAG"

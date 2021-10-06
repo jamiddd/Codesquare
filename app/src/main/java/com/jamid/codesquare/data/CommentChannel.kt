@@ -10,12 +10,13 @@ import kotlinx.parcelize.Parcelize
 @Entity(tableName = "comment_channels")
 data class CommentChannel(
     @PrimaryKey
-    val commentChannelId: String,
-    val parentId: String,
-    val postTitle: String,
-    val createdAt: Long,
+    var commentChannelId: String,
+    var parentId: String,
+    var projectId: String,
+    var postTitle: String,
+    var createdAt: Long,
     @Embedded(prefix = "comment_channel_")
     val lastComment: Comment?
 ): Parcelable {
-    constructor(): this("", "", "", System.currentTimeMillis(), Comment())
+    constructor(): this("", "", "", "", System.currentTimeMillis(), Comment())
 }

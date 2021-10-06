@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/right_balloon_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/message_content_container_alt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="4dp"
+        android:background="@drawable/message_background_alt"
+        android:maxWidth="270dp"
+        android:minHeight="48dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/message_meta_alt"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintWidth_max="270dp">
+
+        <ViewStub
+            android:id="@+id/message_document_stub_alt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inflatedId="@+id/message_dynamic_content_doc_alt"
+            android:layout="@layout/message_document_layout" />
+
+        <ViewStub
+            android:id="@+id/message_image_stub_alt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inflatedId="@+id/message_dynamic_content_img_alt"
+            android:layout="@layout/message_image_layout" />
+
+
+        <TextView
+            android:id="@+id/message_content_alt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="20dp"
+            android:paddingTop="12dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="12dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/message_meta_alt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="12:35 pm"
+        app:layout_constraintBottom_toTopOf="@+id/message_content_container_alt"
+        app:layout_constraintEnd_toEndOf="@+id/message_content_container_alt"
+        app:layout_constraintHorizontal_bias="0.8"
+        app:layout_constraintStart_toStartOf="@+id/message_content_container_alt"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

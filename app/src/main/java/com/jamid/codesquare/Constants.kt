@@ -17,3 +17,18 @@ const val TOP_TO_TOP = "TOP_TO_TOP"
 const val TOP_TO_BOTTOM = "TOP_TO_BOTTOM"
 const val BOTTOM_TO_BOTTOM = "BOTTOM_TO_BOTTOM"
 const val BOTTOM_TO_TOP = "BOTTOM_TO_TOP"
+
+
+const val msg_at_start = 101
+const val msg_at_middle = 102
+const val msg_at_end = 103
+const val msg_at_start_alt = 104
+const val msg_at_middle_alt = 105
+const val msg_at_end_alt = 106
+const val msg_single = 107
+const val msg_single_alt = 108
+
+const val image = "Image"
+const val text = "Text"
+const val document = "Document"
+

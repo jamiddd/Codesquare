@@ -44,6 +44,10 @@ data class User(
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
 
+    fun minify(): UserMinimal {
+        return UserMinimal(id, name, photo, username)
+    }
+
     companion object {
         fun newUser(id: String, name: String, email: String) =
             User(id, name, randomId(), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)

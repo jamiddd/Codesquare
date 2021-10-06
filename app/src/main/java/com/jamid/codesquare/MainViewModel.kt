@@ -3,13 +3,13 @@ package com.jamid.codesquare
 import android.app.Application
 import android.location.Address
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.paging.*
 import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
@@ -20,6 +20,7 @@ import com.jamid.codesquare.db.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.util.*
 
 class MainViewModel(application: Application): AndroidViewModel(application) {
 
@@ -35,8 +36,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 viewModelScope.launch(Dispatchers.IO) {
                     insertCurrentUser(user)
                 }
+                getChannelUsers(user.chatChannels)
             }
         }
+
     }
 
     private val _currentError = MutableLiveData<Exception?>()
@@ -52,6 +55,26 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     private val _currentImage = MutableLiveData<Uri?>()
     val currentImage: LiveData<Uri?> = _currentImage
+
+    val currentCommentChannelIds = Stack<String>()
+    var currentChatChannel: String? = null
+
+    private val _chatImagesUpload = MutableLiveData<List<Uri>>()
+    val chatImagesUpload: LiveData<List<Uri>> = _chatImagesUpload
+
+    private val _chatDocumentsUpload = MutableLiveData<List<Uri>>()
+    val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
+
+    fun setChatUploadImages(images: List<Uri>) {
+        _chatImagesUpload.postValue(images)
+    }
+
+    fun setChatUploadDocuments(documents: List<Uri>) {
+        _chatDocumentsUpload.postValue(documents)
+    }
+
+    // make sure the user in this comment is not null or empty
+    val replyToContent = MutableLiveData<Comment>()
 
     fun setCurrentError(exception: Exception?) {
         _currentError.postValue(exception)
@@ -376,9 +399,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         suspend fun onProject(project: Project) {
             when (val res = FireUtility.acceptProjectRequest(project, projectRequest)) {
                 is Result.Error -> {
+                    Log.d(TAG, "Something went wrong while accepting project request.")
                     setCurrentError(res.exception)
                 }
                 is Result.Success -> {
+
+                    TODO("Something is wrong here ///  basically the downloads need to be done later on")
                     val existingRequests = project.requests.toMutableList()
                     existingRequests.remove(projectRequest.requestId)
 
@@ -403,6 +429,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
                         when (val res1 = FireUtility.getDocument(ref)) {
                             is Result.Error -> {
+                                Log.d(TAG, "Something went wrong while getting chat channel for this project .."  + res1.exception.localizedMessage)
                                 setCurrentError(res1.exception)
                             }
                             is Result.Success -> {
@@ -422,6 +449,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
                         when (val result = FireUtility.getDocument(ref)) {
                             is Result.Error -> {
+                                Log.d(TAG, "Something went wrong while getting request sender .."  + result.exception.localizedMessage)
                                 setCurrentError(result.exception)
                             }
                             is Result.Success -> {
@@ -544,6 +572,123 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         ) {
             repo.projectDao.getPagedSavedProjects()
         }.flow.cachedIn(viewModelScope)
+    }
+
+    fun getProjectContributors(project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        FireUtility.getProjectContributors(project, onComplete)
+    }
+
+    fun getCommentChannel(project: Project, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        val ref = Firebase.firestore.collection("commentChannels")
+            .document(project.commentChannel)
+        FireUtility.getDocument(ref, onComplete)
+    }
+
+    fun sendComment(comment: Comment, parentChannelId: String? = null) = viewModelScope.launch(Dispatchers.IO) {
+        when (val result = FireUtility.sendComment(comment, parentChannelId)) {
+            is Result.Error -> setCurrentError(result.exception)
+            is Result.Success -> {
+                val project = repo.getProject(comment.projectId)
+                if (project != null) {
+                    project.comments += 1
+                    insertProject(project)
+                }
+
+                if (comment.commentLevel >= 1) {
+                    val parentComment1 = repo.getComment(comment.parentId)
+                    if (parentComment1 != null) {
+                        parentComment1.repliesCount += 1
+                        insertComment(parentComment1)
+                    }
+                }
+
+                insertComment(result.data)
+            }
+        }
+    }
+
+    fun insertComment(parentComment: Comment) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertComment(parentComment)
+    }
+
+    @ExperimentalPagingApi
+    fun getPagedComments(commentChannelId: String, query: Query): Flow<PagingData<Comment>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = CommentRemoteMediator(query, repo)
+        ) {
+            repo.commentDao.getPagedComments(commentChannelId)
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    fun onCommentLiked(comment: Comment) = viewModelScope.launch (Dispatchers.IO)  {
+        repo.onCommentLiked(comment)
+    }
+
+    // to insert all the users related to the local projects
+    fun getChannelUsers(chatChannels: List<String>) = viewModelScope.launch (Dispatchers.IO) {
+        when (val result = FireUtility.getChannelUsers(chatChannels)) {
+            is Result.Error -> {
+                setCurrentError(result.exception)
+            }
+            is Result.Success -> {
+                Log.d(TAG, result.data.toString())
+                repo.insertUsers(result.data)
+            }
+        }
+    }
+
+    fun sendTextMessage(chatChannelId: String, content: String) = viewModelScope.launch (Dispatchers.IO) {
+        val currentUser = currentUser.value!!
+        when (val result = FireUtility.sendTextMessage(currentUser, chatChannelId, content)) {
+            is Result.Error -> setCurrentError(result.exception)
+            is Result.Success -> {
+                repo.insertMessages(listOf(result.data))
+                val chatChannel = repo.getChatChannel(chatChannelId)
+                if (chatChannel != null) {
+                    chatChannel.lastMessage = result.data
+                    chatChannel.updatedAt = result.data.createdAt
+
+                    Log.d(TAG, chatChannel.toString())
+
+                    repo.insertChatChannels(listOf(chatChannel))
+                }
+            }
+        }
+    }
+
+    fun sendMessagesSimultaneously(chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+        when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
+            is Result.Error -> setCurrentError(result.exception)
+            is Result.Success -> {
+                repo.insertMessages(result.data)
+
+                val chatChannel = repo.getChatChannel(chatChannelId)
+
+                if (chatChannel != null) {
+                    chatChannel.lastMessage = result.data.last()
+                    chatChannel.updatedAt = result.data.last().createdAt
+                    repo.insertChatChannels(listOf(chatChannel))
+                }
+            }
+        }
+    }
+
+    fun deleteChatUploadImageAtPosition(delPos: Int) {
+        val chatImages = chatImagesUpload.value
+        if (chatImages != null) {
+            val existingList = chatImages.toMutableList()
+            existingList.removeAt(delPos)
+            setChatUploadImages(existingList)
+        }
+    }
+
+    fun insertMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
+        TODO()
+    }
+
+    companion object {
+        private const val TAG = "MainViewModel"
     }
 
 }

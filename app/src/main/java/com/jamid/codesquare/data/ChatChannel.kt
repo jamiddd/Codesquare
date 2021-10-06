@@ -14,6 +14,7 @@ data class ChatChannel(
     var projectId: String,
     var projectTitle: String,
     var projectImage: String?,
+    // need to set a listener to know if a new user has been added to this group TODO()
     var contributorsCount: Long,
     var administrators: List<String>,
     var contributors: List<String>,

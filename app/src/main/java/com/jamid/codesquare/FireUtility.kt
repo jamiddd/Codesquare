@@ -10,11 +10,13 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.google.firebase.storage.ktx.storage
 import com.jamid.codesquare.data.*
 import kotlinx.coroutines.tasks.await
+import java.io.File
 
 object FireUtility {
 
@@ -155,6 +157,7 @@ object FireUtility {
 
         val commentChannel = CommentChannel(
             commentChannelId,
+            project.id,
             project.id,
             project.title,
             project.createdAt,
@@ -519,6 +522,245 @@ object FireUtility {
         } catch (e: Exception) {
             Result.Error(e)
         }
+    }
+
+    fun getProjectContributors(project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        val task = Firebase.firestore.collection("users")
+            .whereArrayContains("collaborations", project.id)
+            .limit(7)
+            .get()
+
+        task.addOnCompleteListener(onComplete)
+    }
+
+
+    suspend fun sendComment(comment: Comment, parentCommentChannelId: String? = null): Result<Comment> {
+        // - create new comment
+        // - create a new channel for that comment
+        // - the project comment's channel needs to contain this new comment
+        // - the project needs to update comments count
+        // - if it is a reply then update the parent comment
+
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+            val commentRef = db.collection("commentChannels")
+                .document(comment.commentChannelId)
+                .collection("comments")
+                .document(comment.commentId)
+
+            val newCommentChannel = CommentChannel(randomId(), comment.commentId, comment.projectId, comment.postTitle, System.currentTimeMillis(), null)
+            val newCommentChannelRef = db.collection("commentChannels").document(newCommentChannel.commentChannelId)
+            batch.set(newCommentChannelRef, newCommentChannel)
+            comment.threadChannelId = newCommentChannel.commentChannelId
+            batch.set(commentRef, comment)
+
+            val parentCommentChannelRef = db.collection("commentChannels").document(comment.commentChannelId)
+            val parentCommentChannelChanges = mapOf("lastComment" to comment)
+            batch.update(parentCommentChannelRef, parentCommentChannelChanges)
+
+            val projectRef = db.collection("projects").document(comment.projectId)
+            val projectChanges = mapOf("comments" to FieldValue.increment(1))
+            batch.update(projectRef, projectChanges)
+
+
+
+            // update the parent comment replies count
+            if (comment.commentLevel.toInt() != 0) {
+                val parentRef = db.collection("commentChannels")
+                    .document(parentCommentChannelId!!).collection("comments")
+                    .document(comment.parentId)
+
+                batch.update(parentRef, mapOf("repliesCount" to FieldValue.increment(1)))
+            }
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(comment)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+
+
+    }
+
+    suspend fun dislikeComment(currentUserId: String, comment: Comment): Result<Comment> {
+        return try {
+            val db = Firebase.firestore
+
+            val batch = db.batch()
+
+            val commentRef = Firebase.firestore.collection("commentChannels")
+                .document(comment.commentChannelId)
+                .collection("comments")
+                .document(comment.commentId)
+
+            batch.update(commentRef, mapOf("likes" to FieldValue.increment(-1)))
+
+            val currentUserRef = db.collection("users").document(currentUserId)
+
+            batch.update(currentUserRef, mapOf("likedComments" to FieldValue.arrayRemove(comment.commentId)))
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(comment)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    suspend fun likeComment(currentUserId: String, comment: Comment): Result<Comment> {
+        return try {
+            val db = Firebase.firestore
+
+            val batch = db.batch()
+
+            val commentRef = Firebase.firestore.collection("commentChannels")
+                .document(comment.commentChannelId)
+                .collection("comments")
+                .document(comment.commentId)
+
+            batch.update(commentRef, mapOf("likes" to FieldValue.increment(1)))
+
+            val currentUserRef = db.collection("users").document(currentUserId)
+
+            batch.update(currentUserRef, mapOf("likedComments" to FieldValue.arrayUnion(comment.commentId)))
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(comment)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    suspend fun getChannelUsers(chatChannels: List<String>): Result<List<User>> {
+
+        return try {
+            val listOfReferences = mutableListOf<Query>()
+            val users = mutableListOf<User>()
+
+            for (channel in chatChannels) {
+                val ref = Firebase.firestore.collection("users")
+                    .whereArrayContains("chatChannels", channel)
+                listOfReferences.add(ref)
+            }
+
+            for (ref in listOfReferences) {
+                val task = ref.get()
+                val querySnapshot = task.await()
+                val usersList = querySnapshot.toObjects(User::class.java)
+                users.addAll(usersList)
+            }
+
+            Result.Success(users)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+
+    }
+
+    suspend fun sendTextMessage(currentUser: User, chatChannelId: String, content: String): Result<Message> {
+
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+
+            val chatChannelRef = db.collection("chatChannels").document(chatChannelId)
+
+            val ref = chatChannelRef.collection("messages").document()
+            val messageId = ref.id
+
+            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, System.currentTimeMillis(), UserMinimal(currentUser.id, currentUser.name, currentUser.photo, currentUser.username), false, isCurrentUserMessage = true)
+
+            batch.set(ref, message)
+
+            val chatChannelChanges = mapOf(
+                "lastMessage" to message,
+                "updatedAt" to message.createdAt
+            )
+
+            batch.update(chatChannelRef, chatChannelChanges)
+
+            val task = batch.commit()
+            task.await()
+            Result.Success(message)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+
+    }
+
+    // size of the list must be 2 if text included and 1 if only media
+    suspend fun sendMessagesSimultaneously(chatChannelId: String, listOfMessages: List<Message>): Result<List<Message>> {
+        val db = Firebase.firestore
+
+        val lastMessage = listOfMessages.last()
+        val isLastMessageTextMsg = lastMessage.type == text
+
+        val chatChannelRef = db.collection("chatChannels").document(chatChannelId)
+
+        val sample = listOfMessages.first()
+        val updatedList = if (isLastMessageTextMsg && listOfMessages.size > 1) {
+            val mediaMessages = listOfMessages.slice(0..listOfMessages.size - 2)
+            if (sample.type == image) {
+                val downloadedImages = uploadImages(sample.chatChannelId, mediaMessages.map { it.content.toUri() })
+                val images = downloadedImages.map { it.toString() }
+                mediaMessages.forEachIndexed { index, message ->
+                    message.content = images[index]
+                }
+            } else {
+                TODO("Not implemented yet")
+            }
+            mediaMessages
+        } else {
+            if (sample.type == image) {
+                val downloadedImages = uploadImages(sample.chatChannelId, listOfMessages.map { it.content.toUri() })
+                val images = downloadedImages.map { it.toString() }
+                listOfMessages.forEachIndexed { index, message ->
+                    message.content = images[index]
+                }
+            } else {
+                TODO("Not implemented yet")
+            }
+            listOfMessages
+        }.toMutableList()
+
+        if (isLastMessageTextMsg) {
+            updatedList.add(lastMessage)
+        }
+
+        return try {
+            val batch = Firebase.firestore.batch()
+
+            for (message in updatedList) {
+                val ref = chatChannelRef.collection("messages").document()
+                message.messageId = ref.id
+                batch.set(ref, message)
+            }
+
+            val chatChannelChanges = mapOf("lastMessage" to updatedList.last())
+
+            batch.update(chatChannelRef, chatChannelChanges)
+
+            val task = batch.commit()
+            task.await()
+
+            Result.Success(updatedList)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+
+    }
+
+    fun downloadMedia(destinationFile: File, message: Message, onComplete: (task: Task<FileDownloadTask.TaskSnapshot>) -> Unit) {
+        val uri = Uri.parse(message.content)
+        val fileRef = uri.lastPathSegment
+        fileRef?.let {
+            val objRef = Firebase.storage.reference.child(fileRef)
+            objRef.getFile(destinationFile).addOnCompleteListener(onComplete)
+        }
+
     }
 
 }

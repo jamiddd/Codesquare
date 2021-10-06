@@ -18,7 +18,6 @@ class ImageViewHolder(val view: View, val onClick: (view: View) -> Unit): Recycl
         imageView.setOnClickListener {
             onClick(it)
         }
-
     }
 
     companion object {

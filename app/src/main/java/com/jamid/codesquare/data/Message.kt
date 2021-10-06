@@ -19,7 +19,7 @@ data class Message(
     var content: String,
     var senderId: String,
     @Embedded(prefix = "meta_")
-    var metaData: MediaMetadata,
+    var metaData: MediaMetadata?,
     val createdAt: Long,
     @Embedded(prefix = "sender_")
     @Exclude @set: Exclude @get: Exclude

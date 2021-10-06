@@ -26,6 +26,12 @@
         <action
             android:id="@+id/action_homeFragment_to_projectFragment"
             app:destination="@id/projectFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_commentsContainerFragment"
+            app:destination="@id/commentsContainerFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_chatFragmentContainer"
+            app:destination="@id/chatFragmentContainer" />
     </fragment>
     <fragment
         android:id="@+id/createProjectFragment"
@@ -98,6 +104,12 @@
             android:name="title"
             app:argType="string"
             android:defaultValue="Project" />
+        <action
+            android:id="@+id/action_projectFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_projectFragment_to_commentsContainerFragment"
+            app:destination="@id/commentsContainerFragment" />
     </fragment>
     <fragment
         android:id="@+id/projectRequestFragment"
@@ -109,4 +121,31 @@
         android:name="com.jamid.codesquare.ui.profile.SavedProjectsFragment"
         tools:layout="@layout/fragment_pager"
         android:label="Saved projects" />
+    <fragment
+        android:id="@+id/commentsContainerFragment"
+        android:label="{title}"
+        android:name="com.jamid.codesquare.ui.CommentsContainerFragment"
+        tools:layout="@layout/fragment_comments_container">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Project" />
+        <action
+            android:id="@+id/action_commentsContainerFragment_self"
+            app:destination="@id/commentsContainerFragment" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/chatFragmentContainer"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatFragmentContainer"
+        tools:layout="@layout/fragment_chat_container"
+        android:label="{title}">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Chat" />
+
+    </fragment>
 </navigation>

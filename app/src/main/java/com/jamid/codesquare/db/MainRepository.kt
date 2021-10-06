@@ -2,6 +2,7 @@ package com.jamid.codesquare.db
 
 import android.util.Log
 import androidx.lifecycle.LiveData
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.FireUtility
@@ -15,6 +16,7 @@ class MainRepository(db: CodesquareDatabase) {
     val chatChannelDao = db.chatChannelDao()
     val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
+    val commentDao = db.commentDao()
 
     val currentUser: LiveData<User> = userDao.currentUser()
 
@@ -138,10 +140,29 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
+        for (chatChannel in chatChannels) {
+            if (chatChannel.lastMessage != null) {
+                val sender = getUser(chatChannel.lastMessage?.senderId.orEmpty())
+                if (sender != null) {
+                    val short = UserMinimal(sender.id, sender.name, sender.photo, sender.username)
+                    chatChannel.lastMessage?.sender = short
+                }
+            }
+        }
         chatChannelDao.insert(chatChannels)
     }
 
     suspend fun insertMessages(messages: List<Message>) {
+        Log.d(TAG, "Inserting messages")
+        for (message in messages) {
+            val user = getUser(message.senderId)
+            if (user != null) {
+                val short = UserMinimal(user.id, user.name, user.photo, user.username)
+                message.sender = short
+            } else {
+                throw NullPointerException("The user doesn't exist for a message with user id - ${message.senderId}")
+            }
+        }
         messageDao.insert(messages)
     }
 
@@ -214,6 +235,78 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun deleteProjectRequest(projectRequest: ProjectRequest) {
         projectRequestDao.deleteProjectRequest(projectRequest.requestId)
+    }
+
+    suspend fun getComment(parentId: String): Comment? {
+        return commentDao.getCommentById(parentId)
+    }
+
+    suspend fun insertComment(comment: Comment) {
+        commentDao.insert(comment)
+    }
+
+    suspend fun insertComments(comments: List<Comment>) {
+        val currentUser = currentUser.value!!
+        for (comment in comments) {
+            comment.isLiked = currentUser.likedComments.contains(comment.commentId)
+        }
+        commentDao.insert(comments)
+    }
+
+    suspend fun onCommentLiked(comment: Comment) {
+        val currentUser = currentUser.value
+        if (currentUser != null) {
+
+            val isLiked = currentUser.likedComments.contains(comment.commentId)
+
+            val result = if (isLiked) {
+                // dislike
+                FireUtility.dislikeComment(currentUser.id, comment)
+            } else {
+                // like
+                FireUtility.likeComment(currentUser.id, comment)
+            }
+
+            when (result) {
+                is Result.Error -> {
+                    Log.e(TAG, "Error while liking or disliking a comment -> " + result.exception.localizedMessage!!)
+                }
+                is Result.Success -> {
+                    // insert the new project
+                    val existingList = currentUser.likedComments.toMutableList()
+
+                    if (isLiked) {
+                        comment.likes = comment.likes - 1
+                        comment.isLiked = false
+                        existingList.remove(comment.commentId)
+                    } else {
+                        comment.likes = comment.likes + 1
+                        comment.isLiked = true
+                        existingList.add(comment.commentId)
+                    }
+
+                    Log.d(TAG, "${comment.likes} -- ${comment.isLiked}")
+
+                    commentDao.insert(comment)
+
+                    // insert the new user
+                    currentUser.likedComments = existingList
+                    userDao.insert(currentUser)
+                }
+            }
+
+        }
+    }
+
+    suspend fun clearComments() {
+        commentDao.clearTable()
+    }
+
+    suspend fun insertUsers(users: List<User>) {
+        for (user in users) {
+            user.isCurrentUser = user.id == Firebase.auth.currentUser?.uid.orEmpty()
+        }
+        userDao.insert(users)
     }
 
     companion object {

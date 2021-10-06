@@ -5,6 +5,7 @@ import android.content.Intent
 import android.location.Address
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -20,20 +21,20 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.ProjectRequest
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
-import com.jamid.codesquare.listeners.ProjectClickListener
-import com.jamid.codesquare.listeners.ProjectRequestListener
+import com.jamid.codesquare.listeners.*
+import java.io.File
 
-class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener {
+class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentClickListener, ChatChannelClickListener, MessageListener {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
@@ -90,6 +91,33 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             } else {
                 it.data?.data?.let { it1 ->
                     viewModel.setCurrentProjectImages(listOf(it1.toString()))
+                }
+            }
+        }
+    }
+
+    private val selectChatImagesUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+
+            val clipData = it.data?.clipData
+
+            if (clipData != null) {
+                val count = clipData.itemCount
+
+                val images = mutableListOf<Uri>()
+
+                for (i in 0 until count) {
+                    val uri = clipData.getItemAt(i)?.uri
+                    uri?.let { image ->
+                        images.add(image)
+                    }
+                }
+
+                viewModel.setChatUploadImages(images)
+
+            } else {
+                it.data?.data?.let { it1 ->
+                    viewModel.setChatUploadImages(listOf(it1))
                 }
             }
         }
@@ -225,12 +253,24 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
+                R.id.commentsContainerFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.chatFragmentContainer -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
             }
         }
 
         viewModel.currentUser.observe(this) {
             if (it != null) {
-                Log.d(TAG, it.toString())
+                Log.d(TAG, "user.")
             } else {
                 Log.d(TAG, "No user.")
             }
@@ -238,6 +278,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
         viewModel.currentError.observe(this) { exception ->
             if (exception != null) {
+                Log.e(TAG, exception.localizedMessage.orEmpty())
                 toast(exception.localizedMessage.orEmpty())
             }
         }
@@ -261,6 +302,16 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
 
         selectProjectImageLauncher.launch(intent)
+    }
+
+    fun selectChatUploadImages() {
+        val intent = Intent().apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+
+        selectChatImagesUploadLauncher.launch(intent)
     }
 
     fun selectMoreProjectImages() {
@@ -313,14 +364,84 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             navController.navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
         } else {
             viewModel.getOtherUser(project.creator.userId) {
-                if (it.isSuccessful) {
-                    val user = it.result.toObject(User::class.java)
-                    val bundle = bundleOf("user" to user)
-                    navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
+                if (it.isSuccessful && it.result.exists()) {
+                    val user = it.result.toObject(User::class.java)!!
+                    onUserClick(user)
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
             }
+        }
+    }
+
+    override fun onProjectCommentClick(project: Project) {
+        val bundle = bundleOf("parent" to project, "title" to project.title)
+        viewModel.currentCommentChannelIds.push(project.commentChannel)
+        when (navController.currentDestination?.id) {
+            R.id.homeFragment -> {
+                navController.navigate(R.id.action_homeFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+            }
+            R.id.projectFragment -> {
+                navController.navigate(R.id.action_projectFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+            }
+        }
+    }
+
+    override fun onUserClick(user: User) {
+        val bundle = bundleOf("user" to user)
+        when (navController.currentDestination?.id) {
+            R.id.homeFragment -> {
+                navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
+            }
+            R.id.projectFragment -> {
+                navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle, slideRightNavOptions())
+            }
+        }
+    }
+
+    override fun onCommentLike(comment: Comment) {
+        viewModel.onCommentLiked(comment)
+    }
+
+    override fun onCommentReply(comment: Comment) {
+        viewModel.replyToContent.postValue(comment)
+    }
+
+    override fun onClick(comment: Comment) {
+        val bundle = bundleOf("parent" to comment, "title" to "Comments")
+        viewModel.currentCommentChannelIds.push(comment.threadChannelId)
+        navController.navigate(R.id.action_commentsContainerFragment_self, bundle, slideRightNavOptions())
+    }
+
+    override fun onChannelClick(chatChannel: ChatChannel) {
+        val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
+        viewModel.currentChatChannel = chatChannel.chatChannelId
+        navController.navigate(R.id.action_homeFragment_to_chatFragmentContainer, bundle, slideRightNavOptions())
+    }
+
+    override fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>) -> Unit) {
+        if (message.type == image) {
+            getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
+                createNewFileAndDownload(it, message, onComplete)
+            }
+        }
+    }
+
+    private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>) -> Unit){
+        val file = File(externalFilesDir, randomId())
+
+        if (file.createNewFile()) {
+            FireUtility.downloadMedia(file, message) {
+                onComplete(it)
+                if (it.isSuccessful) {
+                    message.isDownloaded = true
+                    viewModel.insertMessage(message)
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        } else {
+            toast("Something went wrong")
         }
     }
 

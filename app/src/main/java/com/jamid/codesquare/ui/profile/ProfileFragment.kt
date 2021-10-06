@@ -24,7 +24,9 @@ class ProfileFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
+        if (arguments?.getParcelable<User>("user") == null) {
+            setHasOptionsMenu(true)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

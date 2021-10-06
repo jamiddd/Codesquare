@@ -35,6 +35,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     private lateinit var binding: FragmentPagerBinding
     protected var recyclerView: RecyclerView? = null
     protected var noItemsText: TextView? = null
+    protected var swipeRefresher: SwipeRefreshLayout? = null
 
     protected abstract fun getAdapter(): PagingDataAdapter<T, VH>
 
@@ -60,6 +61,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     open fun onViewLaidOut() {
         recyclerView = binding.pagerItemsRecycler
         noItemsText = binding.pagerNoItemsText
+        swipeRefresher = binding.pagerRefresher
         initLayout(binding.pagerItemsRecycler, binding.pagerNoItemsText, refresher = binding.pagerRefresher)
     }
 

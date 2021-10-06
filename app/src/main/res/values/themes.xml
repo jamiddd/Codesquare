@@ -173,4 +173,23 @@
         <item name="android:textColor">?colorOnPrimary</item>
     </style>
 
+    <style name="AppTheme.Card.ShapeAppearance.App.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">12dp</item>
+        <item name="cornerSizeTopRight">12dp</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
+    <style name="AppTheme.BottomSheet.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Card</item>
+        <item name="shapeAppearance">@style/AppTheme.Card.ShapeAppearance.App.MediumComponent</item>
+    </style>
+
+    <style name="ThemeOverlay.App.Card" parent="">
+        <item name="colorPrimary">?colorPrimary</item>
+        <item name="colorSurface">?colorSurface</item>
+        <item name="colorOnSurface">?colorOnSurface</item>
+    </style>
+
 </resources>

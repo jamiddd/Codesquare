@@ -5,8 +5,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -15,9 +17,13 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
+import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
+import com.jamid.codesquare.data.CommentChannel
 import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.ProjectClickListener
+import com.jamid.codesquare.listeners.UserClickListener
 
 
 class ProjectFragment: Fragment() {
@@ -27,6 +33,7 @@ class ProjectFragment: Fragment() {
     private var totalImageCount = 1
     private lateinit var projectClickListener: ProjectClickListener
     private val viewModel: MainViewModel by activityViewModels()
+    private lateinit var userClickListener: UserClickListener
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +49,7 @@ class ProjectFragment: Fragment() {
 
         val activity = requireActivity()
         projectClickListener = activity as ProjectClickListener
+        userClickListener = activity as UserClickListener
 
         val joinBtn = activity.findViewById<MaterialButton>(R.id.main_primary_action)
         joinBtn.show()
@@ -77,11 +85,11 @@ class ProjectFragment: Fragment() {
         binding.userName.text = project.creator.name
 
         binding.userImg.setOnClickListener {
-            projectClickListener.onProjectCreatorClick(project)
+            onUserClick()
         }
 
         binding.userName.setOnClickListener {
-            projectClickListener.onProjectCreatorClick(project)
+            onUserClick()
         }
 
         binding.projectTime.text = getTextForTime(project.createdAt)
@@ -101,6 +109,10 @@ class ProjectFragment: Fragment() {
         setSaveButton()
 
         setTags()
+
+        setContributors()
+
+        setCommentLayout()
 
         joinBtn.setOnClickListener {
             if (joinBtn.text == "Join") {
@@ -149,6 +161,25 @@ class ProjectFragment: Fragment() {
             }
         }
 
+        binding.projectCommentBtn.setOnClickListener {
+            projectClickListener.onProjectCommentClick(project)
+        }
+
+        binding.projectLikeCommentText.setOnClickListener {
+            projectClickListener.onProjectCommentClick(project)
+        }
+
+    }
+
+    private fun onUserClick() {
+        viewModel.getOtherUser(project.creator.userId) {
+            if (it.isSuccessful && it.result.exists()) {
+                val user = it.result.toObject(User::class.java)!!
+                userClickListener.onUserClick(user)
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     private fun setTags() {
@@ -211,6 +242,75 @@ class ProjectFragment: Fragment() {
     private fun setLikeDislike() {
         val likeCommentText = "${project.likes} Likes • ${project.comments} Comments"
         binding.projectLikeCommentText.text = likeCommentText
+    }
+
+    private fun setContributors() {
+        binding.contributorsHeaderLayout.show()
+        binding.divider6.show()
+        binding.projectContributorsRecycler.show()
+
+        val userAdapter2 = UserAdapter2()
+
+        binding.projectContributorsRecycler.apply {
+            adapter = userAdapter2
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        }
+
+        viewModel.getProjectContributors(project) {
+            if (it.isSuccessful) {
+                if (!it.result.isEmpty) {
+                    val contributors = it.result.toObjects(User::class.java)
+                    userAdapter2.submitList(contributors)
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+
+    }
+
+    private fun setCommentLayout() {
+        viewModel.getCommentChannel(project) {
+            if (it.isSuccessful && it.result.exists()) {
+                val commentChannel = it.result.toObject(CommentChannel::class.java)!!
+                if (commentChannel.lastComment == null) {
+                    binding.projectsLastComment.root.hide()
+                    binding.commentsHeaderLayout.hide()
+                    binding.divider9.hide()
+                } else {
+
+                    binding.projectsLastComment.root.show()
+                    binding.commentsHeaderLayout.show()
+                    binding.divider9.show()
+
+                    binding.projectsLastComment.commentLikeBtn.hide()
+                    binding.projectsLastComment.commentReplyBtn.hide()
+                    binding.projectsLastComment.commentLikesReplies.hide()
+                    binding.projectsLastComment.commentOptionBtn.hide()
+
+                    val comment = commentChannel.lastComment
+                    viewModel.getOtherUser(comment.senderId) { it1 ->
+                        if (it1.isSuccessful && it1.result.exists()) {
+                            val sender = it1.result.toObject(User::class.java)!!
+                            binding.projectsLastComment.apply {
+                                commentUserName.text = sender.name
+                                commentUserImg.setImageURI(sender.photo)
+                                commentTime.text = getTextForTime(comment.createdAt)
+
+                                commentContent.text = comment.content
+
+                                val likeRepliesText = "${comment.likes} Likes • ${comment.repliesCount} Replies"
+                                commentLikesReplies.text = likeRepliesText
+                            }
+                        } else {
+                            viewModel.setCurrentError(it1.exception)
+                        }
+                    }
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
 }

@@ -214,6 +214,10 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 else -> joinBtn.show()
             }
 
+            commentBtn.setOnClickListener {
+                projectClickListener.onProjectCommentClick(project)
+            }
+
         }
     }
 

@@ -72,6 +72,7 @@ class LoginFragment: Fragment() {
         }
 
         binding.signInBtn.setOnClickListener {
+            hideKeyboard()
             val emailText = binding.emailText.editText?.text
             if (emailText.isNullOrBlank()) {
                 toast("Email cannot be empty")
@@ -154,6 +155,7 @@ class LoginFragment: Fragment() {
                         if (it1.isSuccessful && it1.result.exists()) {
                             val localUser = it1.result.toObject(User::class.java)!!
                             viewModel.insertCurrentUser(localUser)
+                            viewModel.getChannelUsers(localUser.chatChannels)
                         } else {
                             Firebase.auth.signOut()
                             viewModel.setCurrentError(it.exception)
