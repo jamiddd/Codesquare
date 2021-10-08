@@ -252,4 +252,24 @@ fun Context.hideKeyboard(view: View) {
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
+
+fun getNameForSizeInBytes(size: Long): String {
+    return when {
+        size > (1024 * 1024) -> {
+            val sizeInMB = size.toFloat()/(1024 * 1024)
+            sizeInMB.toString().take(4) + " MB"
+        }
+        size/1024 > 100 -> {
+            val sizeInMB = size.toFloat()/(1024 * 1024)
+            sizeInMB.toString().take(4) + " MB"
+        }
+        else -> {
+            val sizeInKB = size.toFloat()/1024
+            sizeInKB.toString().take(3) + " KB"
+        }
+    }
+}
+
+
+
 private const val TAG = "UtilityTAG"

@@ -4,6 +4,7 @@ import android.app.Application
 import android.location.Address
 import android.net.Uri
 import android.util.Log
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -657,19 +658,29 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
+
+    // TODO("Need to implement this in such a way that
+    //  the message should be set as downloaded, because one shouldn't download an image which was
+    //  already there in the phone locally, we just need to copy paste the image from the location
+    //  to our app's location.")
     fun sendMessagesSimultaneously(chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-                repo.insertMessages(result.data)
+
+                val messages = result.data
+                repo.insertMessages(messages)
 
                 val chatChannel = repo.getChatChannel(chatChannelId)
 
                 if (chatChannel != null) {
-                    chatChannel.lastMessage = result.data.last()
-                    chatChannel.updatedAt = result.data.last().createdAt
+                    chatChannel.lastMessage = messages.last()
+                    chatChannel.updatedAt = messages.last().createdAt
                     repo.insertChatChannels(listOf(chatChannel))
                 }
+
+                setChatUploadImages(emptyList())
+                setChatUploadDocuments(emptyList())
             }
         }
     }
@@ -685,6 +696,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun insertMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
         TODO()
+    }
+
+    fun updateMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateMessage(message)
+    }
+
+    fun updateMessages(messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateMessages(messages)
     }
 
     companion object {

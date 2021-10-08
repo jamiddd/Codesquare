@@ -47,12 +47,15 @@
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:backgroundTint="#E5D4FA"
         android:text="Download"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/document_size" />
+        app:layout_constraintTop_toBottomOf="@+id/document_size"
+        tools:visibility="visible" />
 
     <ProgressBar
         android:id="@+id/document_download_progress"
@@ -63,6 +66,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/document_download_btn"
         app:layout_constraintEnd_toEndOf="@+id/document_download_btn"
         app:layout_constraintStart_toStartOf="@+id/document_download_btn"
-        app:layout_constraintTop_toBottomOf="@+id/document_size" />
+        app:layout_constraintTop_toTopOf="@+id/document_download_btn"
+        tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

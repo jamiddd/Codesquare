@@ -11,4 +11,7 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("SELECT * FROM messages ORDER BY createdAt DESC")
     abstract fun getPagedMessages(): PagingSource<Int, Message>
 
+    @Query("SELECT * FROM messages WHERE messageId = :messageId")
+    abstract suspend fun getMessage(messageId: String): Message?
+
 }

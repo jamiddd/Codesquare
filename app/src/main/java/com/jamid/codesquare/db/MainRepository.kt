@@ -8,6 +8,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.text
 
 class MainRepository(db: CodesquareDatabase) {
 
@@ -153,7 +154,7 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertMessages(messages: List<Message>) {
-        Log.d(TAG, "Inserting messages")
+
         for (message in messages) {
             val user = getUser(message.senderId)
             if (user != null) {
@@ -163,7 +164,29 @@ class MainRepository(db: CodesquareDatabase) {
                 throw NullPointerException("The user doesn't exist for a message with user id - ${message.senderId}")
             }
         }
-        messageDao.insert(messages)
+
+        val mediaMessages = messages.filter {
+            it.type != text
+        }
+
+        val textMessages = messages.filter {
+            it.type == text
+        }
+
+        messageDao.insert(textMessages)
+
+        // this is to make sure that the downloaded message don't get overwritten by new messages
+        // from the server, because we have set the local path in message.content
+
+        for (message in mediaMessages) {
+            val localMessage = messageDao.getMessage(message.messageId)
+            if (localMessage != null && localMessage.isDownloaded) {
+                message.isDownloaded = true
+            }
+        }
+
+        messageDao.insert(mediaMessages)
+
     }
 
     suspend fun onJoinProject(project: Project) {
@@ -307,6 +330,14 @@ class MainRepository(db: CodesquareDatabase) {
             user.isCurrentUser = user.id == Firebase.auth.currentUser?.uid.orEmpty()
         }
         userDao.insert(users)
+    }
+
+    suspend fun updateMessage(message: Message) {
+        messageDao.update(message)
+    }
+
+    suspend fun updateMessages(messages: List<Message>) {
+        messageDao.update(messages)
     }
 
     companion object {

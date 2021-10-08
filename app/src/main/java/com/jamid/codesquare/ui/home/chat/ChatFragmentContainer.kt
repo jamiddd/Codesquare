@@ -1,6 +1,9 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
+import android.os.Environment
+import android.provider.OpenableColumns
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,9 +15,9 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapterSmall
 import com.jamid.codesquare.data.MediaMetadata
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.ui.MainActivity
+import java.io.File
 
 class ChatFragmentContainer: Fragment() {
 
@@ -43,24 +46,70 @@ class ChatFragmentContainer: Fragment() {
 
             val now = System.currentTimeMillis()
 
+            val contentResolver = requireActivity().contentResolver
+
             if (!images.isNullOrEmpty() || !documents.isNullOrEmpty()) {
 
                 val listOfMessages = mutableListOf<Message>()
+
                 // there is either images or documents attached
                 // only two possibilities, either there are images or there are documents
                 if (!images.isNullOrEmpty()) {
                     // there are images
                     for (img in images) {
-                        val message = Message(randomId(), chatChannelId, image, img.toString(), currentUser.id, null, now, currentUser.minify(), isDownloaded = false, isCurrentUserMessage = true)
-                        listOfMessages.add(message)
+
+                        val cursor = contentResolver.query(img, null, null, null, null)
+
+                        try {
+                            cursor?.moveToFirst()
+                            val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+
+                            val name = cursor?.getString(nameIndex ?: 0)
+                            val size = (cursor?.getLong(sizeIndex ?: 0) ?: 0)
+
+                            cursor?.close()
+                            val metadata = MediaMetadata(size, name!!, ".jpg")
+
+                            val message = Message(randomId(), chatChannelId, image, img.toString(), currentUser.id, metadata, now, currentUser.minify(), isDownloaded = false, isCurrentUserMessage = true)
+
+                            listOfMessages.add(message)
+
+                        } catch (e: Exception) {
+                            Log.e(TAG,e.localizedMessage!! + img.toString())
+                        }
+
                     }
                 }
 
                 if (!documents.isNullOrEmpty()) {
+                    val externalDocumentsDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
                     // there are documents
                     for (doc in documents) {
-                        val message = Message(randomId(), chatChannelId, document, doc.toString(), currentUser.id, null, now, currentUser.minify(), isDownloaded = false, isCurrentUserMessage = true)
-                        listOfMessages.add(message)
+
+                        val cursor = contentResolver.query(doc, null, null, null, null)
+
+                        try {
+                            cursor?.moveToFirst()
+                            val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                            val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+
+                            val name = cursor?.getString(nameIndex ?: 0)
+
+                            val size = (cursor?.getLong(sizeIndex ?: 0) ?: 0)
+                            cursor?.close()
+
+                            val file = File(externalDocumentsDir, randomId())
+                            val ext = file.extension
+
+                            val metadata = MediaMetadata(size, name.orEmpty(), ext)
+
+                            val message = Message(randomId(), chatChannelId, document, doc.toString(), currentUser.id, metadata, now, currentUser.minify(), isDownloaded = false, isCurrentUserMessage = true)
+                            listOfMessages.add(message)
+
+                        } catch (e: Exception) {
+                            viewModel.setCurrentError(e)
+                        }
                     }
                 }
 
@@ -131,6 +180,13 @@ class ChatFragmentContainer: Fragment() {
         super.onDestroy()
         viewModel.currentChatChannel = null
         viewModel.setChatUploadImages(emptyList())
+    }
+
+    companion object {
+
+        private const val TAG = "ChatFragmentContainer"
+
+
     }
 
 }

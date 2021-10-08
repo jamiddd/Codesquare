@@ -30,9 +30,4 @@ data class Message(
     var isCurrentUserMessage: Boolean
 ): Parcelable {
     constructor(): this("", "", "", "", "", MediaMetadata(), System.currentTimeMillis(), UserMinimal(), false, false)
-
-    fun isEmpty() = messageId.isBlank() || messageId.isEmpty()
-
-    fun isNotEmpty() = messageId.isNotEmpty() || messageId.isNotBlank()
-
 }

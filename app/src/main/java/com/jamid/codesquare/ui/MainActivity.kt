@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
@@ -419,30 +420,70 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         navController.navigate(R.id.action_homeFragment_to_chatFragmentContainer, bundle, slideRightNavOptions())
     }
 
-    override fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>) -> Unit) {
+    override fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit) {
         if (message.type == image) {
             getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
+                createNewFileAndDownload(it, message, onComplete)
+            }
+        } else if (message.type == document) {
+            getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.let {
                 createNewFileAndDownload(it, message, onComplete)
             }
         }
     }
 
-    private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>) -> Unit){
-        val file = File(externalFilesDir, randomId())
+    override fun onDocumentClick(message: Message) {
+        val externalDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        val file = File(externalDir, message.metaData?.originalFileName!!)
+        openFile(file) 
+    }
 
-        if (file.createNewFile()) {
-            FireUtility.downloadMedia(file, message) {
-                onComplete(it)
-                if (it.isSuccessful) {
-                    message.isDownloaded = true
-                    viewModel.insertMessage(message)
-                } else {
-                    viewModel.setCurrentError(it.exception)
+    override fun onImageClick(message: Message) {
+        toast("Clicked an image")
+    }
+
+    private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit){
+        val uri = Uri.parse(message.content)
+        val name = uri.lastPathSegment!!.split('/').last()
+
+        val file = File(externalFilesDir, name + message.metaData?.extension)
+
+        try {
+            if (file.createNewFile()) {
+                FireUtility.downloadMedia(file, name, message) {
+                    if (it.isSuccessful) {
+                        onComplete(it, message)
+                        message.content = Uri.fromFile(file).toString()
+                        message.isDownloaded = true
+                        viewModel.updateMessage(message)
+                    } else {
+                        toast("File was created but something went wrong while downloading")
+                        viewModel.setCurrentError(it.exception)
+                    }
                 }
+            } else {
+                toast("Something went wrong")
             }
-        } else {
-            toast("Something went wrong")
+        } catch (e: Exception) {
+            viewModel.setCurrentError(e)
+        } finally {
+            Log.d(TAG, file.path)
         }
+
+
+    }
+
+    private fun openFile(file: File) {
+        // Get URI and MIME type of file
+        val uri = FileProvider.getUriForFile(this, "com.jamid.codesquare.fileprovider", file)
+        val mime = contentResolver.getType(uri)
+
+        // Open file with user selected app
+        val intent = Intent()
+        intent.action = Intent.ACTION_VIEW
+        intent.setDataAndType(uri, mime)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        startActivity(intent)
     }
 
 }
