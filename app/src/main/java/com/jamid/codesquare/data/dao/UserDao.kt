@@ -17,4 +17,7 @@ abstract class UserDao: BaseDao<User>() {
     @Query("SELECT * FROM users WHERE id = :userId")
     abstract suspend fun getUser(userId: String): User?
 
+    @Query("SELECT * FROM users WHERE chatChannels LIKE :chatChannel ORDER BY name ASC")
+    abstract suspend fun getChannelContributors(chatChannel: String): List<User>?
+
 }

@@ -206,6 +206,12 @@ class ProjectFragment: Fragment() {
         chip.isCheckable = false
         chip.isCloseIconVisible = false
         binding.projectTags.addView(chip)
+
+        chip.setOnClickListener {
+            val bundle = bundleOf("title" to "#$tag", "tag" to tag)
+            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle, slideRightNavOptions())
+        }
+
     }
 
     private fun setSaveButton() {
@@ -249,14 +255,24 @@ class ProjectFragment: Fragment() {
         binding.divider6.show()
         binding.projectContributorsRecycler.show()
 
-        val userAdapter2 = UserAdapter2()
+        binding.seeAllContributorsBtn.setOnClickListener {
+
+            val bundle = bundleOf(
+                ProjectContributorsFragment.ARG_PROJECT to project,
+                ProjectContributorsFragment.ARG_ADMINISTRATORS to arrayListOf(project.creator.userId)
+            )
+
+            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle, slideRightNavOptions())
+        }
+
+        val userAdapter2 = UserAdapter2(listOf(project.creator.userId))
 
         binding.projectContributorsRecycler.apply {
             adapter = userAdapter2
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         }
 
-        viewModel.getProjectContributors(project) {
+        viewModel.getProjectContributors(7, project) {
             if (it.isSuccessful) {
                 if (!it.result.isEmpty) {
                     val contributors = it.result.toObjects(User::class.java)
@@ -270,6 +286,13 @@ class ProjectFragment: Fragment() {
     }
 
     private fun setCommentLayout() {
+
+        binding.seeAllComments.setOnClickListener {
+            val bundle = bundleOf("parent" to project, "title" to project.title)
+            viewModel.currentCommentChannelIds.push(project.commentChannel)
+            findNavController().navigate(R.id.action_projectFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+        }
+
         viewModel.getCommentChannel(project) {
             if (it.isSuccessful && it.result.exists()) {
                 val commentChannel = it.result.toObject(CommentChannel::class.java)!!

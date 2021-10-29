@@ -4,7 +4,6 @@ import android.app.Application
 import android.location.Address
 import android.net.Uri
 import android.util.Log
-import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -21,6 +20,7 @@ import com.jamid.codesquare.db.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 
 class MainViewModel(application: Application): AndroidViewModel(application) {
@@ -340,12 +340,17 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     @ExperimentalPagingApi
-    fun getPagedMessages(query: Query): Flow<PagingData<Message>> {
-        return Pager(
-            config = PagingConfig(pageSize = 20),
-            remoteMediator = MessageRemoteMediator(query, repo)
+    fun getPagedMessages(imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
+        return Pager(config =
+        PagingConfig(
+            pageSize = 50,
+            enablePlaceholders = false,
+            maxSize = 150,
+            prefetchDistance = 10,
+            initialLoadSize= 40),
+            remoteMediator = MessageRemoteMediator(imagesDir, documentsDir, query, repo)
         ) {
-            repo.messageDao.getPagedMessages()
+            repo.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.cachedIn(viewModelScope)
     }
 
@@ -575,8 +580,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun getProjectContributors(project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        FireUtility.getProjectContributors(project, onComplete)
+    fun getProjectContributors(limit: Long = 0, project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        FireUtility.getProjectContributors(limit, project, onComplete)
     }
 
     fun getCommentChannel(project: Project, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
@@ -635,16 +640,34 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             is Result.Success -> {
                 Log.d(TAG, result.data.toString())
                 repo.insertUsers(result.data)
+
+                val channels = repo.getAllChatChannels()
+                if (channels.isNotEmpty()) {
+                    for (channel in channels) {
+
+                        val lastMessage = channel.lastMessage
+
+                        if (lastMessage != null) {
+                            val sender = repo.getUser(lastMessage.senderId)
+                            if (sender != null) {
+                                lastMessage.sender = sender
+                                channel.lastMessage = lastMessage
+                            }
+                        }
+                    }
+
+                    insertChatChannels(channels)
+                }
             }
         }
     }
 
-    fun sendTextMessage(chatChannelId: String, content: String) = viewModelScope.launch (Dispatchers.IO) {
+    fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
         when (val result = FireUtility.sendTextMessage(currentUser, chatChannelId, content)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-                repo.insertMessages(listOf(result.data))
+                repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data))
                 val chatChannel = repo.getChatChannel(chatChannelId)
                 if (chatChannel != null) {
                     chatChannel.lastMessage = result.data
@@ -663,13 +686,15 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     //  the message should be set as downloaded, because one shouldn't download an image which was
     //  already there in the phone locally, we just need to copy paste the image from the location
     //  to our app's location.")
-    fun sendMessagesSimultaneously(chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+    fun sendMessagesSimultaneously(imagesDir: File, documentsDir: File, chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+        setChatUploadImages(emptyList())
+        setChatUploadDocuments(emptyList())
         when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
 
                 val messages = result.data
-                repo.insertMessages(messages)
+                repo.insertMessages(imagesDir, documentsDir, messages)
 
                 val chatChannel = repo.getChatChannel(chatChannelId)
 
@@ -678,9 +703,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     chatChannel.updatedAt = messages.last().createdAt
                     repo.insertChatChannels(listOf(chatChannel))
                 }
-
-                setChatUploadImages(emptyList())
-                setChatUploadDocuments(emptyList())
             }
         }
     }
@@ -694,8 +716,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun insertMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
-        TODO()
+    fun insertMessage(imagesDir: File, documentsDir: File, message: Message) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertMessages(imagesDir, documentsDir, listOf(message))
     }
 
     fun updateMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
@@ -704,6 +726,78 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun updateMessages(messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
         repo.updateMessages(messages)
+    }
+
+    suspend fun getProjectByChatChannel(channelId: String): Project? {
+        return repo.getProjectByChatChannel(channelId)
+    }
+
+    suspend fun getLocalChannelContributors(chatChannel: String): List<User> {
+        return repo.getLocalChannelContributors(chatChannel)
+    }
+
+    fun updateProject(projectId: String, changes: Map<String, Any>, onComplete: (task: Task<Void>) -> Unit) {
+        val ref = Firebase.firestore.collection("projects").document(projectId)
+        FireUtility.updateDocument(ref, changes, onComplete)
+    }
+
+    fun updateLocalProject(project: Project) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateLocalProject(project)
+    }
+
+    suspend fun getChatChannel(chatChannel: String): ChatChannel? {
+        return repo.getChatChannel(chatChannel)
+    }
+
+    fun getLiveProjectByChatChannel(chatChannel: String): LiveData<Project> {
+        return repo.getLiveProjectByChatChannel(chatChannel)
+    }
+
+    suspend fun getLimitedMediaMessages(chatChannel: String, limit: Int): List<Message> {
+        return repo.getLimitedMediaMessages(chatChannel, limit)
+    }
+
+    fun deleteChatUploadDocumentAtPosition(delPos: Int) {
+        val chatDocuments = chatDocumentsUpload.value
+        if (chatDocuments != null) {
+            val existingList = chatDocuments.toMutableList()
+            existingList.removeAt(delPos)
+            setChatUploadDocuments(existingList)
+        }
+    }
+
+    fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertMessages(imagesDir, documentsDir, messages)
+    }
+
+    fun insertChatChannels(chatChannels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertChatChannels(chatChannels)
+    }
+
+    fun getChatPagingInstance(
+        currentChatChannel: String,
+        externalImagesDir: File,
+        externalDocumentsDir: File
+    ): ChatPaging {
+        return ChatPaging(externalImagesDir, externalDocumentsDir, currentChatChannel, repo, viewModelScope)
+    }
+
+    suspend fun getLocalUser(userId: String): User? {
+        return repo.getUser(userId)
+    }
+
+    suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
+        return repo.getDocumentMessages(chatChannelId)
+    }
+
+    @ExperimentalPagingApi
+    fun getTagProjects(tag: String, query: Query): Flow<PagingData<Project>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo, false)
+        ) {
+            repo.projectDao.getTagProjects("%$tag%")
+        }.flow.cachedIn(viewModelScope)
     }
 
     companion object {

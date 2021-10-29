@@ -1,5 +1,10 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.net.Uri
+import android.os.Environment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,24 +13,21 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.annotation.LayoutRes
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.databinding.ChatBalloonLeftBinding
-import com.jamid.codesquare.databinding.ChatBalloonRightBinding
 import com.jamid.codesquare.databinding.MessageDocumentLayoutBinding
-import com.jamid.codesquare.databinding.MessageImageLayoutBinding
 import com.jamid.codesquare.listeners.MessageListener
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 class MessageViewHolder(val view: View, private val currentUserId: String, private val viewType: Int): RecyclerView.ViewHolder(view) {
 
     private val messageListener = view.context as MessageListener
+
     private val rootLeft = view.findViewById<View>(R.id.left_balloon_root)
     private val rootRight = view.findViewById<View>(R.id.right_balloon_root)
     private val senderImg = view.findViewById<SimpleDraweeView>(R.id.message_sender_img)
@@ -39,45 +41,93 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private val messageContentRight = view.findViewById<TextView>(R.id.message_content_alt)
     private val messageMetaLeft = view.findViewById<TextView>(R.id.message_meta)
     private val messageMetaRight = view.findViewById<TextView>(R.id.message_meta_alt)
+    private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    private val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
     fun bind(message: Message?) {
         if (message != null) {
+
+            Log.d(TAG, message.content)
+
             val isCurrentUserMessage = message.senderId == currentUserId
 
             if (isCurrentUserMessage) {
                 when (viewType) {
                     msg_at_start_alt -> {
+                        messageContentRight.text = message.content
                        containerRight.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
                         rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
                     }
+                    msg_at_start_alt_image -> {
+                        messageContentRight.hide()
+                        if (imageStubRight != null && imageStubRight.parent != null) {
+                            val view1 = imageStubRight.inflate() as ViewGroup
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                    }
+                    msg_at_start_alt_doc -> {
+                        messageContentRight.hide()
+                        val view1 = documentStubRight.inflate()
+                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+
+                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                    }
                     msg_at_middle_alt -> {
+                        messageContentRight.text = message.content
                         messageMetaRight.hide()
                         containerRight.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
                         rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
                     }
-                    msg_at_end_alt -> {
-                        messageMetaRight.hide()
-                    }
-                    msg_single_alt -> {
-                        // default
-                    }
-                }
-
-                when (message.type) {
-                    text -> {
-                        messageContentRight.text = message.content
-                    }
-                    image -> {
+                    msg_at_middle_alt_image -> {
+                        messageContentRight.hide()
+                        messageContentRight.hide()
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
-                            if (viewType == msg_at_end_alt || viewType == msg_single_alt){
-                                view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginRight = convertDpToPx(7, view.context))
-                            }
                             onMediaImageMessageLoaded(view1, message)
                         }
-                        messageContentRight.hide()
                     }
-                    document -> {
+                    msg_at_middle_alt_doc -> {
+                        messageContentRight.hide()
+                        val view1 = documentStubRight.inflate()
+                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+
+                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                    }
+                    msg_at_end_alt -> {
+                        messageMetaRight.hide()
+                        messageContentRight.text = message.content
+                    }
+                    msg_at_end_alt_image -> {
+                        messageContentRight.hide()
+                        if (imageStubRight != null && imageStubRight.parent != null) {
+                            val view1 = imageStubRight.inflate() as ViewGroup
+                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginRight = convertDpToPx(7, view.context))
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                    }
+                    msg_at_end_alt_doc -> {
+                        messageContentRight.hide()
+                        val view1 = documentStubRight.inflate()
+                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+
+                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                    }
+                    msg_single_alt -> {
+                        messageContentRight.text = message.content
+                    }
+                    msg_single_alt_image ->  {
+                        messageContentRight.hide()
+                        if (imageStubRight != null && imageStubRight.parent != null) {
+                            val view1 = imageStubRight.inflate() as ViewGroup
+                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginRight = convertDpToPx(7, view.context))
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                    }
+                    msg_single_alt_doc -> {
+                        messageContentRight.hide()
                         val view1 = documentStubRight.inflate()
                         val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
                         messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
@@ -100,48 +150,120 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                 when (viewType) {
                     msg_at_start -> {
+                        messageContentLeft.text = message.content
                         senderImg.disappear()
                         containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
                         rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
                     }
-                    msg_at_middle -> {
-                        messageMetaLeft.hide()
-                        senderImg.disappear()
-                        messageContentLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
-                    }
-                    msg_at_end -> {
-                        messageMetaLeft.hide()
-                    }
-                    msg_single -> {
-                        // default
-                    }
-                }
-
-                when (message.type) {
-                    text -> {
-                        messageContentLeft.text = message.content
-                    }
-                    image -> {
+                    msg_at_start_image -> {
                         if (imageStubLeft != null && imageStubLeft.parent != null) {
                             val view1 = imageStubLeft.inflate() as ViewGroup
-                            if (viewType == msg_at_end || viewType == msg_single){
-                                view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginLeft = convertDpToPx(7, view.context))
-                            }
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                        senderImg.disappear()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
+                        messageContentLeft.hide()
+                    }
+                    msg_at_start_doc -> {
+                        senderImg.disappear()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
+                        if (documentStubLeft != null && documentStubLeft.parent != null) {
+                            val view1 = documentStubLeft.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginLeft = convertDpToPx(7, view.context))
+
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message, true)
+                        }
+                        messageContentLeft.hide()
+                    }
+                    msg_at_middle -> {
+                        messageContentLeft.text = message.content
+                        messageMetaLeft.hide()
+                        senderImg.disappear()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                    }
+                    msg_at_middle_image -> {
+                        if (imageStubLeft != null && imageStubLeft.parent != null) {
+                            val view1 = imageStubLeft.inflate() as ViewGroup
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                        senderImg.disappear()
+                        messageContentLeft.hide()
+                        messageMetaLeft.hide()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                    }
+                    msg_at_middle_doc -> {
+                        messageMetaLeft.hide()
+                        senderImg.disappear()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                        if (documentStubLeft != null && documentStubLeft.parent != null) {
+                            val view1 = documentStubLeft.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginLeft = convertDpToPx(7, view.context))
+
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message, true)
+                        }
+                        messageContentLeft.hide()
+                    }
+                    msg_at_end -> {
+                        messageContentLeft.text = message.content
+                        messageMetaLeft.hide()
+                    }
+                    msg_at_end_image -> {
+                        if (imageStubLeft != null && imageStubLeft.parent != null) {
+                            val view1 = imageStubLeft.inflate() as ViewGroup
+                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginLeft = convertDpToPx(7, view.context))
+                            onMediaImageMessageLoaded(view1, message)
+                        }
+                        messageContentLeft.hide()
+                        messageMetaLeft.hide()
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        containerLeft.setBackgroundColor(Color.TRANSPARENT)
+                    }
+                    msg_at_end_doc -> {
+                        messageMetaLeft.hide()
+                        if (documentStubLeft != null && documentStubLeft.parent != null) {
+                            val view1 = documentStubLeft.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginLeft = convertDpToPx(7, view.context))
+
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message, true)
+                        }
+                        messageContentLeft.hide()
+                    }
+                    msg_single -> {
+                        messageContentLeft.text = message.content
+                    }
+                    msg_single_image -> {
+                        if (imageStubLeft != null && imageStubLeft.parent != null) {
+                            val view1 = imageStubLeft.inflate() as ViewGroup
+                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginLeft = convertDpToPx(7, view.context))
                             onMediaImageMessageLoaded(view1, message)
                         }
                         messageContentLeft.hide()
                     }
-                    document -> {
-                        val view1 = documentStubLeft.inflate()
-                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
-                        messageDocumentLayoutBinding.root.updateLayout(marginLeft = convertDpToPx(7, view.context))
+                    msg_single_doc -> {
+                        if (documentStubLeft != null && documentStubLeft.parent != null) {
+                            val view1 = documentStubLeft.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginLeft = convertDpToPx(7, view.context))
 
-                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message, true)
+                        }
+                        messageContentLeft.hide()
                     }
                 }
 
                 senderImg.setImageURI(message.sender.photo)
+
+                senderImg.setOnClickListener {
+                    messageListener.onUserClick(message)
+                }
 
                 val oneHour = (60 * 60 * 1000).toLong()
                 val diff = System.currentTimeMillis() - oneHour
@@ -153,6 +275,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaLeft.text = message.sender.name + " • " + getTextForTime(message.createdAt)
                 }
             }
+
+            messageListener.onMessageRead(message)
+
         }
     }
 
@@ -162,7 +287,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
         if (message.isDownloaded) {
             progress.hide()
-            imageView.setImageURI(message.content)
+            val name = message.content + message.metadata!!.ext
+            val destination = File(imagesDir, message.chatChannelId)
+            val file = File(destination, name)
+            val uri = Uri.fromFile(file)
+            imageView.setImageURI(uri.toString())
 
             parentView.setOnClickListener {
                 messageListener.onImageClick(message)
@@ -174,7 +303,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             messageListener.onStartDownload(message) { task, newMessage ->
                 if (task.isSuccessful) {
                     progress.hide()
-                    imageView.setImageURI(newMessage.content)
+                    val name = message.content + message.metadata!!.ext
+                    val destination = File(imagesDir, message.chatChannelId)
+                    val file = File(destination, name)
+                    val uri = Uri.fromFile(file)
+                    imageView.setImageURI(uri.toString())
 
                     imageView.setOnClickListener {
                         messageListener.onImageClick(newMessage)
@@ -186,11 +319,18 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
     }
 
-    private fun onMediaDocumentMessageLoaded(binding: MessageDocumentLayoutBinding, message: Message) {
-        val metaData = message.metaData
+    private fun onMediaDocumentMessageLoaded(binding: MessageDocumentLayoutBinding, message: Message, isLeft: Boolean = false) {
+        val metaData = message.metadata
         if (metaData != null) {
-            binding.documentName.text = metaData.originalFileName
-            binding.documentSize.text = getNameForSizeInBytes(metaData.size_b)
+            binding.documentName.text = metaData.name
+            binding.documentSize.text = getTextForSizeInBytes(metaData.size)
+        }
+
+        if (isLeft) {
+            binding.documentIcon.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(view.context, R.color.white))
+            binding.documentName.setTextColor(ContextCompat.getColor(view.context, R.color.white))
+            binding.documentSize.setTextColor(ContextCompat.getColor(view.context, R.color.slight_white))
+            binding.documentDownloadProgress.indeterminateTintList = ColorStateList.valueOf(ContextCompat.getColor(view.context, R.color.white))
         }
 
         if (message.isDownloaded) {
@@ -216,7 +356,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         binding.root.setOnClickListener {
                             messageListener.onDocumentClick(newMessage)
                         }
-
                     } else {
                         binding.documentDownloadProgress.hide()
                         binding.documentDownloadBtn.show()
@@ -229,6 +368,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     }
 
     companion object {
+
+        private const val TAG = "MessageViewHolder"
+
         fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, viewType: Int): MessageViewHolder {
             return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, viewType)
         }

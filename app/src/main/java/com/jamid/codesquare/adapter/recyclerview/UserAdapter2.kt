@@ -5,7 +5,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.data.User
 
-class UserAdapter2: ListAdapter<User, UserSmallViewHolder>(comparator) {
+class UserAdapter2(private val administrators: List<String>): ListAdapter<User, UserSmallViewHolder>(comparator) {
+
+    var isGrid = false
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<User>() {
@@ -21,7 +23,9 @@ class UserAdapter2: ListAdapter<User, UserSmallViewHolder>(comparator) {
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserSmallViewHolder {
-        return UserSmallViewHolder.newInstance(parent)
+        val vh = UserSmallViewHolder.newInstance(parent, administrators)
+        vh.isGrid = isGrid
+        return vh
     }
 
     override fun onBindViewHolder(holder: UserSmallViewHolder, position: Int) {

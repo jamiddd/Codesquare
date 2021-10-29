@@ -4,10 +4,11 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class MediaMetadata(
-    var size_b: Long,
-    var originalFileName: String,
-    var extension: String
+data class Metadata(
+    var size: Long, // in bytes
+    var name: String,
+    var url: String,
+    var ext: String
 ): Parcelable {
-    constructor(): this(0, "", "")
+    constructor(): this(0, "", "", "")
 }

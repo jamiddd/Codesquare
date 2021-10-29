@@ -3,6 +3,7 @@ package com.jamid.codesquare
 import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Context
+import android.content.res.Resources
 import android.os.Build
 import android.text.format.DateUtils
 import android.util.Log
@@ -19,12 +20,32 @@ import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.ui.auth.CreateAccountFragment
+import java.lang.IllegalStateException
 import java.util.*
 import java.util.regex.Pattern
+
+fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
+
+fun Activity.getFullScreenHeight(): Int {
+    return if (Build.VERSION.SDK_INT > 29) {
+        val rect = windowManager.maximumWindowMetrics.bounds
+        rect.bottom - rect.top
+    } else {
+        getWindowHeight()
+    }
+}
+
+fun Fragment.getFullScreenHeight(): Int {
+    return requireActivity().getFullScreenHeight()
+}
+
 
 fun View.show() {
     this.visibility = View.VISIBLE
@@ -253,7 +274,78 @@ fun Context.hideKeyboard(view: View) {
 }
 
 
-fun getNameForSizeInBytes(size: Long): String {
+fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) -> Unit) {
+    val linearLayoutManager = this.layoutManager
+    if (linearLayoutManager is LinearLayoutManager && linearLayoutManager.orientation == LinearLayoutManager.VERTICAL) {
+        this.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    onIdle(linearLayoutManager)
+                }
+            }
+        })
+    } else {
+        throw IllegalStateException("Recyclerview must be vertical and linear.")
+    }
+}
+
+
+fun getExtensionForMime(mime: String): String {
+    return when (mime) {
+        "audio/aac" -> ".aac"
+        "video/x-msvideo" -> ".avi"
+        "image/bmp" -> ".bmp"
+        "text/css" -> ".css"
+        "text/csv" -> ".csv"
+        "application/msword" -> ".doc"
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ".docx"
+        "application/gzip" -> ".gz"
+        "image/gif" -> ".gif"
+        "text/html" -> ".html"
+        "image/vnd.microsoft.icon" -> ".ico"
+        "image/jpeg" -> ".jpg"
+        "text/javascript" -> ".js"
+        "application/json" -> ".json"
+        "audio/mpeg" -> ".mp3"
+        "video/mp4" -> ".mp4"
+        "video/mpeg" -> ".mpeg"
+        "application/vnd.oasis.opendocument.presentation" -> ".odp"
+        "application/vnd.oasis.opendocument.spreadsheet" -> ".ods"
+        "application/vnd.oasis.opendocument.text" -> ".odt"
+        "audio/ogg" -> ".oga"
+        "video/ogg" -> ".ogv"
+        "font/otf" -> ".otf"
+        "image/png" -> ".png"
+        "application/pdf" -> ".pdf"
+        "application/x-httpd-php" -> ".php"
+        "application/vnd.ms-powerpoint" -> ".ppt"
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation" -> ".pptx"
+        "application/vnd.rar" -> ".rar"
+        "application/rtf" -> ".rtf"
+        "application/x-sh" -> ".sh"
+        "image/svg+xml" -> ".svg"
+        "application/x-tar" -> ".tar"
+        "font/ttf" -> ".ttf"
+        "text/plain" -> ".txt"
+        "audio/wav" -> ".wav"
+        "audio/webm" -> ".weba"
+        "video/webm" -> ".webm"
+        "image/webp" -> ".webp"
+        "font/woff" -> ".woff"
+        "font/woff2" -> ".woff2"
+        "application/xhtml+xml" -> ".xhtml"
+        "application/vnd.ms-excel" -> ".xls"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> ".xlsx"
+        "application/xml" -> ".xml"
+        "text/xml" -> ".xml"
+        "application/zip" -> ".zip"
+        "application/x-7z-compressed" -> ".7z"
+        else -> ""
+    }
+}
+
+fun getTextForSizeInBytes(size: Long): String {
     return when {
         size > (1024 * 1024) -> {
             val sizeInMB = size.toFloat()/(1024 * 1024)
@@ -265,7 +357,7 @@ fun getNameForSizeInBytes(size: Long): String {
         }
         else -> {
             val sizeInKB = size.toFloat()/1024
-            sizeInKB.toString().take(3) + " KB"
+            sizeInKB.toString().take(4) + " KB"
         }
     }
 }

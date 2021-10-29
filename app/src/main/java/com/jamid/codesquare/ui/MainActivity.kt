@@ -8,15 +8,13 @@ import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
@@ -33,6 +31,7 @@ import com.jamid.codesquare.adapter.LocationItemClickListener
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.*
+import kotlinx.coroutines.launch
 import java.io.File
 
 class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentClickListener, ChatChannelClickListener, MessageListener {
@@ -92,6 +91,33 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             } else {
                 it.data?.data?.let { it1 ->
                     viewModel.setCurrentProjectImages(listOf(it1.toString()))
+                }
+            }
+        }
+    }
+
+    private val selectChatDocumentsUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+
+            val clipData = it.data?.clipData
+
+            if (clipData != null) {
+                val count = clipData.itemCount
+
+                val documents = mutableListOf<Uri>()
+
+                for (i in 0 until count) {
+                    val uri = clipData.getItemAt(i)?.uri
+                    uri?.let { doc ->
+                        documents.add(doc)
+                    }
+                }
+
+                viewModel.setChatUploadDocuments(documents)
+
+            } else {
+                it.data?.data?.let { it1 ->
+                    viewModel.setChatUploadDocuments(listOf(it1))
                 }
             }
         }
@@ -266,6 +292,30 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
+                R.id.chatDetailFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.chatMediaFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.show()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.projectContributorsFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.tagFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
             }
         }
 
@@ -299,17 +349,28 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         val intent = Intent().apply {
             type = "image/*"
             action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
 
         selectProjectImageLauncher.launch(intent)
+    }
+
+    fun selectChatUploadDocuments() {
+        val intent = Intent().apply {
+            type = "*/*"
+            action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+
+        selectChatDocumentsUploadLauncher.launch(intent)
+
     }
 
     fun selectChatUploadImages() {
         val intent = Intent().apply {
             type = "image/*"
             action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
 
         selectChatImagesUploadLauncher.launch(intent)
@@ -389,13 +450,26 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     override fun onUserClick(user: User) {
-        val bundle = bundleOf("user" to user)
+        val bundle = if (user.isCurrentUser) {
+            null
+        } else {
+            bundleOf("user" to user)
+        }
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
                 navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.projectFragment -> {
                 navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle, slideRightNavOptions())
+            }
+            R.id.chatDetailFragment -> {
+                navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle, slideRightNavOptions())
+            }
+            R.id.chatFragmentContainer -> {
+                navController.navigate(R.id.action_chatFragmentContainer_to_profileFragment, bundle, slideRightNavOptions())
+            }
+            R.id.projectContributorsFragment -> {
+                navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
         }
     }
@@ -434,7 +508,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onDocumentClick(message: Message) {
         val externalDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        val file = File(externalDir, message.metaData?.originalFileName!!)
+        val destination = File(externalDir, message.chatChannelId)
+        val name = message.content + message.metadata!!.ext
+        val file = File(destination, name)
         openFile(file) 
     }
 
@@ -443,47 +519,91 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit){
-        val uri = Uri.parse(message.content)
-        val name = uri.lastPathSegment!!.split('/').last()
 
-        val file = File(externalFilesDir, name + message.metaData?.extension)
+        val name = message.content + message.metadata!!.ext
+        val destination = File(externalFilesDir, message.chatChannelId)
 
-        try {
-            if (file.createNewFile()) {
-                FireUtility.downloadMedia(file, name, message) {
-                    if (it.isSuccessful) {
-                        onComplete(it, message)
-                        message.content = Uri.fromFile(file).toString()
-                        message.isDownloaded = true
-                        viewModel.updateMessage(message)
-                    } else {
-                        toast("File was created but something went wrong while downloading")
-                        viewModel.setCurrentError(it.exception)
+        fun download(des: File) {
+            val file = File(des, name)
+            try {
+                if (file.createNewFile()) {
+                    FireUtility.downloadMedia(file, message.content, message) {
+                        if (it.isSuccessful) {
+                            onComplete(it, message)
+                            message.isDownloaded = true
+                            viewModel.updateMessage(message)
+                        } else {
+                            toast("File was created but something went wrong while downloading")
+                            viewModel.setCurrentError(it.exception)
+                        }
                     }
+                } else {
+                    Log.d(TAG, "Probably file already exists. Or some other problem for which we are not being able to ")
+                    toast("Something went wrong")
                 }
-            } else {
-                toast("Something went wrong")
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
+            } finally {
+                Log.d(TAG, file.path)
             }
-        } catch (e: Exception) {
-            viewModel.setCurrentError(e)
-        } finally {
-            Log.d(TAG, file.path)
         }
 
-
+        try {
+            if (destination.mkdir()) {
+                download(destination)
+            } else {
+                Log.d(TAG, "Probably directory already exists")
+                if (destination.exists()) {
+                    download(destination)
+                } else {
+                    throw Exception("Unknown error. Couldn't create file and download.")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, e.localizedMessage.orEmpty())
+        } finally {
+            Log.d(TAG, destination.path)
+        }
     }
 
     private fun openFile(file: File) {
         // Get URI and MIME type of file
-        val uri = FileProvider.getUriForFile(this, "com.jamid.codesquare.fileprovider", file)
-        val mime = contentResolver.getType(uri)
+        try {
+            Log.d(TAG, file.path)
+            val uri = FileProvider.getUriForFile(this, "com.jamid.codesquare.fileprovider", file)
+            val mime = contentResolver.getType(uri)
 
-        // Open file with user selected app
-        val intent = Intent()
-        intent.action = Intent.ACTION_VIEW
-        intent.setDataAndType(uri, mime)
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        startActivity(intent)
+            // Open file with user selected app
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
+            intent.setDataAndType(uri, mime)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.d(TAG, e.localizedMessage.orEmpty())
+        }
+
+    }
+
+    // make sure to change this later on for null safety
+    override fun onMessageRead(message: Message) {
+
+        lifecycleScope.launch {
+            val chatChannel = viewModel.getChatChannel(message.chatChannelId)
+            if (chatChannel != null) {
+                chatChannel.lastMessage?.read = true
+                viewModel.insertChatChannels(listOf(chatChannel))
+            }
+        }
+
+        message.read = true
+        val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
+        val a2 = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
+        viewModel.insertMessage(a1, a2, message)
+    }
+
+    override fun onUserClick(message: Message) {
+        onUserClick(message.sender)
     }
 
 }

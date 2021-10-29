@@ -44,9 +44,13 @@ data class User(
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
 
+    @Exclude
     fun minify(): UserMinimal {
         return UserMinimal(id, name, photo, username)
     }
+
+    @Exclude
+    fun isEmpty() = id.isBlank()
 
     companion object {
         fun newUser(id: String, name: String, email: String) =

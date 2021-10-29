@@ -55,6 +55,33 @@
             tools:listitem="@layout/imageview_layout_small" />
     </androidx.cardview.widget.CardView>
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/chat_documents_container"
+        style="@style/AppTheme.BottomSheet.Card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/lightest_grey"
+        app:cardElevation="4dp"
+        app:contentPaddingBottom="56dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/uploading_documents_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="8dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="0dp"
+            android:paddingBottom="8dp"
+            tools:itemCount="1"
+            tools:listitem="@layout/document_layout_small" />
+    </androidx.cardview.widget.CardView>
+
     <LinearLayout
         android:id="@+id/linearLayout9"
         android:layout_width="match_parent"

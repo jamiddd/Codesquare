@@ -6,9 +6,10 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.FireUtility
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
-import com.jamid.codesquare.text
+import com.jamid.codesquare.document
+import com.jamid.codesquare.image
+import java.io.File
 
 class MainRepository(db: CodesquareDatabase) {
 
@@ -140,54 +141,62 @@ class MainRepository(db: CodesquareDatabase) {
         }
     }
 
+    suspend fun getAllChatChannels(): List<ChatChannel> {
+        return chatChannelDao.allChannels().orEmpty()
+    }
+
+
+    // check if the message already has the user, in which case no need to get the user
     suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
         for (chatChannel in chatChannels) {
-            if (chatChannel.lastMessage != null) {
-                val sender = getUser(chatChannel.lastMessage?.senderId.orEmpty())
+
+            val lastMessage = chatChannel.lastMessage
+
+            if (lastMessage != null && lastMessage.sender.isEmpty()) {
+                val sender = getUser(lastMessage.senderId)
                 if (sender != null) {
-                    val short = UserMinimal(sender.id, sender.name, sender.photo, sender.username)
-                    chatChannel.lastMessage?.sender = short
+                    lastMessage.sender = sender
+                } else {
+                    val ref = Firebase.firestore.collection("users").document(lastMessage.senderId)
+                    when (val result = FireUtility.getDocument(ref))  {
+                        is Result.Error -> {
+                            Log.e(TAG, "Something went wrong while getting user data for chatChannel")
+                        }
+                        is Result.Success -> {
+                            lastMessage.sender = result.data.toObject(User::class.java)!!
+                        }
+                    }
                 }
             }
         }
         chatChannelDao.insert(chatChannels)
     }
 
-    suspend fun insertMessages(messages: List<Message>) {
-
+    suspend fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
         for (message in messages) {
             val user = getUser(message.senderId)
             if (user != null) {
-                val short = UserMinimal(user.id, user.name, user.photo, user.username)
-                message.sender = short
+                message.sender = user
             } else {
                 throw NullPointerException("The user doesn't exist for a message with user id - ${message.senderId}")
             }
-        }
 
-        val mediaMessages = messages.filter {
-            it.type != text
-        }
 
-        val textMessages = messages.filter {
-            it.type == text
-        }
+            if (message.type == image) {
+                val name = message.content + message.metadata!!.ext
+                val f = File(imagesDir, name)
+                message.isDownloaded = f.exists()
+            }
 
-        messageDao.insert(textMessages)
-
-        // this is to make sure that the downloaded message don't get overwritten by new messages
-        // from the server, because we have set the local path in message.content
-
-        for (message in mediaMessages) {
-            val localMessage = messageDao.getMessage(message.messageId)
-            if (localMessage != null && localMessage.isDownloaded) {
-                message.isDownloaded = true
+            if (message.type == document) {
+                val name = message.content + message.metadata!!.ext
+                val f = File(documentsDir, name)
+                message.isDownloaded = f.exists()
             }
         }
-
-        messageDao.insert(mediaMessages)
-
+        return messages
     }
+
 
     suspend fun onJoinProject(project: Project) {
         val currentUser = currentUser.value
@@ -338,6 +347,58 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun updateMessages(messages: List<Message>) {
         messageDao.update(messages)
+    }
+
+    suspend fun getProjectByChatChannel(channelId: String): Project? {
+        return projectDao.getProjectByChatChannel(channelId)
+    }
+
+    suspend fun getLocalChannelContributors(chatChannel: String): List<User> {
+        return userDao.getChannelContributors(chatChannel) ?: emptyList()
+    }
+
+    suspend fun updateLocalProject(project: Project) {
+        projectDao.update(project)
+    }
+
+    fun getLiveProjectByChatChannel(chatChannel: String): LiveData<Project> {
+        return projectDao.getLiveProjectByChatChannel(chatChannel)
+    }
+
+    suspend fun getLimitedMediaMessages(channelId:String, limit: Int): List<Message> {
+        return messageDao.getLimitedMediaMessages(channelId, limit).orEmpty()
+    }
+
+    suspend fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>, preProcessed: Boolean = false) {
+        if (!preProcessed) {
+            messageDao.insertMessages(processMessages(imagesDir, documentsDir, messages))
+        } else {
+            messageDao.insertMessages(messages)
+        }
+    }
+
+    suspend fun getMessagesBefore(chatChannel: String, time: Long, limit: Int): List<Message> {
+        return messageDao.getMessagesBefore(chatChannel, time, limit)
+    }
+
+    suspend fun getMessagesOnRefresh(chatChannelId: String, pageSize: Int): List<Message> {
+        return messageDao.getMessagesOnRefresh(chatChannelId, pageSize).orEmpty()
+    }
+
+    suspend fun getMessagesOnAppend(chatChannelId: String, pageSize: Int, nextKey: Long): List<Message> {
+        return messageDao.getMessagesOnAppend(chatChannelId, pageSize, nextKey).orEmpty()
+    }
+
+    fun getMessagesOnPrepend(
+        chatChannelId: String,
+        pageSize: Int,
+        anchorMessageTimeStart: Long
+    ): List<Message> {
+        return messageDao.getMessagesOnPrepend(chatChannelId, pageSize, anchorMessageTimeStart).orEmpty()
+    }
+
+    suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
+        return messageDao.getMessages(chatChannelId).orEmpty()
     }
 
     companion object {

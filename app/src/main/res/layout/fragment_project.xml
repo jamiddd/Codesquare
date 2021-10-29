@@ -125,8 +125,9 @@
                 android:paddingEnd="16dp"
                 android:paddingBottom="8dp"
                 android:text="Tags"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:textSize="18sp"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:textSize="16sp"
                 android:visibility="gone" />
 
             <com.google.android.material.chip.ChipGroup
@@ -157,8 +158,9 @@
                     android:paddingEnd="16dp"
                     android:paddingBottom="8dp"
                     android:text="Contributors"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                    android:textSize="18sp" />
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/see_all_contributors_btn"
@@ -208,8 +210,9 @@
                     android:paddingEnd="16dp"
                     android:paddingBottom="8dp"
                     android:text="Comments"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                    android:textSize="18sp" />
+                    android:textAllCaps="true"
+                    android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                    android:textSize="16sp" />
 
                 <Button
                     android:id="@+id/see_all_comments"

@@ -8,4 +8,6 @@ interface MessageListener {
     fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit)
     fun onDocumentClick(message: Message)
     fun onImageClick(message: Message)
+    fun onMessageRead(message: Message)
+    fun onUserClick(message: Message)
 }

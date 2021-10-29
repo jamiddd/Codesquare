@@ -1,5 +1,9 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.graphics.Typeface
+import android.text.SpannableString
+import android.text.style.StyleSpan
+import android.text.style.TypefaceSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,7 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.document
 import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.image
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
 class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
@@ -29,8 +35,27 @@ class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             val message = chatChannel.lastMessage
             if (message != null) {
-                val lastMessageText = "${message.sender.name}: ${message.content}"
-                channelLastMessage.text = lastMessageText
+                val content = when (message.type) {
+                    image -> {
+                        image
+                    }
+                    document -> {
+                        document
+                    }
+                    else -> {
+                        message.content
+                    }
+                }
+                val lastMessageText = "${message.sender.name}: $content"
+
+                if (!message.read) {
+                    val sp = SpannableString(lastMessageText)
+                    sp.setSpan(StyleSpan(Typeface.BOLD), 0, lastMessageText.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    channelLastMessage.text = sp
+                } else {
+
+                    channelLastMessage.text = lastMessageText
+                }
             } else {
                 channelLastMessage.text = "No messages"
             }

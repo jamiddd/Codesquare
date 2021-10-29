@@ -27,6 +27,7 @@ object FireUtility {
         task.addOnCompleteListener(onComplete)
     }
 
+
     suspend fun getQuerySnapshot(query: Query): Result<QuerySnapshot> {
         return try {
             val task = query.get()
@@ -40,8 +41,8 @@ object FireUtility {
     suspend fun fetchItems(query: Query, lim: Int = 20, lastSnapshot: DocumentSnapshot? = null): Result<QuerySnapshot> {
         return if (lastSnapshot != null) {
             try {
-                val task = query.startAfter(lastSnapshot)
-                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                val task = query.orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                    .startAfter(lastSnapshot)
                     .limit(lim.toLong())
                     .get()
 
@@ -128,7 +129,12 @@ object FireUtility {
     suspend fun createProject(currentUser: User, project: Project, onComplete: (task: Task<Void>) -> Unit) {
         val ref = Firebase.firestore.collection("projects").document(project.id)
 
-        val downloadUris = uploadItems("${project.id}/images", project.images.map { it.toUri() })
+        val listOfNames = mutableListOf<String>()
+        for (i in project.images.indices) {
+            listOfNames.add(randomId())
+        }
+
+        val downloadUris = uploadItems("${project.id}/images", listOfNames, project.images.map { it.toUri() })
 
         val downloadUrls = downloadUris.map { it.toString() }
         project.images = downloadUrls
@@ -182,15 +188,14 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    private suspend fun uploadItems(locationPath: String, images: List<Uri>): List<Uri> {
+    private suspend fun uploadItems(locationPath: String, names: List<String>, items: List<Uri>): List<Uri> {
         val listOfReferences = mutableListOf<StorageReference>()
         val listOfUploadTask = mutableListOf<UploadTask>()
-        for (image in images) {
-            val randomImageName = randomId()
-            val ref = Firebase.storage.reference.child("$locationPath/$randomImageName")
+        for (i in items.indices) {
+            val ref = Firebase.storage.reference.child("$locationPath/${names[i]}")
             listOfReferences.add(ref)
 
-            val task = ref.putFile(image)
+            val task = ref.putFile(items[i])
             listOfUploadTask.add(task)
         }
 
@@ -523,11 +528,18 @@ object FireUtility {
         }
     }
 
-    fun getProjectContributors(project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        val task = Firebase.firestore.collection("users")
-            .whereArrayContains("collaborations", project.id)
-            .limit(7)
-            .get()
+    fun getProjectContributors(limit: Long = 0, project: Project, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+
+        val task = if (limit.toInt() == 0) {
+            Firebase.firestore.collection("users")
+                .whereArrayContains("collaborations", project.id)
+                .get()
+        } else {
+            Firebase.firestore.collection("users")
+                .whereArrayContains("collaborations", project.id)
+                .limit(limit)
+                .get()
+        }
 
         task.addOnCompleteListener(onComplete)
     }
@@ -670,7 +682,7 @@ object FireUtility {
             val ref = chatChannelRef.collection("messages").document()
             val messageId = ref.id
 
-            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, System.currentTimeMillis(), UserMinimal(currentUser.id, currentUser.name, currentUser.photo, currentUser.username), false, isCurrentUserMessage = true)
+            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, true, System.currentTimeMillis(), currentUser, false, isCurrentUserMessage = true)
 
             batch.set(ref, message)
 
@@ -703,24 +715,24 @@ object FireUtility {
         val updatedList = if (isLastMessageTextMsg && listOfMessages.size > 1) {
             val mediaMessages = listOfMessages.slice(0..listOfMessages.size - 2)
             val downloadedContents = if (sample.type == image) {
-                uploadItems("$chatChannelId/images", mediaMessages.map { it.content.toUri() }).map { it.toString() }
+                uploadItems("$chatChannelId/images", mediaMessages.map { it.content }, mediaMessages.map { it.metadata!!.url.toUri() }).map { it.toString() }
             } else {
-                uploadItems("$chatChannelId/documents", mediaMessages.map { it.content.toUri() }).map { it.toString() }
+                uploadItems("$chatChannelId/documents", mediaMessages.map { it.content }, mediaMessages.map { it.metadata!!.url.toUri() }).map { it.toString() }
             }
 
             mediaMessages.mapIndexed { index, message ->
-                message.content = downloadedContents[index]
+                message.metadata?.url = downloadedContents[index]
                 message
             }
 
         } else {
             val downloadedContents = if (sample.type == image) {
-                uploadItems("$chatChannelId/images", listOfMessages.map { it.content.toUri() }).map { it.toString() }
+                uploadItems("$chatChannelId/images", listOfMessages.map { it.content }, listOfMessages.map { it.metadata!!.url.toUri() }).map { it.toString() }
             } else {
-                uploadItems("$chatChannelId/documents", listOfMessages.map { it.content.toUri() }).map { it.toString() }
+                uploadItems("$chatChannelId/documents", listOfMessages.map { it.content }, listOfMessages.map { it.metadata!!.url.toUri() }).map { it.toString() }
             }
             listOfMessages.mapIndexed { index, message ->
-                message.content = downloadedContents[index]
+                message.metadata?.url = downloadedContents[index]
                 message
             }
 
@@ -753,8 +765,13 @@ object FireUtility {
 
     }
 
+    // name must be with extension
     fun downloadMedia(destinationFile: File, name: String, message: Message, onComplete: (task: Task<FileDownloadTask.TaskSnapshot>) -> Unit) {
-        val path = "${message.chatChannelId}/images/$name"
+        val path = if (message.type == image) {
+            "${message.chatChannelId}/images/$name"
+        } else {
+            "${message.chatChannelId}/documents/$name"
+        }
         val objRef = Firebase.storage.reference.child(path)
         objRef.getFile(destinationFile).addOnCompleteListener(onComplete)
     }

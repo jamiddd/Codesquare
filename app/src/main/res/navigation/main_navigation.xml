@@ -110,6 +110,12 @@
         <action
             android:id="@+id/action_projectFragment_to_commentsContainerFragment"
             app:destination="@id/commentsContainerFragment" />
+        <action
+            android:id="@+id/action_projectFragment_to_projectContributorsFragment"
+            app:destination="@id/projectContributorsFragment" />
+        <action
+            android:id="@+id/action_projectFragment_to_tagFragment"
+            app:destination="@id/tagFragment" />
     </fragment>
     <fragment
         android:id="@+id/projectRequestFragment"
@@ -147,5 +153,54 @@
             app:argType="string"
             android:defaultValue="Chat" />
 
+        <action
+            android:id="@+id/action_chatFragmentContainer_to_chatDetailFragment"
+            app:destination="@id/chatDetailFragment" />
+        <action
+            android:id="@+id/action_chatFragmentContainer_to_profileFragment"
+            app:destination="@id/profileFragment" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/chatDetailFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatDetailFragment"
+        tools:layout="@layout/fragment_chat_detail"
+        android:label="{title}" >
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Chat" />
+        <action
+            android:id="@+id/action_chatDetailFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_chatDetailFragment_to_chatMediaFragment"
+            app:destination="@id/chatMediaFragment" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/chatMediaFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatMediaFragment"
+        android:label="Media"
+        tools:layout="@layout/fragment_chat_media" />
+    <fragment
+        android:id="@+id/projectContributorsFragment"
+        android:name="com.jamid.codesquare.ui.ProjectContributorsFragment"
+        tools:layout="@layout/fragment_project_contributors"
+        android:label="Contributors" >
+        <action
+            android:id="@+id/action_projectContributorsFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/tagFragment"
+        android:name="com.jamid.codesquare.ui.TagFragment"
+        tools:layout="@layout/fragment_pager"
+        android:label="{title}" >
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Tag" />
     </fragment>
 </navigation>

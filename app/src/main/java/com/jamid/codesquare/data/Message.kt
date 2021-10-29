@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
+import java.io.File
 
 @IgnoreExtraProperties
 @Entity(tableName="messages")
@@ -19,15 +20,17 @@ data class Message(
     var content: String,
     var senderId: String,
     @Embedded(prefix = "meta_")
-    var metaData: MediaMetadata?,
+    var metadata: Metadata?,
+    var read: Boolean,
     val createdAt: Long,
     @Embedded(prefix = "sender_")
     @Exclude @set: Exclude @get: Exclude
-    var sender: UserMinimal,
+    var sender: User,
     @Exclude @set: Exclude @get: Exclude
     var isDownloaded: Boolean,
     @Exclude @set: Exclude @get: Exclude
     var isCurrentUserMessage: Boolean
 ): Parcelable {
-    constructor(): this("", "", "", "", "", MediaMetadata(), System.currentTimeMillis(), UserMinimal(), false, false)
+    constructor(): this("", "", "", "", "", Metadata(), false, System.currentTimeMillis(), User(), false, false)
+
 }

@@ -1,12 +1,14 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
 
-class MessageAdapter(val currentUsrId: String): PagingDataAdapter<Message, MessageViewHolder>(comparator) {
+class MessageAdapter(private val currentUsrId: String): ListAdapter<Message, MessageViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Message>() {
@@ -45,6 +47,8 @@ class MessageAdapter(val currentUsrId: String): PagingDataAdapter<Message, Messa
         val isCurrentUserMessage = message?.senderId == currentUsrId
         val isOnlyMessage = itemCount == 1
 
+        Log.d("MessageAdapter", "isCurrentUserMessage = $isCurrentUserMessage + currentUser -> $currentUsrId + ${message?.sender}")
+
         when {
             isOnlyMessage -> {
                 return if (isCurrentUserMessage) {
@@ -77,7 +81,7 @@ class MessageAdapter(val currentUsrId: String): PagingDataAdapter<Message, Messa
                     if (isSameBottomSender) {
                         msg_at_start_alt
                     } else {
-                        msg_single
+                        msg_single_alt
                     }
                 } else {
                     if (isSameBottomSender) {

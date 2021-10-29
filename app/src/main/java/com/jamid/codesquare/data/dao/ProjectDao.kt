@@ -33,4 +33,13 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Query("SELECT * FROM projects WHERE isSaved = 1 ORDER BY createdAt DESC")
     abstract fun getPagedSavedProjects(): PagingSource<Int, Project>
 
+    @Query("SELECT * FROM projects WHERE chatChannel = :channelId LIMIT 1")
+    abstract suspend fun getProjectByChatChannel(channelId: String): Project?
+
+    @Query("SELECT * FROM projects WHERE chatChannel = :channelId LIMIT 1")
+    abstract fun getLiveProjectByChatChannel(channelId: String): LiveData<Project>
+
+    @Query("SELECT * FROM projects WHERE tags LIKE :tag ORDER BY createdAt DESC")
+    abstract fun getTagProjects(tag: String): PagingSource<Int, Project>
+
 }

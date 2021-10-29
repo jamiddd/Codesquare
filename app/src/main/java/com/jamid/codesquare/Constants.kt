@@ -20,13 +20,29 @@ const val BOTTOM_TO_TOP = "BOTTOM_TO_TOP"
 
 
 const val msg_at_start = 101
-const val msg_at_middle = 102
-const val msg_at_end = 103
-const val msg_at_start_alt = 104
-const val msg_at_middle_alt = 105
-const val msg_at_end_alt = 106
-const val msg_single = 107
-const val msg_single_alt = 108
+const val msg_at_start_image = 102
+const val msg_at_start_doc = 103
+const val msg_at_middle = 104
+const val msg_at_middle_image = 105
+const val msg_at_middle_doc = 106
+const val msg_at_end = 107
+const val msg_at_end_image = 108
+const val msg_at_end_doc = 109
+const val msg_at_start_alt = 110
+const val msg_at_start_alt_image = 111
+const val msg_at_start_alt_doc = 112
+const val msg_at_middle_alt = 113
+const val msg_at_middle_alt_image = 114
+const val msg_at_middle_alt_doc = 115
+const val msg_at_end_alt = 116
+const val msg_at_end_alt_image = 117
+const val msg_at_end_alt_doc = 118
+const val msg_single = 119
+const val msg_single_image = 120
+const val msg_single_doc = 121
+const val msg_single_alt = 122
+const val msg_single_alt_image = 123
+const val msg_single_alt_doc = 124
 
 const val image = "Image"
 const val text = "Text"

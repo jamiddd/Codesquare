@@ -13,11 +13,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
+import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
@@ -30,7 +32,7 @@ import kotlinx.coroutines.launch
 abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment() {
 
     open var job: Job? = null
-    private lateinit var pagingAdapter: PagingDataAdapter<T, VH>
+    lateinit var pagingAdapter: PagingDataAdapter<T, VH>
     protected val viewModel: MainViewModel by activityViewModels()
     private lateinit var binding: FragmentPagerBinding
     protected var recyclerView: RecyclerView? = null
