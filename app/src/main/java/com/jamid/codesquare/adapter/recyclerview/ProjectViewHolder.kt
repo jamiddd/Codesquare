@@ -51,6 +51,11 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     private val projectClickListener = view.context as ProjectClickListener
 
+    fun onSaveProjectClick(project: Project) {
+        projectClickListener.onProjectSaveClick(project.copy())
+        saveBtn.isSelected = !saveBtn.isSelected
+    }
+
     fun bind(project: Project?) {
         if (project != null) {
 
@@ -185,8 +190,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             saveBtn.isSelected = project.isSaved
 
             saveBtn.setOnClickListener {
-                projectClickListener.onProjectSaveClick(project.copy())
-                saveBtn.isSelected = !saveBtn.isSelected
+                onSaveProjectClick(project)
             }
 
             joinBtn.setOnClickListener {
@@ -216,6 +220,10 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             commentBtn.setOnClickListener {
                 projectClickListener.onProjectCommentClick(project)
+            }
+
+            optionBtn.setOnClickListener {
+                projectClickListener.onProjectOptionClick(this, project)
             }
 
         }

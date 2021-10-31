@@ -1,5 +1,7 @@
 package com.jamid.codesquare.ui
 
+import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.activity.addCallback
@@ -63,6 +65,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 viewModel.setCurrentProjectTitle(getTitle())
                 viewModel.setCurrentProjectTags(getTags())
                 viewModel.setCurrentProjectContent(getContent())
+                viewModel.setCurrentProjectLinks(getLinks())
 
                 val view = layoutInflater.inflate(R.layout.loading_layout, null, false)
                 val loadingLayoutBinding = LoadingLayoutBinding.bind(view)
@@ -89,6 +92,18 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             }
             else -> true
         }
+    }
+
+    private fun getLinks(): List<String> {
+        val links = mutableListOf<String>()
+        for (child in binding.projectLinksContainer.children) {
+            val chip = child as Chip
+            val link = chip.text.toString()
+            if (link != "Add Link") {
+                links.add(link)
+            }
+        }
+        return links
     }
 
     private fun validateProjectContent(): Boolean {
@@ -267,6 +282,26 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
         }
 
+        binding.addLinkBtn.setOnClickListener {
+            val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+            val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
+
+            inputLayoutBinding.inputTextLayout.hint = "Add link .. "
+
+            MaterialAlertDialogBuilder(activity)
+                .setTitle("Add Link")
+                .setMessage("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
+                .setView(inputLayout)
+                .setPositiveButton("Add") { _, _ ->
+                    if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
+                        val link = inputLayoutBinding.inputTextLayout.text.toString()
+                        addLink(link)
+                    }
+                }.setNegativeButton("Cancel") { a, _ ->
+                    a.dismiss()
+                }.show()
+        }
+
         activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
 
             if (binding.projectTitleText.editText?.text.isNullOrBlank() && binding.projectContentText.editText?.text.isNullOrBlank() && imagesCount == 0) {
@@ -338,6 +373,45 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             binding.projectTagsContainer.removeView(chip)
         }
         binding.projectTagsContainer.addView(chip, 0)
+    }
+
+    private fun addLinks(links: List<String>) {
+        if (binding.projectLinksContainer.childCount != 1) {
+            binding.projectLinksContainer.removeViews(0, binding.projectLinksContainer.childCount - 1)
+        }
+        for (link in links) {
+            addLink(link)
+        }
+    }
+
+    private fun addLink(link: String) {
+        link.trim()
+        val chip = Chip(requireContext())
+
+        chip.isCloseIconVisible = true
+
+        val splitLink = link.split(".")
+        if (splitLink.size > 2) {
+            if (splitLink[2].length > 3) {
+                chip.text = link.substring(0, 12) + "..."
+                // trim
+            } else {
+                chip.text = link
+            }
+        } else {
+            chip.text = link
+        }
+
+        if (link.contains("github.com")) {
+            chip.chipIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_github)
+        }
+
+        chip.isCheckable = false
+        chip.setOnCloseIconClickListener {
+            binding.projectLinksContainer.removeView(chip)
+        }
+
+        binding.projectLinksContainer.addView(chip, 0)
     }
 
     private fun updateLayoutOnImagesLoaded() {

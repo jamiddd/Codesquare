@@ -17,7 +17,7 @@ import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.CommentClickListener
 
-class CommentViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+class CommentViewHolder(val view: View, private val commentClickListener: CommentClickListener): RecyclerView.ViewHolder(view) {
 
     private val userImage: SimpleDraweeView = view.findViewById(R.id.comment_user_img)
     private val content: TextView = view.findViewById(R.id.comment_content)
@@ -28,24 +28,14 @@ class CommentViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     private val replyBtn: Button = view.findViewById(R.id.comment_reply_btn)
     private val optionBtn: Button = view.findViewById(R.id.comment_option_btn)
 
-    private val commentClickListener = view.context as CommentClickListener
-
     fun bind(comment: Comment?) {
         if (comment != null) {
 
-            val ref = Firebase.firestore.collection("users").document(comment.senderId)
-            FireUtility.getDocument(ref) {
-                if (it.isSuccessful && it.result.exists()) {
-                    val sender = it.result.toObject(User::class.java)!!
-                    userImage.setImageURI(sender.photo)
-                    userName.text = sender.name
+            userImage.setImageURI(comment.sender.photo)
+            userName.text = comment.sender.name
 
-                    comment.sender = sender
-                    replyBtn.setOnClickListener {
-                        commentClickListener.onCommentReply(comment.copy())
-                    }
-
-                }
+            replyBtn.setOnClickListener {
+                commentClickListener.onCommentReply(comment.copy())
             }
 
             content.text = comment.content
@@ -76,8 +66,8 @@ class CommentViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     companion object {
 
-        fun newInstance(parent: ViewGroup)
-            = CommentViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.comment_item, parent, false))
+        fun newInstance(parent: ViewGroup, commentClickListener: CommentClickListener)
+            = CommentViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.comment_item, parent, false), commentClickListener)
 
     }
 

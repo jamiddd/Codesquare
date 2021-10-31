@@ -16,6 +16,6 @@ class CommentRemoteMediator(query: Query, repository: MainRepository): FirebaseR
     }
 
     override suspend fun onRefresh() {
-        repository.clearComments()
+
     }
 }

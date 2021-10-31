@@ -90,7 +90,7 @@ class CommentsContainerFragment: Fragment() {
 
                 val content = binding.commentInputLayout.text.toString()
 
-                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), currentUser, false, replyComment.postTitle)
+                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, replyComment.postTitle)
 
                 viewModel.sendComment(comment, replyComment.commentChannelId)
 
@@ -107,10 +107,10 @@ class CommentsContainerFragment: Fragment() {
                 val content = binding.commentInputLayout.text.toString()
 
                 if (project != null) {
-                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), currentUser, false, project!!.title)
+                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), currentUser.minify(), false, project!!.title)
                     viewModel.sendComment(comment1)
                 } else {
-                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), currentUser, false, comment!!.postTitle)
+                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, comment!!.postTitle)
                     viewModel.sendComment(comment1, comment!!.commentChannelId)
                 }
 

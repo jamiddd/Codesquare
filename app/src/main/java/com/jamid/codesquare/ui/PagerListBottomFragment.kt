@@ -1,35 +1,36 @@
 package com.jamid.codesquare.ui
 
+import android.app.Dialog
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
-import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.viewbinding.ViewBinding
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
-import com.jamid.codesquare.toast
+import com.jamid.codesquare.updateLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment() {
+abstract class PagerListBottomFragment<T: Any, VH: RecyclerView.ViewHolder> : DialogFragment() {
 
     open var job: Job? = null
     lateinit var pagingAdapter: PagingDataAdapter<T, VH>
@@ -48,6 +49,17 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                 pagingAdapter.submitData(it)
             }
         }
+    }
+
+    /** The system calls this only when creating the layout in a dialog. */
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        // The only reason you might override this method when using onCreateView() is
+        // to modify any dialog characteristics. For example, the dialog includes a
+        // title by default, but your custom layout might not need it. So here you can
+        // remove the dialog title, but you must call the superclass to get the Dialog.
+        val dialog = super.onCreateDialog(savedInstanceState)
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+        return dialog
     }
 
     override fun onCreateView(
@@ -77,6 +89,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
             adapter = pagingAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
+
+        binding.root.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
 
         addLoadListener(recyclerView, infoText, progressBar, refresher)
 

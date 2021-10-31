@@ -1,5 +1,6 @@
 package com.jamid.codesquare.listeners
 
+import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 
 interface ProjectClickListener {
@@ -10,5 +11,6 @@ interface ProjectClickListener {
     fun onProjectJoinClick(project: Project)
     fun onProjectCreatorClick(project: Project)
     fun onProjectCommentClick(project: Project)
+    fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project)
 
 }

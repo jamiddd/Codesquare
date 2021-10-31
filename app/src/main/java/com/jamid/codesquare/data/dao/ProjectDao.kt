@@ -42,4 +42,10 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Query("SELECT * FROM projects WHERE tags LIKE :tag ORDER BY createdAt DESC")
     abstract fun getTagProjects(tag: String): PagingSource<Int, Project>
 
+    @Query("SELECT * FROM projects WHERE id = :id")
+    abstract fun getLiveProjectById(id: String): LiveData<Project>
+
+    @Query("DELETE FROM projects WHERE id = :id")
+    abstract suspend fun deleteProjectById(id: String)
+
 }

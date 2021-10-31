@@ -117,6 +117,31 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/links_header"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="Links"
+                android:textAllCaps="true"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                android:textSize="16sp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/project_links"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:visibility="gone">
+
+            </com.google.android.material.chip.ChipGroup>
+
+            <TextView
                 android:id="@+id/tags_header"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -128,7 +153,8 @@
                 android:textAllCaps="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body2"
                 android:textSize="16sp"
-                android:visibility="gone" />
+                android:visibility="gone"
+                tools:visibility="visible" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/project_tags"

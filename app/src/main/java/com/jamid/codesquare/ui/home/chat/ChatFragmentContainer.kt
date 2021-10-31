@@ -39,7 +39,7 @@ class ChatFragmentContainer: Fragment() {
         return when (item.itemId) {
             R.id.chat_detail -> {
                 val title = arguments?.getString("title")
-                findNavController().navigate(R.id.action_chatFragmentContainer_to_chatDetailFragment, bundleOf("title" to title), slideRightNavOptions())
+                findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title), slideRightNavOptions())
                 true
             }
             else -> super.onOptionsItemSelected(item)

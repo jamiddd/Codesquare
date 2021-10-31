@@ -13,24 +13,31 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
+import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
+import androidx.paging.ExperimentalPagingApi
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
+import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -232,6 +239,8 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
             val userInfoLayout = findViewById<View>(R.id.user_info)
 
+            binding.mainToolbar.isTitleCentered = destination.id != R.id.homeFragment
+
             when (destination.id) {
                 R.id.loginFragment -> {
                     userInfoLayout?.hide()
@@ -280,13 +289,13 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
-                R.id.commentsContainerFragment -> {
+                R.id.commentsFragment -> {
                     userInfoLayout?.hide()
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
-                R.id.chatFragmentContainer -> {
+                R.id.chatFragment -> {
                     userInfoLayout?.hide()
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
@@ -319,9 +328,32 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             }
         }
 
+        val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
         viewModel.currentUser.observe(this) {
             if (it != null) {
-                Log.d(TAG, "user.")
+                for (channel in it.chatChannels) {
+                    Firebase.firestore.collection("chatChannels")
+                        .document(channel)
+                        .collection("messages")
+                        .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                        .limit(10)
+                        .addSnapshotListener { value, error ->
+                            if (error != null) {
+                                Log.e(com.jamid.codesquare.ui.home.chat.TAG, error.localizedMessage.orEmpty())
+                                return@addSnapshotListener
+                            }
+
+                            if (value != null) {
+                                val messages = value.toObjects(Message::class.java)
+                                if (externalDocumentsDir != null && externalImagesDir != null)
+                                    viewModel.insertMessages(externalImagesDir, externalDocumentsDir, messages)
+                            }
+                        }
+
+                }
+
             } else {
                 Log.d(TAG, "No user.")
             }
@@ -332,6 +364,47 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 Log.e(TAG, exception.localizedMessage.orEmpty())
                 toast(exception.localizedMessage.orEmpty())
             }
+        }
+
+        val firebaseUser = Firebase.auth.currentUser
+        if (firebaseUser != null) {
+
+            // listener for users
+            Firebase.firestore.collection("users").document(firebaseUser.uid)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        viewModel.setCurrentError(error)
+                    }
+
+                    if (value != null && value.exists()) {
+                        val currentUser = value.toObject(User::class.java)
+                        if (currentUser != null) {
+                            viewModel.insertCurrentUser(currentUser)
+                        }
+                    }
+                }
+
+
+            // chat channels are downloaded as soon as app starts
+            Firebase.firestore.collection("chatChannels")
+                .whereArrayContains("contributors", firebaseUser.uid)
+                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                .limit(10)
+                .addSnapshotListener { value, error ->
+
+                    if (error != null) {
+                        Log.e(com.jamid.codesquare.ui.home.chat.TAG, error.localizedMessage.orEmpty())
+                        return@addSnapshotListener
+                    }
+
+                    if (value != null) {
+                        val channels = value.toObjects(ChatChannel::class.java)
+                        viewModel.insertChatChannels(channels)
+                    }
+
+                }
+
+
         }
 
     }
@@ -413,10 +486,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         viewModel.onJoinProject(project)
     }
 
+    // project request must have project included inside it
     override fun onProjectRequestAccept(projectRequest: ProjectRequest) {
         viewModel.acceptRequest(projectRequest)
     }
 
+    // project request must have project included inside it
     override fun onProjectRequestCancel(projectRequest: ProjectRequest) {
         viewModel.rejectRequest(projectRequest)
     }
@@ -436,17 +511,109 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
     }
 
+    @ExperimentalPagingApi
     override fun onProjectCommentClick(project: Project) {
-        val bundle = bundleOf("parent" to project, "title" to project.title)
-        viewModel.currentCommentChannelIds.push(project.commentChannel)
-        when (navController.currentDestination?.id) {
+//        val bundle = bundleOf("parent" to project, "title" to project.title)
+
+        showDialog(project)
+
+
+    /*when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
-                navController.navigate(R.id.action_homeFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_homeFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
             R.id.projectFragment -> {
-                navController.navigate(R.id.action_projectFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_projectFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
+        }*/
+    }
+
+    @ExperimentalPagingApi
+    fun showDialog(project: Project) {
+        val fragmentManager = supportFragmentManager
+        val newFragment = CommentsFragment.newInstance(project.commentChannel, project.title, project)
+        // The device is smaller, so show the fragment fullscreen
+        val transaction = fragmentManager.beginTransaction()
+        // For a little polish, specify a transition animation
+        transaction.setCustomAnimations(R.anim.slide_in_bottom, R.anim.slide_out_bottom)
+        // To make it fullscreen, use the 'content' root view as the container
+        // for the fragment, which is always the root view for the activity
+        transaction
+            .add(android.R.id.content, newFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project) {
+
+        val currentUser = viewModel.currentUser.value!!
+        val creatorId = project.creator.userId
+        val isCurrentUser = creatorId == currentUser.id
+
+        val name = project.creator.name
+        val isCreatorLiked = currentUser.likedUsers.contains(creatorId)
+
+        val likeDislikeUserText = if (isCreatorLiked) {
+            "Dislike $name"
+        } else {
+            "Like $name"
         }
+
+        val saveUnSaveText = if (project.isSaved) {
+            "Unsave"
+        } else {
+            "Save"
+        }
+
+        val choices = if (isCurrentUser) {
+            arrayOf(saveUnSaveText, "Delete")
+        } else {
+            arrayOf(likeDislikeUserText, saveUnSaveText)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(project.title)
+            .setItems(choices) { _, index ->
+                if (isCurrentUser) {
+                    when (index) {
+                        0 -> {
+                            viewHolder.onSaveProjectClick(project)
+                        }
+                        1 -> {
+                            MaterialAlertDialogBuilder(this)
+                                .setTitle("Deleting project")
+                                .setMessage("Are you sure you want to delete this project?")
+                                .setPositiveButton("Delete") { _, _ ->
+                                    viewModel.deleteProject(project) {
+                                        if (it.isSuccessful) {
+                                            toast("Project Deleted")
+                                        } else {
+                                            toast("Something went wrong. ${it.exception?.localizedMessage.orEmpty()}")
+                                        }
+                                    }
+                                }.setNegativeButton("Cancel") { a, _ ->
+                                    a.dismiss()
+                                }.show()
+                        }
+                    }
+                } else {
+                    when (index) {
+                        0 -> {
+                            if (isCreatorLiked) {
+                                viewModel.dislikeUser(creatorId)
+                            } else {
+                                viewModel.likeUser(creatorId)
+                            }
+                        }
+                        1 -> {
+                            viewHolder.onSaveProjectClick(project)
+                        }
+                    }
+                }
+
+            }
+            .show()
+
     }
 
     override fun onUserClick(user: User) {
@@ -465,8 +632,8 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             R.id.chatDetailFragment -> {
                 navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
-            R.id.chatFragmentContainer -> {
-                navController.navigate(R.id.action_chatFragmentContainer_to_profileFragment, bundle, slideRightNavOptions())
+            R.id.chatFragment -> {
+                navController.navigate(R.id.action_chatFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.projectContributorsFragment -> {
                 navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle, slideRightNavOptions())
@@ -485,13 +652,13 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     override fun onClick(comment: Comment) {
         val bundle = bundleOf("parent" to comment, "title" to "Comments")
         viewModel.currentCommentChannelIds.push(comment.threadChannelId)
-        navController.navigate(R.id.action_commentsContainerFragment_self, bundle, slideRightNavOptions())
+        navController.navigate(R.id.action_commentsFragment_self, bundle)
     }
 
     override fun onChannelClick(chatChannel: ChatChannel) {
         val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
         viewModel.currentChatChannel = chatChannel.chatChannelId
-        navController.navigate(R.id.action_homeFragment_to_chatFragmentContainer, bundle, slideRightNavOptions())
+        navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle, slideRightNavOptions())
     }
 
     override fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit) {
@@ -605,5 +772,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     override fun onUserClick(message: Message) {
         onUserClick(message.sender)
     }
+
+
 
 }

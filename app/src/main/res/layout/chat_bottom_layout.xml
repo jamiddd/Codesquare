@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/chat_bottom_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <View
+        android:id="@+id/divider17"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/uploading_images_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#BFFFFFFF"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="0dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        tools:itemCount="1"
+        tools:listitem="@layout/imageview_layout_small" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/uploading_documents_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#BFFFFFFF"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="0dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        tools:itemCount="1"
+        tools:listitem="@layout/document_layout_small" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout9"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:elevation="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/divider10">
+
+        <Button
+            android:id="@+id/add_media_btn"
+            style="@style/AppTheme.Button.IconOnly"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            app:icon="@drawable/ic_round_add_24" />
+
+        <EditText
+            android:id="@+id/chat_input_layout"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:layout_weight="1"
+            android:background="@drawable/chat_edittext_background"
+            android:ems="10"
+            android:hint="Write something here ..."
+            android:inputType="textMultiLine"
+            android:minHeight="48dp"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp" />
+
+        <Button
+            android:id="@+id/chat_send_btn"
+            style="@style/AppTheme.Button.IconOnly"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:backgroundTint="?colorPrimary"
+            android:paddingStart="8dp"
+            android:paddingEnd="0dp"
+            app:icon="@drawable/ic_round_arrow_forward_24"
+            app:iconTint="@color/white" />
+    </LinearLayout>
+
+</LinearLayout>

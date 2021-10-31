@@ -125,23 +125,32 @@ class ProfileFragment: Fragment() {
     }
 
     private fun UserInfoLayoutBinding.setUser(user: User) {
+
         userImg.setImageURI(user.photo)
         userName.text = user.name
+
         if (user.tag.isNotBlank()) {
+            userTag.show()
             userTag.text = user.tag
         } else {
             userTag.hide()
         }
 
         if (user.about.isNotBlank()) {
+            userAbout.show()
             userAbout.text = user.about
         } else {
             userAbout.hide()
         }
 
-        projectsCount.text = user.projectsCount.toString() + " Projects"
-        collaborationsCount.text = user.collaborationsCount.toString() + " Collaborations"
-        starsCount.text = user.starsCount.toString() + " Stars"
+        val totalProjectText = user.projectsCount.toString() + " Projects"
+        projectsCount.text = totalProjectText
+
+        val totalCollaborationText = user.collaborationsCount.toString() + " Collaborations"
+        collaborationsCount.text = totalCollaborationText
+
+        val starsCountText = user.starsCount.toString() + " Stars"
+        starsCount.text = starsCountText
     }
 
 }

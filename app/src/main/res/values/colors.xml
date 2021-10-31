@@ -20,4 +20,6 @@
     <color name="darkest_transparent">#66000000</color>
     <color name="lightest_purple">#E4DFEF</color>
     <color name="slight_white">#BFFFFFFF</color>
+    <color name="green_light">#DAEFDB</color>
+    <color name="green_dark">#19801E</color>
 </resources>

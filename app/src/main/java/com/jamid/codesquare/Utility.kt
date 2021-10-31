@@ -30,6 +30,32 @@ import com.jamid.codesquare.ui.auth.CreateAccountFragment
 import java.lang.IllegalStateException
 import java.util.*
 import java.util.regex.Pattern
+import com.facebook.imagepipeline.image.CloseableImage
+
+import com.facebook.common.references.CloseableReference
+
+import com.facebook.imagepipeline.request.ImageRequest
+
+import com.facebook.imagepipeline.common.ResizeOptions
+
+import com.facebook.imagepipeline.request.ImageRequestBuilder
+
+import com.facebook.drawee.backends.pipeline.Fresco
+
+import com.facebook.imagepipeline.core.ImagePipeline
+
+import com.facebook.datasource.DataSubscriber
+
+import android.graphics.Bitmap
+import android.net.Uri
+
+import com.facebook.imagepipeline.image.CloseableBitmap
+
+import com.facebook.datasource.BaseDataSubscriber
+import com.facebook.datasource.DataSource
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
 
 fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
 

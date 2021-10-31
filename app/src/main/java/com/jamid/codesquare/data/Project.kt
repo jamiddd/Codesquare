@@ -27,7 +27,7 @@ data class Project(
     var rules: List<String>,
     var images: List<String>,
     var tags: List<String>,
-    val sources: List<String>,
+    var sources: List<String>,
     var contributors: List<String>,
     var requests: List<String>,
     @Embedded(prefix = "project_")

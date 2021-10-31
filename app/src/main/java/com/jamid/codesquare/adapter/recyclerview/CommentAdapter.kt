@@ -4,8 +4,9 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.listeners.CommentClickListener
 
-class CommentAdapter: PagingDataAdapter<Comment, CommentViewHolder>(comparator) {
+class CommentAdapter(private val commentClickListener: CommentClickListener): PagingDataAdapter<Comment, CommentViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Comment>() {
@@ -25,7 +26,7 @@ class CommentAdapter: PagingDataAdapter<Comment, CommentViewHolder>(comparator) 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CommentViewHolder {
-        return CommentViewHolder.newInstance(parent)
+        return CommentViewHolder.newInstance(parent, commentClickListener)
     }
 
 }

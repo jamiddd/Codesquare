@@ -157,7 +157,10 @@ class MainRepository(db: CodesquareDatabase) {
                 if (sender != null) {
                     lastMessage.sender = sender
                 } else {
-                    val ref = Firebase.firestore.collection("users").document(lastMessage.senderId)
+
+                    val ref = Firebase.firestore.collection("users")
+                        .document(lastMessage.senderId)
+
                     when (val result = FireUtility.getDocument(ref))  {
                         is Result.Error -> {
                             Log.e(TAG, "Something went wrong while getting user data for chatChannel")
@@ -399,6 +402,14 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return messageDao.getMessages(chatChannelId).orEmpty()
+    }
+
+    fun getLiveProjectById(id: String): LiveData<Project> {
+        return projectDao.getLiveProjectById(id)
+    }
+
+    suspend fun deleteProject(project: Project) {
+        projectDao.deleteProjectById(project.id)
     }
 
     companion object {

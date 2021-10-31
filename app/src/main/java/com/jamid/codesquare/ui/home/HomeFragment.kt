@@ -1,10 +1,16 @@
 package com.jamid.codesquare.ui.home
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.*
+import android.widget.HorizontalScrollView
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.chip.Chip
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.ktx.auth
@@ -16,6 +22,7 @@ import com.jamid.codesquare.databinding.FragmentHomeBinding
 class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
+    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,6 +37,10 @@ class HomeFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
+            R.id.search -> {
+
+                true
+            }
             R.id.create_project -> {
                 findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
                 true
@@ -76,6 +87,7 @@ class HomeFragment: Fragment() {
                 tab.text = "Chats"
             }
         }.attach()
+
     }
 
 }

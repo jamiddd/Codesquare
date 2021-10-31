@@ -12,14 +12,15 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.convertDpToPx
 import com.jamid.codesquare.getFullScreenHeight
+import com.jamid.codesquare.getWindowHeight
 
 open class SuperBottomSheetFragment: BottomSheetDialogFragment() {
 
     private fun setupFullHeight(bottomSheet: FrameLayout, behavior: BottomSheetBehavior<FrameLayout>, context: Context) {
         val layoutParams = bottomSheet.layoutParams
-        val windowHeight = getFullScreenHeight()
+        val windowHeight = getWindowHeight()
         if (layoutParams != null) {
-            layoutParams.height = windowHeight + convertDpToPx(48)
+            layoutParams.height = windowHeight
         }
         bottomSheet.layoutParams = layoutParams
         behavior.state = BottomSheetBehavior.STATE_EXPANDED

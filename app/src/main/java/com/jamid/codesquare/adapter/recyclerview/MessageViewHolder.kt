@@ -103,7 +103,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageContentRight.hide()
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
-                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginRight = convertDpToPx(7, view.context))
                             onMediaImageMessageLoaded(view1, message)
                         }
                     }

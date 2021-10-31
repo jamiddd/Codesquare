@@ -34,7 +34,6 @@
     </style>
 
     <style name="AppTheme.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
-        <item name="titleCentered">true</item>
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.Toolbar</item>
         <item name="titleTextAppearance">@style/AppTheme.Headline6</item>
         <item name="subtitleTextAppearance">@style/AppTheme.Subtitle1</item>

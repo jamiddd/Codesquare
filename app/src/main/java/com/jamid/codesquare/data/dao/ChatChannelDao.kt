@@ -11,7 +11,7 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("DELETE FROM chat_channels")
     abstract suspend fun clearTable()
 
-    @Query("SELECT * FROM chat_channels ORDER BY createdAt DESC")
+    @Query("SELECT * FROM chat_channels ORDER BY updatedAt DESC")
     abstract fun getPagedChatChannels(): PagingSource<Int, ChatChannel>
 
     @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannel")

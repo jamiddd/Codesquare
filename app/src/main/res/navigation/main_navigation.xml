@@ -27,11 +27,14 @@
             android:id="@+id/action_homeFragment_to_projectFragment"
             app:destination="@id/projectFragment" />
         <action
-            android:id="@+id/action_homeFragment_to_commentsContainerFragment"
-            app:destination="@id/commentsContainerFragment" />
+            android:id="@+id/action_homeFragment_to_commentsFragment"
+            app:destination="@id/commentsFragment" />
         <action
-            android:id="@+id/action_homeFragment_to_chatFragmentContainer"
-            app:destination="@id/chatFragmentContainer" />
+            android:id="@+id/action_homeFragment_to_chatFragment"
+            app:destination="@id/chatFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
     </fragment>
     <fragment
         android:id="@+id/createProjectFragment"
@@ -108,8 +111,8 @@
             android:id="@+id/action_projectFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
         <action
-            android:id="@+id/action_projectFragment_to_commentsContainerFragment"
-            app:destination="@id/commentsContainerFragment" />
+            android:id="@+id/action_projectFragment_to_commentsFragment"
+            app:destination="@id/commentsFragment" />
         <action
             android:id="@+id/action_projectFragment_to_projectContributorsFragment"
             app:destination="@id/projectContributorsFragment" />
@@ -128,9 +131,9 @@
         tools:layout="@layout/fragment_pager"
         android:label="Saved projects" />
     <fragment
-        android:id="@+id/commentsContainerFragment"
+        android:id="@+id/commentsFragment"
         android:label="{title}"
-        android:name="com.jamid.codesquare.ui.CommentsContainerFragment"
+        android:name="com.jamid.codesquare.ui.CommentsFragment"
         tools:layout="@layout/fragment_comments_container">
 
         <argument
@@ -138,14 +141,14 @@
             app:argType="string"
             android:defaultValue="Project" />
         <action
-            android:id="@+id/action_commentsContainerFragment_self"
-            app:destination="@id/commentsContainerFragment" />
+            android:id="@+id/action_commentsFragment_self"
+            app:destination="@id/commentsFragment" />
 
     </fragment>
     <fragment
-        android:id="@+id/chatFragmentContainer"
-        android:name="com.jamid.codesquare.ui.home.chat.ChatFragmentContainer"
-        tools:layout="@layout/fragment_chat_container"
+        android:id="@+id/chatFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatFragment"
+        tools:layout="@layout/fragment_pager"
         android:label="{title}">
 
         <argument
@@ -154,10 +157,10 @@
             android:defaultValue="Chat" />
 
         <action
-            android:id="@+id/action_chatFragmentContainer_to_chatDetailFragment"
+            android:id="@+id/action_chatFragment_to_chatDetailFragment"
             app:destination="@id/chatDetailFragment" />
         <action
-            android:id="@+id/action_chatFragmentContainer_to_profileFragment"
+            android:id="@+id/action_chatFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
 
     </fragment>

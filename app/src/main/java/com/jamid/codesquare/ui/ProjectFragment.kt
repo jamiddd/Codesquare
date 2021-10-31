@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,6 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
@@ -24,6 +26,8 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 class ProjectFragment: Fragment() {
@@ -110,6 +114,8 @@ class ProjectFragment: Fragment() {
 
         setTags()
 
+        setLinks()
+
         setContributors()
 
         setCommentLayout()
@@ -169,6 +175,27 @@ class ProjectFragment: Fragment() {
             projectClickListener.onProjectCommentClick(project)
         }
 
+        setProjectObserver()
+
+    }
+
+    private fun setProjectObserver() = viewLifecycleOwner.lifecycleScope.launch {
+        delay(1000)
+        viewModel.getLiveProjectById(project.id).observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (project.isLiked != it.isLiked) {
+                    project.isLiked = it.isLiked
+                    project.likes = it.likes
+                    setLikeDislike()
+                }
+
+                if (project.isSaved != it.isSaved) {
+                    project.isSaved = it.isSaved
+                    setSaveButton()
+                }
+
+            }
+        }
     }
 
     private fun onUserClick() {
@@ -191,6 +218,38 @@ class ProjectFragment: Fragment() {
             binding.tagsHeader.hide()
             binding.projectTags.hide()
         }
+    }
+
+    private fun setLinks() {
+        if (project.sources.isNotEmpty()) {
+            binding.linksHeader.show()
+            binding.projectLinks.show()
+            addLinks(project.sources)
+        } else {
+            binding.linksHeader.hide()
+            binding.projectLinks.hide()
+        }
+    }
+
+    private fun addLinks(links: List<String>) {
+        for (link in links) {
+            addLink(link)
+        }
+    }
+
+    private fun addLink(link: String) {
+        val chip = Chip(requireContext())
+        chip.text = link
+        chip.isCheckable = false
+        chip.isCloseIconVisible = false
+        chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_light))
+        chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_dark))
+        binding.projectLinks.addView(chip)
+
+        chip.setOnClickListener {
+
+        }
+
     }
 
     private fun addTags(tags: List<String>) {
@@ -251,7 +310,6 @@ class ProjectFragment: Fragment() {
     }
 
     private fun setContributors() {
-        binding.contributorsHeaderLayout.show()
         binding.divider6.show()
         binding.projectContributorsRecycler.show()
 
@@ -275,10 +333,14 @@ class ProjectFragment: Fragment() {
         viewModel.getProjectContributors(7, project) {
             if (it.isSuccessful) {
                 if (!it.result.isEmpty) {
+                    binding.contributorsHeaderLayout.show()
                     val contributors = it.result.toObjects(User::class.java)
                     userAdapter2.submitList(contributors)
+                } else {
+                    binding.contributorsHeaderLayout.hide()
                 }
             } else {
+                binding.contributorsHeaderLayout.hide()
                 viewModel.setCurrentError(it.exception)
             }
         }
@@ -288,9 +350,7 @@ class ProjectFragment: Fragment() {
     private fun setCommentLayout() {
 
         binding.seeAllComments.setOnClickListener {
-            val bundle = bundleOf("parent" to project, "title" to project.title)
-            viewModel.currentCommentChannelIds.push(project.commentChannel)
-            findNavController().navigate(R.id.action_projectFragment_to_commentsContainerFragment, bundle, slideRightNavOptions())
+            projectClickListener.onProjectCommentClick(project)
         }
 
         viewModel.getCommentChannel(project) {

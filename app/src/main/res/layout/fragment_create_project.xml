@@ -244,7 +244,7 @@
             android:clipToPadding="false"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/divider20"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/linearLayout3">
@@ -256,6 +256,37 @@
                 android:checkable="false"
                 android:text="Add Tag"
                 app:chipIcon="@drawable/ic_round_add_24"
+                app:closeIconEnabled="false" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <View
+            android:id="@+id/divider20"
+            android:layout_width="391dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="8dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toTopOf="@+id/project_links_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/project_tags_container" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/project_links_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider20">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/add_link_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Add Link"
+                app:chipIcon="@drawable/ic_round_add_link_24"
                 app:closeIconEnabled="false" />
         </com.google.android.material.chip.ChipGroup>
 
