@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.home.chat
 
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
@@ -7,11 +8,15 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ProgressBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
+import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -19,6 +24,7 @@ import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -32,6 +38,7 @@ import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 @ExperimentalPagingApi
 class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
@@ -41,6 +48,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+        postponeEnterTransition()
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -98,14 +106,37 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         recyclerView?.setPadding(0, 0, 0, convertDpToPx(64))
 
+        val progressBar = activity?.findViewById<ProgressBar>(R.id.main_progress_bar)
+
         initChatBottom(chatChannelId)
 
         if (viewModel.chatScrollPositions.containsKey(chatChannelId)) {
             val pos = viewModel.chatScrollPositions[chatChannelId] ?: 0
             recyclerView?.doOnLayout {
                 recyclerView?.scrollToPosition(pos)
+                startPostponedEnterTransition()
             }
+        } else {
+            startPostponedEnterTransition()
         }
+
+        pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
+                super.onItemRangeChanged(positionStart, itemCount, payload)
+                if (itemCount != 0) {
+
+                    progressBar?.hide()
+
+                    // hide recyclerview and show info
+                    recyclerView?.show()
+                    noItemsText?.hide()
+                } else {
+                    // hide info and show recyclerview
+                    recyclerView?.hide()
+                    noItemsText?.show()
+                }
+            }
+        })
 
     }
 
@@ -235,6 +266,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             val externalDocumentsDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
 
             if (!images.isNullOrEmpty() || !documents.isNullOrEmpty()) {
+
+                activity?.findViewById<ProgressBar>(R.id.main_progress_bar)?.show()
 
                 val listOfMessages = mutableListOf<Message>()
 

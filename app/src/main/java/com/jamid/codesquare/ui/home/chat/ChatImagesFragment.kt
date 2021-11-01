@@ -8,16 +8,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import com.jamid.codesquare.adapter.recyclerview.GridImagesAdapter
+import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
 import com.jamid.codesquare.databinding.FragmentChatImagesBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
+import kotlinx.coroutines.launch
 import java.io.File
 
 class ChatImagesFragment: Fragment() {
 
     private lateinit var binding: FragmentChatImagesBinding
+    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -31,22 +36,27 @@ class ChatImagesFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val gridAdapter = GridImagesAdapter()
-
         val chatChannelId = arguments?.getString(ARG_CHAT_CHANNEL_ID) ?: return
+        setMediaRecyclerAndData(chatChannelId)
+
+    }
+
+    private fun setMediaRecyclerAndData(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch {
+        val gridAdapter = GridImageMessagesAdapter()
 
         binding.chatImagesRecycler.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = gridAdapter
         }
+        val imageMessages = viewModel.getImageMessages(chatChannelId)
 
-        val images = getImages(chatChannelId)
-        if (images.isNotEmpty()) {
+        if (imageMessages.isNotEmpty()) {
             binding.noImagesText.hide()
-            gridAdapter.submitList(images)
+            gridAdapter.submitList(imageMessages)
         } else {
             binding.noImagesText.show()
         }
+
 
     }
 

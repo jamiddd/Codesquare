@@ -88,15 +88,10 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
     }
 
-    open fun onItemsLoaded(positionStart: Int, itemCount: Int) {
-
-    }
-
     open fun addLoadListener(recyclerView: RecyclerView, infoText: TextView? = null, progressBar: ProgressBar? = null, refresher: SwipeRefreshLayout? = null) {
         pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
                 super.onItemRangeChanged(positionStart, itemCount, payload)
-                onItemsLoaded(positionStart, itemCount)
                 if (itemCount != 0) {
                     // hide recyclerview and show info
                     recyclerView.show()

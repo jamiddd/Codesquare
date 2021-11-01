@@ -1,18 +1,13 @@
 package com.jamid.codesquare.ui
 
 import android.graphics.Typeface
-import android.os.Bundle
 import android.os.Parcelable
 import android.text.SpannableString
 import android.text.style.StyleSpan
-import android.util.Log
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -26,12 +21,10 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.CommentBottomLayoutBinding
 import com.jamid.codesquare.databinding.CommentTopLayoutBinding
-import com.jamid.codesquare.listeners.CommentClickListener
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.listeners.CommentListener
 
 @ExperimentalPagingApi
-class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), CommentClickListener {
+class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), CommentListener {
 
     private var project: Project? = null
     private var comment: Comment? = null
@@ -212,6 +205,18 @@ class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), C
 
     override fun onClick(comment: Comment) {
         showDialog(comment)
+    }
+
+    override fun onCommentDelete(comment: Comment) {
+        viewModel.deleteComment(comment)
+    }
+
+    override fun onCommentUpdate(comment: Comment) {
+        viewModel.updateComment(comment)
+    }
+
+    override fun onNoUserFound(userId: String) {
+        viewModel.deleteUserById(userId)
     }
 
     @ExperimentalPagingApi

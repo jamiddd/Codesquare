@@ -18,4 +18,7 @@ abstract class CommentDao: BaseDao<Comment>() {
     @Query("DELETE FROM comments")
     abstract suspend fun clearTable()
 
+    @Query("DELETE FROM comments WHERE commentId = :commentId")
+    abstract suspend fun deleteCommentById(commentId: String)
+
 }

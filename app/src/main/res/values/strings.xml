@@ -36,5 +36,6 @@
         issues such as privacy concerns, tax avoidance, censorship, search neutrality, antitrust and abuse
         of its monopoly position.
     </string>
+    <string name="generic_image_desc">container for full screen image</string>
 
 </resources>

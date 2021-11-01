@@ -14,7 +14,9 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
+import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
@@ -47,11 +49,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     fun bind(message: Message?) {
         if (message != null) {
 
-            Log.d(TAG, message.content)
-
             val isCurrentUserMessage = message.senderId == currentUserId
+            ViewCompat.setTransitionName(view, message.content)
 
             if (isCurrentUserMessage) {
+
                 when (viewType) {
                     msg_at_start_alt -> {
                         messageContentRight.text = message.content
@@ -62,16 +64,20 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageContentRight.hide()
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
+                            rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
                             onMediaImageMessageLoaded(view1, message)
                         }
                     }
                     msg_at_start_alt_doc -> {
                         messageContentRight.hide()
-                        val view1 = documentStubRight.inflate()
-                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
-                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+                        if (documentStubRight != null && documentStubRight.parent != null) {
+                            val view1 = documentStubRight.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
 
-                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        }
+
                     }
                     msg_at_middle_alt -> {
                         messageContentRight.text = message.content
@@ -81,19 +87,23 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     }
                     msg_at_middle_alt_image -> {
                         messageContentRight.hide()
-                        messageContentRight.hide()
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
+                            rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
                             onMediaImageMessageLoaded(view1, message)
                         }
                     }
                     msg_at_middle_alt_doc -> {
                         messageContentRight.hide()
-                        val view1 = documentStubRight.inflate()
-                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
-                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
 
-                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        if (documentStubRight != null && documentStubRight.parent != null) {
+                            val view1 = documentStubRight.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        }
+
                     }
                     msg_at_end_alt -> {
                         messageMetaRight.hide()
@@ -108,11 +118,13 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     }
                     msg_at_end_alt_doc -> {
                         messageContentRight.hide()
-                        val view1 = documentStubRight.inflate()
-                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
-                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+                        if (documentStubRight != null && documentStubRight.parent != null) {
+                            val view1 = documentStubRight.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
 
-                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        }
                     }
                     msg_single_alt -> {
                         messageContentRight.text = message.content
@@ -127,11 +139,14 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     }
                     msg_single_alt_doc -> {
                         messageContentRight.hide()
-                        val view1 = documentStubRight.inflate()
-                        val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
-                        messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
 
-                        onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        if (documentStubRight != null && documentStubRight.parent != null) {
+                            val view1 = documentStubRight.inflate()
+                            val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
+                            messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
+
+                            onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
+                        }
                     }
                 }
 
@@ -146,7 +161,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 }
 
             } else {
-
                 when (viewType) {
                     msg_at_start -> {
                         messageContentLeft.text = message.content
@@ -290,10 +304,22 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             val destination = File(imagesDir, message.chatChannelId)
             val file = File(destination, name)
             val uri = Uri.fromFile(file)
-            imageView.setImageURI(uri.toString())
+
+            if (message.metadata!!.ext == ".webp") {
+                Log.d(TAG, "Yes it is webp")
+                val controller = Fresco.newDraweeControllerBuilder()
+                    .setUri(uri)
+                    .setAutoPlayAnimations(true)
+                    .build()
+
+                imageView.controller = controller
+            } else {
+                Log.d(TAG, "No it is not webp")
+                imageView.setImageURI(uri.toString())
+            }
 
             parentView.setOnClickListener {
-                messageListener.onImageClick(message)
+                messageListener.onImageClick(view, message, layoutPosition, message.content)
             }
 
         } else {
@@ -306,10 +332,23 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     val destination = File(imagesDir, message.chatChannelId)
                     val file = File(destination, name)
                     val uri = Uri.fromFile(file)
-                    imageView.setImageURI(uri.toString())
+
+                    if (message.metadata!!.ext == ".webp") {
+                        Log.d(TAG, "Yes it is webp")
+                        val controller = Fresco.newDraweeControllerBuilder()
+                            .setUri(uri)
+                            .setAutoPlayAnimations(true)
+                            .build()
+
+                        imageView.controller = controller
+                    } else {
+                        Log.d(TAG, "No it is not webp")
+                        imageView.setImageURI(uri.toString())
+                    }
+
 
                     imageView.setOnClickListener {
-                        messageListener.onImageClick(newMessage)
+                        messageListener.onImageClick(view, newMessage, layoutPosition, message.content)
                     }
                 } else {
                     view.context.toast("Something went wrong while downloading media.")
@@ -359,7 +398,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         binding.documentDownloadProgress.hide()
                         binding.documentDownloadBtn.show()
 
-                        view.context.toast("Something went wrong while downloading media.")
+                        view.context.toast("Something went wrong while downloading media. Try again.")
                     }
                 }
             }

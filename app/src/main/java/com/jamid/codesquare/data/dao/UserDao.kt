@@ -20,4 +20,7 @@ abstract class UserDao: BaseDao<User>() {
     @Query("SELECT * FROM users WHERE chatChannels LIKE :chatChannel ORDER BY name ASC")
     abstract suspend fun getChannelContributors(chatChannel: String): List<User>?
 
+    @Query("DELETE FROM users WHERE id = :userId")
+    abstract suspend fun deleteUserById(userId: String)
+
 }

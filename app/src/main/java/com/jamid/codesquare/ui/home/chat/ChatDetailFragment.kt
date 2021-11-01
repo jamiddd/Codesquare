@@ -10,11 +10,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.jamid.codesquare.adapter.recyclerview.GridImagesAdapter
+import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
 import kotlinx.coroutines.launch
 import android.os.Environment
@@ -63,16 +61,8 @@ class ChatDetailFragment: Fragment() {
                 binding.chatNoMediaText.hide()
             }
 
-            val gridAdapter = GridImagesAdapter()
 
-            binding.chatMediaRecycler.apply {
-                layoutManager = GridLayoutManager(requireContext(), 3)
-                adapter = gridAdapter
-            }
-
-            val adjustedImages = getImages(chatChannel)
-
-            gridAdapter.submitList(adjustedImages)
+            setMediaRecyclerAndData(chatChannel)
 
             userAdapter = UserAdapter2(channel?.administrators.orEmpty())
             userAdapter.isGrid = true
@@ -113,6 +103,19 @@ class ChatDetailFragment: Fragment() {
 
     }
 
+    private fun setMediaRecyclerAndData(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch {
+        val gridAdapter = GridImageMessagesAdapter()
+
+        binding.chatMediaRecycler.apply {
+            layoutManager = GridLayoutManager(requireContext(), 3)
+            adapter = gridAdapter
+        }
+        val imageMessages = viewModel.getImageMessages(chatChannelId, 6)
+
+        gridAdapter.submitList(imageMessages)
+
+    }
+
     private fun adjustImages(messages: List<Message>): List<String> {
         val diff = messages.size % 3
         return if (diff == 0) {
@@ -126,6 +129,9 @@ class ChatDetailFragment: Fragment() {
         }
     }
 
+    /*
+    * @Deprecated
+    * */
     private fun getImages(chatChannelId: String): List<String> {
         val images = mutableListOf<String>()
         val externalImagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)

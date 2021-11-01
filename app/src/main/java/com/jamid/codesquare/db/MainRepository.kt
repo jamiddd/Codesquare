@@ -1,5 +1,6 @@
 package com.jamid.codesquare.db
 
+import android.media.Image
 import android.util.Log
 import androidx.lifecycle.LiveData
 import com.google.firebase.auth.ktx.auth
@@ -410,6 +411,23 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun deleteProject(project: Project) {
         projectDao.deleteProjectById(project.id)
+    }
+
+    suspend fun deleteComment(comment: Comment) {
+        commentDao.deleteCommentById(comment.commentId)
+    }
+
+    suspend fun deleteUserById(userId: String) {
+        userDao.deleteUserById(userId)
+    }
+
+    suspend fun getImageMessages(chatChannelId: String, limit: Int = 0): List<Message> {
+        return if (limit != 0) {
+            val list = messageDao.getMessages(chatChannelId, image).orEmpty()
+            list.take(minOf(limit, list.size))
+        } else {
+            messageDao.getMessages(chatChannelId, image).orEmpty()
+        }
     }
 
     companion object {

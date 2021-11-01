@@ -844,4 +844,23 @@ object FireUtility {
 
     }
 
+    fun getOtherUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        val ref = Firebase.firestore.collection("users").document(userId)
+        ref.get().addOnCompleteListener(onComplete)
+    }
+
+    fun deleteUser(userId: String, onComplete: (task: Task<Void>) -> Unit) {
+        val ref = Firebase.firestore.collection("users").document(userId)
+        ref.delete().addOnCompleteListener(onComplete)
+    }
+
+    fun deleteComment(commentChannelId: String, commentId: String, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("commentChannels")
+            .document(commentChannelId)
+            .collection("comments")
+            .document(commentId)
+            .delete()
+            .addOnCompleteListener(onComplete)
+    }
+
 }

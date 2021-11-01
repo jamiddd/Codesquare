@@ -162,6 +162,9 @@
         <action
             android:id="@+id/action_chatFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_chatFragment_to_imageViewFragment"
+            app:destination="@id/imageViewFragment" />
 
     </fragment>
     <fragment
@@ -180,13 +183,20 @@
         <action
             android:id="@+id/action_chatDetailFragment_to_chatMediaFragment"
             app:destination="@id/chatMediaFragment" />
+        <action
+            android:id="@+id/action_chatDetailFragment_to_imageViewFragment"
+            app:destination="@id/imageViewFragment" />
 
     </fragment>
     <fragment
         android:id="@+id/chatMediaFragment"
         android:name="com.jamid.codesquare.ui.home.chat.ChatMediaFragment"
         android:label="Media"
-        tools:layout="@layout/fragment_chat_media" />
+        tools:layout="@layout/fragment_chat_media" >
+        <action
+            android:id="@+id/action_chatMediaFragment_to_imageViewFragment"
+            app:destination="@id/imageViewFragment" />
+    </fragment>
     <fragment
         android:id="@+id/projectContributorsFragment"
         android:name="com.jamid.codesquare.ui.ProjectContributorsFragment"
@@ -205,5 +215,15 @@
             android:name="title"
             app:argType="string"
             android:defaultValue="Tag" />
+    </fragment>
+    <fragment
+        android:id="@+id/imageViewFragment"
+        android:name="com.jamid.codesquare.ui.ImageViewFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_image_view">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="" />
     </fragment>
 </navigation>

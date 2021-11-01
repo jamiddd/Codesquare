@@ -16,7 +16,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/round_background.xml" value="0.26805555555555555" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/save_selector.xml" value="0.23515981735159816" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/tab_indicator.xml" value="0.23515981735159816" />
-        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/activity_main.xml" value="0.2942477876106195" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/activity_main.xml" value="0.67" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_balloon_left.xml" value="0.6" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_balloon_right.xml" value="0.17222222222222222" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_bottom_layout.xml" value="0.25" />
@@ -41,6 +41,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_edit_profile.xml" value="0.33" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_feed.xml" value="0.264" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_home.xml" value="0.29381443298969073" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_image_view.xml" value="0.2727272727272727" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_location.xml" value="0.34629629629629627" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_login.xml" value="0.264" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_pager.xml" value="0.264" />

@@ -315,7 +315,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 config = PagingConfig(pageSize = 20),
                 remoteMediator = ProjectRemoteMediator(query, repo, true)
             ) {
-                repo.projectDao.getTagProjects(tag)
+                repo.projectDao.getTagProjects("%$tag%")
             }.flow.cachedIn(viewModelScope)
         } else {
             Pager(
@@ -797,6 +797,22 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             existingProject.sources = links
             setCurrentProject(existingProject)
         }
+    }
+
+    fun deleteComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteComment(comment)
+    }
+
+    fun updateComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertComment(comment)
+    }
+
+    fun deleteUserById(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteUserById(userId)
+    }
+
+    suspend fun getImageMessages(chatChannelId: String, limit: Int = 0): List<Message> {
+        return repo.getImageMessages(chatChannelId, limit)
     }
 
     companion object {

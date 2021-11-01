@@ -11,12 +11,12 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
-import androidx.core.view.isVisible
-import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
@@ -24,6 +24,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -37,11 +38,10 @@ import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentClickListener, ChatChannelClickListener, MessageListener {
+class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
@@ -300,18 +300,36 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                    binding.mainAppbar.slideReset()
+
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    binding.navHostFragment.layoutParams = params
+
                 }
                 R.id.chatDetailFragment -> {
                     userInfoLayout?.hide()
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+
+                    binding.mainAppbar.slideReset()
+
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    binding.navHostFragment.layoutParams = params
                 }
                 R.id.chatMediaFragment -> {
                     userInfoLayout?.hide()
                     binding.mainTabLayout.show()
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+
+                    binding.mainAppbar.slideReset()
+
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    binding.navHostFragment.layoutParams = params
                 }
                 R.id.projectContributorsFragment -> {
                     userInfoLayout?.hide()
@@ -324,6 +342,17 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
                     binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                }
+                R.id.imageViewFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    binding.navHostFragment.layoutParams = params
+
                 }
             }
         }
@@ -655,6 +684,18 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         navController.navigate(R.id.action_commentsFragment_self, bundle)
     }
 
+    override fun onCommentDelete(comment: Comment) {
+        viewModel.deleteComment(comment)
+    }
+
+    override fun onCommentUpdate(comment: Comment) {
+        viewModel.updateComment(comment)
+    }
+
+    override fun onNoUserFound(userId: String) {
+        viewModel.deleteUserById(userId)
+    }
+
     override fun onChannelClick(chatChannel: ChatChannel) {
         val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
         viewModel.currentChatChannel = chatChannel.chatChannelId
@@ -681,8 +722,28 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         openFile(file) 
     }
 
-    override fun onImageClick(message: Message) {
-        toast("Clicked an image")
+    override fun onImageClick(view: View, message: Message, pos: Int, id: String) {
+        viewModel.chatScrollPositions[message.chatChannelId] = pos
+
+        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val name = message.content + message.metadata!!.ext
+        val destination = File(imagesDir, message.chatChannelId)
+        val file = File(destination, name)
+        val uri = Uri.fromFile(file)
+        val bundle = bundleOf("fullscreenImage" to uri.toString(), "title" to message.sender.name, "transitionName" to id, "ext" to message.metadata!!.ext)
+        val extras = FragmentNavigatorExtras(view to id)
+
+        when (navController.currentDestination?.id) {
+            R.id.chatFragment -> {
+                navController.navigate(R.id.action_chatFragment_to_imageViewFragment, bundle, null, extras)
+            }
+            R.id.chatDetailFragment -> {
+                navController.navigate(R.id.action_chatDetailFragment_to_imageViewFragment, bundle, null, extras)
+            }
+            R.id.chatMediaFragment -> {
+                navController.navigate(R.id.action_chatMediaFragment_to_imageViewFragment, bundle, null, extras)
+            }
+        }
     }
 
     private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit){
@@ -695,16 +756,30 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             try {
                 if (file.createNewFile()) {
                     FireUtility.downloadMedia(file, message.content, message) {
+                        onComplete(it, message)
                         if (it.isSuccessful) {
-                            onComplete(it, message)
                             message.isDownloaded = true
                             viewModel.updateMessage(message)
                         } else {
+                            file.delete()
                             toast("File was created but something went wrong while downloading")
                             viewModel.setCurrentError(it.exception)
                         }
                     }
                 } else {
+                    if (file.exists()) {
+                        FireUtility.downloadMedia(file, message.content, message) {
+                            onComplete(it, message)
+                            if (it.isSuccessful) {
+                                message.isDownloaded = true
+                                viewModel.updateMessage(message)
+                            } else {
+                                file.delete()
+                                toast("File was created but something went wrong while downloading")
+                                viewModel.setCurrentError(it.exception)
+                            }
+                        }
+                    }
                     Log.d(TAG, "Probably file already exists. Or some other problem for which we are not being able to ")
                     toast("Something went wrong")
                 }
