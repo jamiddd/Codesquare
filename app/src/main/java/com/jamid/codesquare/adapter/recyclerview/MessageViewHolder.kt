@@ -9,6 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewStub
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -26,7 +27,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MessageViewHolder(val view: View, private val currentUserId: String, private val viewType: Int): RecyclerView.ViewHolder(view) {
+class MessageViewHolder(val view: View, private val currentUserId: String, private val contributorsSize: Int, private val viewType: Int): RecyclerView.ViewHolder(view) {
 
     private val messageListener = view.context as MessageListener
 
@@ -65,7 +66,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
                             rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
-                            onMediaImageMessageLoaded(view1, message)
+                            onMediaImageMessageLoaded(view1, message, false)
                         }
                     }
                     msg_at_start_alt_doc -> {
@@ -90,7 +91,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
                             rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
-                            onMediaImageMessageLoaded(view1, message)
+                            onMediaImageMessageLoaded(view1, message, false)
                         }
                     }
                     msg_at_middle_alt_doc -> {
@@ -113,7 +114,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageContentRight.hide()
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
-                            onMediaImageMessageLoaded(view1, message)
+                            rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
+                            onMediaImageMessageLoaded(view1, message, false)
                         }
                     }
                     msg_at_end_alt_doc -> {
@@ -134,7 +136,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         if (imageStubRight != null && imageStubRight.parent != null) {
                             val view1 = imageStubRight.inflate() as ViewGroup
                             view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginRight = convertDpToPx(7, view.context))
-                            onMediaImageMessageLoaded(view1, message)
+                            onMediaImageMessageLoaded(view1, message, false)
                         }
                     }
                     msg_single_alt_doc -> {
@@ -153,11 +155,27 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 val oneHour = (60 * 60 * 1000).toLong()
                 val diff = System.currentTimeMillis() - oneHour
 
+                val suffix = if (message.readList.size == contributorsSize - 1) {
+                    " • Read"
+                } else {
+                    when (message.readList.size) {
+                        0 -> {
+                            ""
+                        }
+                        1 -> {
+                            " • Read by ${message.readList.size} person"
+                        }
+                        else -> {
+                            " • Read by ${message.readList.size} people"
+                        }
+                    }
+                }
+
                 if (message.createdAt > diff) {
-                    val timeText = SimpleDateFormat("hh:mm a", Locale.UK).format(message.createdAt)
+                    val timeText = SimpleDateFormat("hh:mm a", Locale.UK).format(message.createdAt) + suffix
                     messageMetaRight.text = timeText
                 } else {
-                    messageMetaRight.text = getTextForTime(message.createdAt)
+                    messageMetaRight.text = getTextForTime(message.createdAt) + suffix
                 }
 
             } else {
@@ -294,9 +312,15 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
     }
 
-    private fun onMediaImageMessageLoaded(parentView: ViewGroup, message: Message) {
+    private fun onMediaImageMessageLoaded(parentView: ViewGroup, message: Message, isLeft: Boolean = true) {
         val progress = parentView.findViewById<ProgressBar>(R.id.message_img_progress)
         val imageView = parentView.findViewById<SimpleDraweeView>(R.id.message_image)
+
+        val forwardBtn: Button = if (isLeft) {
+            view.findViewById(R.id.forward_btn)
+        } else {
+            view.findViewById(R.id.forward_btn_alt)
+        }
 
         if (message.isDownloaded) {
             progress.hide()
@@ -305,8 +329,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             val file = File(destination, name)
             val uri = Uri.fromFile(file)
 
+            forwardBtn.show()
+
             if (message.metadata!!.ext == ".webp") {
-                Log.d(TAG, "Yes it is webp")
                 val controller = Fresco.newDraweeControllerBuilder()
                     .setUri(uri)
                     .setAutoPlayAnimations(true)
@@ -314,7 +339,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                 imageView.controller = controller
             } else {
-                Log.d(TAG, "No it is not webp")
                 imageView.setImageURI(uri.toString())
             }
 
@@ -322,19 +346,25 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 messageListener.onImageClick(view, message, layoutPosition, message.content)
             }
 
+            forwardBtn.setOnClickListener {
+                messageListener.onForwardClick(view, message)
+            }
+
+
         } else {
             progress.show()
+            forwardBtn.hide()
 
             messageListener.onStartDownload(message) { task, newMessage ->
                 if (task.isSuccessful) {
                     progress.hide()
+                    forwardBtn.show()
                     val name = message.content + message.metadata!!.ext
                     val destination = File(imagesDir, message.chatChannelId)
                     val file = File(destination, name)
                     val uri = Uri.fromFile(file)
 
                     if (message.metadata!!.ext == ".webp") {
-                        Log.d(TAG, "Yes it is webp")
                         val controller = Fresco.newDraweeControllerBuilder()
                             .setUri(uri)
                             .setAutoPlayAnimations(true)
@@ -342,10 +372,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                         imageView.controller = controller
                     } else {
-                        Log.d(TAG, "No it is not webp")
                         imageView.setImageURI(uri.toString())
                     }
 
+                    forwardBtn.setOnClickListener {
+                        messageListener.onForwardClick(view, message)
+                    }
 
                     imageView.setOnClickListener {
                         messageListener.onImageClick(view, newMessage, layoutPosition, message.content)
@@ -364,6 +396,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             binding.documentSize.text = getTextForSizeInBytes(metaData.size)
         }
 
+        val forwardBtn: Button = if (isLeft) {
+            view.findViewById(R.id.forward_btn)
+        } else {
+            view.findViewById(R.id.forward_btn_alt)
+        }
+
         if (isLeft) {
             binding.documentIcon.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(view.context, R.color.white))
             binding.documentName.setTextColor(ContextCompat.getColor(view.context, R.color.white))
@@ -372,13 +410,24 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
 
         if (message.isDownloaded) {
+
+            forwardBtn.show()
+
             binding.documentDownloadBtn.hide()
             binding.documentDownloadProgress.hide()
 
             binding.root.setOnClickListener {
                 messageListener.onDocumentClick(message)
             }
+
+            forwardBtn.setOnClickListener {
+                messageListener.onForwardClick(view, message)
+            }
+
         } else {
+
+            forwardBtn.hide()
+
             binding.documentDownloadBtn.show()
             binding.documentDownloadProgress.hide()
 
@@ -388,8 +437,15 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                 messageListener.onStartDownload(message) { task, newMessage ->
                     if (task.isSuccessful) {
+
+                        forwardBtn.show()
+
                         binding.documentDownloadProgress.hide()
                         binding.documentDownloadBtn.hide()
+
+                        forwardBtn.setOnClickListener {
+                            messageListener.onForwardClick(view, message)
+                        }
 
                         binding.root.setOnClickListener {
                             messageListener.onDocumentClick(newMessage)
@@ -409,8 +465,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
         private const val TAG = "MessageViewHolder"
 
-        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, viewType: Int): MessageViewHolder {
-            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, viewType)
+        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, contributorsSize: Int, viewType: Int): MessageViewHolder {
+            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, contributorsSize, viewType)
         }
     }
 

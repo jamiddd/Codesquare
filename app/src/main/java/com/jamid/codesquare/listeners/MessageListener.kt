@@ -11,4 +11,5 @@ interface MessageListener {
     fun onImageClick(view: View, message: Message, pos: Int, id: String)
     fun onMessageRead(message: Message)
     fun onUserClick(message: Message)
+    fun onForwardClick(view: View, message: Message)
 }

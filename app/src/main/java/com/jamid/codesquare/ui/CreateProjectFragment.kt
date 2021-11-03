@@ -308,7 +308,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 findNavController().navigateUp()
                 viewModel.setCurrentProject(null)
             } else {
-                val dialog = MaterialAlertDialogBuilder(activity)
+                MaterialAlertDialogBuilder(activity)
                     .setTitle("Save project ...")
                     .setMessage("Save the content of this unfinished project?")
                     .setPositiveButton("Save") { _, _ ->
@@ -318,12 +318,6 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         findNavController().navigateUp()
                         a.dismiss()
                     }.show()
-
-                dialog.setOnDismissListener {
-                    viewModel.setCurrentProject(null)
-                    findNavController().navigateUp()
-                }
-
             }
         }
 

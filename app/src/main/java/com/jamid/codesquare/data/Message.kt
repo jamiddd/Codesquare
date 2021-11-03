@@ -21,7 +21,8 @@ data class Message(
     var senderId: String,
     @Embedded(prefix = "meta_")
     var metadata: Metadata?,
-    var read: Boolean,
+    var deliveryList: List<String>,
+    var readList: List<String>,
     val createdAt: Long,
     @Embedded(prefix = "sender_")
     @Exclude @set: Exclude @get: Exclude
@@ -31,6 +32,5 @@ data class Message(
     @Exclude @set: Exclude @get: Exclude
     var isCurrentUserMessage: Boolean
 ): Parcelable {
-    constructor(): this("", "", "", "", "", Metadata(), false, System.currentTimeMillis(), User(), false, false)
-
+    constructor(): this("", "", "", "", "", Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), User(), false, false)
 }

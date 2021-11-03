@@ -251,6 +251,33 @@ fun getTextForTime(time: Long): String {
     return DateUtils.getRelativeTimeSpanString(time, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS).toString()
 }
 
+fun <T: Any> List<T>.addItemToList(item: T): List<T> {
+    val newList = this.toMutableList()
+    newList.add(item)
+    return newList
+}
+
+fun <T: Any> List<T>.removeItemFromList(item: T): List<T> {
+    return if (this.isEmpty()) {
+        emptyList()
+    } else {
+        val newList = this.toMutableList()
+        newList.remove(item)
+        newList
+    }
+}
+
+fun <T: Any> List<T>.removeItemFromList(pos: Int): List<T> {
+    return if (this.isEmpty()) {
+        emptyList()
+    } else {
+        val newList = this.toMutableList()
+        newList.removeAt(pos)
+        newList
+    }
+}
+
+
 fun View.slideReset() {
     val animator = ObjectAnimator.ofFloat(this, View.TRANSLATION_Y, 0f)
     animator.duration = 300

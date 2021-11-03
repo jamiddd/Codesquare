@@ -3,6 +3,7 @@ package com.jamid.codesquare
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
+import androidx.lifecycle.viewModelScope
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -15,6 +16,8 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.google.firebase.storage.ktx.storage
 import com.jamid.codesquare.data.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 
@@ -191,6 +194,7 @@ object FireUtility {
     private suspend fun uploadItems(locationPath: String, names: List<String>, items: List<Uri>): List<Uri> {
         val listOfReferences = mutableListOf<StorageReference>()
         val listOfUploadTask = mutableListOf<UploadTask>()
+
         for (i in items.indices) {
             val ref = Firebase.storage.reference.child("$locationPath/${names[i]}")
             listOfReferences.add(ref)
@@ -238,6 +242,23 @@ object FireUtility {
     fun updateUser(userId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
         val ref = Firebase.firestore.collection("users").document(userId)
         updateDocument(ref, changes, onComplete)
+    }
+
+    fun updateUser2(currentUser: User, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        val db = Firebase.firestore
+        val batch = db.batch()
+
+        // updating user
+        val currentUserRef = db.collection("users").document(currentUser.id)
+        batch.update(currentUserRef, changes)
+
+        // updating projects where the creator is current user
+        for (project in currentUser.projects) {
+            val ref = db.collection("projects").document(project)
+            batch.update(ref, "creator", currentUser.minify())
+        }
+
+        batch.commit().addOnCompleteListener(onComplete)
     }
 
     suspend fun updateUser(userId: String, changes: Map<String, Any?>): Result<Map<String, Any?>> {
@@ -659,8 +680,15 @@ object FireUtility {
         }
     }
 
-    suspend fun getChannelUsers(chatChannels: List<String>): Result<List<User>> {
+    fun getChannelUsers(channel: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        val db = Firebase.firestore
+        val ref = db.collection("users")
+            .whereArrayContains("chatChannels", channel)
 
+        ref.get().addOnCompleteListener(onComplete)
+    }
+
+    suspend fun getChannelUsers(chatChannels: List<String>): Result<List<User>> {
         return try {
             val listOfReferences = mutableListOf<Query>()
             val users = mutableListOf<User>()
@@ -696,7 +724,7 @@ object FireUtility {
             val ref = chatChannelRef.collection("messages").document()
             val messageId = ref.id
 
-            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, true, System.currentTimeMillis(), currentUser, false, isCurrentUserMessage = true)
+            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, emptyList(), emptyList(), System.currentTimeMillis(), currentUser, false, isCurrentUserMessage = true)
 
             batch.set(ref, message)
 
@@ -765,7 +793,7 @@ object FireUtility {
                 batch.set(ref, message)
             }
 
-            val chatChannelChanges = mapOf("lastMessage" to updatedList.last())
+            val chatChannelChanges = mapOf("lastMessage" to updatedList.last(), "updatedAt" to System.currentTimeMillis())
 
             batch.update(chatChannelRef, chatChannelChanges)
 
@@ -861,6 +889,140 @@ object FireUtility {
             .document(commentId)
             .delete()
             .addOnCompleteListener(onComplete)
+    }
+
+    /*suspend fun sendMediaForwards(uri: Uri, currentUser: User, message: Message, channels: List<ChatChannel>): Exception? {
+        return try {
+
+            for (channel in channels) {
+                val newMessage = Message(randomId(), channel.chatChannelId, message.type, randomId(), currentUser.id, message.metadata, emptyList(), emptyList(), System.currentTimeMillis(), currentUser, false, true)
+                when (val result = sendMessagesSimultaneously(channel.chatChannelId, listOf(newMessage))) {
+                    is Result.Error -> throw result.exception
+                    is Result.Success -> {}
+                }
+            }
+            null
+        } catch (e: Exception) {
+            e
+        }
+
+    }*/
+
+    suspend fun sendSingleMediaMessageToMultipleChannels(
+        uri: Uri,
+        currentUser: User,
+        message: Message,
+        channels: List<ChatChannel>
+    ): Result<List<Message>> {
+        val db = Firebase.firestore
+
+        val now = System.currentTimeMillis()
+
+        return try {
+            val batch = db.batch()
+
+            val messages = mutableListOf<Message>()
+
+            for (channel in channels) {
+                val newMessage = Message(randomId(), channel.chatChannelId, message.type, randomId(), currentUser.id, message.metadata, emptyList(), emptyList(), now, currentUser,
+                    isDownloaded = false,
+                    isCurrentUserMessage = true
+                )
+
+                val chatChannelRef = db.collection("chatChannels").document(channel.chatChannelId)
+
+                val downloadedContents = if (newMessage.type == image) {
+                    uploadItems("${channel.chatChannelId}/images", listOf(newMessage.content), listOf(uri)).map { it.toString() }
+                } else {
+                    uploadItems("${channel.chatChannelId}/documents", listOf(newMessage.content), listOf(uri)).map { it.toString() }
+                }
+
+                newMessage.metadata?.url = downloadedContents.first()
+
+                val ref = chatChannelRef.collection("messages").document()
+                newMessage.messageId = ref.id
+
+                messages.add(newMessage)
+
+                batch.set(ref, newMessage)
+                val changes = mapOf(
+                    "lastMessage" to newMessage,
+                    "updatedAt" to now
+                )
+
+                batch.update(chatChannelRef, changes)
+            }
+
+            batch.commit().await()
+            Result.Success(messages)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun updateDeliveryListOfMessages(chatChannel: ChatChannel, currentUserId: String, messages: List<Message>, onComplete: (task: Task<Void>) -> Unit){
+        val batch = Firebase.firestore.batch()
+
+        for (message in messages) {
+            if (message.senderId != currentUserId) {
+                val messageRef = Firebase.firestore.collection("chatChannels")
+                    .document(message.chatChannelId)
+                    .collection("messages")
+                    .document(message.messageId)
+
+                val changes = mapOf("deliveryList" to FieldValue.arrayUnion(currentUserId))
+                val newList = message.deliveryList.addItemToList(currentUserId)
+                message.deliveryList = newList
+
+                batch.update(messageRef, changes)
+
+                if (chatChannel.lastMessage?.messageId == message.messageId) {
+                    batch.update(Firebase.firestore.collection("chatChannels")
+                        .document(chatChannel.chatChannelId),
+                        mapOf(
+                            "lastMessage" to message,
+                            "updatedAt" to System.currentTimeMillis()
+                        )
+                    )
+                }
+            }
+        }
+
+        batch.commit().addOnCompleteListener(onComplete)
+    }
+
+    fun getAllChatChannels(userId: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        Firebase.firestore.collection("chatChannels")
+            .whereArrayContains("contributors", userId)
+            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+            .get()
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun updateReadList(chatChannel: ChatChannel, currentUser: User, message: Message, onComplete: (task: Task<Void>) -> Unit) {
+        val db = Firebase.firestore
+        val batch = db.batch()
+        val ref = db.collection("chatChannels")
+            .document(message.chatChannelId)
+            .collection("messages")
+            .document(message.messageId)
+
+        val newList = message.readList.addItemToList(currentUser.id)
+        message.readList = newList
+
+        if (chatChannel.lastMessage?.messageId == message.messageId) {
+            batch.update(Firebase.firestore.collection("chatChannels")
+                .document(chatChannel.chatChannelId),
+                    mapOf(
+                        "lastMessage" to message,
+                        "updatedAt" to System.currentTimeMillis()
+                    )
+            )
+        }
+
+        batch.update(ref, mapOf("readList" to FieldValue.arrayUnion(currentUser.id)))
+
+        batch.commit().addOnCompleteListener(onComplete)
     }
 
 }

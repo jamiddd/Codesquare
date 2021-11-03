@@ -19,11 +19,13 @@ import com.google.android.material.transition.MaterialSharedAxis
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder
+import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.FlingListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
+import java.text.SimpleDateFormat
 
 class ImageViewFragment: Fragment(), View.OnClickListener {
 
@@ -53,6 +55,7 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
         val image = arguments?.getString("fullscreenImage") ?: return
         val transitionName = arguments?.getString("transitionName") ?: return
         val ext = arguments?.getString("ext") ?: return
+        val message = arguments?.getParcelable<Message>("message")
 
         ViewCompat.setTransitionName(binding.fullscreenImage, transitionName)
 
@@ -84,19 +87,33 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
             setOnClickListener(this@ImageViewFragment)
         }
 
+        if (message?.metadata != null) {
+            binding.bottomInfoView.show()
+
+            binding.userTimeInfo.text = "Sent by ${message.sender.name} • " + SimpleDateFormat("hh:mm a, dd/MM/yyyy").format(message.createdAt)
+            binding.imageSize.text = getTextForSizeInBytes(message.metadata!!.size)
+        } else {
+            binding.bottomInfoView.hide()
+        }
+
     }
 
     override fun onClick(p0: View?) {
         val appbar = activity?.findViewById<AppBarLayout>(R.id.main_appbar)!!
+
         if (appbar.translationY == 0f) {
             appbar.slideUp(convertDpToPx(100).toFloat())
             binding.fullscreenImage.setBackgroundColor(Color.BLACK)
+
+            binding.bottomInfoView.slideDown(convertDpToPx(150).toFloat())
 
             hideSystemUI()
 
         } else {
             appbar.slideReset()
             binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
+
+            binding.bottomInfoView.slideReset()
 
             showSystemUI()
         }

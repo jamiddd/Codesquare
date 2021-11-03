@@ -1,6 +1,5 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.graphics.Color
 import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
@@ -8,15 +7,12 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
-import androidx.core.view.ViewCompat
 import androidx.core.view.doOnLayout
-import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -24,12 +20,11 @@ import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.transition.platform.MaterialContainerTransform
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.*
+import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Metadata
 import com.jamid.codesquare.databinding.ChatBottomLayoutBinding
@@ -38,12 +33,12 @@ import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.concurrent.TimeUnit
 
 @ExperimentalPagingApi
 class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
     private lateinit var chatChannelId: String
+    private lateinit var chatChannel: ChatChannel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +59,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 val layoutManager = recyclerView?.layoutManager as LinearLayoutManager
                 val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
-                findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title), slideRightNavOptions())
+                findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title, "chatChannel" to chatChannel), slideRightNavOptions())
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -74,7 +69,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        chatChannelId = viewModel.currentChatChannel ?: throw NullPointerException("Chat channel id cannot be null.")
+        chatChannel = arguments?.getParcelable("chatChannel") ?: return
+
+        chatChannelId = chatChannel.chatChannelId
 
         recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 
@@ -93,6 +90,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         getItems {
             viewModel.getPagedMessages(
+                chatChannel,
                 externalImagesDir,
                 externalDocumentsDir,
                 chatChannelId,
@@ -293,7 +291,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                             val ext = getExtensionForMime(contentResolver.getType(img).orEmpty())
                             val metadata = Metadata(size, name.orEmpty(), img.toString(), ext)
 
-                            val message = Message(randomId(), chatChannelId, image, randomId(), currentUser.id, metadata, true, now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
+                            val message = Message(randomId(), chatChannelId, image, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
 
                             listOfMessages.add(message)
 
@@ -327,7 +325,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
                             val metadata = Metadata(size, name.orEmpty(), doc.toString(), ext)
 
-                            val message = Message(randomId(), chatChannelId, document, randomId(), currentUser.id, metadata, true, now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
+                            val message = Message(randomId(), chatChannelId, document, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
                             listOfMessages.add(message)
 
                         } catch (e: Exception) {
@@ -338,7 +336,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
                 // check if there is any text present
                 if (!chatInputLayout.text.isNullOrBlank()) {
-                    val message = Message(randomId(), chatChannelId, text, chatInputLayout.text.toString(), currentUser.id, null, true, now, currentUser, false, isCurrentUserMessage = true)
+                    val message = Message(randomId(), chatChannelId, text, chatInputLayout.text.toString(), currentUser.id, null, emptyList(), emptyList(), now, currentUser, false, isCurrentUserMessage = true)
                     listOfMessages.add(message)
                 }
 
@@ -368,7 +366,12 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
     override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder> {
         val currentUser = viewModel.currentUser.value!!
-        return MessageAdapter2(currentUser.id)
+        val chatChannel = arguments?.getParcelable<ChatChannel>("chatChannel")
+        return if (chatChannel == null) {
+            MessageAdapter2(currentUser.id, 0)
+        } else {
+            MessageAdapter2(currentUser.id, chatChannel.contributors.size)
+        }
     }
 
     override fun onDestroy() {

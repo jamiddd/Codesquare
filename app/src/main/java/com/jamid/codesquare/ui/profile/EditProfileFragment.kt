@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
 import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
@@ -53,6 +54,8 @@ class EditProfileFragment: Fragment() {
 
                 val currentUser = viewModel.currentUser.value!!
 
+                val updatedUser = currentUser.copy()
+
                 loadingDialog = MaterialAlertDialogBuilder(requireContext())
                     .setView(loadingLayout)
                     .setCancelable(false)
@@ -64,28 +67,33 @@ class EditProfileFragment: Fragment() {
 
                 if (currentUser.name != name) {
                     changes["name"] = name
+                    updatedUser.name = name
                 }
 
                 val about = binding.aboutText.editText?.text.toString()
 
                 if (currentUser.about != about) {
                     changes["about"] = about
+                    updatedUser.about = about
                 }
 
                 val tag = binding.tagText.editText?.text.toString()
 
                 if (currentUser.tag != tag) {
                     changes["tag"] = tag
+                    updatedUser.tag = tag
                 }
 
                 val interests = getInterests()
 
                 if (currentUser.interests != interests) {
                     changes["interests"] = interests
+                    updatedUser.interests = interests
                 }
 
                 if (currentUser.photo != profileImage) {
                     changes["photo"] = profileImage
+                    updatedUser.photo = profileImage
                 }
 
                 if (currentUser.username != username) {
@@ -95,8 +103,9 @@ class EditProfileFragment: Fragment() {
                             if (snapshot.isEmpty) {
                                 // no username .. good to go
                                 changes["username"] = username
+                                updatedUser.username = username
 
-                                updateUser(currentUser.id, changes)
+                                updateUser(updatedUser, changes)
                             } else {
                                 binding.usernameText.isErrorEnabled = true
                                 binding.usernameText.error = "Username already exists"
@@ -106,7 +115,7 @@ class EditProfileFragment: Fragment() {
                         }
                     }
                 } else {
-                    updateUser(currentUser.id, changes)
+                    updateUser(updatedUser, changes)
                 }
 
                 true
@@ -115,14 +124,13 @@ class EditProfileFragment: Fragment() {
         }
     }
 
-    private fun updateUser(userId: String, changes: Map<String, Any?>) {
+    private fun updateUser(updatedUser: User, changes: Map<String, Any?>) {
         if (changes.isEmpty()) {
             findNavController().navigateUp()
         } else {
-            viewModel.updateUser(userId, changes) { it1 ->
+            viewModel.updateUser(updatedUser, changes) { it1 ->
                 loadingDialog?.dismiss()
                 if (it1.isSuccessful) {
-                    viewModel.updateUserLocally(changes)
                     toast("Saved changes successfully")
                     viewModel.setCurrentImage(null)
                     findNavController().navigateUp()

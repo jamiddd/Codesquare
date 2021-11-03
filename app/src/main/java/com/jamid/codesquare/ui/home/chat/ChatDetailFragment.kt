@@ -19,6 +19,7 @@ import android.os.Environment
 import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.ChatChannel
 import java.io.File
 
 
@@ -40,12 +41,12 @@ class ChatDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val chatChannel = viewModel.currentChatChannel ?: return
+        val chatChannel = arguments?.getParcelable<ChatChannel>("chatChannel") ?: return
 
         val currentUser = viewModel.currentUser.value!!
 
         viewLifecycleOwner.lifecycleScope.launch {
-            val channel = viewModel.getChatChannel(chatChannel)
+            val channel = viewModel.getLocalChatChannel(chatChannel.chatChannelId)
             if (channel != null) {
                 if (channel.administrators.contains(currentUser.id)) {
                     binding.updateGuidelinesBtn.show()
@@ -54,7 +55,7 @@ class ChatDetailFragment: Fragment() {
                 }
             }
 
-            val messages = viewModel.getLimitedMediaMessages(chatChannel, 3)
+            val messages = viewModel.getLimitedMediaMessages(chatChannel.chatChannelId, 3)
             if (messages.isEmpty()) {
                 binding.chatNoMediaText.show()
             } else {
@@ -62,7 +63,7 @@ class ChatDetailFragment: Fragment() {
             }
 
 
-            setMediaRecyclerAndData(chatChannel)
+            setMediaRecyclerAndData(chatChannel.chatChannelId)
 
             userAdapter = UserAdapter2(channel?.administrators.orEmpty())
             userAdapter.isGrid = true
@@ -75,7 +76,7 @@ class ChatDetailFragment: Fragment() {
             val contributors = viewModel.getLocalChannelContributors("%$chatChannel%")
             userAdapter.submitList(contributors)
 
-            val project = viewModel.getProjectByChatChannel(chatChannel)
+            val project = viewModel.getProjectByChatChannel(chatChannel.chatChannelId)
             if (project != null) {
                 binding.chatProjectImage.setImageURI(project.images.first())
 
@@ -91,7 +92,7 @@ class ChatDetailFragment: Fragment() {
             findNavController().navigate(R.id.action_chatDetailFragment_to_chatMediaFragment, bundle, slideRightNavOptions())
         }
 
-        viewModel.getLiveProjectByChatChannel(chatChannel).observe(viewLifecycleOwner) {
+        viewModel.getLiveProjectByChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) {
             if (it != null) {
                 val guidelines = getFormattedGuidelinesText(it.rules)
                 if (it.rules.isEmpty()) {

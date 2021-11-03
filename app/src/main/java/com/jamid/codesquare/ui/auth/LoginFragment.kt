@@ -155,7 +155,7 @@ class LoginFragment: Fragment() {
                         if (it1.isSuccessful && it1.result.exists()) {
                             val localUser = it1.result.toObject(User::class.java)!!
                             viewModel.insertCurrentUser(localUser)
-                            viewModel.getChannelUsers(localUser.chatChannels)
+//                            viewModel.getChannelUsers(localUser.chatChannels)
                         } else {
                             Firebase.auth.signOut()
                             viewModel.setCurrentError(it.exception)

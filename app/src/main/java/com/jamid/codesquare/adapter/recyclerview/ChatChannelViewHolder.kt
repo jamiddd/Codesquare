@@ -4,27 +4,27 @@ import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.text.style.TypefaceSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.RadioButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.document
-import com.jamid.codesquare.getTextForTime
-import com.jamid.codesquare.image
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
-class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+class ChatChannelViewHolder(val uid: String, val view: View, private val channelListener: ChatChannelClickListener): RecyclerView.ViewHolder(view) {
+
+    var isSelectAvailable = false
 
     private val channelName = view.findViewById<TextView>(R.id.channel_name)
     private val channelLastMessage = view.findViewById<TextView>(R.id.channel_last_message)
     private val channelTime = view.findViewById<TextView>(R.id.channel_time)
     private val channelImg = view.findViewById<SimpleDraweeView>(R.id.channel_img)
-
-    private val chatChannelClickListener = view.context as ChatChannelClickListener
+    private val channelSelectRadioBtn = view.findViewById<RadioButton>(R.id.chat_select_radio_btn)
 
     fun bind(chatChannel: ChatChannel?) {
         if (chatChannel != null) {
@@ -46,14 +46,18 @@ class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         message.content
                     }
                 }
-                val lastMessageText = "${message.sender.name}: $content"
 
-                if (!message.read) {
-                    val sp = SpannableString(lastMessageText)
-                    sp.setSpan(StyleSpan(Typeface.BOLD), 0, lastMessageText.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    channelLastMessage.text = sp
+                if (message.senderId != uid) {
+                    val lastMessageText = "${message.sender.name}: $content"
+                    if (message.readList.contains(uid)) {
+                        channelLastMessage.text = lastMessageText
+                    } else {
+                        val sp = SpannableString(lastMessageText)
+                        sp.setSpan(StyleSpan(Typeface.BOLD), 0, lastMessageText.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+                        channelLastMessage.text = sp
+                    }
                 } else {
-
+                    val lastMessageText = "You: $content"
                     channelLastMessage.text = lastMessageText
                 }
             } else {
@@ -63,7 +67,25 @@ class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             channelTime.text = getTextForTime(chatChannel.updatedAt)
 
             view.setOnClickListener {
-                chatChannelClickListener.onChannelClick(chatChannel)
+                channelListener.onChannelClick(chatChannel)
+                channelSelectRadioBtn.isChecked = !channelSelectRadioBtn.isChecked
+            }
+
+            if (isSelectAvailable) {
+                channelTime.hide()
+                channelLastMessage.hide()
+                channelSelectRadioBtn.show()
+
+                channelSelectRadioBtn.isClickable = false
+
+                channelSelectRadioBtn.setOnCheckedChangeListener { _, b ->
+                    if (b) {
+                        channelListener.onChatChannelSelected(chatChannel)
+                    } else {
+                        channelListener.onChatChannelDeSelected(chatChannel)
+                    }
+                }
+
             }
 
         }
@@ -73,8 +95,10 @@ class ChatChannelViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private const val TAG = "ChatChannelViewHolder"
 
-        fun newInstance(parent: ViewGroup): ChatChannelViewHolder {
-            return ChatChannelViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.chat_channel_item, parent, false))
+        fun newInstance(uid: String, parent: ViewGroup, isSelectAvailable: Boolean, channelListener: ChatChannelClickListener): ChatChannelViewHolder {
+            val vh = ChatChannelViewHolder(uid, LayoutInflater.from(parent.context).inflate(R.layout.chat_channel_item, parent, false), channelListener)
+            vh.isSelectAvailable = isSelectAvailable
+            return vh
         }
     }
 

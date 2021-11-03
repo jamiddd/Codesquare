@@ -38,6 +38,7 @@ import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.*
+import com.jamid.codesquare.ui.home.chat.ForwardFragment
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -220,6 +221,8 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
     }
 
+    var isInitialized = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -357,34 +360,30 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             }
         }
 
-        val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-
         viewModel.currentUser.observe(this) {
             if (it != null) {
-                for (channel in it.chatChannels) {
-                    Firebase.firestore.collection("chatChannels")
-                        .document(channel)
-                        .collection("messages")
-                        .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                        .limit(10)
-                        .addSnapshotListener { value, error ->
-                            if (error != null) {
-                                Log.e(com.jamid.codesquare.ui.home.chat.TAG, error.localizedMessage.orEmpty())
-                                return@addSnapshotListener
-                            }
+                Log.d(TAG, it.toString())
+                if (!isInitialized) {
+                    isInitialized = true
+                    Log.d("MessageChecking", "Got User ")
 
-                            if (value != null) {
-                                val messages = value.toObjects(Message::class.java)
-                                if (externalDocumentsDir != null && externalImagesDir != null)
-                                    viewModel.insertMessages(externalImagesDir, externalDocumentsDir, messages)
+                    // getting all the chat channels first
+                    viewModel.getAllChatChannels(it.id) { it1 ->
+                        if (it1.isSuccessful) {
+                            val chatChannels = it1.result.toObjects(ChatChannel::class.java)
+
+                            Log.d("MessageChecking", "Got channels ${chatChannels.size}")
+
+                            for (channel in chatChannels) {
+                                Log.d("MessageChecking", "Setting up ${channel.projectTitle}")
+                                // getting all the contributors in a chat channel
+                                getChannelData(it, channel)
                             }
+                        } else {
+                            viewModel.setCurrentError(it1.exception)
                         }
-
+                    }
                 }
-
-            } else {
-                Log.d(TAG, "No user.")
             }
         }
 
@@ -399,42 +398,163 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         if (firebaseUser != null) {
 
             // listener for users
-            Firebase.firestore.collection("users").document(firebaseUser.uid)
+            Firebase.firestore.collection("users")
+                .document(firebaseUser.uid)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
                         viewModel.setCurrentError(error)
                     }
 
                     if (value != null && value.exists()) {
-                        val currentUser = value.toObject(User::class.java)
-                        if (currentUser != null) {
-                            viewModel.insertCurrentUser(currentUser)
+
+                        Log.d("MessageChecking", "Got new user")
+
+                        val newUser = value.toObject(User::class.java)
+                        if (newUser != null) {
+
+                            val currentUser = viewModel.currentUser.value
+                            if (currentUser != null) {
+                                // this will look for any recent changes, so as to not download
+                                    // everything, every time there's a change
+                                if (currentUser.chatChannels.size < newUser.chatChannels.size) {
+                                    for (channel in newUser.chatChannels) {
+                                        if (!currentUser.chatChannels.contains(channel)) {
+                                            setUpChatChannel(currentUser, channel)
+                                        }
+                                    }
+                                }
+                            }
+
+                            viewModel.insertCurrentUser(newUser)
                         }
                     }
                 }
+        }
+    }
 
 
-            // chat channels are downloaded as soon as app starts
-            Firebase.firestore.collection("chatChannels")
-                .whereArrayContains("contributors", firebaseUser.uid)
-                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                .limit(10)
-                .addSnapshotListener { value, error ->
+    private fun setUpChatChannel(currentUser: User, chatChannelId: String) {
+        // getting all the chat channels first
+        viewModel.getChatChannel(chatChannelId) { it1 ->
+            if (it1.isSuccessful) {
+                if (it1.result != null && it1.result.exists()) {
+                    val chatChannel = it1.result.toObject(ChatChannel::class.java)!!
+                    getChannelData(currentUser, chatChannel)
+                }
+            } else {
+                viewModel.setCurrentError(it1.exception)
+            }
+        }
+    }
 
-                    if (error != null) {
-                        Log.e(com.jamid.codesquare.ui.home.chat.TAG, error.localizedMessage.orEmpty())
-                        return@addSnapshotListener
+    private fun getChannelData(currentUser: User, chatChannel: ChatChannel) {
+        // getting all the contributors in a chat channel
+        viewModel.getChannelUsers(chatChannel.chatChannelId) { it2 ->
+            if (it2.isSuccessful) {
+                val users = it2.result.toObjects(User::class.java).filter {
+                    it.id != currentUser.id
+                }
+                Log.d(TAG, chatChannel.projectTitle + " " +  users.map { it.name }.toString())
+                viewModel.insertChannelWithContributors(chatChannel, users)
+            } else {
+                viewModel.setCurrentError(it2.exception)
+            }
+        }
+
+        getLatestMessagesBaseOnLastMessage(chatChannel)
+
+        // listening for new messages as soon as activity starts
+        addChannelListener(currentUser, chatChannel)
+    }
+
+    // the criteria for checking time is 24 hour
+    private fun isLastMessageReallyOld(message: Message): Boolean {
+        val now = System.currentTimeMillis()
+        val diff = now - message.createdAt
+        return diff > 12 * 60 * 60 * 1000
+    }
+
+    // the criteria for checking time is 12 hour
+    private fun isLastMessageRelativelyNew(message: Message): Boolean {
+        val now = System.currentTimeMillis()
+        val diff = now - message.createdAt
+        return diff <= 6 * 60 * 60 * 1000
+    }
+
+    private fun getLatestMessagesBaseOnLastMessage(chatChannel: ChatChannel) = lifecycleScope.launch {
+
+        Log.d("MessageChecking", "Getting latest Messages ${chatChannel.projectTitle}")
+
+        val lastMessage = viewModel.getLastMessageForChannel(chatChannel.chatChannelId)
+        if (lastMessage != null) {
+
+            val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
+            // getting limited new messages cause deleting old messages
+            if (isLastMessageReallyOld(lastMessage)) {
+                viewModel.deleteAllMessagesInChannel(chatChannel.chatChannelId)
+
+                // getting 50 new messages
+                viewModel.getLatestMessages(chatChannel.chatChannelId, 50) {
+                    if (it.isSuccessful) {
+                        if (externalImagesDir != null && externalDocumentsDir != null) {
+                            val messages = it.result.toObjects(Message::class.java)
+                            viewModel.insertChannelMessages(chatChannel, externalImagesDir, externalDocumentsDir, messages)
+                        }
+                    } else {
+                        viewModel.setCurrentError(it.exception)
                     }
+                }
+            }
 
-                    if (value != null) {
-                        val channels = value.toObjects(ChatChannel::class.java)
-                        viewModel.insertChatChannels(channels)
-                    }
+            // getting all messages since this message
+            if (isLastMessageRelativelyNew(lastMessage)) {
+                if (externalImagesDir != null && externalDocumentsDir != null) {
+                    viewModel.getLatestMessagesAfter(externalImagesDir, externalDocumentsDir, lastMessage, chatChannel)
+                }
+            }
+        }
+    }
 
+    private fun addChannelListener(currentUser: User, chatChannel: ChatChannel) = lifecycleScope.launch {
+
+        val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
+        Firebase.firestore.collection("chatChannels")
+            .document(chatChannel.chatChannelId)
+            .collection("messages")
+            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+            .limit(chatChannel.contributorsCount)
+            .addSnapshotListener { value, error ->
+                if (error != null) {
+                    Log.e(TAG, error.localizedMessage.orEmpty())
+                    return@addSnapshotListener
                 }
 
+                if (value != null) {
+                    val messages = value.toObjects(Message::class.java)
+                    if (externalDocumentsDir != null && externalImagesDir != null) {
 
-        }
+                        val nonUpdatedMessages = messages.filter { message ->
+                            !message.deliveryList.contains(currentUser.id)
+                        }
+
+                        // update chat channel
+                        // insert the new messages
+                        viewModel.insertChatChannelsWithoutProcessing(listOf(chatChannel))
+                        viewModel.insertChannelMessages(chatChannel, externalImagesDir, externalDocumentsDir, messages)
+
+                        // update the delivery list
+                        viewModel.updateDeliveryListOfMessages(chatChannel, currentUser.id, nonUpdatedMessages) { it1 ->
+                            if (!it1.isSuccessful) {
+                                viewModel.setCurrentError(it1.exception)
+                            }
+                        }
+                    }
+                }
+            }
 
     }
 
@@ -698,8 +818,15 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onChannelClick(chatChannel: ChatChannel) {
         val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
-        viewModel.currentChatChannel = chatChannel.chatChannelId
         navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle, slideRightNavOptions())
+    }
+
+    override fun onChatChannelSelected(chatChannel: ChatChannel) {
+
+    }
+
+    override fun onChatChannelDeSelected(chatChannel: ChatChannel) {
+
     }
 
     override fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit) {
@@ -730,7 +857,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         val destination = File(imagesDir, message.chatChannelId)
         val file = File(destination, name)
         val uri = Uri.fromFile(file)
-        val bundle = bundleOf("fullscreenImage" to uri.toString(), "title" to message.sender.name, "transitionName" to id, "ext" to message.metadata!!.ext)
+        val bundle = bundleOf("fullscreenImage" to uri.toString(), "title" to message.sender.name, "transitionName" to id, "ext" to message.metadata!!.ext, "message" to message)
         val extras = FragmentNavigatorExtras(view to id)
 
         when (navController.currentDestination?.id) {
@@ -762,7 +889,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                             viewModel.updateMessage(message)
                         } else {
                             file.delete()
-                            toast("File was created but something went wrong while downloading")
                             viewModel.setCurrentError(it.exception)
                         }
                     }
@@ -775,13 +901,11 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                                 viewModel.updateMessage(message)
                             } else {
                                 file.delete()
-                                toast("File was created but something went wrong while downloading")
                                 viewModel.setCurrentError(it.exception)
                             }
                         }
                     }
                     Log.d(TAG, "Probably file already exists. Or some other problem for which we are not being able to ")
-                    toast("Something went wrong")
                 }
             } catch (e: Exception) {
                 viewModel.setCurrentError(e)
@@ -829,25 +953,23 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     // make sure to change this later on for null safety
     override fun onMessageRead(message: Message) {
-
-        lifecycleScope.launch {
-            val chatChannel = viewModel.getChatChannel(message.chatChannelId)
-            if (chatChannel != null) {
-                chatChannel.lastMessage?.read = true
-                viewModel.insertChatChannels(listOf(chatChannel))
-            }
-        }
-
-        message.read = true
         val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
         val a2 = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
-        viewModel.insertMessage(a1, a2, message)
+
+        val currentUser = viewModel.currentUser.value!!
+        if (!message.readList.contains(currentUser.id)) {
+            viewModel.updateReadList(currentUser, a1, a2, message)
+        }
     }
 
     override fun onUserClick(message: Message) {
         onUserClick(message.sender)
     }
 
+    override fun onForwardClick(view: View, message: Message) {
+        val forwardFragment = ForwardFragment.newInstance(message)
+        forwardFragment.show(supportFragmentManager, "ForwardFragment")
+    }
 
 
 }

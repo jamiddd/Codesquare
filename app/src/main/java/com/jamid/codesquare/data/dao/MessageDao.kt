@@ -50,4 +50,10 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId AND type = :type ORDER BY createdAt DESC")
     abstract suspend fun getMessages(chatChannelId: String, type: String = document): List<Message>?
 
+    @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId ORDER BY createdAt DESC LIMIT 1")
+    abstract suspend fun getLastMessageForChannel(chatChannelId: String): Message?
+
+    @Query("DELETE FROM messages WHERE chatChannelId = :chatChannelId")
+    abstract suspend fun deleteAllMessagesInChannel(chatChannelId: String)
+
 }

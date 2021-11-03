@@ -1,12 +1,12 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.view.ViewGroup
-import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
-class ChatChannelAdapter(private val uid: String, private val channelClickListener: ChatChannelClickListener): PagingDataAdapter<ChatChannel, ChatChannelViewHolder>(comparator) {
+class ChatChannelAdapter2(private val uid: String, private val channelListener: ChatChannelClickListener): ListAdapter<ChatChannel, ChatChannelViewHolder>(comparator) {
 
     var isSelectAvailable = false
 
@@ -27,7 +27,7 @@ class ChatChannelAdapter(private val uid: String, private val channelClickListen
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatChannelViewHolder {
-        return ChatChannelViewHolder.newInstance(uid, parent, isSelectAvailable, channelClickListener)
+        return ChatChannelViewHolder.newInstance(uid, parent, isSelectAvailable, channelListener)
     }
 
 }

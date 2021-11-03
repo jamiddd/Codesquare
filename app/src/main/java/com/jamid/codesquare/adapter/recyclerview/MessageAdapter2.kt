@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
 
-class MessageAdapter2(private val currentUsrId: String): PagingDataAdapter<Message, MessageViewHolder>(comparator) {
+class MessageAdapter2(private val currentUsrId: String, private val contributorsSize: Int): PagingDataAdapter<Message, MessageViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Message>() {
@@ -29,10 +29,10 @@ class MessageAdapter2(private val currentUsrId: String): PagingDataAdapter<Messa
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
         return when (viewType) {
             msg_at_start, msg_at_start_image, msg_at_start_doc, msg_at_middle, msg_at_middle_image, msg_at_middle_doc, msg_at_end, msg_at_end_image, msg_at_end_doc, msg_single, msg_single_image, msg_single_doc -> {
-                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_left, currentUsrId, viewType)
+                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_left, currentUsrId, contributorsSize, viewType)
             }
             msg_at_start_alt, msg_at_start_alt_image, msg_at_start_alt_doc, msg_at_middle_alt, msg_at_middle_alt_image, msg_at_middle_alt_doc, msg_at_end_alt, msg_at_end_alt_image, msg_at_end_alt_doc, msg_single_alt, msg_single_alt_image, msg_single_alt_doc -> {
-                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_right, currentUsrId, viewType)
+                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_right, currentUsrId, contributorsSize, viewType)
             }
             else -> throw IllegalStateException("View type is illegal")
         }

@@ -3,6 +3,7 @@ package com.jamid.codesquare.db
 import android.media.Image
 import android.util.Log
 import androidx.lifecycle.LiveData
+import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -43,12 +44,18 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertCurrentUser(user: User) {
+        Log.d(TAG, "Inserting current user")
         user.isCurrentUser = true
         userDao.insert(user)
     }
 
     suspend fun insertUser(localUser: User) {
-        userDao.insert(localUser)
+        Log.d(TAG, "Inserting 1 user")
+        if (localUser.id == currentUser.value?.id) {
+            insertCurrentUser(localUser)
+        } else {
+            userDao.insert(localUser)
+        }
     }
 
     suspend fun clearDatabases() {
@@ -142,8 +149,12 @@ class MainRepository(db: CodesquareDatabase) {
         }
     }
 
-    suspend fun getAllChatChannels(): List<ChatChannel> {
+    suspend fun getAllLocalChatChannels(): List<ChatChannel> {
         return chatChannelDao.allChannels().orEmpty()
+    }
+
+    suspend fun insertChatChannelsWithoutProcessing(channels: List<ChatChannel>) {
+        chatChannelDao.insert(channels)
     }
 
 
@@ -184,7 +195,6 @@ class MainRepository(db: CodesquareDatabase) {
             } else {
                 throw NullPointerException("The user doesn't exist for a message with user id - ${message.senderId}")
             }
-
 
             if (message.type == image) {
                 val name = message.content + message.metadata!!.ext
@@ -265,7 +275,7 @@ class MainRepository(db: CodesquareDatabase) {
         return userDao.getUser(userId)
     }
 
-    suspend fun getChatChannel(chatChannel: String): ChatChannel? {
+    suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
         return chatChannelDao.getChatChannel(chatChannel)
     }
 
@@ -339,9 +349,7 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertUsers(users: List<User>) {
-        for (user in users) {
-            user.isCurrentUser = user.id == Firebase.auth.currentUser?.uid.orEmpty()
-        }
+        Log.d(TAG, "Inserting multiple users")
         userDao.insert(users)
     }
 
@@ -374,6 +382,7 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>, preProcessed: Boolean = false) {
+        Log.d(TAG, "Inserting messages")
         if (!preProcessed) {
             messageDao.insertMessages(processMessages(imagesDir, documentsDir, messages))
         } else {
@@ -428,6 +437,67 @@ class MainRepository(db: CodesquareDatabase) {
         } else {
             messageDao.getMessages(chatChannelId, image).orEmpty()
         }
+    }
+
+    suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel> {
+        return chatChannelDao.getForwardChannels(chatChannelId).orEmpty()
+    }
+
+    /*suspend fun updateDeliveryListOfMessages(messages: List<Message>): Result<List<Message>> {
+        val currentUser = currentUser.value!!
+
+        val newMessageList = mutableListOf<Message>()
+
+        for (message in messages) {
+            val m = messageDao.getMessage(message.messageId)
+            if (m == null) {
+                newMessageList.add(message)
+            }
+        }
+
+        return when (val result = FireUtility.updateDeliveryListOfMessages(currentUser, newMessageList)) {
+            is Result.Error -> result
+            is Result.Success -> {
+                for (message in newMessageList) {
+                    val newList = message.deliveryList.toMutableList()
+                    newList.add(currentUser.id)
+                    message.deliveryList = newList
+                }
+                Result.Success(newMessageList)
+            }
+        }
+    }*/
+
+    suspend fun updateLocalProjects(updatedUser: User, projects: List<String>) {
+
+        val updatedProjects = mutableListOf<Project>()
+
+        for (projectId in projects) {
+            val project = projectDao.getProject(projectId)
+            if (project != null) {
+                project.creator = updatedUser.minify()
+                updatedProjects.add(project)
+            }
+        }
+
+        insertProjects(updatedProjects)
+    }
+
+    fun updateDeliveryListOfMessages(
+        chatChannel: ChatChannel,
+        currentUserId: String,
+        messages: List<Message>,
+        onComplete: (task: Task<Void>) -> Unit
+    ) {
+        FireUtility.updateDeliveryListOfMessages(chatChannel, currentUserId, messages, onComplete)
+    }
+
+    suspend fun getLastMessageForChannel(chatChannelId: String): Message? {
+        return messageDao.getLastMessageForChannel(chatChannelId)
+    }
+
+    suspend fun deleteAllMessagesInChannel(chatChannelId: String) {
+        messageDao.deleteAllMessagesInChannel(chatChannelId)
     }
 
     companion object {

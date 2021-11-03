@@ -4,16 +4,10 @@ import android.app.Application
 import android.location.Address
 import android.net.Uri
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import androidx.paging.*
 import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.data.*
@@ -32,15 +26,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         val db = CodesquareDatabase.getInstance(application.applicationContext, viewModelScope)
         repo = MainRepository.getInstance(db)
 
-        FireUtility.getLatestUserData {
+        /*FireUtility.getLatestUserData {
             if (it.isSuccessful && it.result.exists()) {
                 val user = it.result.toObject(User::class.java)!!
                 viewModelScope.launch(Dispatchers.IO) {
                     insertCurrentUser(user)
                 }
-                getChannelUsers(user.chatChannels)
             }
-        }
+        }*/
 
     }
 
@@ -68,6 +61,33 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
 
     val chatScrollPositions = mutableMapOf<String, Int>()
+
+    private val _forwardList = MutableLiveData<List<ChatChannel>>()
+    val forwardList: LiveData<List<ChatChannel>> = _forwardList
+
+    fun addChannelToForwardList(chatChannel: ChatChannel) {
+        val oldList = forwardList.value
+        if (oldList != null) {
+            val newList = oldList.toMutableList()
+            newList.add(chatChannel)
+            _forwardList.postValue(newList)
+        } else {
+            _forwardList.postValue(listOf(chatChannel))
+        }
+    }
+
+    fun removeChannelFromForwardList(chatChannel: ChatChannel) {
+        val oldList = forwardList.value
+        if (oldList != null && oldList.isNotEmpty()) {
+            val newList = oldList.toMutableList()
+            newList.remove(chatChannel)
+            _forwardList.postValue(newList)
+        }
+    }
+
+    fun clearForwardList() {
+        _forwardList.postValue(emptyList())
+    }
 
     fun setChatUploadImages(images: List<Uri>) {
         _chatImagesUpload.postValue(images)
@@ -210,8 +230,21 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.uploadImage(locationId, image, onComplete)
     }
 
-    fun updateUser(userId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
-        FireUtility.updateUser(userId, changes, onComplete)
+    fun updateUser(updatedUser: User, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        val currentUser = currentUser.value!!
+        FireUtility.updateUser2(currentUser, changes) {
+            onComplete(it)
+            if (it.isSuccessful) {
+                insertCurrentUser(updatedUser)
+                updateLocalProjects(updatedUser, updatedUser.projects)
+            } else {
+                setCurrentError(it.exception)
+            }
+        }
+    }
+
+    private fun updateLocalProjects(updatedUser: User, projects: List<String>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateLocalProjects(updatedUser, projects)
     }
 
     fun checkIfUsernameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
@@ -352,15 +385,25 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     @ExperimentalPagingApi
-    fun getPagedMessages(imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
+    fun getPagedForwardChatChannels(originalChannel: String, query: Query): Flow<PagingData<ChatChannel>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ChatChannelRemoteMediator(query, repo)
+        ) {
+            repo.chatChannelDao.getPagedChatChannels()
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    @ExperimentalPagingApi
+    fun getPagedMessages(chatChannel: ChatChannel, imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
         return Pager(config =
         PagingConfig(
             pageSize = 50,
             enablePlaceholders = false,
             maxSize = 150,
-            prefetchDistance = 10,
+            prefetchDistance = 20,
             initialLoadSize= 40),
-            remoteMediator = MessageRemoteMediator(imagesDir, documentsDir, query, repo)
+            remoteMediator = MessageRemoteMediator(chatChannel, imagesDir, documentsDir, viewModelScope, query, repo)
         ) {
             repo.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.cachedIn(viewModelScope)
@@ -442,7 +485,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
 
         // 3. chat channel
-        val chatChannel = repo.getChatChannel(project.chatChannel)
+        val chatChannel = repo.getLocalChatChannel(project.chatChannel)
         if (chatChannel != null) {
             val newContributorsList = chatChannel.contributors.toMutableList()
             newContributorsList.add(projectRequest.senderId)
@@ -606,17 +649,27 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.onCommentLiked(comment)
     }
 
+
+    fun getChannelUsers(channel: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        FireUtility.getChannelUsers(channel, onComplete)
+    }
+
+    /*fun getAllChannelUsers(channels: List<String>, onComplete: (channel: ChatChannel, task: Task<QuerySnapshot>) -> Unit) {
+        for (channel in channels) {
+            getChannelUsers(channel, onComplete(ch))
+        }
+    }*/
+
     // to insert all the users related to the local projects
-    fun getChannelUsers(chatChannels: List<String>) = viewModelScope.launch (Dispatchers.IO) {
+    /*fun getChannelUsers(chatChannels: List<String>) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.getChannelUsers(chatChannels)) {
             is Result.Error -> {
                 setCurrentError(result.exception)
             }
             is Result.Success -> {
-                Log.d(TAG, result.data.toString())
                 repo.insertUsers(result.data)
 
-                val channels = repo.getAllChatChannels()
+                val channels = repo.getAllLocalChatChannels()
                 if (channels.isNotEmpty()) {
                     for (channel in channels) {
 
@@ -635,7 +688,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 }
             }
         }
-    }
+    }*/
 
     fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
@@ -643,7 +696,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
                 repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data))
-                val chatChannel = repo.getChatChannel(chatChannelId)
+                val chatChannel = repo.getLocalChatChannel(chatChannelId)
                 if (chatChannel != null) {
                     chatChannel.lastMessage = result.data
                     chatChannel.updatedAt = result.data.createdAt
@@ -672,7 +725,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 val messages = result.data
                 repo.insertMessages(imagesDir, documentsDir, messages)
 
-                val chatChannel = repo.getChatChannel(chatChannelId)
+                val chatChannel = repo.getLocalChatChannel(chatChannelId)
 
                 if (chatChannel != null) {
                     chatChannel.lastMessage = messages.last()
@@ -721,8 +774,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.updateLocalProject(project)
     }
 
-    suspend fun getChatChannel(chatChannel: String): ChatChannel? {
-        return repo.getChatChannel(chatChannel)
+    suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
+        return repo.getLocalChatChannel(chatChannel)
     }
 
     fun getLiveProjectByChatChannel(chatChannel: String): LiveData<Project> {
@@ -742,12 +795,31 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+    // insert channel messages and also update the channel along with it
+    fun insertChannelMessages(chatChannel: ChatChannel, imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+        if (messages.isNotEmpty()) {
+            val lastMessage = messages.first()
+            chatChannel.lastMessage = lastMessage
+            chatChannel.updatedAt = lastMessage.createdAt
+            repo.insertChatChannels(listOf(chatChannel))
+            insertMessages(imagesDir, documentsDir, messages)
+        }
+    }
+
+    private fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertMessages(imagesDir, documentsDir, messages)
+    }
+
+    fun updateDeliveryListOfMessages(chatChannel: ChatChannel, currentUserId: String, messages: List<Message>, onComplete: (task: Task<Void>) -> Unit) {
+        repo.updateDeliveryListOfMessages(chatChannel, currentUserId, messages, onComplete)
     }
 
     fun insertChatChannels(chatChannels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertChatChannels(chatChannels)
+    }
+
+    fun insertChatChannelsWithoutProcessing(channels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertChatChannelsWithoutProcessing(channels)
     }
 
     fun getChatPagingInstance(
@@ -813,6 +885,168 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     suspend fun getImageMessages(chatChannelId: String, limit: Int = 0): List<Message> {
         return repo.getImageMessages(chatChannelId, limit)
+    }
+
+    suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel> {
+        return repo.getForwardChannels(chatChannelId)
+    }
+
+    // currently supports single message
+    fun sendForwardsToChatChannels(imagesDir: File, documentsDir: File, uri: Uri, message: Message, channels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
+        val currentUser = currentUser.value!!
+        when (val result = FireUtility.sendSingleMediaMessageToMultipleChannels(uri, currentUser, message, channels)) {
+            is Result.Error -> {
+                setCurrentError(result.exception)
+            }
+            is Result.Success -> {
+                val newMessages = result.data
+                insertMessages(imagesDir, documentsDir, newMessages)
+
+                if (channels.size == newMessages.size) {
+                    for (i in channels.indices) {
+                        val message1 = newMessages[i]
+                        message1.chatChannelId = channels[i].chatChannelId
+                        channels[i].lastMessage = message1
+                        channels[i].updatedAt = message1.createdAt
+                    }
+                }
+
+                insertChatChannels(channels)
+            }
+        }
+    }
+
+
+
+    fun updateReadList(currentUser: User, imagesDir: File, documentsDir: File, message: Message) = viewModelScope.launch (Dispatchers.IO) {
+
+        val chatChannel = getLocalChatChannel(message.chatChannelId)
+        if (chatChannel != null) {
+            FireUtility.updateReadList(chatChannel, currentUser, message) {
+                if (it.isSuccessful) {
+                    val newList = message.readList.addItemToList(currentUser.id)
+                    message.readList = newList
+
+                    if (chatChannel.lastMessage?.messageId == message.messageId) {
+                        chatChannel.lastMessage = message
+                        chatChannel.updatedAt = System.currentTimeMillis()
+                        insertChatChannelsWithoutProcessing(listOf(chatChannel))
+                    }
+
+                    insertMessages(imagesDir, documentsDir, listOf(message))
+                } else {
+                    setCurrentError(it.exception)
+                }
+            }
+        }
+    }
+
+    fun updateChannelsWithUsers(chatChannels: List<ChatChannel>, users: List<User>) = viewModelScope.launch (Dispatchers.IO) {
+        if (chatChannels.isNotEmpty()) {
+            for (user in users) {
+                for (channel in chatChannels) {
+                    if (channel.lastMessage != null && channel.lastMessage!!.senderId == user.id) {
+                        channel.lastMessage!!.sender = user
+                    }
+                }
+            }
+        }
+    }
+
+    private suspend fun getAllLocalChatChannels(): List<ChatChannel> {
+        return repo.getAllLocalChatChannels()
+    }
+
+    fun getAllChatChannels(userId: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        FireUtility.getAllChatChannels(userId, onComplete)
+    }
+
+    /*fun insertUsers(users: List<User>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertUsers(users)
+    }*/
+
+    fun insertChannelWithContributors(channel: ChatChannel, contributors: List<User>) = viewModelScope.launch (Dispatchers.IO) {
+        contributors.find {
+            channel.lastMessage?.senderId == it.id
+        }?.let {
+            channel.lastMessage?.sender = it
+        }
+
+        if (channel.lastMessage?.senderId == currentUser.value?.id) {
+            channel.lastMessage?.sender = currentUser.value!!
+        }
+
+        repo.insertUsers(contributors)
+        repo.insertChatChannelsWithoutProcessing(listOf(channel))
+    }
+
+    fun insertChannelsWithUsers(chatChannels: List<ChatChannel>, users: List<User>) = viewModelScope.launch (Dispatchers.IO) {
+        if (chatChannels.isNotEmpty()) {
+            for (user in users) {
+                for (channel in chatChannels) {
+                    if (channel.lastMessage != null && channel.lastMessage!!.senderId == user.id) {
+                        channel.lastMessage!!.sender = user
+                    }
+                }
+            }
+        }
+        repo.insertChatChannelsWithoutProcessing(chatChannels)
+    }
+
+    fun getChatChannel(channelId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        val ref = Firebase.firestore.collection("chatChannels").document(channelId)
+        FireUtility.getDocument(ref, onComplete)
+    }
+
+    suspend fun getLastMessageForChannel(chatChannelId: String): Message? {
+        return repo.getLastMessageForChannel(chatChannelId)
+    }
+
+    fun getDocumentSnapshot(ref: DocumentReference, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        FireUtility.getDocument(ref, onComplete)
+    }
+
+    fun deleteAllMessagesInChannel(chatChannelId: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteAllMessagesInChannel(chatChannelId)
+    }
+
+    fun getLatestMessages(chatChannelId: String, limit: Int, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        val ref = Firebase.firestore.collection("chatChannels")
+            .document(chatChannelId)
+            .collection("messages")
+            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+            .limit(limit.toLong())
+
+        FireUtility.getQuerySnapshot(ref, onComplete)
+    }
+
+    fun getLatestMessagesAfter(imagesDir: File, documentsDir: File, lastMessage: Message, channel: ChatChannel) {
+        val ref = Firebase.firestore.collection("chatChannels")
+            .document(lastMessage.chatChannelId)
+            .collection("messages")
+            .document(lastMessage.messageId)
+
+        FireUtility.getDocument(ref) {
+            if (it.isSuccessful) {
+                val ref1 = Firebase.firestore.collection("chatChannels")
+                    .document(lastMessage.chatChannelId)
+                    .collection("messages")
+                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                    .startAfter(it.result.data)
+
+                FireUtility.getQuerySnapshot(ref1) { it1 ->
+                    if (it1.isSuccessful) {
+                        val latestMessages = it1.result.toObjects(Message::class.java)
+                        insertChannelMessages(channel, imagesDir, documentsDir, latestMessages)
+                    } else {
+                        setCurrentError(it1.exception)
+                    }
+                }
+            } else {
+                setCurrentError(it.exception)
+            }
+        }
+
     }
 
     companion object {

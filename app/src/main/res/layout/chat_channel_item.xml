@@ -66,4 +66,13 @@
             android:maxLines="2"
             android:text="Jamid Deka: this is the last message but it's not the end" />
     </LinearLayout>
+
+    <RadioButton
+        android:id="@+id/chat_select_radio_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -127,7 +127,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         delay(200)
                         content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
                     }
-
                 }
             }
 
@@ -138,6 +137,10 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 projectClickListener.onProjectClick(project.copy())
             }
             val helper: SnapHelper = LinearSnapHelper()
+
+            likeComment.setOnClickListener {
+                projectClickListener.onProjectCommentClick(project.copy())
+            }
 
             val manager = LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
 
