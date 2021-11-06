@@ -12,4 +12,6 @@ interface MessageListener {
     fun onMessageRead(message: Message)
     fun onUserClick(message: Message)
     fun onForwardClick(view: View, message: Message)
+    fun onMessageLongClick(message: Message)
+    fun onMessageStateChanged(message: Message)
 }

@@ -908,17 +908,126 @@ object FireUtility {
 
     }*/
 
+
+    suspend fun sendMultipleMessageToMultipleChannels(currentUser: User, messages: List<Message>, channels: List<ChatChannel>): Result<List<Message>> {
+        return try {
+
+            val newMessages = mutableListOf<Message>()
+
+            val db = Firebase.firestore
+            val now = System.currentTimeMillis()
+
+            val batch = db.batch()
+
+            val imagesMessages = messages.filter { it.type == image }
+            val imageUris = imagesMessages.map { it.content.toUri() }
+
+            val documentMessages = messages.filter { it.type == document }
+            val documentUris = documentMessages.map { it.content.toUri() }
+
+            for (message in imagesMessages) {
+                message.content = randomId()
+            }
+
+            for (message in documentMessages) {
+                message.content = randomId()
+            }
+
+            channels.forEach {
+
+                val downloadedImageUris = if (imagesMessages.isNotEmpty()) {
+                    uploadItems("${it.chatChannelId}/images", imagesMessages.map { it1 -> it1.content }, imageUris)
+                } else {
+                    emptyList()
+                }
+
+                val downloadedDocumentUris = if (documentMessages.isNotEmpty()) {
+                    uploadItems("${it.chatChannelId}/documents", documentMessages.map { it1 -> it1.content }, documentUris)
+                } else {
+                    emptyList()
+                }
+
+                for (i in downloadedImageUris.indices) {
+                    imagesMessages[i].metadata!!.url = downloadedImageUris[i].toString()
+                }
+
+                for (i in downloadedDocumentUris.indices) {
+                    documentMessages[i].metadata!!.url = downloadedDocumentUris[i].toString()
+                }
+
+                for (i in messages.indices) {
+                    if (messages[i].type == image) {
+                        val newMessage = imagesMessages.find { it1 ->
+                            it1.messageId == messages[i].messageId
+                        }
+                        if (newMessage != null) {
+                            messages[i].content = newMessage.content
+                            messages[i].metadata!!.url = newMessage.metadata!!.url
+                        }
+                    }
+
+                    if (messages[i].type == document) {
+                        val newMessage = documentMessages.find { it1 ->
+                            it1.messageId == messages[i].messageId
+                        }
+                        if (newMessage != null) {
+                            messages[i].content = newMessage.content
+                            messages[i].metadata!!.url = newMessage.metadata!!.url
+                        }
+                    }
+
+                    val ref = db.collection("chatChannels")
+                        .document(it.chatChannelId)
+                        .collection("messages")
+                        .document()
+
+                    val newMessage = Message(ref.id, it.chatChannelId, messages[i].type, messages[i].content, currentUser.id, messages[i].metadata, emptyList(), emptyList(), now, currentUser,
+                        isDownloaded = false,
+                        isCurrentUserMessage = true
+                    )
+
+                    newMessages.add(newMessage)
+
+                    Log.d(TAG, newMessages.map {it1 -> it1.content }.toString())
+
+                    batch.set(ref, newMessage)
+
+                    if (i == messages.size - 1) {
+                        batch.update(db.collection("chatChannels").document(it.chatChannelId), mapOf("lastMessage" to newMessage, "updatedAt" to now))
+                    }
+
+                }
+            }
+
+            batch.commit().addOnCompleteListener {
+                if (!it.isSuccessful) {
+                    Log.d(TAG, it.exception?.localizedMessage.orEmpty())
+                }
+            }
+
+            Result.Success(newMessages)
+
+        } catch (e: Exception) {
+
+            Result.Error(e)
+
+        }
+
+    }
+
     suspend fun sendSingleMediaMessageToMultipleChannels(
         uri: Uri,
         currentUser: User,
         message: Message,
         channels: List<ChatChannel>
     ): Result<List<Message>> {
+
         val db = Firebase.firestore
 
         val now = System.currentTimeMillis()
 
         return try {
+
             val batch = db.batch()
 
             val messages = mutableListOf<Message>()

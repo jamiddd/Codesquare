@@ -2,7 +2,6 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.util.Log
 import android.view.ViewGroup
-import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.*

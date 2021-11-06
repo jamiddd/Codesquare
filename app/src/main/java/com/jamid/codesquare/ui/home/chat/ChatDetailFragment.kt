@@ -73,7 +73,7 @@ class ChatDetailFragment: Fragment() {
                 layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
             }
 
-            val contributors = viewModel.getLocalChannelContributors("%$chatChannel%")
+            val contributors = viewModel.getLocalChannelContributors("%${chatChannel.chatChannelId}%")
             userAdapter.submitList(contributors)
 
             val project = viewModel.getProjectByChatChannel(chatChannel.chatChannelId)

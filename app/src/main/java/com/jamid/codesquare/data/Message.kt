@@ -30,7 +30,9 @@ data class Message(
     @Exclude @set: Exclude @get: Exclude
     var isDownloaded: Boolean,
     @Exclude @set: Exclude @get: Exclude
-    var isCurrentUserMessage: Boolean
+    var isCurrentUserMessage: Boolean,
+    @Exclude @set: Exclude @get: Exclude
+    var state: Int = -1
 ): Parcelable {
     constructor(): this("", "", "", "", "", Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), User(), false, false)
 }

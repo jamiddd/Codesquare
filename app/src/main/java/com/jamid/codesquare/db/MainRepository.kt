@@ -23,6 +23,7 @@ class MainRepository(db: CodesquareDatabase) {
     val commentDao = db.commentDao()
 
     val currentUser: LiveData<User> = userDao.currentUser()
+    val onMessagesModeChanged = messageDao.onMessagesModeChanged()
 
     suspend fun insertProjects(projects: List<Project>) {
 
@@ -498,6 +499,14 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun deleteAllMessagesInChannel(chatChannelId: String) {
         messageDao.deleteAllMessagesInChannel(chatChannelId)
+    }
+
+    suspend fun updateRestOfTheMessages(chatChannelId: String, selected: Int) {
+        messageDao.updateRestOfTheMessagesInChannel(chatChannelId, selected)
+    }
+
+    suspend fun getSelectedMessages(): List<Message> {
+        return messageDao.getSelectedMessages().orEmpty()
     }
 
     companion object {

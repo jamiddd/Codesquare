@@ -10,6 +10,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.R
+import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
 
 class ChatMediaFragment: Fragment() {
@@ -30,10 +31,10 @@ class ChatMediaFragment: Fragment() {
 
         val activity = requireActivity()
 
-        val chatChannelId = arguments?.getString(ARG_CHAT_CHANNEL) ?: return
+        val chatChannel = arguments?.getParcelable<ChatChannel>(ARG_CHAT_CHANNEL) ?: return
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
 
-        binding.chatMediaPager.adapter = ChatMediaAdapter(chatChannelId, activity)
+        binding.chatMediaPager.adapter = ChatMediaAdapter(chatChannel.chatChannelId, activity)
 
         TabLayoutMediator(tabLayout, binding.chatMediaPager) { tab, pos ->
             when (pos) {

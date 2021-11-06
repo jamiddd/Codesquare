@@ -62,6 +62,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val chatScrollPositions = mutableMapOf<String, Int>()
 
+    val onMessagesModeChanged = repo.onMessagesModeChanged
+
     private val _forwardList = MutableLiveData<List<ChatChannel>>()
     val forwardList: LiveData<List<ChatChannel>> = _forwardList
 
@@ -891,10 +893,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getForwardChannels(chatChannelId)
     }
 
-    // currently supports single message
-    fun sendForwardsToChatChannels(imagesDir: File, documentsDir: File, uri: Uri, message: Message, channels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
+    fun sendForwardsToChatChannels(imagesDir: File, documentsDir: File, messages: List<Message>, channels: List<ChatChannel>, onComplete: (result: Result<List<Message>>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
-        when (val result = FireUtility.sendSingleMediaMessageToMultipleChannels(uri, currentUser, message, channels)) {
+
+        val result = FireUtility.sendMultipleMessageToMultipleChannels(currentUser, messages, channels)
+        when (result) {
             is Result.Error -> {
                 setCurrentError(result.exception)
             }
@@ -902,18 +905,22 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 val newMessages = result.data
                 insertMessages(imagesDir, documentsDir, newMessages)
 
-                if (channels.size == newMessages.size) {
-                    for (i in channels.indices) {
-                        val message1 = newMessages[i]
-                        message1.chatChannelId = channels[i].chatChannelId
-                        channels[i].lastMessage = message1
-                        channels[i].updatedAt = message1.createdAt
+                for (i in channels.indices) {
+                    val channelMessages = newMessages.filter {
+                        it.chatChannelId == channels[i].chatChannelId
+                    }
+                    if (channelMessages.isNotEmpty()) {
+                        val lastMessage = channelMessages.last()
+                        lastMessage.chatChannelId = channels[i].chatChannelId
+                        channels[i].lastMessage = lastMessage
+                        channels[i].updatedAt = lastMessage.createdAt
                     }
                 }
 
                 insertChatChannels(channels)
             }
         }
+        onComplete(result)
     }
 
 
@@ -1047,6 +1054,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             }
         }
 
+    }
+
+    fun updateRestOfTheMessages(chatChannelId: String, isSelected: Int) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateRestOfTheMessages(chatChannelId, isSelected)
+    }
+
+    suspend fun getSelectedMessages(): List<Message> {
+        return repo.getSelectedMessages()
     }
 
     companion object {

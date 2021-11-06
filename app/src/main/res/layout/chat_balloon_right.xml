@@ -53,14 +53,13 @@
 
     <TextView
         android:id="@+id/message_meta_alt"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
         android:text="12:35 pm"
         android:textStyle="italic"
         app:layout_constraintBottom_toTopOf="@+id/message_content_container_alt"
         app:layout_constraintEnd_toEndOf="@+id/message_content_container_alt"
-        app:layout_constraintHorizontal_bias="0.8"
-        app:layout_constraintStart_toStartOf="@+id/message_content_container_alt"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
@@ -80,6 +79,17 @@
         app:strokeColor="@color/lightest_blue"
         app:strokeWidth="1dp"
         tools:visibility="visible" />
+
+    <RadioButton
+        android:id="@+id/select_msg_btn_alt"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:clickable="false"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/message_content_container_alt"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/message_content_container_alt" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -16,7 +16,7 @@
         app:layout_constraintEnd_toStartOf="@+id/message_content_container"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/select_msg_btn"
         app:layout_constraintTop_toTopOf="@+id/message_content_container"
         app:layout_constraintVertical_bias="1.0"
         app:roundAsCircle="true" />
@@ -93,6 +93,22 @@
         app:layout_constraintTop_toTopOf="@+id/message_content_container"
         app:strokeColor="@color/lightest_blue"
         app:strokeWidth="1dp" />
+
+    <RadioButton
+        android:id="@+id/select_msg_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:clickable="false"
+        android:minWidth="36dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/message_content_container"
+        app:layout_constraintEnd_toStartOf="@+id/message_sender_img"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/message_content_container" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

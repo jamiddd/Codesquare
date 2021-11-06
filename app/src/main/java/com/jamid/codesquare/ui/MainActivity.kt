@@ -39,6 +39,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.listeners.*
 import com.jamid.codesquare.ui.home.chat.ForwardFragment
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -241,6 +242,10 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         navController.addOnDestinationChangedListener { controller, destination, arguments ->
 
             val userInfoLayout = findViewById<View>(R.id.user_info)
+
+            binding.mainToolbar.setNavigationOnClickListener {
+                navController.navigateUp()
+            }
 
             binding.mainToolbar.isTitleCentered = destination.id != R.id.homeFragment
 
@@ -759,7 +764,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                         }
                     }
                 }
-
             }
             .show()
 
@@ -967,9 +971,23 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     override fun onForwardClick(view: View, message: Message) {
-        val forwardFragment = ForwardFragment.newInstance(message)
+        val forwardFragment = ForwardFragment.newInstance(arrayListOf(message))
         forwardFragment.show(supportFragmentManager, "ForwardFragment")
     }
 
+    override fun onMessageLongClick(message: Message) {
+        viewModel.updateRestOfTheMessages(message.chatChannelId, 0)
+
+        lifecycleScope.launch {
+            delay(500)
+            message.state = 1
+            onMessageStateChanged(message)
+        }
+
+    }
+
+    override fun onMessageStateChanged(message: Message) {
+        viewModel.updateMessage(message)
+    }
 
 }

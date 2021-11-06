@@ -10,15 +10,21 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
+import android.widget.RadioButton
+import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.core.view.children
 import androidx.core.view.doOnLayout
+import androidx.core.view.get
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -40,6 +46,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
 
+    private var modeChanged = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -49,6 +57,10 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.chat_menu, menu)
+
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+        toolbar?.menu?.getItem(0)?.isVisible = false
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -60,6 +72,27 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
                 findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title, "chatChannel" to chatChannel), slideRightNavOptions())
+                true
+            }
+            R.id.chat_forward -> {
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val messages = viewModel.getSelectedMessages()
+                    if (messages.isEmpty()) {
+                        toast("No messages selected")
+                    } else {
+                        val newMessages = arrayListOf<Message>()
+
+                        Log.d(TAG, messages.map { it.content }.toString())
+
+                        viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                        for (message in messages) {
+                            newMessages.add(message)
+                        }
+                        val forwardFragment = ForwardFragment.newInstance(newMessages)
+                        forwardFragment.show(requireActivity().supportFragmentManager, "ForwardFragment")
+                    }
+                }
+
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -243,6 +276,52 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             } else {
                 bottomViewBinding.uploadingDocumentsRecycler.hide()
             }
+        }
+
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)!!
+
+        viewModel.onMessagesModeChanged.observe(viewLifecycleOwner) {
+            if (it != null) {
+                modeChanged = true
+                toolbar.menu.getItem(0).isVisible = true
+                toolbar.menu.getItem(1).isVisible = false
+
+                toolbar.setNavigationIcon(R.drawable.ic_round_close_24)
+                toolbar.setNavigationOnClickListener {
+                    viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                }
+
+                bottomViewBinding.root.slideDown(convertDpToPx(100).toFloat())
+
+            } else {
+
+                if (modeChanged) {
+                    viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                    modeChanged = false
+                }
+
+                if (toolbar.menu.hasVisibleItems()){
+                    toolbar.menu.getItem(0).isVisible = false
+                    toolbar.menu.getItem(1).isVisible = true
+                }
+                toolbar.setNavigationIcon(R.drawable.ic_round_arrow_back_24)
+
+                toolbar.setNavigationOnClickListener {
+                    findNavController().navigateUp()
+                    toolbar.setNavigationOnClickListener(null)
+                }
+
+                requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+                    findNavController().navigateUp()
+                }
+
+                bottomViewBinding.root.slideReset()
+
+            }
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            viewModel.updateRestOfTheMessages(chatChannelId, -1)
         }
 
     }

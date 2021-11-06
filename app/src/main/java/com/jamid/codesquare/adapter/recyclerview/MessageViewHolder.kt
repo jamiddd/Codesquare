@@ -4,15 +4,11 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewStub
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.widget.*
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -44,21 +40,73 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private val messageContentRight = view.findViewById<TextView>(R.id.message_content_alt)
     private val messageMetaLeft = view.findViewById<TextView>(R.id.message_meta)
     private val messageMetaRight = view.findViewById<TextView>(R.id.message_meta_alt)
+    private val selectBtn = view.findViewById<RadioButton>(R.id.select_msg_btn)
+    private val selectBtnAlt = view.findViewById<RadioButton>(R.id.select_msg_btn_alt)
+    private val forwardBtn = view.findViewById<Button>(R.id.forward_btn)
+    private val forwardBtnAlt = view.findViewById<Button>(R.id.forward_btn_alt)
+
     private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     private val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
+    /*fun updateSelectMode(state: Boolean) {
+        isSelectModeOn = state
+        if (isSelectModeOn) {
+
+            view.setOnClickListener {
+                selectBtn.isChecked = !selectBtn.isChecked
+            }
+
+            (selectBtn ?: selectBtnAlt).show()
+            (forwardBtn ?: forwardBtnAlt).hide()
+            imageParentView?.setOnClickListener {
+                view.performClick()
+            }
+            documentParentView?.setOnClickListener {
+                view.performClick()
+            }
+            senderImg?.setOnClickListener {
+                view.performClick()
+            }
+        } else {
+
+            view.setOnClickListener {
+                //
+            }
+
+            (selectBtn ?: selectBtnAlt).hide()
+            (selectBtn ?: selectBtnAlt).isChecked = false
+
+            if (messageCopy != null && messageCopy!!.type != text) {
+                (forwardBtn ?: forwardBtnAlt)?.show()
+            }
+            imageParentView?.setOnClickListener {
+                if (messageCopy != null) {
+                    messageListener.onImageClick(view, messageCopy!!, layoutPosition, messageCopy!!.content)
+                }
+            }
+            documentParentView?.setOnClickListener {
+                if (messageCopy != null) {
+                    messageListener.onDocumentClick(messageCopy!!)
+                }
+            }
+            senderImg?.setOnClickListener {
+                if (messageCopy != null) {
+                    messageListener.onUserClick(messageCopy!!)
+                }
+            }
+        }
+    }*/
+
     fun bind(message: Message?) {
         if (message != null) {
-
             val isCurrentUserMessage = message.senderId == currentUserId
             ViewCompat.setTransitionName(view, message.content)
 
             if (isCurrentUserMessage) {
-
                 when (viewType) {
                     msg_at_start_alt -> {
                         messageContentRight.text = message.content
-                       containerRight.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
+                        containerRight.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
                         rootRight.setPadding(0, 0, convertDpToPx(7, view.context), 0)
                     }
                     msg_at_start_alt_image -> {
@@ -178,13 +226,53 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaRight.text = getTextForTime(message.createdAt) + suffix
                 }
 
+                when (message.state) {
+                    -1 -> {
+                        selectBtnAlt.hide()
+                    }
+                    0 -> {
+                        selectBtnAlt.show()
+                        selectBtnAlt.isChecked = false
+
+                        forwardBtnAlt.hide()
+
+                        view.setOnClickListener {
+                            selectBtnAlt.isChecked = !selectBtnAlt.isChecked
+                            if (selectBtnAlt.isChecked) {
+                                message.state = 1
+                                messageListener.onMessageStateChanged(message)
+                            } else {
+                                message.state = 0
+                                messageListener.onMessageStateChanged(message)
+                            }
+                        }
+
+                    }
+                    1 -> {
+                        selectBtnAlt.show()
+                        selectBtnAlt.isChecked = true
+
+                        forwardBtnAlt.hide()
+
+                        view.setOnClickListener {
+                            selectBtnAlt.isChecked = !selectBtnAlt.isChecked
+                            if (selectBtnAlt.isChecked) {
+                                message.state = 1
+                                messageListener.onMessageStateChanged(message)
+                            } else {
+                                message.state = 0
+                                messageListener.onMessageStateChanged(message)
+                            }
+                        }
+
+                    }
+                }
             } else {
                 when (viewType) {
                     msg_at_start -> {
                         messageContentLeft.text = message.content
                         senderImg.disappear()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
                     }
                     msg_at_start_image -> {
                         if (imageStubLeft != null && imageStubLeft.parent != null) {
@@ -192,14 +280,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                             onMediaImageMessageLoaded(view1, message)
                         }
                         senderImg.disappear()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
                         messageContentLeft.hide()
                     }
                     msg_at_start_doc -> {
                         senderImg.disappear()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(7, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
                         if (documentStubLeft != null && documentStubLeft.parent != null) {
                             val view1 = documentStubLeft.inflate()
                             val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
@@ -213,8 +299,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageContentLeft.text = message.content
                         messageMetaLeft.hide()
                         senderImg.disappear()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
+//                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
                     }
                     msg_at_middle_image -> {
                         if (imageStubLeft != null && imageStubLeft.parent != null) {
@@ -224,14 +310,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         senderImg.disappear()
                         messageContentLeft.hide()
                         messageMetaLeft.hide()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
                     }
                     msg_at_middle_doc -> {
                         messageMetaLeft.hide()
                         senderImg.disappear()
-                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body)
-                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
+                        containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
                         if (documentStubLeft != null && documentStubLeft.parent != null) {
                             val view1 = documentStubLeft.inflate()
                             val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
@@ -305,9 +389,57 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 } else {
                     messageMetaLeft.text = message.sender.name + " • " + getTextForTime(message.createdAt)
                 }
+
+                when (message.state) {
+                    -1 -> {
+                        selectBtn.hide()
+                    }
+                    0 -> {
+                        selectBtn.show()
+                        selectBtn.isChecked = false
+
+                        forwardBtn.hide()
+
+                        view.setOnClickListener {
+                            selectBtn.isChecked = !selectBtn.isChecked
+                            if (selectBtn.isChecked) {
+                                message.state = 1
+                                messageListener.onMessageStateChanged(message)
+                            } else {
+                                message.state = 0
+                                messageListener.onMessageStateChanged(message)
+                            }
+                        }
+
+                    }
+                    1 -> {
+                        selectBtn.show()
+                        selectBtn.isChecked = true
+
+                        forwardBtn.hide()
+
+                        view.setOnClickListener {
+                            selectBtn.isChecked = !selectBtn.isChecked
+                            if (selectBtn.isChecked) {
+                                message.state = 1
+                                messageListener.onMessageStateChanged(message)
+                            } else {
+                                message.state = 0
+                                messageListener.onMessageStateChanged(message)
+                            }
+                        }
+
+                    }
+                }
+
             }
 
             messageListener.onMessageRead(message)
+
+            view.setOnLongClickListener {
+                messageListener.onMessageLongClick(message)
+                true
+            }
 
         }
     }
@@ -316,10 +448,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         val progress = parentView.findViewById<ProgressBar>(R.id.message_img_progress)
         val imageView = parentView.findViewById<SimpleDraweeView>(R.id.message_image)
 
+//        imageParentView = parentView
+
         val forwardBtn: Button = if (isLeft) {
-            view.findViewById(R.id.forward_btn)
+            forwardBtn
         } else {
-            view.findViewById(R.id.forward_btn_alt)
+            forwardBtnAlt
         }
 
         if (message.isDownloaded) {
@@ -380,8 +514,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     }
 
                     imageView.setOnClickListener {
-                        messageListener.onImageClick(view, newMessage, layoutPosition, message.content)
+                        messageListener.onImageClick(view, message, layoutPosition, message.content)
                     }
+
                 } else {
                     view.context.toast("Something went wrong while downloading media.")
                 }
@@ -390,6 +525,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     }
 
     private fun onMediaDocumentMessageLoaded(binding: MessageDocumentLayoutBinding, message: Message, isLeft: Boolean = false) {
+
         val metaData = message.metadata
         if (metaData != null) {
             binding.documentName.text = metaData.name
@@ -397,9 +533,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
 
         val forwardBtn: Button = if (isLeft) {
-            view.findViewById(R.id.forward_btn)
+            forwardBtn
         } else {
-            view.findViewById(R.id.forward_btn_alt)
+            forwardBtnAlt
         }
 
         if (isLeft) {
@@ -437,7 +573,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                 messageListener.onStartDownload(message) { task, newMessage ->
                     if (task.isSuccessful) {
-
                         forwardBtn.show()
 
                         binding.documentDownloadProgress.hide()

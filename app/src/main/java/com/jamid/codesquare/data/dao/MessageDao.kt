@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
@@ -55,5 +56,14 @@ abstract class MessageDao: BaseDao<Message>() {
 
     @Query("DELETE FROM messages WHERE chatChannelId = :chatChannelId")
     abstract suspend fun deleteAllMessagesInChannel(chatChannelId: String)
+
+    @Query("UPDATE messages SET state = :selected WHERE chatChannelId = :chatChannelId")
+    abstract suspend fun updateRestOfTheMessagesInChannel(chatChannelId: String, selected: Int)
+
+    @Query("SELECT * FROM messages WHERE state = 1 LIMIT 1")
+    abstract fun onMessagesModeChanged(): LiveData<Message>
+
+    @Query("SELECT * FROM messages WHERE state = 1")
+    abstract suspend fun getSelectedMessages(): List<Message>?
 
 }
