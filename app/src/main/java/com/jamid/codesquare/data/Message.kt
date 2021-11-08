@@ -7,7 +7,6 @@ import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
-import java.io.File
 
 @IgnoreExtraProperties
 @Entity(tableName="messages")
@@ -24,6 +23,10 @@ data class Message(
     var deliveryList: List<String>,
     var readList: List<String>,
     val createdAt: Long,
+    var replyTo: String? = null,
+    @Embedded(prefix = "reply_")
+    @Exclude @set: Exclude @get: Exclude
+    var replyMessage: MessageMinimal? = null,
     @Embedded(prefix = "sender_")
     @Exclude @set: Exclude @get: Exclude
     var sender: User,
@@ -34,5 +37,10 @@ data class Message(
     @Exclude @set: Exclude @get: Exclude
     var state: Int = -1
 ): Parcelable {
-    constructor(): this("", "", "", "", "", Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), User(), false, false)
+
+    fun toReplyMessage(): MessageMinimal {
+        return MessageMinimal(senderId, sender.name, content, type, chatChannelId, isDownloaded, metadata)
+    }
+
+    constructor(): this("", "", "", "", "", Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), null, null, User(), false, false)
 }

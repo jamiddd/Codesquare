@@ -1,5 +1,6 @@
 package com.jamid.codesquare
 
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Context
@@ -48,6 +49,7 @@ import com.facebook.datasource.DataSubscriber
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.core.animation.doOnEnd
 
 import com.facebook.imagepipeline.image.CloseableBitmap
 
@@ -77,8 +79,40 @@ fun View.show() {
     this.visibility = View.VISIBLE
 }
 
+fun View.showWithAnimations() {
+
+    this.scaleX = 0f
+    this.scaleY = 0f
+
+    this.show()
+
+    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f, 1f)
+    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f, 1f)
+
+    AnimatorSet().apply {
+        duration = 250
+        interpolator = AccelerateDecelerateInterpolator()
+        playTogether(objAnimator, objAnimator1)
+        start()
+    }
+}
+
 fun View.hide() {
     this.visibility = View.GONE
+}
+
+fun View.hideWithAnimation() {
+    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f)
+    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f )
+
+    AnimatorSet().apply {
+        duration = 250
+        interpolator = AccelerateDecelerateInterpolator()
+        playTogether(objAnimator, objAnimator1)
+        start()
+    }.doOnEnd {
+        this.visibility = View.GONE
+    }
 }
 
 fun View.disappear() {

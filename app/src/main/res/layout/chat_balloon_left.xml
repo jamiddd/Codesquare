@@ -38,6 +38,13 @@
         app:layout_constraintWidth_max="270dp">
 
         <ViewStub
+            android:id="@+id/message_reply_stub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inflatedId="@+id/message_dynamic_reply"
+            android:layout="@layout/reply_layout" />
+
+        <ViewStub
             android:id="@+id/message_document_stub"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -88,11 +95,12 @@
         android:visibility="gone"
         app:icon="@drawable/ic_round_arrow_forward_24"
         app:iconTint="#2196F3"
-        app:layout_constraintBottom_toBottomOf="@+id/message_content_container"
-        app:layout_constraintStart_toEndOf="@+id/message_content_container"
-        app:layout_constraintTop_toTopOf="@+id/message_content_container"
+        app:layout_constraintBottom_toBottomOf="@+id/reply_btn"
+        app:layout_constraintStart_toEndOf="@+id/reply_btn"
+        app:layout_constraintTop_toTopOf="@+id/reply_btn"
         app:strokeColor="@color/lightest_blue"
-        app:strokeWidth="1dp" />
+        app:strokeWidth="1dp"
+        tools:visibility="visible" />
 
     <RadioButton
         android:id="@+id/select_msg_btn"
@@ -109,6 +117,24 @@
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/message_content_container" />
+
+    <Button
+        android:id="@+id/reply_btn"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="5dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="0dp"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_reply_24"
+        app:iconTint="#2196F3"
+        app:layout_constraintBottom_toBottomOf="@+id/message_content_container"
+        app:layout_constraintStart_toEndOf="@+id/message_content_container"
+        app:layout_constraintTop_toTopOf="@+id/message_content_container"
+        app:strokeColor="@color/lightest_blue"
+        app:strokeWidth="1dp"
+        tools:visibility="visible" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

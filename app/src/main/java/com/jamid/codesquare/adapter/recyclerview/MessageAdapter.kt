@@ -30,10 +30,12 @@ class MessageAdapter(private val currentUsrId: String): ListAdapter<Message, Mes
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MessageViewHolder {
         return when (viewType) {
             msg_at_start, msg_at_middle, msg_at_end, msg_single -> {
-                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_left, currentUsrId, 0, viewType)
+//                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_left, currentUsrId, 0, viewType)
+                TODO()
             }
             msg_at_start_alt, msg_at_middle_alt, msg_at_end_alt, msg_single_alt -> {
-                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_right, currentUsrId, 0, viewType)
+//                MessageViewHolder.newInstance(parent, R.layout.chat_balloon_right, currentUsrId, 0, viewType)
+                TODO()
             }
             else -> throw IllegalStateException("View type is illegal")
         }

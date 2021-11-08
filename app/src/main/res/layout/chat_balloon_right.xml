@@ -26,6 +26,13 @@
         app:layout_constraintWidth_max="270dp">
 
         <ViewStub
+            android:id="@+id/message_reply_stub_alt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inflatedId="@+id/message_dynamic_reply_alt"
+            android:layout="@layout/reply_layout" />
+
+        <ViewStub
             android:id="@+id/message_document_stub_alt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -55,7 +62,7 @@
         android:id="@+id/message_meta_alt"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="16dp"
         android:text="12:35 pm"
         android:textStyle="italic"
         app:layout_constraintBottom_toTopOf="@+id/message_content_container_alt"
@@ -73,9 +80,9 @@
         android:visibility="gone"
         app:icon="@drawable/ic_round_arrow_forward_24"
         app:iconTint="#2196F3"
-        app:layout_constraintBottom_toBottomOf="@+id/message_content_container_alt"
-        app:layout_constraintEnd_toStartOf="@+id/message_content_container_alt"
-        app:layout_constraintTop_toTopOf="@+id/message_content_container_alt"
+        app:layout_constraintBottom_toBottomOf="@+id/reply_btn_alt"
+        app:layout_constraintEnd_toStartOf="@+id/reply_btn_alt"
+        app:layout_constraintTop_toTopOf="@+id/reply_btn_alt"
         app:strokeColor="@color/lightest_blue"
         app:strokeWidth="1dp"
         tools:visibility="visible" />
@@ -90,6 +97,24 @@
         app:layout_constraintBottom_toBottomOf="@+id/message_content_container_alt"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/message_content_container_alt" />
+
+    <Button
+        android:id="@+id/reply_btn_alt"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="8dp"
+        android:paddingStart="6dp"
+        android:paddingEnd="0dp"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_reply_24"
+        app:iconTint="#2196F3"
+        app:layout_constraintBottom_toBottomOf="@+id/message_content_container_alt"
+        app:layout_constraintEnd_toStartOf="@+id/message_content_container_alt"
+        app:layout_constraintTop_toTopOf="@+id/message_content_container_alt"
+        app:strokeColor="@color/lightest_blue"
+        app:strokeWidth="1dp"
+        tools:visibility="visible" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

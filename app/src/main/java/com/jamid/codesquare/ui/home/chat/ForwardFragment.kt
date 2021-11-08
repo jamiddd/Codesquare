@@ -112,7 +112,6 @@ class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
                                     is Result.Error -> {}
                                     is Result.Success -> {
                                         viewModel.updateRestOfTheMessages(chatChannelId, -1)
-                                        binding.forwardProgress.hide()
                                         dismiss()
                                     }
                                 }

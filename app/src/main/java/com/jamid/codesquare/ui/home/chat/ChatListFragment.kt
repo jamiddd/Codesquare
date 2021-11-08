@@ -29,7 +29,6 @@ class ChatListFragment: PagerListFragment<ChatChannel, ChatChannelViewHolder>() 
         }
 
         recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        recyclerView?.itemAnimator = null
 
     }
 

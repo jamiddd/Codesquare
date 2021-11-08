@@ -21,17 +21,21 @@ class ProfileFragment: Fragment() {
 
     private lateinit var binding: FragmentProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
+    private var mUser: User? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (arguments?.getParcelable<User>("user") == null) {
-            setHasOptionsMenu(true)
-        }
+        setHasOptionsMenu(true)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.profile_menu, menu)
+        mUser = arguments?.getParcelable("user")
+        if (mUser == null) {
+            inflater.inflate(R.menu.profile_menu, menu)
+        } else {
+            inflater.inflate(R.menu.other_profile_menu, menu)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -57,6 +61,10 @@ class ProfileFragment: Fragment() {
             }
             R.id.settings -> {
                 toast("Settings")
+                true
+            }
+            R.id.like_user -> {
+                toast("Liked this user")
                 true
             }
             else -> true

@@ -60,8 +60,8 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("UPDATE messages SET state = :selected WHERE chatChannelId = :chatChannelId")
     abstract suspend fun updateRestOfTheMessagesInChannel(chatChannelId: String, selected: Int)
 
-    @Query("SELECT * FROM messages WHERE state = 1 LIMIT 1")
-    abstract fun onMessagesModeChanged(): LiveData<Message>
+    @Query("SELECT * FROM messages WHERE state = 1")
+    abstract fun onMessagesModeChanged(): LiveData<List<Message>>
 
     @Query("SELECT * FROM messages WHERE state = 1")
     abstract suspend fun getSelectedMessages(): List<Message>?

@@ -1,29 +1,37 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
 import android.os.Environment
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.view.ViewStub
+import android.util.Log
+import android.view.*
 import android.widget.*
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.MessageMinimal
 import com.jamid.codesquare.databinding.MessageDocumentLayoutBinding
+import com.jamid.codesquare.databinding.ReplyLayoutBinding
 import com.jamid.codesquare.listeners.MessageListener
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-class MessageViewHolder(val view: View, private val currentUserId: String, private val contributorsSize: Int, private val viewType: Int): RecyclerView.ViewHolder(view) {
+@SuppressLint("ClickableViewAccessibility")
+class MessageViewHolder(val view: View, private val currentUserId: String, private val contributorsSize: Int, private val viewType: Int, private val scope: CoroutineScope): RecyclerView.ViewHolder(view), GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
 
     private val messageListener = view.context as MessageListener
 
@@ -44,62 +52,22 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private val selectBtnAlt = view.findViewById<RadioButton>(R.id.select_msg_btn_alt)
     private val forwardBtn = view.findViewById<Button>(R.id.forward_btn)
     private val forwardBtnAlt = view.findViewById<Button>(R.id.forward_btn_alt)
+    private val replyStub = view.findViewById<ViewStub>(R.id.message_reply_stub)
+    private val replyStubAlt = view.findViewById<ViewStub>(R.id.message_reply_stub_alt)
+    private val replyBtn = view.findViewById<Button>(R.id.reply_btn)
+    private val replyBtnAlt = view.findViewById<Button>(R.id.reply_btn_alt)
 
     private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     private val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
-    /*fun updateSelectMode(state: Boolean) {
-        isSelectModeOn = state
-        if (isSelectModeOn) {
-
-            view.setOnClickListener {
-                selectBtn.isChecked = !selectBtn.isChecked
-            }
-
-            (selectBtn ?: selectBtnAlt).show()
-            (forwardBtn ?: forwardBtnAlt).hide()
-            imageParentView?.setOnClickListener {
-                view.performClick()
-            }
-            documentParentView?.setOnClickListener {
-                view.performClick()
-            }
-            senderImg?.setOnClickListener {
-                view.performClick()
-            }
-        } else {
-
-            view.setOnClickListener {
-                //
-            }
-
-            (selectBtn ?: selectBtnAlt).hide()
-            (selectBtn ?: selectBtnAlt).isChecked = false
-
-            if (messageCopy != null && messageCopy!!.type != text) {
-                (forwardBtn ?: forwardBtnAlt)?.show()
-            }
-            imageParentView?.setOnClickListener {
-                if (messageCopy != null) {
-                    messageListener.onImageClick(view, messageCopy!!, layoutPosition, messageCopy!!.content)
-                }
-            }
-            documentParentView?.setOnClickListener {
-                if (messageCopy != null) {
-                    messageListener.onDocumentClick(messageCopy!!)
-                }
-            }
-            senderImg?.setOnClickListener {
-                if (messageCopy != null) {
-                    messageListener.onUserClick(messageCopy!!)
-                }
-            }
-        }
-    }*/
+    private lateinit var mDetector: GestureDetectorCompat
+    private var mMessage: Message? = null
+    private var isCurrentUserMessage = false
 
     fun bind(message: Message?) {
         if (message != null) {
-            val isCurrentUserMessage = message.senderId == currentUserId
+            mMessage = message
+            isCurrentUserMessage = message.senderId == currentUserId
             ViewCompat.setTransitionName(view, message.content)
 
             if (isCurrentUserMessage) {
@@ -226,47 +194,39 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaRight.text = getTextForTime(message.createdAt) + suffix
                 }
 
-                when (message.state) {
-                    -1 -> {
-                        selectBtnAlt.hide()
-                    }
-                    0 -> {
-                        selectBtnAlt.show()
-                        selectBtnAlt.isChecked = false
-
-                        forwardBtnAlt.hide()
-
-                        view.setOnClickListener {
-                            selectBtnAlt.isChecked = !selectBtnAlt.isChecked
-                            if (selectBtnAlt.isChecked) {
-                                message.state = 1
-                                messageListener.onMessageStateChanged(message)
+                if (message.replyTo != null) {
+                    val msg1 = message.replyMessage
+                    if (msg1 != null) {
+                        onReplyMessageLoaded(msg1, false)
+                    } else {
+                        scope.launch {
+                            val msg2 = messageListener.onGetMessageReply(message.replyTo!!)
+                            if (msg2 != null) {
+                                onReplyMessageLoaded(msg2.toReplyMessage(), false)
                             } else {
-                                message.state = 0
-                                messageListener.onMessageStateChanged(message)
+                                Firebase.firestore.collection("chatChannels")
+                                    .document(message.chatChannelId)
+                                    .collection("messages")
+                                    .document(message.replyTo!!)
+                                    .get()
+                                    .addOnSuccessListener {
+                                        if (it != null && it.exists()) {
+                                            val msg = it.toObject(Message::class.java)!!
+                                            onReplyMessageLoaded(msg.toReplyMessage(), false)
+                                        }
+                                    }.addOnFailureListener {
+                                        Log.e(TAG, it.localizedMessage.orEmpty())
+                                    }
                             }
                         }
-
-                    }
-                    1 -> {
-                        selectBtnAlt.show()
-                        selectBtnAlt.isChecked = true
-
-                        forwardBtnAlt.hide()
-
-                        view.setOnClickListener {
-                            selectBtnAlt.isChecked = !selectBtnAlt.isChecked
-                            if (selectBtnAlt.isChecked) {
-                                message.state = 1
-                                messageListener.onMessageStateChanged(message)
-                            } else {
-                                message.state = 0
-                                messageListener.onMessageStateChanged(message)
-                            }
-                        }
-
                     }
                 }
+
+                replyBtnAlt.setOnClickListener {
+                    replyBtnAlt.hideWithAnimation()
+                    messageListener.onMessageDoubleClick(message)
+                }
+
             } else {
                 when (viewType) {
                     msg_at_start -> {
@@ -390,65 +350,180 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaLeft.text = message.sender.name + " • " + getTextForTime(message.createdAt)
                 }
 
-                when (message.state) {
-                    -1 -> {
-                        selectBtn.hide()
-                    }
-                    0 -> {
-                        selectBtn.show()
-                        selectBtn.isChecked = false
-
-                        forwardBtn.hide()
-
-                        view.setOnClickListener {
-                            selectBtn.isChecked = !selectBtn.isChecked
-                            if (selectBtn.isChecked) {
-                                message.state = 1
-                                messageListener.onMessageStateChanged(message)
+                if (message.replyTo != null) {
+                    val msg1 = message.replyMessage
+                    if (msg1 != null) {
+                        onReplyMessageLoaded(msg1)
+                    } else {
+                        scope.launch {
+                            val msg2 = messageListener.onGetMessageReply(message.replyTo!!)
+                            if (msg2 != null) {
+                                onReplyMessageLoaded(msg2.toReplyMessage())
                             } else {
-                                message.state = 0
-                                messageListener.onMessageStateChanged(message)
+                                Firebase.firestore.collection("chatChannels")
+                                    .document(message.chatChannelId)
+                                    .collection("messages")
+                                    .document(message.replyTo!!)
+                                    .get()
+                                    .addOnSuccessListener {
+                                        if (it != null && it.exists()) {
+                                            val msg3 = it.toObject(Message::class.java)!!
+                                            onReplyMessageLoaded(msg3.toReplyMessage())
+                                        }
+                                    }.addOnFailureListener {
+                                        Log.e(TAG, it.localizedMessage.orEmpty())
+                                    }
                             }
                         }
-
                     }
-                    1 -> {
-                        selectBtn.show()
-                        selectBtn.isChecked = true
+                }
 
-                        forwardBtn.hide()
+                // end of other user message
 
-                        view.setOnClickListener {
-                            selectBtn.isChecked = !selectBtn.isChecked
-                            if (selectBtn.isChecked) {
-                                message.state = 1
-                                messageListener.onMessageStateChanged(message)
-                            } else {
-                                message.state = 0
-                                messageListener.onMessageStateChanged(message)
-                            }
-                        }
-
-                    }
+                replyBtn.setOnClickListener {
+                    replyBtn.hideWithAnimation()
+                    messageListener.onMessageDoubleClick(message)
                 }
 
             }
 
             messageListener.onMessageRead(message)
 
-            view.setOnLongClickListener {
-                messageListener.onMessageLongClick(message)
-                true
-            }
+            mDetector = GestureDetectorCompat(view.context, this)
+            mDetector.setOnDoubleTapListener(this)
+            mDetector.setIsLongpressEnabled(true)
+
+            setListenersBasedOnState(message, !isCurrentUserMessage)
+
+            view.setOnTouchListener(touchListener)
 
         }
+    }
+
+    private val touchListener = View.OnTouchListener { p0, p1 ->
+        return@OnTouchListener mDetector.onTouchEvent(p1)
+    }
+
+    private fun setListenersBasedOnState(message: Message, isLeft: Boolean = true) {
+        when (message.state) {
+            -1 -> {
+                // when nothing is selected and the select mode is not on
+                if (isLeft) {
+                    selectBtn.hide()
+                } else {
+                    selectBtnAlt.hide()
+                }
+            }
+            0 -> {
+                // when select mode is on but nothing is selected
+                if (message.type != text && !message.isDownloaded) {
+                    return
+                }
+
+                if (isLeft) {
+                    selectBtn.show()
+                    selectBtn.isChecked = false
+
+                    forwardBtn.hide()
+                } else {
+                    selectBtnAlt.show()
+                    selectBtnAlt.isChecked = false
+
+                    forwardBtnAlt.hide()
+                }
+            }
+            1 -> {
+                // when select mode is on and this is selected
+                if (isLeft) {
+                    selectBtn.show()
+                    selectBtn.isChecked = true
+                    forwardBtn.hide()
+                } else {
+                    selectBtnAlt.show()
+                    selectBtnAlt.isChecked = true
+
+                    forwardBtnAlt.hide()
+                }
+            }
+        }
+    }
+
+    private fun onReplyMessageLoaded(msg: MessageMinimal, isLeft: Boolean = true) {
+
+        val stub = if (isLeft) {
+            replyStub
+        } else {
+            replyStubAlt
+        }
+
+        if (stub != null && stub.parent != null) {
+            val view1 = stub.inflate()
+            val replyLayoutBinding = ReplyLayoutBinding.bind(view1)
+
+            if (msg.senderId == currentUserId) {
+                replyLayoutBinding.replyName.text = "You"
+            } else {
+                replyLayoutBinding.replyName.text = msg.name
+            }
+            replyLayoutBinding.replyLayoutRoot.updateLayout(marginRight = convertDpToPx(8, view.context))
+
+            replyLayoutBinding.replyCloseBtn.hide()
+
+           /* if (msg.sender.name.isBlank()) {
+                scope.launch {
+                    val sender = messageListener.onGetMessageReplyUser(msg.senderId)
+                    if (sender != null) {
+                        msg.sender = sender
+                        replyLayoutBinding.replyName.text = msg.sender.name
+                    } else {
+                        Firebase.firestore.collection("users").document(msg.senderId)
+                            .get()
+                            .addOnSuccessListener {
+                                if (it != null && it.exists()) {
+                                    val sender1 = it.toObject(User::class.java)!!
+                                    msg.sender = sender1
+                                    replyLayoutBinding.replyName.text = msg.sender.name
+                                }
+                            }.addOnFailureListener {
+                                Log.e(TAG, it.localizedMessage.orEmpty())
+                            }
+                    }
+                }
+            }*/
+
+            if (msg.type == image) {
+                replyLayoutBinding.replyImage.show()
+                replyLayoutBinding.replyText.hide()
+                if (msg.isDownloaded) {
+                    val name = msg.content + msg.metadata!!.ext
+                    val destination = File(imagesDir, msg.chatChannelId)
+                    val file = File(destination, name)
+                    val uri = Uri.fromFile(file)
+
+                    if (msg.metadata.ext == ".webp") {
+                        val controller = Fresco.newDraweeControllerBuilder()
+                            .setUri(uri)
+                            .setAutoPlayAnimations(false)
+                            .build()
+
+                        replyLayoutBinding.replyImage.controller = controller
+                    } else {
+                        replyLayoutBinding.replyImage.setImageURI(uri.toString())
+                    }
+                }
+            } else {
+                replyLayoutBinding.replyImage.hide()
+                replyLayoutBinding.replyText.show()
+
+                replyLayoutBinding.replyText.text = msg.content
+            }
+        }
+
     }
 
     private fun onMediaImageMessageLoaded(parentView: ViewGroup, message: Message, isLeft: Boolean = true) {
         val progress = parentView.findViewById<ProgressBar>(R.id.message_img_progress)
         val imageView = parentView.findViewById<SimpleDraweeView>(R.id.message_image)
-
-//        imageParentView = parentView
 
         val forwardBtn: Button = if (isLeft) {
             forwardBtn
@@ -491,6 +566,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
             messageListener.onStartDownload(message) { task, newMessage ->
                 if (task.isSuccessful) {
+
+                    mMessage = newMessage
+
                     progress.hide()
                     forwardBtn.show()
                     val name = message.content + message.metadata!!.ext
@@ -600,9 +678,94 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
         private const val TAG = "MessageViewHolder"
 
-        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, contributorsSize: Int, viewType: Int): MessageViewHolder {
-            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, contributorsSize, viewType)
+        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, contributorsSize: Int, viewType: Int, scope: CoroutineScope): MessageViewHolder {
+            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, contributorsSize, viewType, scope)
         }
     }
+
+    override fun onDown(p0: MotionEvent?): Boolean {
+        Log.d(TAG, "OnDown")
+        return true
+    }
+
+    override fun onShowPress(p0: MotionEvent?) {
+        Log.d(TAG, "OnShowPress")
+    }
+
+    override fun onSingleTapUp(p0: MotionEvent?): Boolean {
+        Log.d(TAG, "onSingleTapUp")
+        return true
+    }
+
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+        Log.d(TAG, "onScroll")
+        return true
+    }
+
+    override fun onLongPress(p0: MotionEvent?) {
+        Log.d(TAG, "onLongPress")
+
+        if (mMessage!!.state == -1) {
+            mMessage!!.state = 0
+            messageListener.onMessageLongClick(mMessage!!)
+        }
+    }
+
+    override fun onFling(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+        Log.d(TAG, "onFling")
+        return true
+    }
+
+    override fun onSingleTapConfirmed(p0: MotionEvent?): Boolean {
+        Log.d(TAG, "onSingleTapConfirmed")
+        if (mMessage!!.type != text && !mMessage!!.isDownloaded) {
+            return true
+        }
+        if (isCurrentUserMessage) {
+            selectBtnAlt.isChecked = !selectBtnAlt.isChecked
+        } else {
+            selectBtn.isChecked = !selectBtn.isChecked
+        }
+
+        if (mMessage!!.state == 0) {
+            mMessage!!.state = 1
+            messageListener.onMessageStateChanged(mMessage!!)
+        } else {
+            mMessage!!.state = 0
+            messageListener.onMessageStateChanged(mMessage!!)
+        }
+        return true
+    }
+
+    override fun onDoubleTap(p0: MotionEvent?): Boolean {
+        Log.d(TAG, "onDoubleTap")
+
+        if (mMessage!!.type != text && !mMessage!!.isDownloaded) {
+            return true
+        }
+
+        if (isCurrentUserMessage) {
+            replyBtnAlt.showWithAnimations()
+        } else {
+            replyBtn.showWithAnimations()
+        }
+
+        scope.launch {
+            delay(6000)
+            if (isCurrentUserMessage) {
+                replyBtnAlt.hideWithAnimation()
+            } else {
+                replyBtn.hideWithAnimation()
+            }
+        }
+
+        return true
+    }
+
+    override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {
+        Log.d(TAG, "onDoubleTapEvent")
+        return true
+    }
+
 
 }

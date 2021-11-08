@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
+import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.FragmentNavigatorExtras
@@ -21,6 +22,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
@@ -34,6 +36,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
+import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
@@ -979,7 +982,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         viewModel.updateRestOfTheMessages(message.chatChannelId, 0)
 
         lifecycleScope.launch {
-            delay(500)
+            delay(300)
             message.state = 1
             onMessageStateChanged(message)
         }
@@ -988,6 +991,29 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onMessageStateChanged(message: Message) {
         viewModel.updateMessage(message)
+    }
+
+    override suspend fun onGetMessageReply(replyTo: String): Message? {
+        return viewModel.getLocalMessage(replyTo)
+    }
+
+    override suspend fun onGetMessageReplyUser(senderId: String): User? {
+        return viewModel.getLocalUser(senderId)
+    }
+
+    override fun onMessageDoubleClick(message: Message) {
+        viewModel.setCurrentlySelectedMessage(message)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // TODO("Need to hold the last chat channel id value")
+        val currentUser = viewModel.currentUser.value
+        if (currentUser != null) {
+            for (channel in currentUser.chatChannels) {
+                viewModel.updateRestOfTheMessages(channel, -1)
+            }
+        }
     }
 
 }

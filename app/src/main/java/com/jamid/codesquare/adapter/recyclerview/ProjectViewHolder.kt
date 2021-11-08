@@ -24,6 +24,8 @@ import androidx.core.text.set
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.viewpager2.widget.ViewPager2
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.request.ImageRequest
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
 import com.jamid.codesquare.listeners.ProjectClickListener
@@ -150,6 +152,13 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 if (onFlingListener == null) {
                     helper.attachToRecyclerView(this)
                 }
+            }
+
+            val imagePipeline = Fresco.getImagePipeline()
+
+            for (image in project.images) {
+                val imageRequest = ImageRequest.fromUri(image)
+                imagePipeline.prefetchToDiskCache(imageRequest, view.context)
             }
 
             imageAdapter.submitList(project.images)

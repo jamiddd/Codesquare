@@ -1,6 +1,8 @@
 package com.jamid.codesquare.db
 
 import androidx.paging.ExperimentalPagingApi
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.request.ImageRequest
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Project
@@ -10,7 +12,6 @@ class ProjectRemoteMediator(query: Query, repo: MainRepository, private val shou
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val projects = items.toObjects(Project::class.java)
         repository.insertProjects(projects)
-
     }
 
     override suspend fun onRefresh() {

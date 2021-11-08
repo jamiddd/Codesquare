@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.home.chat
 
+import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
@@ -34,6 +35,7 @@ import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Metadata
 import com.jamid.codesquare.databinding.ChatBottomLayoutBinding
+import com.jamid.codesquare.databinding.ChatOptionLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
@@ -48,6 +50,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
     private var modeChanged = false
 
+    private var chatsOptionsBinding: ChatOptionLayoutBinding? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
@@ -57,10 +61,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.chat_menu, menu)
-
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-        toolbar?.menu?.getItem(0)?.isVisible = false
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -72,27 +72,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
                 findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title, "chatChannel" to chatChannel), slideRightNavOptions())
-                true
-            }
-            R.id.chat_forward -> {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val messages = viewModel.getSelectedMessages()
-                    if (messages.isEmpty()) {
-                        toast("No messages selected")
-                    } else {
-                        val newMessages = arrayListOf<Message>()
-
-                        Log.d(TAG, messages.map { it.content }.toString())
-
-                        viewModel.updateRestOfTheMessages(chatChannelId, -1)
-                        for (message in messages) {
-                            newMessages.add(message)
-                        }
-                        val forwardFragment = ForwardFragment.newInstance(newMessages)
-                        forwardFragment.show(requireActivity().supportFragmentManager, "ForwardFragment")
-                    }
-                }
-
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -278,16 +257,82 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             }
         }
 
+        val imagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val chatsOption = layoutInflater.inflate(R.layout.chat_option_layout, null, false)
+        chatsOptionsBinding = ChatOptionLayoutBinding.bind(chatsOption)
+        binding.pagerRoot.addView(chatsOptionsBinding!!.root)
+
+        val params1 = chatsOptionsBinding!!.chatOptionRoot.layoutParams as ConstraintLayout.LayoutParams
+        params1.startToStart = binding.pagerRoot.id
+        params1.endToEnd = binding.pagerRoot.id
+        params1.bottomToBottom = binding.pagerRoot.id
+        chatsOptionsBinding!!.chatOptionRoot.layoutParams = params1
+
+        chatsOptionsBinding!!.chatOptionRoot.updateLayout(ConstraintLayout.LayoutParams.WRAP_CONTENT, ConstraintLayout.LayoutParams.MATCH_PARENT)
+
+        chatsOptionsBinding!!.chatOptionRoot.slideDown(convertDpToPx(150).toFloat())
+
         val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)!!
 
-        viewModel.onMessagesModeChanged.observe(viewLifecycleOwner) {
-            if (it != null) {
+        viewModel.onMessagesModeChanged.observe(viewLifecycleOwner) { messages ->
+            if (!messages.isNullOrEmpty()) {
+
+                for (child in binding.pagerItemsRecycler.children) {
+                    val vh = binding.pagerItemsRecycler.getChildViewHolder(child) as MessageViewHolder?
+                    if (vh != null) {
+                        vh.view.findViewById<Button>(R.id.reply_btn)?.hide()
+                        vh.view.findViewById<Button>(R.id.reply_btn_alt)?.hide()
+                    }
+                }
+
+                val isSingleMessage = messages.size == 1
+                chatsOptionsBinding!!.chatsReplyBtn.isEnabled = isSingleMessage
+
                 modeChanged = true
-                toolbar.menu.getItem(0).isVisible = true
-                toolbar.menu.getItem(1).isVisible = false
+
+                if (isSingleMessage) {
+
+                    val currentlySelectedMessage = messages.first()
+                    chatsOptionsBinding!!.chatOptionRoot.slideReset()
+
+                    bottomViewBinding.chatBottomRoot.slideDown(convertDpToPx(100).toFloat())
+
+                    chatsOptionsBinding?.let {
+
+                        it.chatsForwardBtn.setOnClickListener {
+
+                            val forwardMessages = arrayListOf<Message>()
+                            for (m in messages) {
+                                forwardMessages.add(m)
+                            }
+
+                            chatsOptionsBinding!!.chatOptionRoot.hide()
+                            val forwardFragment = ForwardFragment.newInstance(forwardMessages)
+                            forwardFragment.show(requireActivity().supportFragmentManager, "ForwardFragment")
+
+                            viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                            viewModel.setCurrentlySelectedMessage(null)
+                        }
+
+                        it.chatsReplyBtn.setOnClickListener {
+                            viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                            viewModel.setCurrentlySelectedMessage(currentlySelectedMessage)
+                        }
+                    }
+
+                } else {
+
+                    bottomViewBinding.chatBottomRoot.slideReset()
+                }
+
+                toolbar.menu.getItem(0).isVisible = false
 
                 toolbar.setNavigationIcon(R.drawable.ic_round_close_24)
                 toolbar.setNavigationOnClickListener {
+                    viewModel.updateRestOfTheMessages(chatChannelId, -1)
+                }
+
+                requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
                     viewModel.updateRestOfTheMessages(chatChannelId, -1)
                 }
 
@@ -300,10 +345,16 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                     modeChanged = false
                 }
 
-                if (toolbar.menu.hasVisibleItems()){
-                    toolbar.menu.getItem(0).isVisible = false
-                    toolbar.menu.getItem(1).isVisible = true
+
+                if (toolbar.menu.hasVisibleItems()) {
+                    toolbar.menu.getItem(0).isVisible = true
+                } else {
+                    val item = toolbar.menu.findItem(R.id.chat_detail)
+                    if (item != null) {
+                        item.isVisible = true
+                    }
                 }
+
                 toolbar.setNavigationIcon(R.drawable.ic_round_arrow_back_24)
 
                 toolbar.setNavigationOnClickListener {
@@ -316,12 +367,65 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 }
 
                 bottomViewBinding.root.slideReset()
+                chatsOptionsBinding!!.chatOptionRoot.slideDown(convertDpToPx(150).toFloat())
 
+            }
+        }
+
+        viewModel.singleSelectedMessage.observe(viewLifecycleOwner) { message ->
+            if (message != null) {
+                bottomViewBinding.addMediaBtn.hide()
+                onReplyClick(bottomViewBinding, message)
+            } else {
+                bottomViewBinding.chatBottomReplyContainer.root.hide()
+                bottomViewBinding.addMediaBtn.show()
+                viewModel.setCurrentlySelectedMessage(null)
             }
         }
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             viewModel.updateRestOfTheMessages(chatChannelId, -1)
+        }
+
+    }
+
+    private fun onReplyClick(bottomViewBinding: ChatBottomLayoutBinding, currentlySelectedMessage: Message) {
+        val imagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        chatsOptionsBinding!!.chatOptionRoot.slideDown(convertDpToPx(150).toFloat())
+        bottomViewBinding.chatBottomRoot.slideReset()
+
+        bottomViewBinding.chatBottomReplyContainer.root.show()
+
+        bottomViewBinding.chatBottomReplyContainer.apply {
+
+            replyLayoutRoot.background = null
+            replyName.text = currentlySelectedMessage.sender.name
+
+            if (currentlySelectedMessage.type == image) {
+                if (currentlySelectedMessage.isDownloaded) {
+                    val name = currentlySelectedMessage.content + currentlySelectedMessage.metadata!!.ext
+                    val destination = File(imagesDir, currentlySelectedMessage.chatChannelId)
+                    val file = File(destination, name)
+                    val uri = Uri.fromFile(file)
+                    replyImage.show()
+                    replyText.hide()
+                    replyImage.setImageURI(uri.toString())
+                }
+            } else if (currentlySelectedMessage.type == document) {
+                replyImage.hide()
+                replyText.show()
+                replyText.text = currentlySelectedMessage.metadata!!.name
+            } else {
+                replyText.show()
+                replyImage.hide()
+                replyText.text = currentlySelectedMessage.content
+            }
+
+            replyCloseBtn.setOnClickListener {
+                bottomViewBinding.chatBottomReplyContainer.root.hide()
+                viewModel.setCurrentlySelectedMessage(null)
+            }
+
         }
 
     }
@@ -370,7 +474,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                             val ext = getExtensionForMime(contentResolver.getType(img).orEmpty())
                             val metadata = Metadata(size, name.orEmpty(), img.toString(), ext)
 
-                            val message = Message(randomId(), chatChannelId, image, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
+                            val message = Message(randomId(), chatChannelId, image, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, null, null, currentUser, isDownloaded = false, isCurrentUserMessage = true)
 
                             listOfMessages.add(message)
 
@@ -404,7 +508,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
                             val metadata = Metadata(size, name.orEmpty(), doc.toString(), ext)
 
-                            val message = Message(randomId(), chatChannelId, document, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, currentUser, isDownloaded = false, isCurrentUserMessage = true)
+                            val message = Message(randomId(), chatChannelId, document, randomId(), currentUser.id, metadata, emptyList(), emptyList(), now, null, null, currentUser, isDownloaded = false, isCurrentUserMessage = true)
                             listOfMessages.add(message)
 
                         } catch (e: Exception) {
@@ -415,7 +519,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
                 // check if there is any text present
                 if (!chatInputLayout.text.isNullOrBlank()) {
-                    val message = Message(randomId(), chatChannelId, text, chatInputLayout.text.toString(), currentUser.id, null, emptyList(), emptyList(), now, currentUser, false, isCurrentUserMessage = true)
+                    val message = Message(randomId(), chatChannelId, text, chatInputLayout.text.toString(), currentUser.id, null, emptyList(), emptyList(), now, null, null, currentUser, false, isCurrentUserMessage = true)
                     listOfMessages.add(message)
                 }
 
@@ -428,11 +532,12 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
                 val content = chatInputLayout.text.toString()
 
-                viewModel.sendTextMessage(externalImagesDir, externalDocumentsDir, chatChannelId, content)
+                val currentlySelectedMessage = viewModel.singleSelectedMessage.value
+                viewModel.sendTextMessage(externalImagesDir, externalDocumentsDir, chatChannelId, content, currentlySelectedMessage?.messageId, currentlySelectedMessage?.toReplyMessage())
             }
 
             chatInputLayout.text.clear()
-
+            viewModel.setCurrentlySelectedMessage(null)
             scrollToBottom()
 
         }
@@ -447,9 +552,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         val currentUser = viewModel.currentUser.value!!
         val chatChannel = arguments?.getParcelable<ChatChannel>("chatChannel")
         return if (chatChannel == null) {
-            MessageAdapter2(currentUser.id, 0)
+            MessageAdapter2(currentUser.id, 0, viewLifecycleOwner.lifecycleScope)
         } else {
-            MessageAdapter2(currentUser.id, chatChannel.contributors.size)
+            MessageAdapter2(currentUser.id, chatChannel.contributors.size, viewLifecycleOwner.lifecycleScope)
         }
     }
 
@@ -457,6 +562,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         super.onDestroy()
         viewModel.currentChatChannel = null
         viewModel.setChatUploadImages(emptyList())
+        viewModel.setCurrentlySelectedMessage(null)
     }
 
 }

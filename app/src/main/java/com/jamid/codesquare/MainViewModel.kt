@@ -64,6 +64,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val onMessagesModeChanged = repo.onMessagesModeChanged
 
+    private val _singleSelectedMessage = MutableLiveData<Message?>()
+    val singleSelectedMessage: LiveData<Message?> = _singleSelectedMessage
+
+    fun setCurrentlySelectedMessage(message: Message?) {
+        _singleSelectedMessage.postValue(message)
+    }
+
     private val _forwardList = MutableLiveData<List<ChatChannel>>()
     val forwardList: LiveData<List<ChatChannel>> = _forwardList
 
@@ -692,9 +699,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }*/
 
-    fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String) = viewModelScope.launch (Dispatchers.IO) {
+    fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String, replyTo: String? = null, replyMessage: MessageMinimal? = null) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
-        when (val result = FireUtility.sendTextMessage(currentUser, chatChannelId, content)) {
+        when (val result = FireUtility.sendTextMessage(currentUser, chatChannelId, content, replyTo, replyMessage)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
                 repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data))
@@ -1062,6 +1069,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     suspend fun getSelectedMessages(): List<Message> {
         return repo.getSelectedMessages()
+    }
+
+    suspend fun getLocalMessage(messageId: String): Message? {
+        return repo.getLocalMessage(messageId)
     }
 
     companion object {

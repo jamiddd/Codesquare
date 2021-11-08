@@ -509,6 +509,10 @@ class MainRepository(db: CodesquareDatabase) {
         return messageDao.getSelectedMessages().orEmpty()
     }
 
+    suspend fun getLocalMessage(messageId: String): Message? {
+        return messageDao.getMessage(messageId)
+    }
+
     companion object {
 
         private const val TAG = "MainRepository"

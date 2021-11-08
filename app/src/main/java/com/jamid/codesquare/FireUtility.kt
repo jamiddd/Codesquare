@@ -713,7 +713,7 @@ object FireUtility {
 
     }
 
-    suspend fun sendTextMessage(currentUser: User, chatChannelId: String, content: String): Result<Message> {
+    suspend fun sendTextMessage(currentUser: User, chatChannelId: String, content: String, replyTo: String? = null, replyMessage: MessageMinimal? = null): Result<Message> {
 
         return try {
             val db = Firebase.firestore
@@ -724,7 +724,7 @@ object FireUtility {
             val ref = chatChannelRef.collection("messages").document()
             val messageId = ref.id
 
-            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, emptyList(), emptyList(), System.currentTimeMillis(), currentUser, false, isCurrentUserMessage = true)
+            val message = Message(messageId, chatChannelId, text, content, currentUser.id, null, emptyList(), emptyList(), System.currentTimeMillis(), replyTo, replyMessage, currentUser, false, isCurrentUserMessage = true, -1)
 
             batch.set(ref, message)
 
@@ -981,7 +981,7 @@ object FireUtility {
                         .collection("messages")
                         .document()
 
-                    val newMessage = Message(ref.id, it.chatChannelId, messages[i].type, messages[i].content, currentUser.id, messages[i].metadata, emptyList(), emptyList(), now, currentUser,
+                    val newMessage = Message(ref.id, it.chatChannelId, messages[i].type, messages[i].content, currentUser.id, messages[i].metadata, emptyList(), emptyList(), now, null, null, currentUser,
                         isDownloaded = false,
                         isCurrentUserMessage = true
                     )
@@ -1033,7 +1033,7 @@ object FireUtility {
             val messages = mutableListOf<Message>()
 
             for (channel in channels) {
-                val newMessage = Message(randomId(), channel.chatChannelId, message.type, randomId(), currentUser.id, message.metadata, emptyList(), emptyList(), now, currentUser,
+                val newMessage = Message(randomId(), channel.chatChannelId, message.type, randomId(), currentUser.id, message.metadata, emptyList(), emptyList(), now, null, null, currentUser,
                     isDownloaded = false,
                     isCurrentUserMessage = true
                 )
