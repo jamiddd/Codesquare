@@ -50,10 +50,9 @@
         android:id="@+id/user_tag"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
         android:gravity="center"
         android:text="Android Developer"
-        app:layout_constraintBottom_toTopOf="@+id/user_about"
+        app:layout_constraintBottom_toTopOf="@+id/profile_primary_btn"
         app:layout_constraintEnd_toEndOf="@+id/user_name"
         app:layout_constraintStart_toStartOf="@+id/user_name"
         app:layout_constraintTop_toBottomOf="@+id/user_name"
@@ -73,7 +72,7 @@
         app:layout_constraintBottom_toTopOf="@+id/collaborations_count"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/user_tag"
+        app:layout_constraintTop_toBottomOf="@+id/profile_primary_btn"
         tools:visibility="gone" />
 
     <View
@@ -156,5 +155,14 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/collaborations_count"
         app:layout_constraintTop_toTopOf="@+id/collaborations_count" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/profile_primary_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/user_about"
+        app:layout_constraintEnd_toEndOf="@+id/user_tag"
+        app:layout_constraintStart_toStartOf="@+id/user_tag"
+        app:layout_constraintTop_toBottomOf="@+id/user_tag" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

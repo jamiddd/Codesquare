@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import android.os.Environment
 import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
+import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import java.io.File
@@ -28,6 +29,14 @@ class ChatDetailFragment: Fragment() {
     private lateinit var binding: FragmentChatDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var userAdapter: UserAdapter2
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,

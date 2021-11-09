@@ -41,10 +41,7 @@ class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
             }
 
         }
-
-
-        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-
+//        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
     }
 
     override fun getAdapter(): PagingDataAdapter<Project, ProjectViewHolder> {

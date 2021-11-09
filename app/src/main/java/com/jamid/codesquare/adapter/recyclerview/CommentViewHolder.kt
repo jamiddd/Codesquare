@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
@@ -17,6 +18,7 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.CommentListener
+import com.jamid.codesquare.toast
 
 class CommentViewHolder(val view: View, private val commentListener: CommentListener): RecyclerView.ViewHolder(view) {
 
@@ -105,6 +107,21 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
 
             view.setOnClickListener {
                 commentListener.onClick(comment)
+            }
+
+            optionBtn.setOnClickListener {
+                val popUpMenu = PopupMenu(view.context, it)
+                popUpMenu.inflate(R.menu.comment_menu)
+                popUpMenu.show()
+
+                popUpMenu.setOnMenuItemClickListener { it1 ->
+                    when (it1.itemId) {
+                        R.id.comment_report -> {
+                            view.context.toast("Reported comment")
+                        }
+                    }
+                    true
+                }
             }
         }
     }

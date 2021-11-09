@@ -1,7 +1,9 @@
 package com.jamid.codesquare.ui.profile
 
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingDataAdapter
@@ -13,6 +15,9 @@ import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.show
+import com.jamid.codesquare.slideRightNavOptions
 import com.jamid.codesquare.ui.PagerListFragment
 
 @ExperimentalPagingApi
@@ -27,9 +32,29 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
             val query = Firebase.firestore.collection("projects")
                 .whereEqualTo("creator.userId", currentUser.id)
 
+            setIsViewPagerFragment(true)
+
+            binding.pagerNoItemsText.text = "Create new project so that other people can see your work and collaborate"
+
             getItems {
                 viewModel.getCurrentUserProjects(query)
             }
+
+            isEmpty.observe(viewLifecycleOwner) {
+                if (it != null && it) {
+                    binding.pagerActionBtn.show()
+
+                    binding.pagerActionBtn.text = "Create project"
+                    binding.pagerActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+
+                    binding.pagerActionBtn.setOnClickListener {
+                        findNavController().navigate(R.id.action_profileFragment_to_createProjectFragment, null, slideRightNavOptions())
+                    }
+                } else {
+                    binding.pagerActionBtn.hide()
+                }
+            }
+
         } else {
             val query = Firebase.firestore.collection("projects")
                 .whereEqualTo("creator.userId", otherUser.id)
@@ -40,8 +65,7 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         }
 
-
-        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+//        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
 
     }
 

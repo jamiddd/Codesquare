@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
+import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
@@ -38,6 +39,12 @@ class ProjectFragment: Fragment() {
     private lateinit var projectClickListener: ProjectClickListener
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var userClickListener: UserClickListener
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -268,7 +275,7 @@ class ProjectFragment: Fragment() {
 
         chip.setOnClickListener {
             val bundle = bundleOf("title" to "#$tag", "tag" to tag)
-            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle, slideRightNavOptions())
+            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle)
         }
 
     }
@@ -320,7 +327,7 @@ class ProjectFragment: Fragment() {
                 ProjectContributorsFragment.ARG_ADMINISTRATORS to arrayListOf(project.creator.userId)
             )
 
-            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle, slideRightNavOptions())
+            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle)
         }
 
         val userAdapter2 = UserAdapter2(listOf(project.creator.userId))

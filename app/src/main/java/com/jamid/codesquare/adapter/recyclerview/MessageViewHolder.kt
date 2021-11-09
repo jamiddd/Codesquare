@@ -465,7 +465,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             } else {
                 replyLayoutBinding.replyName.text = msg.name
             }
-            replyLayoutBinding.replyLayoutRoot.updateLayout(marginRight = convertDpToPx(8, view.context))
+            if (isLeft) {
+                replyLayoutBinding.replyLayoutRoot.updateLayout(marginLeft = convertDpToPx(7, view.context))
+            } else {
+                replyLayoutBinding.replyLayoutRoot.updateLayout(marginRight = convertDpToPx(8, view.context))
+            }
 
             replyLayoutBinding.replyCloseBtn.hide()
 

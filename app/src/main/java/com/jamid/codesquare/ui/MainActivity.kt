@@ -363,7 +363,11 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
                     params.behavior = null
                     binding.navHostFragment.layoutParams = params
-
+                }
+                R.id.searchFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainToolbar.show()
+                    binding.mainTabLayout.show()
                 }
             }
         }
@@ -628,7 +632,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onProjectClick(project: Project) {
         val bundle = bundleOf("title" to project.title, "project" to project)
-        navController.navigate(R.id.projectFragment, bundle, slideRightNavOptions())
+        navController.navigate(R.id.projectFragment, bundle)
     }
 
     override fun onProjectLikeClick(project: Project) {
@@ -780,19 +784,19 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
-                navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle)
             }
             R.id.projectFragment -> {
-                navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle)
             }
             R.id.chatDetailFragment -> {
-                navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle)
             }
             R.id.chatFragment -> {
-                navController.navigate(R.id.action_chatFragment_to_profileFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_chatFragment_to_profileFragment, bundle)
             }
             R.id.projectContributorsFragment -> {
-                navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle)
             }
         }
     }
@@ -825,7 +829,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onChannelClick(chatChannel: ChatChannel) {
         val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
-        navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle, slideRightNavOptions())
+        navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle)
     }
 
     override fun onChatChannelSelected(chatChannel: ChatChannel) {

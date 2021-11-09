@@ -37,7 +37,9 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginEnd="12dp"
+        android:gravity="center_vertical"
         android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@+id/project_user_img"
         app:layout_constraintEnd_toStartOf="@+id/project_option"
         app:layout_constraintStart_toEndOf="@+id/project_user_img"
         app:layout_constraintTop_toTopOf="@+id/project_user_img">
@@ -147,13 +149,16 @@
     <TextView
         android:id="@+id/project_like_comment_text"
         style="@style/AppTheme.PrimaryText"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:layout_marginStart="8dp"
+        android:background="?selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
         android:text="12 Likes • 32 Comments • 45 Contributors"
         app:layout_constraintBottom_toTopOf="@+id/project_like_btn"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/project_content" />
 

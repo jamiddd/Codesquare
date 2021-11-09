@@ -50,13 +50,16 @@ import com.facebook.datasource.DataSubscriber
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.animation.doOnEnd
+import androidx.core.text.isDigitsOnly
 
 import com.facebook.imagepipeline.image.CloseableBitmap
 
 import com.facebook.datasource.BaseDataSubscriber
 import com.facebook.datasource.DataSource
+import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlin.collections.HashMap
 
 
 fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
@@ -449,6 +452,105 @@ fun getTextForSizeInBytes(size: Long): String {
     }
 }
 
+// must be in the form [a, b, c]
+fun String.toList() : List<Any> {
 
+    if (this.first() != '[') {
+        return emptyList()
+    }
+
+    if (this.first() != this.last()) {
+        return emptyList()
+    }
+
+    if (this.length == 2) {
+        return emptyList()
+    }
+
+    val newList = mutableListOf<Any>()
+    val newString = this.substring(1, this.length - 1)
+    val words = newString.split(',')
+
+    val sample = words.first()
+    when {
+        sample.startsWith('{') -> {
+            // all are objects
+            for (word in words) {
+                newList.add(word.toHashMap())
+            }
+        }
+        sample.startsWith('\"') -> {
+            // all are strings
+            for (word in words) {
+                newList.add(word.substring(1, word.length - 1))
+            }
+        }
+        sample.isDigitsOnly() -> {
+            // all are numbers
+            for (word in words) {
+                newList.add(word.toInt())
+            }
+        }
+    }
+
+    return newList
+}
+
+// must be in the form { }
+fun String.toHashMap(): Map<String, Any> {
+
+    if (this.first() != '{') {
+        return emptyMap()
+    }
+
+    if (this.first() != this.last()) {
+        return emptyMap()
+    }
+
+    val map = mutableMapOf<String, Any>()
+
+    fun z(pair: String) {
+        val keyValue = pair.split(':')
+        val key = keyValue.first()
+        val value = keyValue.last()
+
+        // object
+        if (value.startsWith('{')) {
+            val newValue = value.toHashMap()
+            map[key] = newValue
+        }
+
+        // list
+        if (value.startsWith('[')) {
+            val newValue = value.toList()
+            map[key] = newValue
+        }
+
+        // number
+        if (value.isNotEmpty() && value.isDigitsOnly()) {
+            val newValue = value.toLong()
+            map[key] = newValue
+        }
+
+        // string
+        if (value.first() == '\"' && value.last() == '\"') {
+            map[key] = value
+        }
+
+    }
+
+    if (this.contains(',')) {
+        // multiple elements
+        val fieldsAndValuesList = this.split(',')
+        for (pair in fieldsAndValuesList) {
+            z(pair)
+        }
+    } else {
+        // single element
+        z(this)
+    }
+
+    return map
+}
 
 private const val TAG = "UtilityTAG"

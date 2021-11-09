@@ -2,12 +2,14 @@ package com.jamid.codesquare.ui.profile
 
 import android.os.Bundle
 import android.view.*
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -26,6 +28,10 @@ class ProfileFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -41,10 +47,6 @@ class ProfileFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
-            R.id.edit_profile -> {
-                findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment, null, slideRightNavOptions())
-                true
-            }
             R.id.log_out -> {
                 Firebase.auth.signOut()
                 viewModel.signOut()
@@ -52,18 +54,18 @@ class ProfileFragment: Fragment() {
                 true
             }
             R.id.project_requests -> {
-                findNavController().navigate(R.id.action_profileFragment_to_projectRequestFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.action_profileFragment_to_projectRequestFragment, null)
                 true
             }
             R.id.saved_projects -> {
-                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null)
                 true
             }
             R.id.settings -> {
                 toast("Settings")
                 true
             }
-            R.id.like_user -> {
+            R.id.report_user -> {
                 toast("Liked this user")
                 true
             }
@@ -115,6 +117,8 @@ class ProfileFragment: Fragment() {
     private fun onViewGenerated(view: View, otherUser: User? = null) {
         val userLayoutBinding = UserInfoLayoutBinding.bind(view)
 
+
+
         userLayoutBinding.apply {
 
             if (otherUser == null) {
@@ -126,13 +130,13 @@ class ProfileFragment: Fragment() {
                     }
                 }
             } else {
-                setUser(otherUser)
+                setUser(otherUser, false)
             }
 
         }
     }
 
-    private fun UserInfoLayoutBinding.setUser(user: User) {
+    private fun UserInfoLayoutBinding.setUser(user: User, isCurrentUser: Boolean = true) {
 
         userImg.setImageURI(user.photo)
         userName.text = user.name
@@ -159,6 +163,38 @@ class ProfileFragment: Fragment() {
 
         val starsCountText = user.starsCount.toString() + " Stars"
         starsCount.text = starsCountText
+
+        if (isCurrentUser) {
+            profilePrimaryBtn.icon = null
+            profilePrimaryBtn.text = "Edit"
+            profilePrimaryBtn.setOnClickListener {
+                findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment)
+            }
+        } else {
+
+            val currentUser = viewModel.currentUser.value!!
+
+            profilePrimaryBtn.isSelected = currentUser.likedUsers.contains(user.id)
+            profilePrimaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.like_selector)
+            if (profilePrimaryBtn.isSelected) {
+                profilePrimaryBtn.isSelected = true
+                profilePrimaryBtn.text = "Dislike"
+            } else {
+                profilePrimaryBtn.isSelected = false
+                profilePrimaryBtn.text = "Like"
+            }
+
+            profilePrimaryBtn.setOnClickListener {
+                if (profilePrimaryBtn.isSelected) {
+                    profilePrimaryBtn.isSelected = false
+                    profilePrimaryBtn.text = "Like"
+                } else {
+                    profilePrimaryBtn.isSelected = true
+                    profilePrimaryBtn.text = "Dislike"
+                }
+            }
+        }
+
     }
 
 }

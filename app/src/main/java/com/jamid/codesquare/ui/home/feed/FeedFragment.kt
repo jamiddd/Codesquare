@@ -32,12 +32,12 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
             viewModel.getFeedItems(query)
         }
 
-        recyclerView?.addItemDecoration(
+        /*recyclerView?.addItemDecoration(
             DividerItemDecoration(
                 requireContext(),
                 DividerItemDecoration.VERTICAL
             )
-        )
+        )*/
         recyclerView?.itemAnimator = null
 
         val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
@@ -84,7 +84,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         chip.isCloseIconVisible = false
 
         chip.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_editProfileFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.action_homeFragment_to_editProfileFragment, null)
         }
 
         addView(chip)

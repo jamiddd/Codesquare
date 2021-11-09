@@ -67,6 +67,20 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val _singleSelectedMessage = MutableLiveData<Message?>()
     val singleSelectedMessage: LiveData<Message?> = _singleSelectedMessage
 
+    private val _searchProjectsResult = MutableLiveData<List<SearchResult>?>()
+    val searchProjectsResult: LiveData<List<SearchResult>?> = _searchProjectsResult
+
+    private val _searchUsersResult = MutableLiveData<List<SearchResult>?>()
+    val searchUsersResult: LiveData<List<SearchResult>?> = _searchUsersResult
+
+    fun setProjectsResult(results: List<SearchResult>?) {
+        _searchProjectsResult.postValue(results)
+    }
+
+    fun setUsersResult(results: List<SearchResult>?) {
+        _searchUsersResult.postValue(results)
+    }
+
     fun setCurrentlySelectedMessage(message: Message?) {
         _singleSelectedMessage.postValue(message)
     }
