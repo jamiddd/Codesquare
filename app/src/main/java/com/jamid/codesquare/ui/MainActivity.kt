@@ -14,7 +14,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
-import androidx.core.view.children
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.FragmentNavigatorExtras
@@ -22,7 +21,6 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import androidx.paging.ExperimentalPagingApi
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
@@ -36,7 +34,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
-import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
@@ -399,6 +396,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             }
         }
 
+        viewModel.errors.observe(this) {
+            if (it != null) {
+                Log.d(TAG, it.localizedMessage ?: "Unknown error")
+            }
+        }
+
         viewModel.currentError.observe(this) { exception ->
             if (exception != null) {
                 Log.e(TAG, exception.localizedMessage.orEmpty())
@@ -466,17 +469,18 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 val users = it2.result.toObjects(User::class.java).filter {
                     it.id != currentUser.id
                 }
-                Log.d(TAG, chatChannel.projectTitle + " " +  users.map { it.name }.toString())
                 viewModel.insertChannelWithContributors(chatChannel, users)
+
+                // get messages only after getting all the contributors associated with the project
+                getLatestMessagesBaseOnLastMessage(chatChannel)
+
             } else {
                 viewModel.setCurrentError(it2.exception)
             }
         }
 
-        getLatestMessagesBaseOnLastMessage(chatChannel)
-
         // listening for new messages as soon as activity starts
-        addChannelListener(currentUser, chatChannel)
+        addChannelListener(chatChannel)
     }
 
     // the criteria for checking time is 24 hour
@@ -495,8 +499,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     private fun getLatestMessagesBaseOnLastMessage(chatChannel: ChatChannel) = lifecycleScope.launch {
 
-        Log.d("MessageChecking", "Getting latest Messages ${chatChannel.projectTitle}")
-
         val lastMessage = viewModel.getLastMessageForChannel(chatChannel.chatChannelId)
         if (lastMessage != null) {
 
@@ -505,6 +507,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
             // getting limited new messages cause deleting old messages
             if (isLastMessageReallyOld(lastMessage)) {
+
                 viewModel.deleteAllMessagesInChannel(chatChannel.chatChannelId)
 
                 // getting 50 new messages
@@ -522,6 +525,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
             // getting all messages since this message
             if (isLastMessageRelativelyNew(lastMessage)) {
+                Log.d(TAG, "Yes the last message is relatively new .. hence downloading all messages after that")
                 if (externalImagesDir != null && externalDocumentsDir != null) {
                     viewModel.getLatestMessagesAfter(externalImagesDir, externalDocumentsDir, lastMessage, chatChannel)
                 }
@@ -529,7 +533,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
     }
 
-    private fun addChannelListener(currentUser: User, chatChannel: ChatChannel) = lifecycleScope.launch {
+    private fun addChannelListener(chatChannel: ChatChannel) = lifecycleScope.launch {
 
         val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -548,22 +552,8 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 if (value != null) {
                     val messages = value.toObjects(Message::class.java)
                     if (externalDocumentsDir != null && externalImagesDir != null) {
-
-                        val nonUpdatedMessages = messages.filter { message ->
-                            !message.deliveryList.contains(currentUser.id)
-                        }
-
-                        // update chat channel
                         // insert the new messages
-                        viewModel.insertChatChannelsWithoutProcessing(listOf(chatChannel))
                         viewModel.insertChannelMessages(chatChannel, externalImagesDir, externalDocumentsDir, messages)
-
-                        // update the delivery list
-                        viewModel.updateDeliveryListOfMessages(chatChannel, currentUser.id, nonUpdatedMessages) { it1 ->
-                            if (!it1.isSuccessful) {
-                                viewModel.setCurrentError(it1.exception)
-                            }
-                        }
                     }
                 }
             }
@@ -621,7 +611,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     companion object {
-        private const val TAG = "MainActivity"
+        private const val TAG = "MainActivityDebugTag"
     }
 
     override fun onLocationClick(address: Address) {
@@ -729,7 +719,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         val choices = if (isCurrentUser) {
             arrayOf(saveUnSaveText, "Delete")
         } else {
-            arrayOf(likeDislikeUserText, saveUnSaveText)
+            arrayOf(likeDislikeUserText, saveUnSaveText, "Report")
         }
 
         MaterialAlertDialogBuilder(this)
@@ -768,6 +758,10 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                         }
                         1 -> {
                             viewHolder.onSaveProjectClick(project)
+                        }
+                        2 -> {
+//                            viewModel.reportProject(project)
+//                            toast("Reporting")
                         }
                     }
                 }

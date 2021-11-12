@@ -15,13 +15,21 @@ const client = algoliasearch(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
     .onCreate((snap, context) => {
 
-        console.log(ALGOLIA_ID + " --- " + ALGOLIA_ADMIN_KEY)
+        console.log(ALGOLIA_ID + " --- " + ALGOLIA_ADMIN_KEY);
 
-        console.log("Hello World")
+        console.log("Hello World");
 
         const project = snap.data();
         project.objectID = context.params.projectId;
         const index = client.initIndex(ALGOLIA_INDEX_NAME);
 
+        return index.saveObject(project);
+    });
+
+exports.onUserCreated = functions.firestore.document("users/{userId}")
+    .onCreate((snap, context) => {
+        const user = snap.data();
+        user.objectID = context.params.userId;
+        const index = client.initIndex("users");
         return index.saveObject(project);
     });

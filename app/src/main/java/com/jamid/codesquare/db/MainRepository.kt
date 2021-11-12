@@ -3,6 +3,7 @@ package com.jamid.codesquare.db
 import android.media.Image
 import android.util.Log
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -24,6 +25,10 @@ class MainRepository(db: CodesquareDatabase) {
 
     val currentUser: LiveData<User> = userDao.currentUser()
     val onMessagesModeChanged = messageDao.onMessagesModeChanged()
+
+    val chatChannels = chatChannelDao.chatChannels()
+
+    val errors = MutableLiveData<Exception>()
 
     suspend fun insertProjects(projects: List<Project>) {
 
@@ -158,38 +163,37 @@ class MainRepository(db: CodesquareDatabase) {
         chatChannelDao.insert(channels)
     }
 
+    private suspend fun processChatChannel(chatChannel: ChatChannel): ChatChannel {
+        val lastMessage = chatChannel.lastMessage
 
-    // check if the message already has the user, in which case no need to get the user
+        if (lastMessage != null && lastMessage.sender.isEmpty()) {
+            val sender = getUser(lastMessage.senderId)
+            if (sender != null) {
+                lastMessage.sender = sender
+            } else {
+                errors.postValue(Exception("No user found for the last message with message id: ${lastMessage.messageId} and chatChannel id: ${chatChannel.chatChannelId}, name => ${chatChannel.projectTitle}"))
+            }
+        }
+        return chatChannel
+    }
+
+    suspend fun insertChatChannel(chatChannel: ChatChannel) {
+        chatChannelDao.insert(processChatChannel(chatChannel))
+    }
+
+    // the contributors must be downloaded before the channels
     suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
         for (chatChannel in chatChannels) {
-
-            val lastMessage = chatChannel.lastMessage
-
-            if (lastMessage != null && lastMessage.sender.isEmpty()) {
-                val sender = getUser(lastMessage.senderId)
-                if (sender != null) {
-                    lastMessage.sender = sender
-                } else {
-
-                    val ref = Firebase.firestore.collection("users")
-                        .document(lastMessage.senderId)
-
-                    when (val result = FireUtility.getDocument(ref))  {
-                        is Result.Error -> {
-                            Log.e(TAG, "Something went wrong while getting user data for chatChannel")
-                        }
-                        is Result.Success -> {
-                            lastMessage.sender = result.data.toObject(User::class.java)!!
-                        }
-                    }
-                }
-            }
+            processChatChannel(chatChannel)
         }
         chatChannelDao.insert(chatChannels)
     }
 
     suspend fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
+        // filter the messages which are marked as not delivered by the message
+        val currentUser = currentUser.value!!
         for (message in messages) {
+            // check if the message has user attached to it
             val user = getUser(message.senderId)
             if (user != null) {
                 message.sender = user
@@ -197,6 +201,7 @@ class MainRepository(db: CodesquareDatabase) {
                 throw NullPointerException("The user doesn't exist for a message with user id - ${message.senderId}")
             }
 
+            // check if the media is already downloaded in the local folder
             if (message.type == image) {
                 val name = message.content + message.metadata!!.ext
                 val f = File(imagesDir, name)
@@ -209,6 +214,7 @@ class MainRepository(db: CodesquareDatabase) {
                 message.isDownloaded = f.exists()
             }
         }
+
         return messages
     }
 
@@ -383,7 +389,6 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>, preProcessed: Boolean = false) {
-        Log.d(TAG, "Inserting messages")
         if (!preProcessed) {
             messageDao.insertMessages(processMessages(imagesDir, documentsDir, messages))
         } else {

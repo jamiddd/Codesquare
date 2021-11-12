@@ -5,16 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/project_save_btn"
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/right_most_btn"
+        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/save_selector"
         app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
         app:layout_constraintStart_toEndOf="@+id/project_comment_btn"
-        app:layout_constraintTop_toTopOf="@+id/project_comment_btn"
-        tools:ignore="SpeakableTextPresentCheck" />
+        app:layout_constraintTop_toTopOf="@+id/project_comment_btn" />
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/project_user_img"
@@ -111,31 +112,33 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/project_title" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/project_like_btn"
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
+        android:background="@drawable/left_most_btn"
+        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/like_selector"
         app:layout_constraintBottom_toTopOf="@+id/project_time"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/project_like_comment_text"
-        tools:ignore="SpeakableTextPresentCheck" />
+        app:layout_constraintTop_toBottomOf="@+id/project_like_comment_text" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/project_comment_btn"
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:background="@drawable/middle_btn"
+        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/ic_round_chat_bubble_outline_24"
         app:layout_constraintBottom_toBottomOf="@+id/project_like_btn"
         app:layout_constraintStart_toEndOf="@+id/project_like_btn"
-        app:layout_constraintTop_toTopOf="@+id/project_like_btn"
-        tools:ignore="SpeakableTextPresentCheck" />
+        app:layout_constraintTop_toTopOf="@+id/project_like_btn" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/project_join_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -206,6 +209,7 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:text="12:34 pm Yesterday"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

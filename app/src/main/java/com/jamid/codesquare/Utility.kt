@@ -56,6 +56,8 @@ import com.facebook.imagepipeline.image.CloseableBitmap
 
 import com.facebook.datasource.BaseDataSubscriber
 import com.facebook.datasource.DataSource
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.Query
 import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -552,5 +554,11 @@ fun String.toHashMap(): Map<String, Any> {
 
     return map
 }
+
+fun CollectionReference.addOrder(field: String, direction: Query.Direction): Query {
+    return this.orderBy(field, direction)
+}
+
+
 
 private const val TAG = "UtilityTAG"

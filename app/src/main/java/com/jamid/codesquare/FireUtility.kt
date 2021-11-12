@@ -1089,8 +1089,7 @@ object FireUtility {
                     batch.update(Firebase.firestore.collection("chatChannels")
                         .document(chatChannel.chatChannelId),
                         mapOf(
-                            "lastMessage" to message,
-                            "updatedAt" to System.currentTimeMillis()
+                            "lastMessage" to message
                         )
                     )
                 }
@@ -1119,12 +1118,11 @@ object FireUtility {
         val newList = message.readList.addItemToList(currentUser.id)
         message.readList = newList
 
-        if (chatChannel.lastMessage?.messageId == message.messageId) {
+        if (chatChannel.lastMessage!!.messageId == message.messageId) {
             batch.update(Firebase.firestore.collection("chatChannels")
                 .document(chatChannel.chatChannelId),
                     mapOf(
-                        "lastMessage" to message,
-                        "updatedAt" to System.currentTimeMillis()
+                        "lastMessage" to message
                     )
             )
         }
@@ -1133,5 +1131,50 @@ object FireUtility {
 
         batch.commit().addOnCompleteListener(onComplete)
     }
+
+    fun reportProject(project: Project) {
+        TODO("Reporting a project")
+    }
+
+
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    /*
+    * Messages related functions
+    * */
+
+    fun getMessageRef(chatChannelId: String, messageId: String = randomId()): DocumentReference {
+        return Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            .collection("messages")
+            .document(messageId)
+    }
+
+    fun getMessagesRef(chatChannelId: String): CollectionReference {
+        return Firebase.firestore.collection("chatChannels").document(chatChannelId).collection("messages")
+    }
+
+
+
+    fun getMessageDocumentSnapshot(chatChannelId: String, messageId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        val ref = getMessageRef(chatChannelId, messageId)
+        getDocument(ref, onComplete)
+    }
+
+    fun getMessagesQuerySnapshot(chatChannelId: String, lastSnapshot: DocumentSnapshot? = null, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        val query = if (lastSnapshot == null) {
+            getMessagesRef(chatChannelId)
+                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+        } else {
+            getMessagesRef(chatChannelId)
+                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                .startAfter(lastSnapshot)
+        }
+
+        query.get()
+            .addOnCompleteListener(onComplete)
+
+    }
+
 
 }

@@ -15,13 +15,10 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.platform.MaterialSharedAxis
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.SearchPagerAdapter
 import com.jamid.codesquare.data.SearchResult
 import com.jamid.codesquare.databinding.FragmentSearchBinding
-import com.jamid.codesquare.hide
-import com.jamid.codesquare.show
 
 class SearchFragment: Fragment(), SearchView.OnQueryTextListener {
 
@@ -58,7 +55,6 @@ class SearchFragment: Fragment(), SearchView.OnQueryTextListener {
         (searchItem.actionView as SearchView).setOnQueryTextListener(this)
         (searchItem.actionView as SearchView).isSubmitButtonEnabled = true
 
-
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -82,7 +78,7 @@ class SearchFragment: Fragment(), SearchView.OnQueryTextListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        client = Client("7HGJNUJMWZ", "b35045d67a73575dde3d008e52f5da34")
+        client = Client(getString(R.string.algolia_id), getString(R.string.algolia_secret))
         index = client.getIndex("projects")
 
         binding.searchPager.adapter = SearchPagerAdapter(requireActivity())

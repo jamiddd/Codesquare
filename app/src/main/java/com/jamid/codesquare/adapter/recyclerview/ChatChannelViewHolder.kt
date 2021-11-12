@@ -47,9 +47,15 @@ class ChatChannelViewHolder(val uid: String, val view: View, private val channel
                     }
                 }
 
+                Log.d(TAG, "Current User ID -> $uid and SenderId -> ${message.senderId}")
+                Log.d(TAG, "Read List -> ${message.readList}")
+
                 if (message.senderId != uid) {
+
+
                     val lastMessageText = "${message.sender.name}: $content"
                     if (message.readList.contains(uid)) {
+
                         channelLastMessage.text = lastMessageText
                     } else {
                         val sp = SpannableString(lastMessageText)

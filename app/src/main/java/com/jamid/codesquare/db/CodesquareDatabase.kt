@@ -48,7 +48,7 @@ abstract class CodesquareDatabase: RoomDatabase() {
             scope.launch (Dispatchers.IO) {
                 instance?.apply {
                     // do something every time the app opens
-                    projectDao().clearTable()
+//                    projectDao().clearTable()
                 }
             }
         }

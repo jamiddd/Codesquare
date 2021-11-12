@@ -5,7 +5,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.HOME_PAGE_COUNT
-import com.jamid.codesquare.ui.home.chat.ChatListFragment
+import com.jamid.codesquare.ui.home.chat.ChatListFragment2
 import com.jamid.codesquare.ui.home.feed.FeedFragment
 
 class MainViewPagerAdapter(activity: FragmentActivity): FragmentStateAdapter(activity) {
@@ -17,7 +17,7 @@ class MainViewPagerAdapter(activity: FragmentActivity): FragmentStateAdapter(act
         return if (position == 0) {
             FeedFragment.newInstance()
         } else {
-            ChatListFragment.newInstance()
+            ChatListFragment2()
         }
     }
 
