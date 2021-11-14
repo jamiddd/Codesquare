@@ -16,6 +16,11 @@
         <item name="materialButtonStyle">@style/AppTheme.Button</item>
         <item name="chipStyle">@style/AppTheme.Chip</item>
         <item name="searchViewStyle">@style/AppTheme.SearchView</item>
+        <item name="snackbarStyle">@style/AppTheme.Snackbar</item>
+    </style>
+
+    <style name="AppTheme.Snackbar" parent="Widget.MaterialComponents.Snackbar.FullWidth">
+
     </style>
 
     <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">

@@ -5,6 +5,7 @@ import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
+import android.graphics.*
 import android.os.Build
 import android.text.format.DateUtils
 import android.util.Log
@@ -47,7 +48,6 @@ import com.facebook.imagepipeline.core.ImagePipeline
 
 import com.facebook.datasource.DataSubscriber
 
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.animation.doOnEnd
 import androidx.core.text.isDigitsOnly
@@ -559,6 +559,22 @@ fun CollectionReference.addOrder(field: String, direction: Query.Direction): Que
     return this.orderBy(field, direction)
 }
 
-
+fun getRoundedCroppedBitmap(bitmap: Bitmap): Bitmap? {
+    val widthLight = bitmap.width
+    val heightLight = bitmap.height
+    val output = Bitmap.createBitmap(
+        bitmap.width, bitmap.height,
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(output)
+    val paintColor = Paint()
+    paintColor.flags = Paint.ANTI_ALIAS_FLAG
+    val rectF = RectF(Rect(0, 0, widthLight, heightLight))
+    canvas.drawRoundRect(rectF, (widthLight / 2).toFloat(), (heightLight / 2).toFloat(), paintColor)
+    val paintImage = Paint()
+    paintImage.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP)
+    canvas.drawBitmap(bitmap, 0f, 0f, paintImage)
+    return output
+}
 
 private const val TAG = "UtilityTAG"

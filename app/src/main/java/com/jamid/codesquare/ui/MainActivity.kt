@@ -1,9 +1,13 @@
 package com.jamid.codesquare.ui
 
+import android.Manifest
+import android.R.attr
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.location.Address
-import android.net.Uri
+import android.net.*
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
@@ -43,11 +47,33 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
+import android.os.Build
+import androidx.core.content.ContextCompat
+import com.facebook.common.references.CloseableReference
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.request.ImageRequest
+import com.google.android.material.snackbar.Snackbar
+import android.R.attr.bitmap
+
+import android.graphics.drawable.BitmapDrawable
+
+import android.graphics.drawable.Drawable
+import com.facebook.datasource.DataSources
+
+import com.facebook.imagepipeline.image.CloseableImage
+import java.io.IOException
+import java.net.URL
+import android.R.attr.bitmap
+import android.graphics.*
+import kotlinx.coroutines.Dispatchers
+
+
 class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
     private lateinit var navController: NavController
+    private var networkFlag = false
 
     val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -249,14 +275,41 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
             binding.mainToolbar.isTitleCentered = destination.id != R.id.homeFragment
 
+            val sharedPreferences = getSharedPreferences("codesquare_shared", MODE_PRIVATE)
+            val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
+
             when (destination.id) {
+                R.id.onBoardingFragment -> {
+                    binding.mainAppbar.hide()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    binding.navHostFragment.layoutParams = params
+                }
                 R.id.loginFragment -> {
-                    userInfoLayout?.hide()
-                    userInfoLayout?.updateLayout(margin = 0)
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.hide()
+                    binding.mainAppbar.hide()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    binding.navHostFragment.layoutParams = params
+
+                    if (!isInitiatedOnce) {
+                        navController.navigate(R.id.action_loginFragment_to_onBoardingFragment, null, slideRightNavOptions())
+                        val editor = sharedPreferences.edit()
+                        editor.putBoolean("is_initiated_once", true)
+                        editor.apply()
+                    } else {
+                        userInfoLayout?.hide()
+                        userInfoLayout?.updateLayout(margin = 0)
+                        binding.mainTabLayout.hide()
+                        binding.mainToolbar.hide()
+                    }
                 }
                 R.id.homeFragment -> {
+
+                    binding.mainAppbar.show()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    binding.navHostFragment.layoutParams = params
+
                     userInfoLayout?.hide()
                     binding.mainTabLayout.show()
                     binding.mainToolbar.show()
@@ -371,7 +424,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
         viewModel.currentUser.observe(this) {
             if (it != null) {
-                Log.d(TAG, it.toString())
+
                 if (!isInitialized) {
                     isInitialized = true
                     Log.d("MessageChecking", "Got User ")
@@ -445,6 +498,65 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     }
                 }
         }
+
+
+        viewModel.isNetworkAvailable.observe(this) {
+            if (it != null) {
+                if (it) {
+                    if (networkFlag) {
+                        Snackbar.make(binding.root, "Network connected", Snackbar.LENGTH_SHORT).show()
+                    }
+                } else {
+                    networkFlag = true
+                    Snackbar.make(binding.root, "Network connection unavailable", Snackbar.LENGTH_INDEFINITE).setBackgroundTint(ContextCompat.getColor(this@MainActivity, R.color.error_color)).show()
+                }
+            } else {
+                // check for network here
+            }
+        }
+
+        startNetworkCallback()
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        checkForNetworkPermissions {
+            if (it) {
+                startNetworkCallback()
+            } else {
+                //
+            }
+        }
+    }
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            viewModel.setNetworkAvailability(true)
+        }
+
+        override fun onLost(network: Network) {
+            viewModel.setNetworkAvailability(false)
+        }
+    }
+
+    private fun startNetworkCallback() {
+        val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val builder = NetworkRequest.Builder()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            cm.registerDefaultNetworkCallback(networkCallback)
+        } else {
+            cm.registerNetworkCallback(
+                builder.build(), networkCallback
+            )
+        }
+    }
+
+    private fun stopNetworkCallback() {
+        val cm: ConnectivityManager =
+            application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        cm.unregisterNetworkCallback(networkCallback)
     }
 
 
@@ -474,13 +586,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 // get messages only after getting all the contributors associated with the project
                 getLatestMessagesBaseOnLastMessage(chatChannel)
 
+                // listening for new messages as soon as activity starts
+                addChannelListener(chatChannel)
             } else {
                 viewModel.setCurrentError(it2.exception)
             }
         }
-
-        // listening for new messages as soon as activity starts
-        addChannelListener(chatChannel)
     }
 
     // the criteria for checking time is 24 hour
@@ -956,6 +1067,24 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     }
 
+    private fun checkForNetworkPermissions(onCheck: (granted: Boolean) -> Unit) {
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED -> {
+                onCheck(true)
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_NETWORK_STATE) -> {
+                MaterialAlertDialogBuilder(this).setTitle("This app requires permission to check your internet connection ...")
+                    .setMessage("For locating your device using GPS. This helps us in adding your location to the post so that it can be filtered based on location. ")
+                    .setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }.show()
+            }
+            else -> {
+                onCheck(false)
+            }
+        }
+    }
+
     // make sure to change this later on for null safety
     override fun onMessageRead(message: Message) {
         val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
@@ -1012,6 +1141,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 viewModel.updateRestOfTheMessages(channel, -1)
             }
         }
+
+        stopNetworkCallback()
+
     }
 
 }

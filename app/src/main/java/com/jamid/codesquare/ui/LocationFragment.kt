@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationSettingsResponse
+import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.LocationUtility
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.adapter.recyclerview.LocationAdapter
@@ -57,71 +58,7 @@ class LocationFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val activity = requireActivity()
-        locationUtility = LocationUtility(activity)
-        locationAdapter = LocationAdapter()
 
-        locationUtility.getLastLocation {
-            if (it is Result.Success) {
-                viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
-            }
-        }
-
-        locationUtility.isLocationEnabled.observe(viewLifecycleOwner) { isEnabled ->
-            if (!isEnabled) {
-                askUserToEnableLocation {
-                    onLocationSettingsRetrieved(it)
-                }
-            } else {
-                if (locationUtility.isLocationPermissionAvailable.value == true) {
-                    requestingLocationUpdates = true
-                    locationUtility.getLastLocation {
-                        if (it is Result.Success) {
-                            viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
-                        }
-                    }
-                } else {
-                    requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                }
-            }
-        }
-
-        locationUtility.isLocationPermissionAvailable.observe(viewLifecycleOwner) { isGranted ->
-            if (isGranted) {
-                requestingLocationUpdates = true
-                if (locationUtility.isLocationEnabled.value == true) {
-                    locationUtility.getLastLocation {
-                        if (it is Result.Success) {
-                            viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
-                        }
-                    }
-                } else {
-                    askUserToEnableLocation {
-                        onLocationSettingsRetrieved(it)
-                    }
-                }
-            } else {
-                requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-        }
-
-        locationUtility.nearbyAddresses.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                viewModel.insertAddresses(it)
-            }
-        }
-
-        locationUtility.currentLocation.observe(viewLifecycleOwner) {
-            if (it != null) {
-                viewModel.setCurrentProjectLocation(Location(it.latitude, it.longitude, ""))
-            }
-            stopLocationUpdates()
-        }
-
-        binding.locationRecycler.apply {
-            adapter = locationAdapter
-            layoutManager = LinearLayoutManager(activity)
-            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
-        }
 
         viewModel.addresses.observe(viewLifecycleOwner) {
             if (it != null) {
@@ -142,6 +79,83 @@ class LocationFragment: Fragment() {
                 findNavController().navigateUp()
             } else {
                 toast("Location cannot be empty")
+            }
+        }
+
+        viewModel.isNetworkAvailable.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it) {
+                    locationUtility = LocationUtility(activity)
+                    locationAdapter = LocationAdapter()
+
+                    binding.locationRecycler.apply {
+                        adapter = locationAdapter
+                        layoutManager = LinearLayoutManager(activity)
+                        addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
+                    }
+
+
+                    locationUtility.getLastLocation {
+                        if (it is Result.Success) {
+                            viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
+                        }
+                    }
+
+                    locationUtility.isLocationEnabled.observe(viewLifecycleOwner) { isEnabled ->
+                        if (!isEnabled) {
+                            askUserToEnableLocation {
+                                onLocationSettingsRetrieved(it)
+                            }
+                        } else {
+                            if (locationUtility.isLocationPermissionAvailable.value == true) {
+                                requestingLocationUpdates = true
+                                locationUtility.getLastLocation {
+                                    if (it is Result.Success) {
+                                        viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
+                                    }
+                                }
+                            } else {
+                                requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                            }
+                        }
+                    }
+
+                    locationUtility.isLocationPermissionAvailable.observe(viewLifecycleOwner) { isGranted ->
+                        if (isGranted) {
+                            requestingLocationUpdates = true
+                            if (locationUtility.isLocationEnabled.value == true) {
+                                locationUtility.getLastLocation {
+                                    if (it is Result.Success) {
+                                        viewModel.setCurrentProjectLocation(Location(it.data.latitude, it.data.longitude, ""))
+                                    }
+                                }
+                            } else {
+                                askUserToEnableLocation {
+                                    onLocationSettingsRetrieved(it)
+                                }
+                            }
+                        } else {
+                            requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                        }
+                    }
+
+                    locationUtility.nearbyAddresses.observe(viewLifecycleOwner) {
+                        if (!it.isNullOrEmpty()) {
+                            viewModel.insertAddresses(it)
+                        }
+                    }
+
+                    locationUtility.currentLocation.observe(viewLifecycleOwner) {
+                        if (it != null) {
+                            viewModel.setCurrentProjectLocation(Location(it.latitude, it.longitude, ""))
+                        }
+                        stopLocationUpdates()
+                    }
+                } else {
+                    findNavController().navigateUp()
+                }
+            } else {
+                // check for network here
             }
         }
 

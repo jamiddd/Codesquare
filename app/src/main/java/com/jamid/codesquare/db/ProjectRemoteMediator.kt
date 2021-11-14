@@ -15,8 +15,8 @@ class ProjectRemoteMediator(query: Query, repo: MainRepository, private val shou
     }
 
     override suspend fun onRefresh() {
-        if (shouldClear) {
+        /*if (shouldClear) {
             repository.projectDao.clearTable()
-        }
+        }*/
     }
 }

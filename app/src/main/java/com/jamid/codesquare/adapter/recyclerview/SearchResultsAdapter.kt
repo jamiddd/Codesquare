@@ -10,8 +10,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.SearchResult
+import com.jamid.codesquare.listeners.SearchItemClickListener
 
-class SearchResultsAdapter(): ListAdapter<SearchResult, SearchResultsAdapter.SearchResultViewHolder>(object: DiffUtil.ItemCallback<SearchResult>() {
+class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener): ListAdapter<SearchResult, SearchResultsAdapter.SearchResultViewHolder>(object: DiffUtil.ItemCallback<SearchResult>() {
     override fun areItemsTheSame(oldItem: SearchResult, newItem: SearchResult): Boolean {
         return oldItem.id == newItem.id
     }
@@ -28,6 +29,11 @@ class SearchResultsAdapter(): ListAdapter<SearchResult, SearchResultsAdapter.Sea
 
         fun bind(searchResult: SearchResult) {
             searchItemText.text = searchResult.title
+
+            view.setOnClickListener {
+                searchItemClickListener.onSearchItemClick(searchResult.id)
+            }
+
         }
 
     }

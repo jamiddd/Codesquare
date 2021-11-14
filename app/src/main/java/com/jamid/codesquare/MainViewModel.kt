@@ -1,6 +1,7 @@
 package com.jamid.codesquare
 
 import android.app.Application
+import android.graphics.Bitmap
 import android.location.Address
 import android.net.Uri
 import android.util.Log
@@ -54,6 +55,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     val currentCommentChannelIds = Stack<String>()
     var currentChatChannel: String? = null
 
+    private val _isNetworkAvailable = MutableLiveData<Boolean>()
+    val isNetworkAvailable: LiveData<Boolean> = _isNetworkAvailable
+
     private val _chatImagesUpload = MutableLiveData<List<Uri>>()
     val chatImagesUpload: LiveData<List<Uri>> = _chatImagesUpload
 
@@ -75,6 +79,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val chatChannels = repo.chatChannels
     val errors = repo.errors
+
+    var currentUserBitmap: Bitmap? = null
+
+    fun setNetworkAvailability(state: Boolean) {
+        _isNetworkAvailable.postValue(state)
+    }
 
     fun setProjectsResult(results: List<SearchResult>?) {
         _searchProjectsResult.postValue(results)

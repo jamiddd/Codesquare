@@ -30,8 +30,8 @@ class SearchFragment: Fragment(), SearchView.OnQueryTextListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -54,6 +54,7 @@ class SearchFragment: Fragment(), SearchView.OnQueryTextListener {
 
         (searchItem.actionView as SearchView).setOnQueryTextListener(this)
         (searchItem.actionView as SearchView).isSubmitButtonEnabled = true
+        (searchItem.actionView as SearchView).queryHint = "Search for projects, users ..."
 
     }
 

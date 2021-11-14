@@ -39,6 +39,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     protected var recyclerView: RecyclerView? = null
     protected var noItemsText: TextView? = null
     protected var swipeRefresher: SwipeRefreshLayout? = null
+    var shouldHideRecyclerView = false
 
     val isEmpty = MutableLiveData<Boolean>()
 
@@ -124,12 +125,15 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                 if (itemCount != 0) {
                     // hide info and show recyclerview
                     isEmpty.postValue(false)
-//                    recyclerView.show()
+
+                    recyclerView.show()
                     infoText?.hide()
                 } else {
                     isEmpty.postValue(true)
+                    if (shouldHideRecyclerView) {
+                        recyclerView.hide()
+                    }
                     // hide recyclerview and show info
-//                    recyclerView.hide()
                     infoText?.show()
                 }
             }
@@ -143,7 +147,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                         // when refresh has just started
                         progressBar?.show()
-//                        recyclerView.hide()
+                        if (shouldHideRecyclerView) {
+                            recyclerView.hide()
+                        }
                         infoText?.hide()
 
                     }
@@ -152,7 +158,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                         // when something went wrong while refreshing
                         progressBar?.hide()
-//                        recyclerView.hide()
+                        if (shouldHideRecyclerView) {
+                            recyclerView.hide()
+                        }
                         infoText?.text = "Something went wrong :("
                         infoText?.show()
                     }
@@ -175,7 +183,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         // when append went wrong
                         // when something went wrong while refreshing
                         progressBar?.hide()
-//                        recyclerView.hide()
+                        if (shouldHideRecyclerView) {
+                            recyclerView.hide()
+                        }
 
                         infoText?.text = "Something went wrong :("
                         infoText?.show()
@@ -188,13 +198,15 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                 if (pagingAdapter.itemCount != 0) {
                     // non empty
-//                    recyclerView.show()
+                    recyclerView.show()
                     infoText?.hide()
                     isEmpty.postValue(false)
                 } else {
                     // empty
                     isEmpty.postValue(true)
-//                    recyclerView.hide()
+                    if (shouldHideRecyclerView) {
+                        recyclerView.hide()
+                    }
                     infoText?.show()
                 }
             }

@@ -103,6 +103,13 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         override fun onClick(p0: View) {
                             content.maxLines = Int.MAX_VALUE
                             content.text = project.content
+
+                            view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
+                                delay(200)
+                                content.setOnClickListener {
+                                    projectClickListener.onProjectClick(project.copy())
+                                }
+                            }
                         }
 
                         override fun updateDrawState(ds: TextPaint) {
@@ -121,13 +128,23 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
                     content.text = truncatedSpannableString
 
-                    content.setOnClickListener {
-                        projectClickListener.onProjectClick(project.copy())
-                    }
-
                     view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
                         delay(200)
                         content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
+
+                        content.setOnClickListener {
+                            /*content.maxLines = Int.MAX_VALUE
+                            content.text = project.content
+
+                            view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
+                                delay(200)
+                                content.setOnClickListener {
+
+                                }
+                            }*/
+                            projectClickListener.onProjectClick(project.copy())
+                        }
+
                     }
                 }
             }

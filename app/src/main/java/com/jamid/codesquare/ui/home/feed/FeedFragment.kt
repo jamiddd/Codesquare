@@ -23,21 +23,17 @@ import com.jamid.codesquare.updateLayout
 @ExperimentalPagingApi
 class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
+    init {
+        shouldHideRecyclerView = true
+    }
+
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
         val query = Firebase.firestore.collection("projects")
 
-        getItems {
-            viewModel.getFeedItems(query)
-        }
+        getItems { viewModel.getFeedItems(query) }
 
-        /*recyclerView?.addItemDecoration(
-            DividerItemDecoration(
-                requireContext(),
-                DividerItemDecoration.VERTICAL
-            )
-        )*/
         recyclerView?.itemAnimator = null
 
         val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
