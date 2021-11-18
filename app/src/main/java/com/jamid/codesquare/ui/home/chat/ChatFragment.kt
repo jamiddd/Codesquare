@@ -568,6 +568,12 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         viewModel.currentChatChannel = null
         viewModel.setChatUploadImages(emptyList())
         viewModel.setCurrentlySelectedMessage(null)
+        viewModel.updateRestOfTheMessages(chatChannelId, -1)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.updateRestOfTheMessages(chatChannelId, -1)
     }
 
 }

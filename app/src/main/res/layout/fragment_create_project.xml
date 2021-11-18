@@ -73,7 +73,7 @@
             android:id="@+id/project_images_container"
             android:layout_width="match_parent"
             android:layout_height="250dp"
-            app:cardBackgroundColor="@color/lightest_purple"
+            app:cardBackgroundColor="@color/lightest_primary_color"
             app:cardCornerRadius="0dp"
             app:cardElevation="0dp"
             app:layout_constraintBottom_toTopOf="@+id/divider2"

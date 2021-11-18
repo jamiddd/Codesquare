@@ -17,12 +17,12 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import com.jamid.codesquare.ui.MainActivity
 
 class CreateAccountFragment: Fragment() {
 
     private lateinit var binding: FragmentCreateAccountBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var dialog: AlertDialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -94,34 +94,24 @@ class CreateAccountFragment: Fragment() {
             findNavController().navigateUp()
         }
 
-        viewModel.currentUser.observe(viewLifecycleOwner) {
-            if (it != null) {
+       /* Firebase.auth.addAuthStateListener {
+            if (it.currentUser != null) {
                 dialog?.dismiss()
-                findNavController().navigate(R.id.action_createAccountFragment_to_homeFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
             }
-        }
+        }*/
 
         viewModel.currentError.observe(viewLifecycleOwner) { exception ->
             if (exception != null) {
                 Log.e(TAG, exception.localizedMessage.orEmpty())
-                dialog?.dismiss()
             }
         }
 
     }
 
     private fun showDialog() {
-
-        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
-
-        loadingLayoutBinding.loadingText.text = "Creating account .. Please wait for a while"
-
-        dialog =  MaterialAlertDialogBuilder(requireContext())
-            .setView(loadingLayout)
-            .setCancelable(false)
-            .show()
-
+        val msg = "Creating account .. Please wait for a while"
+        (activity as MainActivity).showLoadingDialog(msg)
     }
 
     private fun createAccount(name: String, email: String, password: String) {

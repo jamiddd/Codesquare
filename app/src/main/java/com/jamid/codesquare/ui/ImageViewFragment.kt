@@ -55,6 +55,7 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
         val image = arguments?.getString("fullscreenImage") ?: return
         val transitionName = arguments?.getString("transitionName") ?: return
         val ext = arguments?.getString("ext") ?: return
+
         val message = arguments?.getParcelable<Message>("message")
 
         ViewCompat.setTransitionName(binding.fullscreenImage, transitionName)

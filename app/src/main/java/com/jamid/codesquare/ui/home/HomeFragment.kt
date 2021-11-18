@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.HorizontalScrollView
+import androidx.activity.addCallback
 import androidx.appcompat.widget.SearchView
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
@@ -84,9 +85,6 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
 
-        if (Firebase.auth.currentUser == null) {
-            findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
-        }
         val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
         val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
 
@@ -112,8 +110,9 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
                                 if (isNetworkAvailable != null && isNetworkAvailable) {
                                     val url = URL(currentUser.photo)
                                     val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                                    viewModel.currentUserBitmap = getRoundedCroppedBitmap(image)
+                                    viewModel.currentUserBitmap = getCircleBitmap(image)
                                     val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
+
                                     activity.runOnUiThread {
                                         if (toolbar.menu.size() > 1) {
                                             toolbar.menu.getItem(2).icon = d
@@ -135,6 +134,10 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
                 }
 
             }
+        }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            requireActivity().finish()
         }
 
     }

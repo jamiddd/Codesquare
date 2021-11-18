@@ -4,6 +4,7 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.*
 import android.os.Build
@@ -62,6 +63,10 @@ import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.HashMap
+import android.content.res.TypedArray
+
+
+
 
 
 fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
@@ -124,12 +129,12 @@ fun View.disappear() {
     this.visibility = View.INVISIBLE
 }
 
-fun Fragment.toast(msg: String) {
-    requireContext().toast(msg)
+fun Fragment.toast(msg: String, duration: Int = Toast.LENGTH_SHORT) {
+    requireContext().toast(msg, duration)
 }
 
-fun Context.toast(msg: String) {
-    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+fun Context.toast(msg: String, duration: Int = Toast.LENGTH_SHORT) {
+    Toast.makeText(this, msg, duration).show()
 }
 
 fun slideRightNavOptions(): NavOptions {
@@ -382,6 +387,14 @@ fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) 
     }
 }
 
+fun Fragment.isNightMode(): Boolean {
+    return requireContext().isNightMode()
+}
+
+fun Context.isNightMode(): Boolean {
+    return resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+}
+
 
 fun getExtensionForMime(mime: String): String {
     return when (mime) {
@@ -562,18 +575,68 @@ fun CollectionReference.addOrder(field: String, direction: Query.Direction): Que
 fun getRoundedCroppedBitmap(bitmap: Bitmap): Bitmap? {
     val widthLight = bitmap.width
     val heightLight = bitmap.height
+
+    val padding = if (widthLight > heightLight) {
+        val diff = widthLight - heightLight
+        diff/2 to 0
+    } else {
+        val diff = heightLight - widthLight
+        0 to diff/2
+    }
+
     val output = Bitmap.createBitmap(
         bitmap.width, bitmap.height,
         Bitmap.Config.ARGB_8888
     )
+
     val canvas = Canvas(output)
     val paintColor = Paint()
     paintColor.flags = Paint.ANTI_ALIAS_FLAG
-    val rectF = RectF(Rect(0, 0, widthLight, heightLight))
+    val rectF = RectF(Rect(padding.first, padding.second, widthLight - padding.first, heightLight - padding.second))
+    Log.d(TAG, rectF.toShortString())
     canvas.drawRoundRect(rectF, (widthLight / 2).toFloat(), (heightLight / 2).toFloat(), paintColor)
     val paintImage = Paint()
     paintImage.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP)
     canvas.drawBitmap(bitmap, 0f, 0f, paintImage)
+    return output
+}
+
+fun Context.accentColor(): Int {
+    val typedValue = TypedValue()
+    val a = obtainStyledAttributes(typedValue.data, intArrayOf(R.attr.colorAccent))
+    val color = a.getColor(0, 0)
+    a.recycle()
+    return color
+}
+
+fun getCircleBitmap(bitmap: Bitmap): Bitmap {
+
+    Log.d(TAG, "${bitmap.width} x ${bitmap.height}")
+
+    val output = Bitmap.createBitmap(
+        bitmap.width,
+        bitmap.height,
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = Canvas(output)
+
+    val color = -0xbdbdbe
+    val paint = Paint()
+    val rect = Rect(0, 0, bitmap.width, bitmap.height)
+
+    paint.isAntiAlias = true
+    canvas.drawARGB(0, 0, 0, 0)
+    paint.color = color
+
+    canvas.drawCircle(
+        bitmap.width / 2f, bitmap.height / 2f,
+        (minOf(bitmap.width, bitmap.height)) / 2f, paint
+    )
+    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+    canvas.drawBitmap(bitmap, rect, rect, paint)
+
+    Log.d(TAG, "${output.width} x ${output.height}")
+
     return output
 }
 

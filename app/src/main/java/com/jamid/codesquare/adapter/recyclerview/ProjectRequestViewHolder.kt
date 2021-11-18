@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
@@ -14,6 +15,7 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.data.User
+import com.jamid.codesquare.disappear
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.ProjectRequestListener
 import com.jamid.codesquare.show
@@ -26,6 +28,7 @@ class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((pr
     private val requestCancelBtn = view.findViewById<Button>(R.id.request_cancel)
     private val requestTime = view.findViewById<TextView>(R.id.request_time)
     private val projectImage = view.findViewById<SimpleDraweeView>(R.id.project_img)
+    private val requestProgress = view.findViewById<ProgressBar>(R.id.request_accept_progress)
 
     private val projectRequestListener = view.context as ProjectRequestListener
 
@@ -61,6 +64,8 @@ class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((pr
                                     requestAcceptBtn.show()
 
                                     requestAcceptBtn.setOnClickListener {
+                                        requestProgress.show()
+                                        requestAcceptBtn.disappear()
                                         projectRequestListener.onProjectRequestAccept(projectRequest)
                                     }
 

@@ -31,9 +31,11 @@ class MainRepository(db: CodesquareDatabase) {
     val errors = MutableLiveData<Exception>()
 
     suspend fun insertProjects(projects: List<Project>) {
-
         val currentUser = currentUser.value!!
+        projectDao.insert(processProjects(currentUser, projects))
+    }
 
+    fun processProjects(currentUser: User, projects: List<Project>): List<Project> {
         for (project in projects) {
             project.isMadeByMe = project.creator.userId == currentUser.id
             project.isLiked = currentUser.likedProjects.contains(project.id)
@@ -46,7 +48,8 @@ class MainRepository(db: CodesquareDatabase) {
             project.isRequested = intersection.isNotEmpty()
             project.isCollaboration = currentUser.collaborations.contains(project.id)
         }
-        projectDao.insert(projects)
+
+        return projects
     }
 
     suspend fun insertCurrentUser(user: User) {

@@ -12,9 +12,9 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/rules_toolbar"
+            style="@style/AppTheme.AppBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
             android:elevation="8dp"
             android:minHeight="?attr/actionBarSize"
             android:theme="?attr/actionBarTheme"
@@ -88,7 +88,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
-                android:backgroundTint="@color/purple_700"
+                android:backgroundTint="?colorAccent"
                 android:text="Add"
                 android:textAllCaps="false"
                 android:textColor="@color/white"

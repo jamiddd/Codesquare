@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui
 
 import android.Manifest
-import android.R.attr
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -49,23 +48,18 @@ import java.io.File
 
 import android.os.Build
 import androidx.core.content.ContextCompat
-import com.facebook.common.references.CloseableReference
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.imagepipeline.request.ImageRequest
 import com.google.android.material.snackbar.Snackbar
-import android.R.attr.bitmap
 
+import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
-
-import android.graphics.drawable.Drawable
-import com.facebook.datasource.DataSources
-
-import com.facebook.imagepipeline.image.CloseableImage
+import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContentProviderCompat.requireContext
+import com.google.firebase.firestore.ListenerRegistration
+import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import kotlinx.coroutines.Dispatchers
 import java.io.IOException
 import java.net.URL
-import android.R.attr.bitmap
-import android.graphics.*
-import kotlinx.coroutines.Dispatchers
 
 
 class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener {
@@ -74,6 +68,8 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     private val viewModel: MainViewModel by viewModels()
     private lateinit var navController: NavController
     private var networkFlag = false
+    private var userListenerRegistration: ListenerRegistration? = null
+    private var loadingDialog: AlertDialog? = null
 
     val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -273,12 +269,34 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 navController.navigateUp()
             }
 
+            onBackPressedDispatcher.addCallback {
+                navController.navigateUp()
+            }
+
             binding.mainToolbar.isTitleCentered = destination.id != R.id.homeFragment
+            binding.mainToolbar.logo = if (destination.id != R.id.homeFragment) {
+                null
+            } else {
+                ContextCompat.getDrawable(this, R.drawable.ic_collab_logo)
+            }
+
 
             val sharedPreferences = getSharedPreferences("codesquare_shared", MODE_PRIVATE)
             val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
 
             when (destination.id) {
+                R.id.splashFragment -> {
+                    binding.mainAppbar.hide()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    binding.navHostFragment.layoutParams = params
+                }
+                R.id.emailVerificationFragment -> {
+                    binding.mainAppbar.hide()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    binding.navHostFragment.layoutParams = params
+                }
                 R.id.onBoardingFragment -> {
                     binding.mainAppbar.hide()
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
@@ -333,6 +351,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                 }
                 R.id.projectFragment -> {
+                    binding.mainAppbar.show()
+                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    binding.navHostFragment.layoutParams = params
+
+
                     userInfoLayout?.hide()
                     binding.mainTabLayout.hide()
                     binding.mainToolbar.show()
@@ -419,6 +443,11 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     binding.mainToolbar.show()
                     binding.mainTabLayout.show()
                 }
+                R.id.settingsFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainToolbar.show()
+                    binding.mainTabLayout.hide()
+                }
             }
         }
 
@@ -457,48 +486,90 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
         viewModel.currentError.observe(this) { exception ->
             if (exception != null) {
+                loadingDialog?.dismiss()
                 Log.e(TAG, exception.localizedMessage.orEmpty())
-                toast(exception.localizedMessage.orEmpty())
+//                toast(exception.localizedMessage.orEmpty())
             }
         }
 
-        val firebaseUser = Firebase.auth.currentUser
-        if (firebaseUser != null) {
+        Firebase.auth.addAuthStateListener {
+            loadingDialog?.dismiss()
+            val firebaseUser = it.currentUser
+            if (firebaseUser != null) {
+                if (firebaseUser.isEmailVerified) {
 
-            // listener for users
-            Firebase.firestore.collection("users")
-                .document(firebaseUser.uid)
-                .addSnapshotListener { value, error ->
-                    if (error != null) {
-                        viewModel.setCurrentError(error)
-                    }
-
-                    if (value != null && value.exists()) {
-
-                        Log.d("MessageChecking", "Got new user")
-
-                        val newUser = value.toObject(User::class.java)
-                        if (newUser != null) {
-
-                            val currentUser = viewModel.currentUser.value
-                            if (currentUser != null) {
-                                // this will look for any recent changes, so as to not download
-                                    // everything, every time there's a change
-                                if (currentUser.chatChannels.size < newUser.chatChannels.size) {
-                                    for (channel in newUser.chatChannels) {
-                                        if (!currentUser.chatChannels.contains(channel)) {
-                                            setUpChatChannel(currentUser, channel)
-                                        }
-                                    }
-                                }
-                            }
-
-                            viewModel.insertCurrentUser(newUser)
+                    if (navController.currentDestination?.id == R.id.loginFragment) {
+                        navController.navigate(R.id.action_loginFragment_to_splashFragment)
+                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
+                        lifecycleScope.launch {
+                            delay(6000)
+                            navController.navigate(R.id.action_splashFragment_to_homeFragment)
                         }
                     }
-                }
-        }
 
+                    userListenerRegistration?.remove()
+                    userListenerRegistration = Firebase.firestore.collection("users")
+                        .document(firebaseUser.uid)
+                        .addSnapshotListener { value, error ->
+                            if (error != null) {
+                                viewModel.setCurrentError(error)
+                            }
+
+                            if (value != null && value.exists()) {
+                                val newUser = value.toObject(User::class.java)
+                                if (newUser != null) {
+
+                                    val currentUser = viewModel.currentUser.value
+                                    if (currentUser != null) {
+                                        // this will look for any recent changes, so as to not download
+                                        // everything, every time there's a change
+                                        if (currentUser.chatChannels.size < newUser.chatChannels.size) {
+                                            for (channel in newUser.chatChannels) {
+                                                if (!currentUser.chatChannels.contains(channel)) {
+                                                    setUpChatChannel(currentUser, channel)
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    lifecycleScope.launch (Dispatchers.IO) {
+                                        try {
+                                            val isNetworkAvailable = viewModel.isNetworkAvailable.value
+                                            if (isNetworkAvailable != null && isNetworkAvailable) {
+                                                val url = URL(newUser.photo)
+                                                val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                                                viewModel.currentUserBitmap = getCircleBitmap(image)
+                                            }
+                                        } catch (e: IOException) {
+                                            viewModel.setCurrentError(e)
+                                        }
+                                    }
+
+
+                                    viewModel.insertCurrentUser(newUser)
+                                }
+                            }
+                        }
+                } else {
+                    if (navController.currentDestination?.id == R.id.homeFragment) {
+                        navController.navigate(R.id.action_homeFragment_to_emailVerificationFragment, null, slideRightNavOptions())
+                    } else if (navController.currentDestination?.id == R.id.createAccountFragment) {
+                        navController.navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
+                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
+                        navController.navigate(R.id.action_splashFragment_to_loginFragment)
+                    }
+                }
+            } else {
+                lifecycleScope.launch {
+                    delay(6000)
+                    if (navController.currentDestination?.id == R.id.homeFragment) {
+                        navController.navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
+                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
+                        navController.navigate(R.id.action_splashFragment_to_loginFragment, null, slideRightNavOptions())
+                    }
+                }
+            }
+        }
 
         viewModel.isNetworkAvailable.observe(this) {
             if (it != null) {
@@ -519,6 +590,14 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     }
 
+
+    fun onLinkClick(url: String) {
+        val i = Intent(Intent.ACTION_VIEW)
+        i.data = Uri.parse(url)
+        startActivity(i)
+    }
+
+
     override fun onResume() {
         super.onResume()
         checkForNetworkPermissions {
@@ -526,6 +605,22 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 startNetworkCallback()
             } else {
                 //
+            }
+        }
+
+        if (navController.currentDestination?.id == R.id.emailVerificationFragment) {
+            val currentUser = Firebase.auth.currentUser
+            if (currentUser != null) {
+                val task = currentUser.reload()
+                task.addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        if (Firebase.auth.currentUser?.isEmailVerified == true) {
+                            navController.navigate(R.id.action_emailVerificationFragment_to_homeFragment)
+                        }
+                    } else {
+                        Log.d(TAG, it.exception?.localizedMessage.orEmpty())
+                    }
+                }
             }
         }
     }
@@ -681,9 +776,13 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     fun selectProjectImages() {
+
+        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
+
         val intent = Intent().apply {
             type = "image/*"
             action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
 
@@ -712,9 +811,13 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     }
 
     fun selectMoreProjectImages() {
+
+        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
+
         val intent = Intent().apply {
             type = "image/*"
             action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         }
 
@@ -775,26 +878,31 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     @ExperimentalPagingApi
     override fun onProjectCommentClick(project: Project) {
-//        val bundle = bundleOf("parent" to project, "title" to project.title)
+        val bundle = bundleOf("commentChannelId" to project.commentChannel, "parent" to project, "title" to project.title)
 
-        showDialog(project)
+//        showDialog(project)
 
 
-    /*when (navController.currentDestination?.id) {
+        when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
                 navController.navigate(R.id.action_homeFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
             R.id.projectFragment -> {
                 navController.navigate(R.id.action_projectFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
-        }*/
+        }
     }
 
     @ExperimentalPagingApi
     fun showDialog(project: Project) {
+
+
+
         val fragmentManager = supportFragmentManager
         val newFragment = CommentsFragment.newInstance(project.commentChannel, project.title, project)
-        // The device is smaller, so show the fragment fullscreen
+//        newFragment.show(supportFragmentManager, "Something")
+
+    /*// The device is smaller, so show the fragment fullscreen
         val transaction = fragmentManager.beginTransaction()
         // For a little polish, specify a transition animation
         transaction.setCustomAnimations(R.anim.slide_in_bottom, R.anim.slide_out_bottom)
@@ -803,7 +911,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         transaction
             .add(android.R.id.content, newFragment)
             .addToBackStack(null)
-            .commit()
+            .commit()*/
     }
 
     override fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project) {
@@ -1143,7 +1251,22 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
 
         stopNetworkCallback()
+    }
 
+    fun showSnackBar(s: String) {
+        Snackbar.make(binding.root, s, Snackbar.LENGTH_LONG).show()
+    }
+
+    fun showLoadingDialog(msg: String) {
+        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
+        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
+
+        loadingLayoutBinding.loadingText.text = msg
+
+        loadingDialog = MaterialAlertDialogBuilder(this)
+            .setView(loadingLayout)
+            .setCancelable(false)
+            .show()
     }
 
 }

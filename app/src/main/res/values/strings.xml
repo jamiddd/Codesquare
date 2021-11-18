@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Codesquare</string>
+    <string name="app_name">Collab</string>
     <string name="create_project">Create project</string>
     <string name="web_client_id">39101350371-gpoo1j5m3l972tloq1dov43ckd8s11f3.apps.googleusercontent.com</string>
     <string name="about_me">An Android Developer is a Software Developer who specializes in designing applications for the Android marketplace. The Android marketplace is the direct competitor to Apple’s app store. This means most of an Android Developer’s job revolves around creating the apps we use on our smartphones and tablets. Android Developers can either work in-house for a large organization, or they can be employed by an App Development agency.</string>
@@ -37,5 +37,19 @@
         of its monopoly position.
     </string>
     <string name="generic_image_desc">container for full screen image</string>
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
 
 </resources>

@@ -22,6 +22,8 @@ class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         val otherUser = arguments?.getParcelable<User>("user")
 
+        setIsViewPagerFragment(true)
+
         if (otherUser == null) {
             val currentUser = viewModel.currentUser.value!!
 
@@ -41,6 +43,9 @@ class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
             }
 
         }
+
+        binding.pagerNoItemsText.text = "No collaborations"
+
 //        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
     }
 

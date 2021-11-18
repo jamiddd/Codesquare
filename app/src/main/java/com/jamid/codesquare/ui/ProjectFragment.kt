@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -69,9 +70,15 @@ class ProjectFragment: Fragment() {
 
         project = arguments?.getParcelable("project") ?: return
 
-        val imageAdapter = ImageAdapter {}
-
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        val imageAdapter = ImageAdapter {
+            val transitionName = randomId()
+            ViewCompat.setTransitionName(it, transitionName)
+            val pos = manager.findFirstCompletelyVisibleItemPosition()
+            val bundle = bundleOf("fullscreenImage" to project.images[pos], "transitionName" to transitionName, "ext" to ".jpg")
+            findNavController().navigate(R.id.action_projectFragment_to_imageViewFragment, bundle)
+        }
+
         val helper: SnapHelper = LinearSnapHelper()
 
         binding.projectImagesRecycler.apply {
@@ -83,6 +90,8 @@ class ProjectFragment: Fragment() {
 
         totalImageCount = project.images.size
         imageAdapter.submitList(project.images)
+
+
 
         binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -256,6 +265,12 @@ class ProjectFragment: Fragment() {
         binding.projectLinks.addView(chip)
 
         chip.setOnClickListener {
+
+            if (link.startsWith("https://") || link.startsWith("http://")) {
+                (activity as MainActivity).onLinkClick(link)
+            } else {
+                (activity as MainActivity).onLinkClick("https://$link")
+            }
 
         }
 

@@ -45,11 +45,11 @@
         android:paddingLeft="10dp"
         app:icon="@drawable/ic_round_more_horiz_24"
         app:iconSize="16dp"
-        app:iconTint="@color/purple_500"
+        app:iconTint="?colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/linearLayout6"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/linearLayout6"
-        app:rippleColor="@color/lightest_purple"
+        app:rippleColor="@color/lightest_primary_color"
         tools:text=" " />
 
     <Button
@@ -62,11 +62,11 @@
         android:paddingLeft="10dp"
         app:icon="@drawable/like_selector"
         app:iconSize="16sp"
-        app:iconTint="@color/purple_500"
+        app:iconTint="?colorAccent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/comment_content"
-        app:rippleColor="@color/lightest_purple"
+        app:rippleColor="@color/lightest_primary_color"
         tools:text=" " />
 
     <Button
@@ -78,11 +78,11 @@
         android:paddingLeft="10dp"
         app:icon="@drawable/ic_reply"
         app:iconSize="16sp"
-        app:iconTint="@color/purple_500"
+        app:iconTint="?colorAccent"
         app:layout_constraintBottom_toBottomOf="@+id/comment_like_btn"
         app:layout_constraintStart_toEndOf="@+id/comment_like_btn"
         app:layout_constraintTop_toTopOf="@+id/comment_like_btn"
-        app:rippleColor="@color/lightest_purple"
+        app:rippleColor="@color/lightest_primary_color"
         tools:text=" " />
 
     <LinearLayout

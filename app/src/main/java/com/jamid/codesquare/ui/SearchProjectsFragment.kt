@@ -71,7 +71,10 @@ class SearchProjectsFragment: Fragment(), SearchItemClickListener {
         FireUtility.getDocument(projectRef) {
             if (it.isSuccessful) {
                 val project = it.result.toObject(Project::class.java)!!
-                val bundle = bundleOf("project" to project, "title" to project.title)
+
+                val projects = viewModel.processProjects(listOf(project))
+
+                val bundle = bundleOf("project" to projects.first(), "title" to project.title)
                 findNavController().navigate(R.id.action_searchFragment_to_projectFragment, bundle)
             } else {
                 toast("Something went wrong !")

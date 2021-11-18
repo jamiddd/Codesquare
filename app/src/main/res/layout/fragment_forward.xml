@@ -8,6 +8,7 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/forward_app_bar"
+        style="@style/AppTheme.AppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,7 +20,6 @@
             android:id="@+id/forward_toolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
             android:minHeight="?attr/actionBarSize"
             android:theme="?attr/actionBarTheme"
             app:menu="@menu/forward_menu"
@@ -46,7 +46,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:indeterminate="true"
-        android:indeterminateTint="@color/purple_700"
         android:translationY="-6dp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"

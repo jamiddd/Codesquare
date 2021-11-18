@@ -182,11 +182,10 @@ class EditProfileFragment: Fragment() {
         }
 
 
-        // TODO("because the random id string length is more than this, need to fix this")
-        /*if (usernameText.toString().length !in 4..16) {
+        if (usernameText.toString().length !in 4..16) {
             toast("Username is either too short or too long")
             return false
-        }*/
+        }
 
         val aboutText = binding.aboutText.editText?.text
         if (!aboutText.isNullOrBlank() && aboutText.toString().length > 240) {

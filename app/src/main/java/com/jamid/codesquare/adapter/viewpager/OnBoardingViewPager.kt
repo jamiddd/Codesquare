@@ -13,13 +13,13 @@ class OnBoardingViewPager(fa: FragmentActivity): FragmentStateAdapter(fa) {
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> {
-                OnBoardingChildFragment.newInstance(OnBoardingData("Collaborate", R.drawable.ic_collaborate))
+                OnBoardingChildFragment.newInstance(OnBoardingData("Collaborate on projects with other people and get experienced in what you like.", R.drawable.ic_collaborate))
             }
             1 -> {
-                OnBoardingChildFragment.newInstance(OnBoardingData("Search", R.drawable.ic_search))
+                OnBoardingChildFragment.newInstance(OnBoardingData("Search from thousands of projects to work on.", R.drawable.ic_search))
             }
             else -> {
-                OnBoardingChildFragment.newInstance(OnBoardingData("Communicate", R.drawable.ic_communicate))
+                OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and make the world a better place with new innovations.", R.drawable.ic_communicate))
             }
         }
     }

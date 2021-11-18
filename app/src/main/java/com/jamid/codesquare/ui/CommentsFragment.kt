@@ -6,8 +6,11 @@ import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.widget.Button
 import android.widget.EditText
+import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
+import androidx.navigation.NavController
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -24,7 +27,7 @@ import com.jamid.codesquare.databinding.CommentTopLayoutBinding
 import com.jamid.codesquare.listeners.CommentListener
 
 @ExperimentalPagingApi
-class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), CommentListener {
+class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), CommentListener {
 
     private var project: Project? = null
     private var comment: Comment? = null
@@ -32,9 +35,8 @@ class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), C
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val title = arguments?.getString("title") ?: ""
         val commentChannelId = arguments?.getString("commentChannelId") ?: return
-
+        shouldShowImage = false
         val query = Firebase.firestore.collection("commentChannels")
             .document(commentChannelId)
             .collection("comments")
@@ -47,12 +49,12 @@ class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), C
         recyclerView?.itemAnimator = null
         noItemsText?.text = "No comments yet. Be the first one to comment."
 
-        initTopLayout(title)
+//        initTopLayout(title)
 
         initBottomLayout()
     }
 
-    private fun initTopLayout(title: String) {
+    /*private fun initTopLayout(title: String) {
         val topView = layoutInflater.inflate(R.layout.comment_top_layout, null, false)
         binding.pagerRoot.addView(topView)
 
@@ -71,10 +73,14 @@ class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), C
         topViewBinding.topToolbar.title = title
 
         topViewBinding.topToolbar.setNavigationOnClickListener {
-            dismiss()
+            requireActivity().supportFragmentManager.beginTransaction().remove(this@CommentsFragment).commit()
         }
 
-    }
+        requireActivity().onBackPressedDispatcher.addCallback {
+            requireActivity().supportFragmentManager.beginTransaction().remove(this@CommentsFragment).commit()
+        }
+
+    }*/
 
     private fun initBottomLayout() {
 
@@ -204,7 +210,10 @@ class CommentsFragment: PagerListBottomFragment<Comment, CommentViewHolder>(), C
     }
 
     override fun onClick(comment: Comment) {
-        showDialog(comment)
+//        showDialog(comment)
+        val bundle = bundleOf("parent" to comment, "commentChannelId" to comment.threadChannelId)
+        findNavController().navigate(R.id.action_commentsFragment_self, bundle)
+
     }
 
     override fun onCommentDelete(comment: Comment) {

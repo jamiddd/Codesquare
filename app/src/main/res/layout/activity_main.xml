@@ -8,6 +8,7 @@
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/main_appbar"
+        style="@style/AppTheme.AppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -15,9 +16,9 @@
             android:id="@+id/main_collapse"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:contentScrim="?colorPrimary"
+            app:contentScrim="@color/transparent"
             app:layout_scrollFlags="exitUntilCollapsed|scroll|snap|snapMargins"
-            app:statusBarScrim="?colorPrimary"
+            app:statusBarScrim="@color/transparent"
             app:titleEnabled="false">
 
 
@@ -33,11 +34,10 @@
                 android:id="@+id/main_toolbar"
                 style="@style/AppTheme.Toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="?actionBarSize"
                 android:elevation="0dp"
-                android:minHeight="?actionBarSize"
                 app:layout_collapseMode="pin"
-                app:title="@string/app_name" />
+                app:logo="@drawable/ic_collab_logo" />
 
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -79,7 +79,6 @@
         android:layout_height="wrap_content"
         android:elevation="5dp"
         android:indeterminate="true"
-        android:indeterminateTint="@color/purple_500"
         android:visibility="gone"
         app:layout_anchor="@id/main_appbar"
         app:layout_anchorGravity="bottom"

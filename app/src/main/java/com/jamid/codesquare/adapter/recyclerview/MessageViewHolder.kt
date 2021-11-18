@@ -57,6 +57,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private val replyBtn = view.findViewById<Button>(R.id.reply_btn)
     private val replyBtnAlt = view.findViewById<Button>(R.id.reply_btn_alt)
 
+    private var leftImage: SimpleDraweeView? = null
+    private var rightImage: SimpleDraweeView? = null
+    private var leftDocument: View? = null
+    private var rightDocument: View? = null
+
     private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
     private val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
@@ -91,7 +96,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                             val view1 = documentStubRight.inflate()
                             val messageDocumentLayoutBinding = MessageDocumentLayoutBinding.bind(view1)
                             messageDocumentLayoutBinding.root.updateLayout(marginRight = convertDpToPx(7, view.context))
-
                             onMediaDocumentMessageLoaded(messageDocumentLayoutBinding, message)
                         }
 
@@ -260,11 +264,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageMetaLeft.hide()
                         senderImg.disappear()
                         containerLeft.background = ContextCompat.getDrawable(view.context, R.drawable.message_body_2)
-//                        rootLeft.setPadding(convertDpToPx(8, view.context), 0, 0, 0)
                     }
                     msg_at_middle_image -> {
                         if (imageStubLeft != null && imageStubLeft.parent != null) {
                             val view1 = imageStubLeft.inflate() as ViewGroup
+                            view1.findViewById<SimpleDraweeView>(R.id.message_image)?.updateLayout(marginLeft = convertDpToPx(7, view.context))
                             onMediaImageMessageLoaded(view1, message)
                         }
                         senderImg.disappear()
@@ -413,6 +417,18 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 } else {
                     selectBtnAlt.hide()
                 }
+
+
+                leftImage?.setOnClickListener(onImageClick)
+                rightImage?.setOnClickListener(onImageClick)
+                leftDocument?.setOnClickListener(onDocumentClick)
+                rightDocument?.setOnClickListener(onDocumentClick)
+
+                leftImage?.setOnLongClickListener(onImageLongClickListener)
+                rightImage?.setOnLongClickListener(onImageLongClickListener)
+                leftDocument?.setOnLongClickListener(onDocumentLongClickListener)
+                rightDocument?.setOnLongClickListener(onDocumentLongClickListener)
+
             }
             0 -> {
                 // when select mode is on but nothing is selected
@@ -431,6 +447,17 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                     forwardBtnAlt.hide()
                 }
+
+                leftImage?.setOnClickListener(onImageClickAlt)
+                rightImage?.setOnClickListener(onImageClickAlt)
+                leftDocument?.setOnClickListener(onDocumentClickAlt)
+                rightDocument?.setOnClickListener(onDocumentClickAlt)
+
+                leftImage?.setOnLongClickListener(onImageLongClickListenerAlt)
+                rightImage?.setOnLongClickListener(onImageLongClickListenerAlt)
+                leftDocument?.setOnLongClickListener(onDocumentLongClickListenerAlt)
+                rightDocument?.setOnLongClickListener(onDocumentLongClickListenerAlt)
+
             }
             1 -> {
                 // when select mode is on and this is selected
@@ -444,6 +471,17 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
                     forwardBtnAlt.hide()
                 }
+
+                leftImage?.setOnClickListener(onImageClickAlt)
+                rightImage?.setOnClickListener(onImageClickAlt)
+                leftDocument?.setOnClickListener(onDocumentClickAlt)
+                rightDocument?.setOnClickListener(onDocumentClickAlt)
+
+                leftImage?.setOnLongClickListener(onImageLongClickListenerAlt)
+                rightImage?.setOnLongClickListener(onImageLongClickListenerAlt)
+                leftDocument?.setOnLongClickListener(onDocumentLongClickListenerAlt)
+                rightDocument?.setOnLongClickListener(onDocumentLongClickListenerAlt)
+
             }
         }
     }
@@ -530,8 +568,10 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         val imageView = parentView.findViewById<SimpleDraweeView>(R.id.message_image)
 
         val forwardBtn: Button = if (isLeft) {
+            leftImage = imageView
             forwardBtn
         } else {
+            rightImage = imageView
             forwardBtnAlt
         }
 
@@ -553,10 +593,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 imageView.controller = controller
             } else {
                 imageView.setImageURI(uri.toString())
-            }
-
-            parentView.setOnClickListener {
-                messageListener.onImageClick(view, message, layoutPosition, message.content)
             }
 
             forwardBtn.setOnClickListener {
@@ -595,10 +631,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                         messageListener.onForwardClick(view, message)
                     }
 
-                    imageView.setOnClickListener {
-                        messageListener.onImageClick(view, message, layoutPosition, message.content)
-                    }
-
                 } else {
                     view.context.toast("Something went wrong while downloading media.")
                 }
@@ -615,8 +647,10 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
 
         val forwardBtn: Button = if (isLeft) {
+            leftDocument = binding.root
             forwardBtn
         } else {
+            rightDocument = binding.root
             forwardBtnAlt
         }
 
@@ -634,9 +668,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             binding.documentDownloadBtn.hide()
             binding.documentDownloadProgress.hide()
 
-            binding.root.setOnClickListener {
+            /*binding.root.setOnClickListener {
                 messageListener.onDocumentClick(message)
-            }
+            }*/
 
             forwardBtn.setOnClickListener {
                 messageListener.onForwardClick(view, message)
@@ -664,9 +698,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                             messageListener.onForwardClick(view, message)
                         }
 
-                        binding.root.setOnClickListener {
+                        /*binding.root.setOnClickListener {
                             messageListener.onDocumentClick(newMessage)
-                        }
+                        }*/
                     } else {
                         binding.documentDownloadProgress.hide()
                         binding.documentDownloadBtn.show()
@@ -708,7 +742,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
     override fun onLongPress(p0: MotionEvent?) {
         Log.d(TAG, "onLongPress")
-
         if (mMessage!!.state == -1) {
             mMessage!!.state = 0
             messageListener.onMessageLongClick(mMessage!!)
@@ -764,6 +797,53 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
 
         return true
+    }
+
+    private val onImageLongClickListener = View.OnLongClickListener {
+        messageListener.onMessageLongClick(mMessage!!)
+        true
+    }
+
+    private val onImageLongClickListenerAlt = View.OnLongClickListener {
+        true
+    }
+
+    private val onDocumentLongClickListener = View.OnLongClickListener {
+        messageListener.onMessageLongClick(mMessage!!)
+        true
+    }
+
+    private val onDocumentLongClickListenerAlt = View.OnLongClickListener {
+
+        true
+    }
+
+    private val onImageClick = View.OnClickListener {
+        if (mMessage!!.state == 0) {
+            mMessage!!.state = 1
+            messageListener.onMessageStateChanged(mMessage!!)
+        } else {
+            messageListener.onImageClick(view, mMessage!!, layoutPosition, mMessage!!.content)
+        }
+    }
+
+    private val onImageClickAlt = View.OnClickListener {
+        mMessage!!.state = 0
+        messageListener.onMessageStateChanged(mMessage!!)
+    }
+
+    private val onDocumentClick = View.OnClickListener {
+        if (mMessage!!.state == 0) {
+            mMessage!!.state = 1
+            messageListener.onMessageStateChanged(mMessage!!)
+        } else {
+            messageListener.onDocumentClick(mMessage!!)
+        }
+    }
+
+    private val onDocumentClickAlt = View.OnClickListener {
+        mMessage!!.state = 0
+        messageListener.onMessageStateChanged(mMessage!!)
     }
 
     override fun onDoubleTapEvent(p0: MotionEvent?): Boolean {

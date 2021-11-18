@@ -14,6 +14,7 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.listeners.UserClickListener
 import com.facebook.drawee.generic.RoundingParams
+import com.jamid.codesquare.accentColor
 import com.jamid.codesquare.convertDpToPx
 import com.jamid.codesquare.updateLayout
 
@@ -34,7 +35,7 @@ class UserSmallViewHolder(val view: View, private val administrators: List<Strin
 
             image.setImageURI(user.photo)
 
-            val blueColor = ContextCompat.getColor(view.context, R.color.purple_500)
+            val blueColor = view.context.accentColor()
 
             if (administrators.contains(user.id)) {
                 val roundingParams = RoundingParams.asCircle().setBorderColor(blueColor).setBorderWidth(

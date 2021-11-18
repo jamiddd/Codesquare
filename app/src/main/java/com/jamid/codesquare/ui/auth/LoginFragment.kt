@@ -5,6 +5,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -23,6 +25,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentLoginBinding
+import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
 import kotlinx.coroutines.delay
@@ -33,7 +36,6 @@ class LoginFragment: Fragment() {
     private lateinit var binding: FragmentLoginBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var googleSignInClient: GoogleSignInClient
-    private var dialog: AlertDialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,6 +58,10 @@ class LoginFragment: Fragment() {
 
         binding.signUpBtn.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_createAccountFragment, null, slideRightNavOptions())
+        }
+
+        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+            activity.finish()
         }
 
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -101,45 +107,58 @@ class LoginFragment: Fragment() {
 
             signIn(email, password)
 
-            viewModel.currentUser.observe(viewLifecycleOwner) {
-                if (it != null) {
-                    dialog?.dismiss()
-                    findNavController().navigate(R.id.action_loginFragment_to_homeFragment, null, slideRightNavOptions())
-                }
-            }
         }
+
+       /* Firebase.auth.addAuthStateListener {
+            if (it.currentUser != null) {
+                dialog?.dismiss()
+                findNavController().navigate(R.id.action_loginFragment_to_homeFragment, null, slideRightNavOptions())
+            }
+        }*/
 
         viewModel.currentError.observe(viewLifecycleOwner) {
             if (it != null) {
                 Log.e(TAG, it.localizedMessage.orEmpty())
-                dialog?.dismiss()
             }
+        }
+
+
+        val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+        val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
+
+        inputLayoutBinding.inputTextLayout.hint = "Write your email ..."
+
+        binding.forgotPasswordBtn.setOnClickListener {
+
+            MaterialAlertDialogBuilder(activity)
+                .setTitle("Forgot password ? ")
+                .setMessage("We will send you a mail on this address with the link for new password.")
+                .setView(inputLayoutBinding.root)
+                .setPositiveButton("Send") { a, b ->
+                    val emailText = inputLayoutBinding.inputTextLayout.text
+                    if (!emailText.isNullOrBlank()) {
+                        val email = emailText.trim().toString()
+                        Firebase.auth.sendPasswordResetEmail(email)
+                            .addOnCompleteListener {
+                                if (it.isSuccessful) {
+                                    toast("Check your mail for a link to reset your password", Toast.LENGTH_LONG)
+                                } else {
+                                    toast(it.exception?.localizedMessage.orEmpty())
+                                }
+                            }
+                    } else {
+                        toast("Write an email address so that we can send a link for renewing your password.")
+                    }
+                }.setNegativeButton("Cancel") { a, b ->
+                    a.dismiss()
+                }
+                .show()
         }
 
     }
 
     private fun showDialog() {
-
-        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
-
-        loadingLayoutBinding.loadingText.text = "Signing in .. Please wait for a while"
-
-        dialog =  MaterialAlertDialogBuilder(requireContext())
-            .setView(loadingLayout)
-            .setCancelable(false)
-            .show()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            delay(8000)
-            dialog?.dismiss()
-            if (viewModel.currentUser.value != null) {
-                findNavController().navigate(R.id.action_loginFragment_to_homeFragment, null, slideRightNavOptions())
-            } else {
-                toast("Sign in again")
-            }
-        }
-
+        (activity as MainActivity).showLoadingDialog("Signing in .. Please wait for a while")
     }
 
     private fun signIn(email: String, password: String) {

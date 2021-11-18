@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.profile
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.*
 import androidx.core.content.ContextCompat
@@ -24,6 +25,7 @@ class ProfileFragment: Fragment() {
     private lateinit var binding: FragmentProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
     private var mUser: User? = null
+    private var likesCount: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +64,7 @@ class ProfileFragment: Fragment() {
                 true
             }
             R.id.settings -> {
-                toast("Settings")
+                findNavController().navigate(R.id.action_profileFragment_to_settingsFragment, null)
                 true
             }
             R.id.report_user -> {
@@ -117,9 +119,13 @@ class ProfileFragment: Fragment() {
     private fun onViewGenerated(view: View, otherUser: User? = null) {
         val userLayoutBinding = UserInfoLayoutBinding.bind(view)
 
-
-
         userLayoutBinding.apply {
+
+            if (isNightMode()) {
+                userImg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.normal_grey))
+            } else {
+                userImg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.darker_grey))
+            }
 
             if (otherUser == null) {
                 viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
@@ -161,7 +167,9 @@ class ProfileFragment: Fragment() {
         val totalCollaborationText = user.collaborationsCount.toString() + " Collaborations"
         collaborationsCount.text = totalCollaborationText
 
-        val starsCountText = user.starsCount.toString() + " Stars"
+        likesCount = user.likesCount
+
+        val starsCountText = "$likesCount Likes"
         starsCount.text = starsCountText
 
         if (isCurrentUser) {
@@ -175,7 +183,7 @@ class ProfileFragment: Fragment() {
             val currentUser = viewModel.currentUser.value!!
 
             profilePrimaryBtn.isSelected = currentUser.likedUsers.contains(user.id)
-            profilePrimaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.like_selector)
+            profilePrimaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.thumb_selector)
             if (profilePrimaryBtn.isSelected) {
                 profilePrimaryBtn.isSelected = true
                 profilePrimaryBtn.text = "Dislike"
@@ -188,9 +196,20 @@ class ProfileFragment: Fragment() {
                 if (profilePrimaryBtn.isSelected) {
                     profilePrimaryBtn.isSelected = false
                     profilePrimaryBtn.text = "Like"
+                    likesCount -= 1
+                    val starsCountText1 = "$likesCount Stars"
+                    starsCount.text = starsCountText1
+
+                    viewModel.dislikeUser(user.id)
                 } else {
                     profilePrimaryBtn.isSelected = true
                     profilePrimaryBtn.text = "Dislike"
+
+                    likesCount += 1
+                    val starsCountText1 = "$likesCount Stars"
+                    starsCount.text = starsCountText1
+
+                    viewModel.likeUser(user.id)
                 }
             }
         }

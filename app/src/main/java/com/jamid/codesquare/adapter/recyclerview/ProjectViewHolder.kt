@@ -115,7 +115,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         override fun updateDrawState(ds: TextPaint) {
                             super.updateDrawState(ds)
                             ds.isUnderlineText = false
-                            ds.color = ContextCompat.getColor(view.context, R.color.purple_700)
+                            ds.color = view.context.accentColor()
                         }
                     }
 

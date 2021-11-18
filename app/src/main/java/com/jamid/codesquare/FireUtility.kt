@@ -143,12 +143,9 @@ object FireUtility {
         project.images = downloadUrls
 
         val chatChannelRef = Firebase.firestore.collection("chatChannels").document()
-        val chatChannelId = chatChannelRef.id
-
-        project.chatChannel = chatChannelId
 
         val chatChannel = ChatChannel(
-            chatChannelId,
+            project.chatChannel,
             project.id,
             project.title,
             project.images.first(),
@@ -523,7 +520,7 @@ object FireUtility {
             val batch = db.batch()
 
             val ref1 = db.collection("users").document(userId)
-            batch.update(ref1, mapOf("starsCount" to FieldValue.increment(1)))
+            batch.update(ref1, mapOf("likesCount" to FieldValue.increment(1)))
 
             val ref2 = db.collection("users").document(currentUser.id)
             batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayUnion(userId)))
@@ -546,7 +543,7 @@ object FireUtility {
             val batch = db.batch()
 
             val ref1 = db.collection("users").document(userId)
-            batch.update(ref1, mapOf("starsCount" to FieldValue.increment(-1)))
+            batch.update(ref1, mapOf("likesCount" to FieldValue.increment(-1)))
 
             val ref2 = db.collection("users").document(currentUser.id)
             batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayRemove(userId)))

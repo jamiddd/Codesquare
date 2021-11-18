@@ -3,12 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main_navigation"
     xmlns:tools="http://schemas.android.com/tools"
-    app:startDestination="@id/homeFragment">
+    app:startDestination="@id/splashFragment">
 
     <fragment
         android:id="@+id/homeFragment"
         android:name="com.jamid.codesquare.ui.home.HomeFragment"
-        android:label="@string/app_name"
+        android:label=" "
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_homeFragment_to_createProjectFragment"
@@ -38,6 +38,12 @@
         <action
             android:id="@+id/action_homeFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_emailVerificationFragment"
+            app:destination="@id/emailVerificationFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_loginFragment2"
+            app:destination="@id/loginFragment" />
     </fragment>
     <fragment
         android:id="@+id/createProjectFragment"
@@ -63,6 +69,12 @@
         <action
             android:id="@+id/action_loginFragment_to_onBoardingFragment"
             app:destination="@id/onBoardingFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_homeFragment2"
+            app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_splashFragment"
+            app:destination="@id/splashFragment" />
     </fragment>
     <fragment
         android:id="@+id/createAccountFragment"
@@ -70,8 +82,8 @@
         tools:layout="@layout/fragment_create_account"
         android:label="CreateAccountFragment" >
         <action
-            android:id="@+id/action_createAccountFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
+            android:id="@+id/action_createAccountFragment_to_emailVerificationFragment"
+            app:destination="@id/emailVerificationFragment" />
     </fragment>
     <fragment
         android:id="@+id/locationFragment"
@@ -101,6 +113,9 @@
         <action
             android:id="@+id/action_profileFragment_to_createProjectFragment"
             app:destination="@id/createProjectFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_settingsFragment"
+            app:destination="@id/settingsFragment" />
     </fragment>
     <fragment
         android:id="@+id/editProfileFragment"
@@ -128,6 +143,9 @@
         <action
             android:id="@+id/action_projectFragment_to_tagFragment"
             app:destination="@id/tagFragment" />
+        <action
+            android:id="@+id/action_projectFragment_to_imageViewFragment"
+            app:destination="@id/imageViewFragment" />
     </fragment>
     <fragment
         android:id="@+id/projectRequestFragment"
@@ -254,6 +272,42 @@
         android:label="OnBoardingFragment" >
         <action
             android:id="@+id/action_onBoardingFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/emailVerificationFragment"
+        android:name="com.jamid.codesquare.ui.auth.EmailVerificationFragment"
+        tools:layout="@layout/fragment_email_verification"
+        android:label=" " >
+        <action
+            android:id="@+id/action_emailVerificationFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_emailVerificationFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.jamid.codesquare.ui.SettingsFragment"
+        android:label="Settings" >
+        <action
+            android:id="@+id/action_settingsFragment_to_loginFragment"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_editProfileFragment"
+            app:destination="@id/editProfileFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_savedProjectsFragment"
+            app:destination="@id/savedProjectsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/splashFragment"
+        android:name="com.jamid.codesquare.ui.SplashFragment" >
+        <action
+            android:id="@+id/action_splashFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
     </fragment>
 </navigation>

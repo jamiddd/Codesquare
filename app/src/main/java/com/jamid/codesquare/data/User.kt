@@ -32,7 +32,7 @@ data class User(
     var registrationTokens: List<String>,
     var projectsCount: Long,
     var collaborationsCount: Long,
-    var starsCount: Long,
+    var likesCount: Long,
     var createdAt: Long,
     var updatedAt: Long,
     @Exclude @set: Exclude @get: Exclude
@@ -54,7 +54,7 @@ data class User(
 
     companion object {
         fun newUser(id: String, name: String, email: String) =
-            User(id, name, randomId(), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
+            User(id, name, randomId().take(16), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
 
     }
 

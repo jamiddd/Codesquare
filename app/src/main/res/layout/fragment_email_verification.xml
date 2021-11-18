@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/email_verification_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="100dp"
+        android:layout_marginEnd="24dp"
+        android:drawablePadding="12dp"
+        android:gravity="center"
+        android:text="Email not verified"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        app:drawableTopCompat="@drawable/ic_round_report_problem_24"
+        app:layout_constraintBottom_toTopOf="@+id/verify_email_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <Button
+        android:id="@+id/verify_email_btn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="100dp"
+        android:text="Verify email"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/email_verification_message"
+        app:layout_constraintStart_toStartOf="@+id/email_verification_message"
+        app:layout_constraintTop_toBottomOf="@+id/email_verification_message" />
+
+    <ProgressBar
+        android:id="@+id/email_verification_progress"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:elevation="5dp"
+        app:layout_constraintBottom_toBottomOf="@+id/verify_email_btn"
+        app:layout_constraintEnd_toEndOf="@+id/email_verification_message"
+        app:layout_constraintStart_toStartOf="@+id/email_verification_message"
+        app:layout_constraintTop_toTopOf="@+id/verify_email_btn" />
+</androidx.constraintlayout.widget.ConstraintLayout>

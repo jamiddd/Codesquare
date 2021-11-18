@@ -14,11 +14,6 @@ const client = algoliasearch(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 
 exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
     .onCreate((snap, context) => {
-
-        console.log(ALGOLIA_ID + " --- " + ALGOLIA_ADMIN_KEY);
-
-        console.log("Hello World");
-
         const project = snap.data();
         project.objectID = context.params.projectId;
         const index = client.initIndex(ALGOLIA_INDEX_NAME);
@@ -26,10 +21,25 @@ exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
         return index.saveObject(project);
     });
 
+exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
+    .onDelete((snap, context) => {
+        const index = client.initIndex("projects");
+        return index.deleteObject(context.params.projectId);
+    });
+
+
 exports.onUserCreated = functions.firestore.document("users/{userId}")
     .onCreate((snap, context) => {
         const user = snap.data();
         user.objectID = context.params.userId;
         const index = client.initIndex("users");
-        return index.saveObject(project);
+        return index.saveObject(user);
+    });
+
+
+exports.onUserDeleted = functions.firestore.document("users/{userId}")
+    .onDelete((snap, context) => {
+        const index = client.initIndex("users");
+    
+        return index.deleteObject(context.params.userId);
     });

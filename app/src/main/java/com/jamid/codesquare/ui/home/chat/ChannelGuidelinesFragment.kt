@@ -92,9 +92,8 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
 
         binding.addRuleBtn.setOnClickListener {
             val newRuleText = binding.newRuleText.text
-            if (newRuleText != null) {
+            if (newRuleText.isNullOrBlank()) {
                 val newRule = newRuleText.toString()
-
                 val newList = currentGuidelines.value.orEmpty().toMutableList()
                 newList.add(newRule)
 

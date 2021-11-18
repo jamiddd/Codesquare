@@ -93,7 +93,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         chip.text = tag
         chip.isCheckable = true
         chip.isCloseIconVisible = false
-        chip.checkedIconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.purple_700))
+//        chip.checkedIconTint = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.purple_700))
 
         chip.setOnClickListener {
 

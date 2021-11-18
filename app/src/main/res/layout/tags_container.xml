@@ -29,7 +29,6 @@
                 android:layout_height="wrap_content"
                 android:checked="true"
                 android:text="Random"
-                app:checkedIconTint="@color/purple_500"
                 app:closeIconEnabled="false" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>

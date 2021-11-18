@@ -27,15 +27,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         val db = CodesquareDatabase.getInstance(application.applicationContext, viewModelScope)
         repo = MainRepository.getInstance(db)
 
-        /*FireUtility.getLatestUserData {
-            if (it.isSuccessful && it.result.exists()) {
-                val user = it.result.toObject(User::class.java)!!
-                viewModelScope.launch(Dispatchers.IO) {
-                    insertCurrentUser(user)
-                }
-            }
-        }*/
-
     }
 
     private val _currentError = MutableLiveData<Exception?>()
@@ -232,6 +223,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     fun createProject(onComplete: (task: Task<Void>) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
         val project = currentProject.value!!
         val currentUser = currentUser.value!!
+
+        val chatChannelId = randomId()
+        project.chatChannel = chatChannelId
+
         FireUtility.createProject(currentUser, project) {
             if (it.isSuccessful) {
                 val existingList = currentUser.projects.toMutableList()
@@ -250,6 +245,21 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
                 project.isMadeByMe = true
                 insertProject(project)
+
+                val chatChannel = ChatChannel(
+                    chatChannelId,
+                    project.id,
+                    project.title,
+                    project.images.first(),
+                    project.contributors.size.toLong(),
+                    listOf(project.creator.userId),
+                    listOf(project.creator.userId),
+                    project.createdAt,
+                    project.updatedAt,
+                    null
+                )
+
+                insertChatChannelsWithoutProcessing(listOf(chatChannel))
 
             } else {
                 setCurrentError(it.exception)
@@ -1116,6 +1126,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun reportProject(project: Project) {
         FireUtility.reportProject(project)
+    }
+
+    fun processProjects(projects: List<Project>): List<Project> {
+        val currentUser = repo.currentUser.value!!
+        return repo.processProjects(currentUser, projects)
     }
 
     companion object {

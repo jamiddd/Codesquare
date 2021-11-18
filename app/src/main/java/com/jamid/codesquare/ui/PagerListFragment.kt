@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -40,6 +41,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     protected var noItemsText: TextView? = null
     protected var swipeRefresher: SwipeRefreshLayout? = null
     var shouldHideRecyclerView = false
+    var shouldShowImage = true
 
     val isEmpty = MutableLiveData<Boolean>()
 
@@ -67,20 +69,20 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     fun setIsViewPagerFragment(isViewPagerFragment: Boolean) {
         if (isViewPagerFragment) {
             val eightDp = convertDpToPx(8)
-            val params = binding.pagerNoItemsText.layoutParams as ConstraintLayout.LayoutParams
+            val params = binding.noDataImage.layoutParams as ConstraintLayout.LayoutParams
             params.topToTop = binding.pagerRoot.id
-            params.bottomToBottom = binding.pagerRoot.id
+            params.bottomToTop = binding.pagerNoItemsText.id
             params.startToStart = binding.pagerRoot.id
             params.endToEnd = binding.pagerRoot.id
             params.verticalBias = 0.25f
             params.horizontalBias = 0.5f
             params.setMargins(eightDp)
-            binding.pagerNoItemsText.layoutParams = params
+            binding.noDataImage.layoutParams = params
         } else {
             val eightDp = convertDpToPx(8)
             val params = binding.pagerNoItemsText.layoutParams as ConstraintLayout.LayoutParams
             params.topToTop = binding.pagerRoot.id
-            params.bottomToBottom = binding.pagerRoot.id
+            params.bottomToTop = binding.pagerNoItemsText.id
             params.startToStart = binding.pagerRoot.id
             params.endToEnd = binding.pagerRoot.id
             params.verticalBias = 0.5f
@@ -94,7 +96,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
         recyclerView = binding.pagerItemsRecycler
         noItemsText = binding.pagerNoItemsText
         swipeRefresher = binding.pagerRefresher
-        initLayout(binding.pagerItemsRecycler, binding.pagerActionBtn, binding.pagerNoItemsText, refresher = binding.pagerRefresher)
+        initLayout(binding.pagerItemsRecycler, binding.pagerActionBtn, binding.pagerNoItemsText, image = binding.noDataImage, refresher = binding.pagerRefresher)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -102,13 +104,13 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
         onViewLaidOut()
     }
 
-    open fun initLayout(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, refresher: SwipeRefreshLayout? = null) {
+    open fun initLayout(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, image: ImageView? = null, refresher: SwipeRefreshLayout? = null) {
         recyclerView.apply {
             adapter = pagingAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
 
-        addLoadListener(recyclerView, actionBtn, infoText, progressBar, refresher)
+        addLoadListener(recyclerView, actionBtn, infoText, progressBar, image, refresher = refresher)
 
         refresher?.let {
             it.setOnRefreshListener {
@@ -118,7 +120,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
     }
 
-    open fun addLoadListener(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, refresher: SwipeRefreshLayout? = null) {
+    open fun addLoadListener(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, image: ImageView? = null, refresher: SwipeRefreshLayout? = null) {
         pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
                 super.onItemRangeChanged(positionStart, itemCount, payload)
@@ -128,12 +130,16 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                     recyclerView.show()
                     infoText?.hide()
+                    image?.hide()
                 } else {
                     isEmpty.postValue(true)
                     if (shouldHideRecyclerView) {
                         recyclerView.hide()
                     }
                     // hide recyclerview and show info
+                    if (shouldShowImage) {
+                        image?.show()
+                    }
                     infoText?.show()
                 }
             }
@@ -151,6 +157,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                             recyclerView.hide()
                         }
                         infoText?.hide()
+                        image?.hide()
 
                     }
                     is LoadState.Error -> {
@@ -162,7 +169,10 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                             recyclerView.hide()
                         }
                         infoText?.text = "Something went wrong :("
-                        infoText?.show()
+                        if (shouldShowImage) {
+                            image?.show()
+                        }
+                        image?.show()
                     }
                     is LoadState.NotLoading -> {
                         progressBar?.hide()
@@ -176,6 +186,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         // when append is loading
                         progressBar?.show()
                         infoText?.hide()
+                        image?.hide()
                     }
                     is LoadState.Error -> {
                         Log.d(TAG, "Append function - Error")
@@ -189,6 +200,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                         infoText?.text = "Something went wrong :("
                         infoText?.show()
+                        if (shouldShowImage) {
+                            image?.show()
+                        }
                     }
                     is LoadState.NotLoading -> {
                         progressBar?.hide()
@@ -200,6 +214,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     // non empty
                     recyclerView.show()
                     infoText?.hide()
+                    image?.hide()
                     isEmpty.postValue(false)
                 } else {
                     // empty
@@ -208,6 +223,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         recyclerView.hide()
                     }
                     infoText?.show()
+                    if (shouldShowImage) {
+                        image?.show()
+                    }
                 }
             }
         }
