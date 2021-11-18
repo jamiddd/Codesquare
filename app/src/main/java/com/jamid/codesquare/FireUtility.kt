@@ -142,7 +142,7 @@ object FireUtility {
         val downloadUrls = downloadUris.map { it.toString() }
         project.images = downloadUrls
 
-        val chatChannelRef = Firebase.firestore.collection("chatChannels").document()
+        val chatChannelRef = Firebase.firestore.collection("chatChannels").document(project.chatChannel)
 
         val chatChannel = ChatChannel(
             project.chatChannel,

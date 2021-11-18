@@ -76,6 +76,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 val layoutManager = recyclerView?.layoutManager as LinearLayoutManager
                 val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
+
+                Log.d(TAG, chatChannel.chatChannelId)
+
                 findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title, "chatChannel" to chatChannel), slideRightNavOptions())
                 true
             }

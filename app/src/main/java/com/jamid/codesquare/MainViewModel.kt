@@ -457,11 +457,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getPagedProjectRequests(query: Query): Flow<PagingData<ProjectRequest>> {
+        val currentUser = repo.currentUser.value!!
         return Pager(
             config = PagingConfig(pageSize = 20),
             remoteMediator = ProjectRequestRemoteMediator(query, repo)
         ) {
-            repo.projectRequestDao.getPagedProjectRequests()
+            repo.projectRequestDao.getPagedProjectRequests("%${currentUser.id}%")
         }.flow.cachedIn(viewModelScope)
     }
 

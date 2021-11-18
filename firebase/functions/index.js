@@ -43,3 +43,14 @@ exports.onUserDeleted = functions.firestore.document("users/{userId}")
     
         return index.deleteObject(context.params.userId);
     });
+
+
+    // NOTIFICATIONS
+    // ------------------
+    // on request sent/undo
+    // on request accept/reject
+    // on comment/reply posted
+    // on project liked
+    // on new contributor joined
+    // on user liked/disliked
+    // promotion 

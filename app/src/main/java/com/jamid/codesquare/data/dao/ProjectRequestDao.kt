@@ -17,7 +17,7 @@ abstract class ProjectRequestDao: BaseDao<ProjectRequest>() {
     @Query("DELETE FROM project_requests WHERE requestId = :requestId")
     abstract suspend fun deleteProjectRequest(requestId: String)
 
-    @Query("SELECT * FROM project_requests ORDER BY createdAt DESC")
-    abstract fun getPagedProjectRequests(): PagingSource<Int, ProjectRequest>
+    @Query("SELECT * FROM project_requests WHERE receiverId LIKE :receiverId ORDER BY createdAt DESC")
+    abstract fun getPagedProjectRequests(receiverId: String): PagingSource<Int, ProjectRequest>
 
 }
