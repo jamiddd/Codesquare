@@ -10,6 +10,8 @@ import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.functions.HttpsCallableResult
+import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.StorageReference
@@ -290,15 +292,22 @@ object FireUtility {
         Firebase.auth.signOut()
     }
 
-    suspend fun likeProject(userId: String, project: Project): Result<Project> {
+    suspend fun likeProject(currentUser: User, project: Project, notification: Notification): Result<Project> {
         return try {
             val projectRef = Firebase.firestore.collection("projects")
                 .document(project.id)
 
             val userRef = Firebase.firestore.collection("users")
-                .document(userId)
+                .document(currentUser.id)
+
+            val notificationRef = Firebase.firestore.collection("users")
+                .document(project.creator.userId)
+                .collection("notifications")
+                .document(notification.id)
 
             val batch = Firebase.firestore.batch()
+
+            batch.set(notificationRef, notification)
 
             batch.update(projectRef, "likes", FieldValue.increment(1))
             batch.update(userRef, "likedProjects", FieldValue.arrayUnion(project.id))
@@ -312,7 +321,7 @@ object FireUtility {
 
     }
 
-    suspend fun dislikeProject(userId: String, project: Project): Result<Project> {
+    suspend fun dislikeProject(userId: String, project: Project, notification: Notification?): Result<Project> {
         return try {
             val projectRef = Firebase.firestore.collection("projects")
                 .document(project.id)
@@ -321,6 +330,11 @@ object FireUtility {
                 .document(userId)
 
             val batch = Firebase.firestore.batch()
+
+            if (notification != null) {
+                val notificationRef = Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id)
+                batch.delete(notificationRef)
+            }
 
             batch.update(projectRef, "likes", FieldValue.increment(-1))
             batch.update(userRef, "likedProjects", FieldValue.arrayRemove(project.id))
@@ -375,9 +389,8 @@ object FireUtility {
         }
     }
 
-    suspend fun joinProject(currentUser: User, project: Project): Result<ProjectRequest> {
+    suspend fun joinProject(currentUser: User, project: Project, notification: Notification): Result<ProjectRequest> {
         return try {
-
             val batch = Firebase.firestore.batch()
 
             val currentUserRef = Firebase.firestore.collection("users").document(currentUser.id)
@@ -389,12 +402,21 @@ object FireUtility {
 
             val projectRequest = ProjectRequest(requestId, project.id, currentUser.id, project.creator.userId, project, currentUser, System.currentTimeMillis())
 
+            val notificationRef = Firebase.firestore
+                .collection("users")
+                .document(project.creator.userId)
+                .collection("notifications")
+                .document(notification.id)
+
             val userChanges = mapOf("projectRequests" to FieldValue.arrayUnion(requestId))
 
             val projectChanges = mapOf("requests" to FieldValue.arrayUnion(requestId))
 
             // create new project request
             batch.set(projectRequestRef, projectRequest)
+
+            // sending a notification along with it
+            batch.set(notificationRef, notification)
 
             // update the current user
             batch.update(currentUserRef, userChanges)
@@ -414,7 +436,7 @@ object FireUtility {
         }
     }
 
-    suspend fun undoJoinProject(userId: String, projectId: String, requestId: String): Result<Void> {
+    suspend fun undoJoinProject(userId: String, projectId: String, requestId: String, notification: Notification?): Result<Void> {
         return try {
 
             val batch = Firebase.firestore.batch()
@@ -434,6 +456,14 @@ object FireUtility {
             )
 
             batch.delete(projectRequestRef)
+
+            if (notification != null) {
+                batch.delete(Firebase.firestore
+                    .collection("users")
+                    .document(notification.receiverId)
+                    .collection("notifications")
+                    .document(notification.id))
+            }
 
             batch.update(projectRef, projectChanges)
 
@@ -483,7 +513,7 @@ object FireUtility {
 
     }
 
-    fun rejectRequest(projectRequest: ProjectRequest): Result<Void> {
+    fun rejectRequest(projectRequest: ProjectRequest, notification: Notification?): Result<Void> {
         return try {
 
             val projectRef = Firebase.firestore.collection("projects").document(projectRequest.projectId)
@@ -504,6 +534,10 @@ object FireUtility {
             batch.update(senderRef, senderChanges)
             batch.delete(requestRef)
 
+            if (notification != null) {
+                batch.delete(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id))
+            }
+
             val task = batch.commit()
 
             Result.Success(task.result)
@@ -514,7 +548,7 @@ object FireUtility {
 
     }
 
-    suspend fun likeUser(currentUser: User, userId: String): Result<User> {
+    suspend fun likeUser(currentUser: User, userId: String, notification: Notification): Result<User> {
         return try {
             val db = Firebase.firestore
             val batch = db.batch()
@@ -524,6 +558,12 @@ object FireUtility {
 
             val ref2 = db.collection("users").document(currentUser.id)
             batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayUnion(userId)))
+
+            batch.set(Firebase.firestore
+                .collection("users")
+                .document(notification.receiverId)
+                .collection("notifications")
+                .document(notification.id), notification)
 
             val existingList = currentUser.likedUsers.toMutableList()
             existingList.add(userId)
@@ -537,7 +577,7 @@ object FireUtility {
         }
     }
 
-    suspend fun dislikeUser(currentUser: User, userId: String): Result<User> {
+    suspend fun dislikeUser(currentUser: User, userId: String, notification: Notification?): Result<User> {
         return try {
             val db = Firebase.firestore
             val batch = db.batch()
@@ -547,6 +587,14 @@ object FireUtility {
 
             val ref2 = db.collection("users").document(currentUser.id)
             batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayRemove(userId)))
+
+            if (notification != null) {
+                batch.delete(Firebase.firestore
+                    .collection("users")
+                    .document(notification.receiverId)
+                    .collection("notifications")
+                    .document(notification.id))
+            }
 
             val existingList = currentUser.likedUsers.toMutableList()
             existingList.remove(userId)
@@ -577,7 +625,7 @@ object FireUtility {
     }
 
 
-    suspend fun sendComment(comment: Comment, parentCommentChannelId: String? = null): Result<Comment> {
+    suspend fun sendComment(comment: Comment, parentCommentChannelId: String? = null, notification: Notification): Result<Comment> {
         // - create new comment
         // - create a new channel for that comment
         // - the project comment's channel needs to contain this new comment
@@ -597,6 +645,8 @@ object FireUtility {
             batch.set(newCommentChannelRef, newCommentChannel)
             comment.threadChannelId = newCommentChannel.commentChannelId
             batch.set(commentRef, comment)
+
+            batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
 
             val parentCommentChannelRef = db.collection("commentChannels").document(comment.commentChannelId)
             val parentCommentChannelChanges = mapOf("lastComment" to comment)
@@ -627,7 +677,7 @@ object FireUtility {
 
     }
 
-    suspend fun dislikeComment(currentUserId: String, comment: Comment): Result<Comment> {
+    suspend fun dislikeComment(currentUserId: String, comment: Comment, notification: Notification?): Result<Comment> {
         return try {
             val db = Firebase.firestore
 
@@ -638,7 +688,14 @@ object FireUtility {
                 .collection("comments")
                 .document(comment.commentId)
 
-            batch.update(commentRef, mapOf("likes" to FieldValue.increment(-1)))
+            batch.update(commentRef, mapOf("likesCount" to FieldValue.increment(-1), "likes" to FieldValue.arrayRemove(currentUserId)))
+
+            if (notification != null) {
+                batch.delete(Firebase.firestore.collection("users")
+                    .document(notification.receiverId)
+                    .collection("notifications")
+                    .document(notification.id))
+            }
 
             val currentUserRef = db.collection("users").document(currentUserId)
 
@@ -652,7 +709,7 @@ object FireUtility {
         }
     }
 
-    suspend fun likeComment(currentUserId: String, comment: Comment): Result<Comment> {
+    suspend fun likeComment(currentUserId: String, comment: Comment, notification: Notification): Result<Comment> {
         return try {
             val db = Firebase.firestore
 
@@ -663,7 +720,9 @@ object FireUtility {
                 .collection("comments")
                 .document(comment.commentId)
 
-            batch.update(commentRef, mapOf("likes" to FieldValue.increment(1)))
+            batch.update(commentRef, mapOf("likesCount" to FieldValue.increment(1), "likes" to FieldValue.arrayUnion(currentUserId)))
+
+            batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
 
             val currentUserRef = db.collection("users").document(currentUserId)
 
@@ -1171,6 +1230,39 @@ object FireUtility {
         query.get()
             .addOnCompleteListener(onComplete)
 
+    }
+
+    fun callFunction(data: MutableMap<String, Any>, onComplete: ((task: Task<HttpsCallableResult>) -> Unit)? = null) {
+        Firebase.functions.getHttpsCallable("onProjectLiked")
+            .call(data)
+            .addOnCompleteListener {
+                if (onComplete != null) {
+                    onComplete(it)
+                }
+                if (it.isSuccessful) {
+                    Log.d(TAG, "Project like notification sent")
+                } else {
+                    Log.e(TAG, it.exception?.localizedMessage.orEmpty())
+                }
+            }
+
+    }
+
+    fun sendRegistrationTokenToServer(token: String) {
+        val currentUser = Firebase.auth.currentUser
+        if (currentUser != null) {
+            Firebase.firestore.collection("users")
+                .document(currentUser.uid)
+                .update("registrationTokens", FieldValue.arrayUnion(token))
+                .addOnCompleteListener {
+                    /*if (it.isSuccessful) {
+
+                    } else {
+
+                    }*/
+                }
+
+        }
     }
 
 

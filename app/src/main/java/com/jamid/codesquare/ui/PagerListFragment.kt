@@ -17,14 +17,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
-import androidx.paging.map
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import androidx.viewbinding.ViewBinding
 import com.google.android.material.button.MaterialButton
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow

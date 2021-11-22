@@ -90,9 +90,9 @@ class CommentsContainerFragment: Fragment() {
 
                 val content = binding.commentInputLayout.text.toString()
 
-                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, replyComment.postTitle)
+                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, replyComment.postTitle)
 
-                viewModel.sendComment(comment, replyComment.commentChannelId)
+                viewModel.sendComment(comment, replyComment)
 
                 binding.commentInputLayout.text.clear()
 
@@ -107,11 +107,11 @@ class CommentsContainerFragment: Fragment() {
                 val content = binding.commentInputLayout.text.toString()
 
                 if (project != null) {
-                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), currentUser.minify(), false, project!!.title)
-                    viewModel.sendComment(comment1)
+                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, project!!.title)
+                    viewModel.sendComment(comment1, project!!)
                 } else {
-                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, comment!!.postTitle)
-                    viewModel.sendComment(comment1, comment!!.commentChannelId)
+                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, comment!!.postTitle)
+                    viewModel.sendComment(comment1, comment!!)
                 }
 
 

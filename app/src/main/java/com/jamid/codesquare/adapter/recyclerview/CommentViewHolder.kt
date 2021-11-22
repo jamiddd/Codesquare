@@ -132,7 +132,7 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
     }
 
     private fun setLikeAndReplies(comment: Comment) {
-        val likeRepliesText = "${comment.likes} Likes • ${comment.repliesCount} Replies"
+        val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
         likeReplies.text = likeRepliesText
     }
 

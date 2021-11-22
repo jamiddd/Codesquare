@@ -27,14 +27,17 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.URL
 
-class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
+class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
     private val viewModel: MainViewModel by activityViewModels()
+    private var job: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,12 +87,9 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
-
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
         val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
 
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
-
         binding.homeViewPager.isUserInputEnabled = false
 
         TabLayoutMediator(tabLayout, binding.homeViewPager) { tab, pos ->
@@ -102,37 +102,16 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
 
         viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
             if (currentUser != null) {
-                if (currentUser.photo != null) {
-                    if (viewModel.currentUserBitmap == null) {
-                        viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-                            try {
-                                val isNetworkAvailable = viewModel.isNetworkAvailable.value
-                                if (isNetworkAvailable != null && isNetworkAvailable) {
-                                    val url = URL(currentUser.photo)
-                                    val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                                    viewModel.currentUserBitmap = getCircleBitmap(image)
-                                    val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
-
-                                    activity.runOnUiThread {
-                                        if (toolbar.menu.size() > 1) {
-                                            toolbar.menu.getItem(2).icon = d
-                                        }
-                                    }
-                                }
-                            } catch (e: IOException) {
-                                viewModel.setCurrentError(e)
-                            }
-                        }
-                    } else {
-                        val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
-                        if (toolbar.menu.hasVisibleItems() && toolbar.menu.size() == 3) {
-                            toolbar.menu.getItem(2).icon = d
-                        }
-                    }
+                val photo = currentUser.photo
+                if (photo != null) {
+                    setCurrentUserPhotoAsDrawable(photo)
                 } else {
-                    //
+                    Log.d(TAG, "Tried setting up image but current user does not have image")
                 }
-
+            } else {
+                Log.d(TAG, "Waiting to check if the user will be null in 5 seconds, if it is null then the control should return to auth")
+                job?.cancel()
+                job = checkIfUserStillNull()
             }
         }
 
@@ -142,15 +121,43 @@ class HomeFragment: Fragment(), SearchView.OnQueryTextListener {
 
     }
 
-    override fun onQueryTextSubmit(query: String?): Boolean {
-        if (query != null) {
-            toast(query)
+    private fun checkIfUserStillNull() = viewLifecycleOwner.lifecycleScope.launch {
+        delay(5000)
+        val currentUser = viewModel.currentUser.value
+        if (currentUser == null) {
+            findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
         }
-        return true
     }
 
-    override fun onQueryTextChange(newText: String?): Boolean {
-        return true
+    private fun setCurrentUserPhotoAsDrawable(photo: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+        val currentSavedBitmap = viewModel.currentUserBitmap
+        if (currentSavedBitmap != null) {
+            val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
+            setBitmapDrawable(d)
+        } else {
+            try {
+                val isNetworkAvailable = viewModel.isNetworkAvailable.value
+                if (isNetworkAvailable != null && isNetworkAvailable) {
+                    val url = URL(photo)
+                    val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                    viewModel.currentUserBitmap = getCircleBitmap(image)
+                    val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
+
+                    activity?.runOnUiThread {
+                        setBitmapDrawable(d)
+                    }
+                }
+            } catch (e: IOException) {
+                viewModel.setCurrentError(e)
+            }
+        }
+    }
+
+    private fun setBitmapDrawable(drawable: BitmapDrawable) {
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+        if (toolbar.menu.size() > 1) {
+            toolbar.menu.getItem(2).icon = drawable
+        }
     }
 
 }

@@ -640,4 +640,4 @@ fun getCircleBitmap(bitmap: Bitmap): Bitmap {
     return output
 }
 
-private const val TAG = "UtilityTAG"
+const val TAG = "UtilityTAG"

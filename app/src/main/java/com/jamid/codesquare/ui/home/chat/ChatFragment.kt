@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.home.chat
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -11,15 +12,12 @@ import android.view.MenuItem
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
-import android.widget.RadioButton
 import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.children
 import androidx.core.view.doOnLayout
-import androidx.core.view.get
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
@@ -48,19 +46,17 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
     private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
-
     private var modeChanged = false
-
     private var chatsOptionsBinding: ChatOptionLayoutBinding? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
         postponeEnterTransition()
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -77,9 +73,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
 
-                Log.d(TAG, chatChannel.chatChannelId)
+                val bundle = bundleOf("title" to title, "chatChannel" to chatChannel)
 
-                findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundleOf("title" to title, "chatChannel" to chatChannel), slideRightNavOptions())
+                findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundle, slideRightNavOptions())
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -90,9 +86,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         super.onViewLaidOut()
 
         chatChannel = arguments?.getParcelable("chatChannel") ?: return
-
         chatChannelId = chatChannel.chatChannelId
-
         recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 
         val externalImagesDir =
@@ -119,7 +113,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         }
 
         swipeRefresher?.isEnabled = false
-        noItemsText?.text = "No messages"
+        noItemsText?.text = getString(R.string.no_messages)
         recyclerView?.itemAnimator = null
 
         recyclerView?.setPadding(0, 0, 0, convertDpToPx(64))
@@ -155,9 +149,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 }
             }
         })
-
     }
 
+    @SuppressLint("InflateParams")
     private fun initChatBottom(chatChannelId: String) {
 
         val bottomView = layoutInflater.inflate(R.layout.chat_bottom_layout, null, false)
@@ -181,7 +175,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Upload")
-                .setItems(options) {a, pos ->
+                .setItems(options) {_, pos ->
                     if (pos == 0) {
                         (activity as MainActivity).selectChatUploadImages()
                         viewModel.setChatUploadDocuments(emptyList())
@@ -202,7 +196,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         val uploadDocumentsLayoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
-        val documentAdapter = DocumentAdapterSmall { v, p ->
+        val documentAdapter = DocumentAdapterSmall { _, p ->
             viewModel.deleteChatUploadDocumentAtPosition(p)
         }
 
@@ -265,7 +259,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             }
         }
 
-        val imagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+//        val imagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val chatsOption = layoutInflater.inflate(R.layout.chat_option_layout, null, false)
         chatsOptionsBinding = ChatOptionLayoutBinding.bind(chatsOption)
         binding.pagerRoot.addView(chatsOptionsBinding!!.root)
@@ -579,6 +573,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         viewModel.updateRestOfTheMessages(chatChannelId, -1)
     }
 
+    companion object {
+        private const val TAG = "ChatFragment"
+    }
+
 }
 
-const val TAG = "ChatFragment"

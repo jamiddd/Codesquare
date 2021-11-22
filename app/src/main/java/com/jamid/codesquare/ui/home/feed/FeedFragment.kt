@@ -1,12 +1,9 @@
 package com.jamid.codesquare.ui.home.feed
 
-import android.content.res.ColorStateList
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.firebase.firestore.ktx.firestore
@@ -16,7 +13,6 @@ import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.convertDpToPx
 import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.slideRightNavOptions
 import com.jamid.codesquare.ui.PagerListFragment
 import com.jamid.codesquare.updateLayout
 
@@ -32,7 +28,10 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         val query = Firebase.firestore.collection("projects")
 
-        getItems { viewModel.getFeedItems(query) }
+        val currentUser = viewModel.currentUser.value
+        if (currentUser != null) {
+            getItems { viewModel.getFeedItems(query) }
+        }
 
         recyclerView?.itemAnimator = null
 
@@ -54,8 +53,10 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         val container = tagsContainerView.findViewById<ChipGroup>(R.id.tags_holder)
         container.findViewById<Chip>(R.id.random)?.setOnClickListener {
-            getItems {
-                viewModel.getFeedItems(query)
+            if (currentUser != null) {
+                getItems {
+                    viewModel.getFeedItems(query)
+                }
             }
         }
 

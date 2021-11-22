@@ -17,6 +17,14 @@
         android:name=".Codesquare"
         android:theme="@style/AppTheme">
 
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
         <activity android:name=".ui.MainActivity" android:exported="true">
 
             <intent-filter>

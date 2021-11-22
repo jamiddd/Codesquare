@@ -49,6 +49,10 @@ class ProfileFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
+            R.id.notifications -> {
+                findNavController().navigate(R.id.action_profileFragment_to_notificationFragment, null)
+                true
+            }
             R.id.log_out -> {
                 Firebase.auth.signOut()
                 viewModel.signOut()

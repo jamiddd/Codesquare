@@ -1,5 +1,6 @@
 package com.jamid.codesquare.db
 
+import android.util.Log
 import androidx.paging.ExperimentalPagingApi
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
@@ -15,8 +16,8 @@ class ProjectRemoteMediator(query: Query, repo: MainRepository, private val shou
     }
 
     override suspend fun onRefresh() {
-        /*if (shouldClear) {
-            repository.projectDao.clearTable()
-        }*/
+        if (shouldClear) {
+            repository.clearProjects()
+        }
     }
 }

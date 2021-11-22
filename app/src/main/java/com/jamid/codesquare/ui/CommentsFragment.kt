@@ -6,10 +6,8 @@ import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.widget.Button
 import android.widget.EditText
-import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
-import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
@@ -23,7 +21,6 @@ import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.CommentBottomLayoutBinding
-import com.jamid.codesquare.databinding.CommentTopLayoutBinding
 import com.jamid.codesquare.listeners.CommentListener
 
 @ExperimentalPagingApi
@@ -150,9 +147,9 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
 
                 val content = inputLayout.text.toString()
 
-                val comment1 = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, replyComment.postTitle)
+                val comment1 = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, replyComment.postTitle)
 
-                viewModel.sendComment(comment1, replyComment.commentChannelId)
+                viewModel.sendComment(comment1, replyComment)
 
                 inputLayout.text.clear()
 
@@ -167,12 +164,12 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
                 val content = inputLayout.text.toString()
 
                 if (project != null) {
-                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), currentUser.minify(), false, project!!.title)
-                    viewModel.sendComment(comment1)
+                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, project!!.title)
+                    viewModel.sendComment(comment1, project!!)
                 } else {
                     if (comment != null){
-                        val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, comment!!.projectId, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), currentUser.minify(), false, comment!!.postTitle)
-                        viewModel.sendComment(comment1, comment!!.commentChannelId)
+                        val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, comment!!.projectId, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, comment!!.postTitle)
+                        viewModel.sendComment(comment1, comment!!)
                     }
                 }
 

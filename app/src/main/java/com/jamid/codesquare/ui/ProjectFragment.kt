@@ -406,7 +406,7 @@ class ProjectFragment: Fragment() {
 
                                 commentContent.text = comment.content
 
-                                val likeRepliesText = "${comment.likes} Likes • ${comment.repliesCount} Replies"
+                                val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
                                 commentLikesReplies.text = likeRepliesText
                             }
                         } else {

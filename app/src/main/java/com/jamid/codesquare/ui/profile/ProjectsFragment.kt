@@ -2,12 +2,9 @@ package com.jamid.codesquare.ui.profile
 
 import android.os.Bundle
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
-import androidx.paging.Pager
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.R

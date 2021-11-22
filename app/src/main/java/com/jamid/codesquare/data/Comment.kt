@@ -20,10 +20,11 @@ data class Comment(
     var projectId: String,
     var commentChannelId: String,
     var threadChannelId: String,
-    var likes: Long,
+    var likesCount: Long,
     var repliesCount: Long,
     var commentLevel: Long,
     var createdAt: Long,
+    var likes: List<String>,
     @Embedded(prefix = "comment_sender_")
     var sender: UserMinimal,
     @Exclude @set: Exclude @get: Exclude
@@ -31,5 +32,5 @@ data class Comment(
     @Exclude @set: Exclude @get: Exclude
     var postTitle: String,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", 0, 0, 0, 0, UserMinimal(), false, "")
+    constructor(): this("", "", "", "", "", "", "", 0, 0, 0, 0, emptyList(), UserMinimal(), false, "")
 }

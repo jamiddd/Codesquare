@@ -1,17 +1,14 @@
 package com.jamid.codesquare.db
 
-import android.media.Image
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.document
 import com.jamid.codesquare.image
+import com.jamid.codesquare.randomId
 import java.io.File
 
 class MainRepository(db: CodesquareDatabase) {
@@ -22,6 +19,7 @@ class MainRepository(db: CodesquareDatabase) {
     val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
     val commentDao = db.commentDao()
+    val notificationDao = db.notificationDao()
 
     val currentUser: LiveData<User> = userDao.currentUser()
     val onMessagesModeChanged = messageDao.onMessagesModeChanged()
@@ -31,8 +29,10 @@ class MainRepository(db: CodesquareDatabase) {
     val errors = MutableLiveData<Exception>()
 
     suspend fun insertProjects(projects: List<Project>) {
-        val currentUser = currentUser.value!!
-        projectDao.insert(processProjects(currentUser, projects))
+        val currentUser = currentUser.value
+        if (currentUser != null) {
+            projectDao.insert(processProjects(currentUser, projects))
+        }
     }
 
     fun processProjects(currentUser: User, projects: List<Project>): List<Project> {
@@ -53,13 +53,11 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertCurrentUser(user: User) {
-        Log.d(TAG, "Inserting current user")
         user.isCurrentUser = true
         userDao.insert(user)
     }
 
     suspend fun insertUser(localUser: User) {
-        Log.d(TAG, "Inserting 1 user")
         if (localUser.id == currentUser.value?.id) {
             insertCurrentUser(localUser)
         } else {
@@ -80,18 +78,28 @@ class MainRepository(db: CodesquareDatabase) {
 
             val result = if (isLiked) {
                 // dislike
-                FireUtility.dislikeProject(currentUser.id, project)
+                val notification = notificationDao.getNotificationByType(project.id, "like")
+                notificationDao.deleteNotificationByType(project.id, "like")
+                FireUtility.dislikeProject(currentUser.id, project, notification)
             } else {
-                // like
-                FireUtility.likeProject(currentUser.id, project)
+                val notification = Notification(randomId(), project.title, currentUser.name + " has liked your project.", System.currentTimeMillis(), currentUser.id, project.creator.userId, project.id, "like", "project")
+                notificationDao.insert(notification)
+                FireUtility.likeProject(currentUser, project, notification)
             }
 
             when (result) {
                 is Result.Error -> {
-                    Log.e(TAG, "Error while liking or disliking a post -> " + result.exception.localizedMessage!!)
+                    Log.e(TAG, "Error while liking or disliking a post -> " + result.exception.localizedMessage.orEmpty())
                 }
                 is Result.Success -> {
                     // insert the new project
+                    val data = mutableMapOf<String, Any>()
+                    data["creatorId"] = project.creator.userId
+                    data["senderId"] = currentUser.id
+                    data["title"] = project.title
+
+//                    FireUtility.callFunction(data)
+
 
                     val existingList = currentUser.likedProjects.toMutableList()
 
@@ -133,7 +141,7 @@ class MainRepository(db: CodesquareDatabase) {
 
             when (result) {
                 is Result.Error -> {
-                    Log.e(TAG, "Error while saving or unSaving a post -> " + result.exception.localizedMessage!!)
+                    Log.e(TAG, "Error while saving or unSaving a post -> " + result.exception.localizedMessage.orEmpty())
                 }
                 is Result.Success -> {
                     // insert the new project
@@ -194,7 +202,6 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
         // filter the messages which are marked as not delivered by the message
-        val currentUser = currentUser.value!!
         for (message in messages) {
             // check if the message has user attached to it
             val user = getUser(message.senderId)
@@ -206,13 +213,13 @@ class MainRepository(db: CodesquareDatabase) {
 
             // check if the media is already downloaded in the local folder
             if (message.type == image) {
-                val name = message.content + message.metadata!!.ext
+                val name = message.content + message.metadata?.ext.orEmpty()
                 val f = File(imagesDir, name)
                 message.isDownloaded = f.exists()
             }
 
             if (message.type == document) {
-                val name = message.content + message.metadata!!.ext
+                val name = message.content + message.metadata?.ext.orEmpty()
                 val f = File(documentsDir, name)
                 message.isDownloaded = f.exists()
             }
@@ -233,26 +240,42 @@ class MainRepository(db: CodesquareDatabase) {
 
             if (newSet.isNotEmpty()) {
                 val requestId = newSet.first()
-                FireUtility.undoJoinProject(currentUser.id, project.id, requestId)
 
-                val projectRequestsList = currentUser.projectRequests.toMutableList()
-                projectRequestsList.remove(requestId)
-                currentUser.projectRequests = projectRequestsList
+                val notification = notificationDao.getNotificationByType(project.id, "join")
 
-                val requestsList = project.requests.toMutableList()
-                requestsList.remove(requestId)
-                project.requests = requestsList
+                when (val undoSendRequestResult = FireUtility.undoJoinProject(currentUser.id, project.id, requestId, notification)) {
+                    is Result.Error -> {
+                        Log.e(TAG, undoSendRequestResult.exception.localizedMessage.orEmpty())
+                    }
+                    is Result.Success -> {
+                        if (notification != null) {
+                            notificationDao.deleteNotificationByType(project.id, "join")
+                        }
 
-                projectRequestDao.deleteProjectRequest(requestId)
+                        val projectRequestsList = currentUser.projectRequests.toMutableList()
+                        projectRequestsList.remove(requestId)
+                        currentUser.projectRequests = projectRequestsList
 
+                        val requestsList = project.requests.toMutableList()
+                        requestsList.remove(requestId)
+                        project.requests = requestsList
+
+                        projectRequestDao.deleteProjectRequest(requestId)
+                    }
+                }
             } else {
+
+                val notification = Notification(randomId(), project.title, "${currentUser.name} has requested to join your project.", System.currentTimeMillis(), currentUser.id, project.creator.userId, project.id, "join", "project")
+
                 // join project
-                when (val sendRequestResult = FireUtility.joinProject(currentUser, project)) {
+                when (val sendRequestResult = FireUtility.joinProject(currentUser, project, notification)) {
                     is Result.Error -> {
                         Log.e(TAG, sendRequestResult.exception.localizedMessage.orEmpty())
                     }
                     is Result.Success -> {
                         val projectRequest = sendRequestResult.data
+
+                        notificationDao.insert(notification)
 
                         val projectRequestsList = currentUser.projectRequests.toMutableList()
                         projectRequestsList.add(projectRequest.requestId)
@@ -302,11 +325,13 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertComments(comments: List<Comment>) {
-        val currentUser = currentUser.value!!
-        for (comment in comments) {
-            comment.isLiked = currentUser.likedComments.contains(comment.commentId)
+        val currentUser = currentUser.value
+        if (currentUser != null) {
+            for (comment in comments) {
+                comment.isLiked = currentUser.likedComments.contains(comment.commentId)
+            }
+            commentDao.insert(comments)
         }
-        commentDao.insert(comments)
     }
 
     suspend fun onCommentLiked(comment: Comment) {
@@ -317,45 +342,47 @@ class MainRepository(db: CodesquareDatabase) {
 
             val result = if (isLiked) {
                 // dislike
-                FireUtility.dislikeComment(currentUser.id, comment)
+                val notification = notificationDao.getNotificationByType(comment.commentId, "like")
+                notificationDao.deleteNotificationByType(comment.commentId, "type")
+                FireUtility.dislikeComment(currentUser.id, comment, notification)
             } else {
                 // like
-                FireUtility.likeComment(currentUser.id, comment)
+                val notification = Notification(randomId(), "Your comment", currentUser.name + " has liked your comment.", System.currentTimeMillis(), currentUser.id, comment.senderId, comment.commentId, "like", "comment")
+                notificationDao.insert(notification)
+                FireUtility.likeComment(currentUser.id, comment, notification)
             }
 
             when (result) {
                 is Result.Error -> {
-                    Log.e(TAG, "Error while liking or disliking a comment -> " + result.exception.localizedMessage!!)
+                    Log.e(TAG, "Error while liking or disliking a comment -> " + result.exception.localizedMessage.orEmpty())
                 }
                 is Result.Success -> {
                     // insert the new project
-                    val existingList = currentUser.likedComments.toMutableList()
+                    val newLikedCommentsList = currentUser.likedComments.toMutableList()
+                    val newCommentLikesList = comment.likes.toMutableList()
 
                     if (isLiked) {
-                        comment.likes = comment.likes - 1
+                        comment.likesCount = comment.likesCount - 1
                         comment.isLiked = false
-                        existingList.remove(comment.commentId)
+                        newLikedCommentsList.remove(comment.commentId)
+                        newCommentLikesList.remove(currentUser.id)
                     } else {
-                        comment.likes = comment.likes + 1
+                        comment.likesCount = comment.likesCount + 1
                         comment.isLiked = true
-                        existingList.add(comment.commentId)
+                        newLikedCommentsList.add(comment.commentId)
+                        newCommentLikesList.add(currentUser.id)
                     }
 
-                    Log.d(TAG, "${comment.likes} -- ${comment.isLiked}")
-
+                    comment.likes = newCommentLikesList
                     commentDao.insert(comment)
 
                     // insert the new user
-                    currentUser.likedComments = existingList
+                    currentUser.likedComments = newLikedCommentsList
                     userDao.insert(currentUser)
                 }
             }
 
         }
-    }
-
-    suspend fun clearComments() {
-        commentDao.clearTable()
     }
 
     suspend fun insertUsers(users: List<User>) {
@@ -403,20 +430,9 @@ class MainRepository(db: CodesquareDatabase) {
         return messageDao.getMessagesBefore(chatChannel, time, limit)
     }
 
-    suspend fun getMessagesOnRefresh(chatChannelId: String, pageSize: Int): List<Message> {
-        return messageDao.getMessagesOnRefresh(chatChannelId, pageSize).orEmpty()
-    }
 
     suspend fun getMessagesOnAppend(chatChannelId: String, pageSize: Int, nextKey: Long): List<Message> {
         return messageDao.getMessagesOnAppend(chatChannelId, pageSize, nextKey).orEmpty()
-    }
-
-    fun getMessagesOnPrepend(
-        chatChannelId: String,
-        pageSize: Int,
-        anchorMessageTimeStart: Long
-    ): List<Message> {
-        return messageDao.getMessagesOnPrepend(chatChannelId, pageSize, anchorMessageTimeStart).orEmpty()
     }
 
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
@@ -451,31 +467,6 @@ class MainRepository(db: CodesquareDatabase) {
     suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel> {
         return chatChannelDao.getForwardChannels(chatChannelId).orEmpty()
     }
-
-    /*suspend fun updateDeliveryListOfMessages(messages: List<Message>): Result<List<Message>> {
-        val currentUser = currentUser.value!!
-
-        val newMessageList = mutableListOf<Message>()
-
-        for (message in messages) {
-            val m = messageDao.getMessage(message.messageId)
-            if (m == null) {
-                newMessageList.add(message)
-            }
-        }
-
-        return when (val result = FireUtility.updateDeliveryListOfMessages(currentUser, newMessageList)) {
-            is Result.Error -> result
-            is Result.Success -> {
-                for (message in newMessageList) {
-                    val newList = message.deliveryList.toMutableList()
-                    newList.add(currentUser.id)
-                    message.deliveryList = newList
-                }
-                Result.Success(newMessageList)
-            }
-        }
-    }*/
 
     suspend fun updateLocalProjects(updatedUser: User, projects: List<String>) {
 
@@ -519,6 +510,22 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun getLocalMessage(messageId: String): Message? {
         return messageDao.getMessage(messageId)
+    }
+
+    suspend fun insertNotifications(notifications: List<Notification>) {
+        notificationDao.insert(notifications)
+    }
+
+    suspend fun deleteNotificationByType(contextId: String, type: String) {
+        notificationDao.deleteNotificationByType(contextId, type)
+    }
+
+    suspend fun clearAllNotifications() {
+        notificationDao.clearNotifications()
+    }
+
+    suspend fun clearProjects() {
+        projectDao.clearTable()
     }
 
     companion object {

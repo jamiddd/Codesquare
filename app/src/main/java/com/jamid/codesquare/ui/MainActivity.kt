@@ -2,8 +2,12 @@ package com.jamid.codesquare.ui
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.location.Address
 import android.net.*
@@ -45,22 +49,23 @@ import com.jamid.codesquare.ui.home.chat.ForwardFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-
 import android.os.Build
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
-
 import android.graphics.*
-import android.graphics.drawable.BitmapDrawable
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.app.NotificationCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.navigation.NavDeepLinkBuilder
 import com.google.firebase.firestore.ListenerRegistration
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import kotlinx.coroutines.Dispatchers
 import java.io.IOException
 import java.net.URL
-
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
+import com.jamid.codesquare.MyFirebaseMessagingService.Companion.NOTIFICATION_ID
 
 class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener {
 
@@ -70,6 +75,43 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     private var networkFlag = false
     private var userListenerRegistration: ListenerRegistration? = null
     private var loadingDialog: AlertDialog? = null
+    private lateinit var notificationManager: NotificationManager
+
+    private val tokenReceiver = object: BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val token = intent?.extras?.getString(MyFirebaseMessagingService.ARG_TOKEN)
+            if (token != null) {
+                viewModel.sendRegistrationTokenToServer(token)
+            }
+        }
+    }
+
+    private val notificationReceiver = object: BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+
+            val title = intent?.extras?.get(MyFirebaseMessagingService.ARG_NOTIFICATION_TITLE) as String? ?: ""
+            val content = intent?.extras?.get(MyFirebaseMessagingService.ARG_NOTIFICATION_BODY) as String? ?: ""
+
+            val notifyBuilder = getNotificationBuilder(title, content)
+            notificationManager.notify(NOTIFICATION_ID, notifyBuilder.build())
+
+        }
+    }
+
+    private fun getNotificationBuilder(title: String, content: String): NotificationCompat.Builder {
+        val pendingIntent = NavDeepLinkBuilder(this)
+            .setGraph(R.navigation.main_navigation)
+            .setDestination(R.id.notificationFragment)
+            .setArguments(null)
+            .createPendingIntent()
+
+        return NotificationCompat.Builder(this, MyFirebaseMessagingService.NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+    }
 
     val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -246,6 +288,24 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     var isInitialized = false
 
+    private fun createNotificationChannel() {
+        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationChannel = NotificationChannel(
+                MyFirebaseMessagingService.NOTIFICATION_CHANNEL_ID,
+                "Mascot Notification",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            notificationChannel.enableLights(true)
+            notificationChannel.lightColor = Color.RED
+            notificationChannel.enableVibration(true)
+            notificationChannel.description = "Notification from Mascot"
+
+            notificationManager.createNotificationChannel(notificationChannel)
+        }
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -254,6 +314,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
         setSupportActionBar(binding.mainToolbar)
 
+        // must
+        createNotificationChannel()
+
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
@@ -261,7 +324,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         binding.mainToolbar.setupWithNavController(navController, appBarConfiguration)
 
 
-        navController.addOnDestinationChangedListener { controller, destination, arguments ->
+        navController.addOnDestinationChangedListener { _, destination, _ ->
 
             val userInfoLayout = findViewById<View>(R.id.user_info)
 
@@ -280,7 +343,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 ContextCompat.getDrawable(this, R.drawable.ic_collab_logo)
             }
 
-
             val sharedPreferences = getSharedPreferences("codesquare_shared", MODE_PRIVATE)
             val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
 
@@ -290,6 +352,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
                     params.behavior = null
                     binding.navHostFragment.layoutParams = params
+                }
+                R.id.notificationFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
                 R.id.emailVerificationFragment -> {
                     binding.mainAppbar.hide()
@@ -496,10 +564,25 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             loadingDialog?.dismiss()
             val firebaseUser = it.currentUser
             if (firebaseUser != null) {
+
+                FirebaseMessaging.getInstance().token
+                    .addOnCompleteListener(OnCompleteListener { task ->
+                        if (!task.isSuccessful) {
+                            Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                            return@OnCompleteListener
+                        }
+
+                        // Get new FCM registration token
+                        val token = task.result
+
+                        viewModel.sendRegistrationTokenToServer(token)
+                    })
+
                 if (firebaseUser.isEmailVerified) {
 
                     if (navController.currentDestination?.id == R.id.loginFragment) {
-                        navController.navigate(R.id.action_loginFragment_to_splashFragment)
+                        // changed this line
+                        navController.navigate(R.id.action_loginFragment_to_homeFragment)
                     } else if (navController.currentDestination?.id == R.id.splashFragment) {
                         lifecycleScope.launch {
                             delay(6000)
@@ -551,12 +634,16 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                             }
                         }
                 } else {
-                    if (navController.currentDestination?.id == R.id.homeFragment) {
-                        navController.navigate(R.id.action_homeFragment_to_emailVerificationFragment, null, slideRightNavOptions())
-                    } else if (navController.currentDestination?.id == R.id.createAccountFragment) {
-                        navController.navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
-                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
-                        navController.navigate(R.id.action_splashFragment_to_loginFragment)
+                    when (navController.currentDestination?.id) {
+                        R.id.homeFragment -> {
+                            navController.navigate(R.id.action_homeFragment_to_emailVerificationFragment, null, slideRightNavOptions())
+                        }
+                        R.id.createAccountFragment -> {
+                            navController.navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
+                        }
+                        R.id.splashFragment -> {
+                            navController.navigate(R.id.action_splashFragment_to_loginFragment)
+                        }
                     }
                 }
             } else {
@@ -585,6 +672,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 // check for network here
             }
         }
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(tokenReceiver, IntentFilter(MyFirebaseMessagingService.TOKEN_INTENT))
+        LocalBroadcastManager.getInstance(this).registerReceiver(notificationReceiver, IntentFilter(MyFirebaseMessagingService.NOTIFICATION_INTENT))
 
         startNetworkCallback()
 
@@ -818,7 +908,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             type = "image/*"
             action = Intent.ACTION_GET_CONTENT
             putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
 
         selectMoreProjectImageLauncher.launch(intent)
@@ -880,9 +970,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
     override fun onProjectCommentClick(project: Project) {
         val bundle = bundleOf("commentChannelId" to project.commentChannel, "parent" to project, "title" to project.title)
 
-//        showDialog(project)
-
-
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
                 navController.navigate(R.id.action_homeFragment_to_commentsFragment, bundle, slideRightNavOptions())
@@ -891,27 +978,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 navController.navigate(R.id.action_projectFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
         }
-    }
-
-    @ExperimentalPagingApi
-    fun showDialog(project: Project) {
-
-
-
-        val fragmentManager = supportFragmentManager
-        val newFragment = CommentsFragment.newInstance(project.commentChannel, project.title, project)
-//        newFragment.show(supportFragmentManager, "Something")
-
-    /*// The device is smaller, so show the fragment fullscreen
-        val transaction = fragmentManager.beginTransaction()
-        // For a little polish, specify a transition animation
-        transaction.setCustomAnimations(R.anim.slide_in_bottom, R.anim.slide_out_bottom)
-        // To make it fullscreen, use the 'content' root view as the container
-        // for the fragment, which is always the root view for the activity
-        transaction
-            .add(android.R.id.content, newFragment)
-            .addToBackStack(null)
-            .commit()*/
     }
 
     override fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project) {
