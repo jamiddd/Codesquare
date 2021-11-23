@@ -408,6 +408,10 @@ class ProjectFragment: Fragment() {
 
                                 val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
                                 commentLikesReplies.text = likeRepliesText
+
+                                root.setOnClickListener {
+                                    projectClickListener.onProjectCommentClick(project)
+                                }
                             }
                         } else {
                             viewModel.setCurrentError(it1.exception)

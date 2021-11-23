@@ -4,6 +4,7 @@ import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.*
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -72,7 +73,7 @@ class ProfileFragment: Fragment() {
                 true
             }
             R.id.report_user -> {
-                toast("Liked this user")
+                findNavController().navigate(R.id.action_profileFragment_to_reportFragment, bundleOf("contextObject" to mUser))
                 true
             }
             else -> true

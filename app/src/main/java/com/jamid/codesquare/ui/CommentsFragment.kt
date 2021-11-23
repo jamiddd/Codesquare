@@ -225,6 +225,10 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
         viewModel.deleteUserById(userId)
     }
 
+    override fun onReportClick(comment: Comment) {
+        findNavController().navigate(R.id.action_commentsFragment_to_reportFragment, bundleOf("contextObject" to comment))
+    }
+
     @ExperimentalPagingApi
     fun showDialog(comment: Comment) {
         val fragmentManager = activity?.supportFragmentManager

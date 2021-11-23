@@ -117,7 +117,7 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
                 popUpMenu.setOnMenuItemClickListener { it1 ->
                     when (it1.itemId) {
                         R.id.comment_report -> {
-                            view.context.toast("Reported comment")
+                            commentListener.onReportClick(comment)
                         }
                     }
                     true

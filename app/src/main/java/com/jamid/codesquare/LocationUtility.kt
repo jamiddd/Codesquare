@@ -22,6 +22,7 @@ class LocationUtility(val context: Context) {
 
     private var mContext: Context = context
     @SuppressLint("VisibleForTests")
+
     private var mFusedLocationProviderClient: FusedLocationProviderClient = FusedLocationProviderClient(mContext)
     private var geoCoder: Geocoder = Geocoder(mContext)
 

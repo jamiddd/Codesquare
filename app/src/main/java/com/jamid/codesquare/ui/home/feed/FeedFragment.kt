@@ -1,6 +1,8 @@
 package com.jamid.codesquare.ui.home.feed
 
+import android.annotation.SuppressLint
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
@@ -15,6 +17,8 @@ import com.jamid.codesquare.convertDpToPx
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.ui.PagerListFragment
 import com.jamid.codesquare.updateLayout
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
 class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
@@ -23,6 +27,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         shouldHideRecyclerView = true
     }
 
+    @SuppressLint("InflateParams")
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
@@ -70,8 +75,25 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
                         container.addTag(interest)
                     }
                 }
+
+                if (isEmpty.value == true) {
+                    pagingAdapter.refresh()
+                }
+
             }
         }
+
+        /*isEmpty.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it) {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        delay(1000)
+                        pagingAdapter.refresh()
+                    }
+                }
+            }
+        }*/
+
     }
 
     private fun ChipGroup.addUpdateInterestButton() {

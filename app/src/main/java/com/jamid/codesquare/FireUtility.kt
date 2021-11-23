@@ -190,7 +190,7 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    private suspend fun uploadItems(locationPath: String, names: List<String>, items: List<Uri>): List<Uri> {
+    suspend fun uploadItems(locationPath: String, names: List<String>, items: List<Uri>): List<Uri> {
         val listOfReferences = mutableListOf<StorageReference>()
         val listOfUploadTask = mutableListOf<UploadTask>()
 
@@ -1263,6 +1263,20 @@ object FireUtility {
                 }
 
         }
+    }
+
+    fun sendReport(report: Report, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("reports")
+            .document(report.id)
+            .set(report)
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun sendFeedback(feedback: Feedback, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("feedbacks")
+            .document(feedback.id)
+            .set(feedback)
+            .addOnCompleteListener(onComplete)
     }
 
 

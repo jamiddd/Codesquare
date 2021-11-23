@@ -196,6 +196,33 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
     }
 
+    private val selectReportImagesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+
+            val clipData = it.data?.clipData
+
+            if (clipData != null) {
+                val count = clipData.itemCount
+
+                val images = mutableListOf<Uri>()
+
+                for (i in 0 until count) {
+                    val uri = clipData.getItemAt(i)?.uri
+                    uri?.let { image ->
+                        images.add(image)
+                    }
+                }
+
+                viewModel.setReportUploadImages(images)
+
+            } else {
+                it.data?.data?.let { it1 ->
+                    viewModel.setChatUploadImages(listOf(it1))
+                }
+            }
+        }
+    }
+
     private val selectChatImagesUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
 
@@ -352,6 +379,12 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
                     params.behavior = null
                     binding.navHostFragment.layoutParams = params
+                }
+                R.id.reportFragment -> {
+                    userInfoLayout?.hide()
+                    binding.mainTabLayout.hide()
+                    binding.mainToolbar.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
                 R.id.notificationFragment -> {
                     userInfoLayout?.hide()
@@ -585,7 +618,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                         navController.navigate(R.id.action_loginFragment_to_homeFragment)
                     } else if (navController.currentDestination?.id == R.id.splashFragment) {
                         lifecycleScope.launch {
-                            delay(6000)
+                            delay(4000)
                             navController.navigate(R.id.action_splashFragment_to_homeFragment)
                         }
                     }
@@ -648,7 +681,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                 }
             } else {
                 lifecycleScope.launch {
-                    delay(6000)
+                    delay(4000)
                     if (navController.currentDestination?.id == R.id.homeFragment) {
                         navController.navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
                     } else if (navController.currentDestination?.id == R.id.splashFragment) {
@@ -900,6 +933,16 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         selectChatImagesUploadLauncher.launch(intent)
     }
 
+    fun selectReportUploadImages() {
+        val intent = Intent().apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+
+        selectReportImagesLauncher.launch(intent)
+    }
+
     fun selectMoreProjectImages() {
 
         val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
@@ -1045,8 +1088,14 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                             viewHolder.onSaveProjectClick(project)
                         }
                         2 -> {
-//                            viewModel.reportProject(project)
-//                            toast("Reporting")
+
+                            val bundle = bundleOf("contextObject" to project)
+
+                            if (navController.currentDestination?.id == R.id.homeFragment) {
+                                navController.navigate(R.id.action_homeFragment_to_reportFragment, bundle)
+                            } else if (navController.currentDestination?.id == R.id.profileFragment) {
+                                navController.navigate(R.id.action_profileFragment_to_reportFragment, bundle)
+                            }
                         }
                     }
                 }
@@ -1077,6 +1126,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             R.id.projectContributorsFragment -> {
                 navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle)
             }
+            R.id.profileFragment -> {
+                navController.navigate(R.id.action_profileFragment_self, bundle)
+            }
         }
     }
 
@@ -1104,6 +1156,10 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onNoUserFound(userId: String) {
         viewModel.deleteUserById(userId)
+    }
+
+    override fun onReportClick(comment: Comment) {
+        navController.navigate(R.id.action_commentsFragment_to_reportFragment, bundleOf("contextObject" to comment))
     }
 
     override fun onChannelClick(chatChannel: ChatChannel) {

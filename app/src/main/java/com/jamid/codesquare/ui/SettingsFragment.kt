@@ -197,6 +197,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        val feedbackItem = findPreference<Preference>("feedback")
+        feedbackItem?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.action_settingsFragment_to_feedbackFragment)
+            true
+        }
+
     }
 
     companion object {

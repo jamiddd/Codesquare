@@ -383,14 +383,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return if (tag != null) {
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = ProjectRemoteMediator(query, repo, true)
+                remoteMediator = ProjectRemoteMediator(query, repo, false)
             ) {
                 repo.projectDao.getTagProjects("%$tag%")
             }.flow.cachedIn(viewModelScope)
         } else {
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = ProjectRemoteMediator(query, repo, true)
+                remoteMediator = ProjectRemoteMediator(query, repo, false)
             ) {
                 repo.projectDao.getPagedProjects()
             }.flow.cachedIn(viewModelScope)
@@ -1185,6 +1185,34 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun clearAllNotifications() = viewModelScope.launch (Dispatchers.IO) {
         repo.clearAllNotifications()
+    }
+
+    fun insertProjects(projects: List<Project>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertProjects(projects)
+    }
+
+    private val _reportUploadImages = MutableLiveData<List<Uri>>()
+    val reportUploadImages: LiveData<List<Uri>> = _reportUploadImages
+
+    fun setReportUploadImages(images: List<Uri>) {
+        _reportUploadImages.postValue(images)
+    }
+
+    fun uploadImages(path: String, images: List<Uri>, onComplete: (downloadedImages: List<Uri>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        val names = mutableListOf<String>()
+        images.forEach { _ ->
+            names.add(randomId())
+        }
+        val downloadedImages = FireUtility.uploadItems(path, names, images)
+        onComplete(downloadedImages)
+    }
+
+    fun sendReport(report: Report, onComplete: (task: Task<Void>) -> Unit) {
+        FireUtility.sendReport(report, onComplete)
+    }
+
+    fun sendFeedback(feedback: Feedback, onComplete: (task: Task<Void>) -> Unit) {
+        FireUtility.sendFeedback(feedback, onComplete)
     }
 
     companion object {

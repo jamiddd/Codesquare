@@ -14,7 +14,7 @@ import java.io.File
 class MainRepository(db: CodesquareDatabase) {
 
     val projectDao = db.projectDao()
-    val userDao = db.userDao()
+    private val userDao = db.userDao()
     val chatChannelDao = db.chatChannelDao()
     val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
@@ -52,7 +52,7 @@ class MainRepository(db: CodesquareDatabase) {
         return projects
     }
 
-    suspend fun insertCurrentUser(user: User) {
+    private suspend fun insertCurrentUser(user: User) {
         user.isCurrentUser = true
         userDao.insert(user)
     }
@@ -166,9 +166,9 @@ class MainRepository(db: CodesquareDatabase) {
         }
     }
 
-    suspend fun getAllLocalChatChannels(): List<ChatChannel> {
+    /*suspend fun getAllLocalChatChannels(): List<ChatChannel> {
         return chatChannelDao.allChannels().orEmpty()
-    }
+    }*/
 
     suspend fun insertChatChannelsWithoutProcessing(channels: List<ChatChannel>) {
         chatChannelDao.insert(channels)
@@ -394,9 +394,9 @@ class MainRepository(db: CodesquareDatabase) {
         messageDao.update(message)
     }
 
-    suspend fun updateMessages(messages: List<Message>) {
+    /*suspend fun updateMessages(messages: List<Message>) {
         messageDao.update(messages)
-    }
+    }*/
 
     suspend fun getProjectByChatChannel(channelId: String): Project? {
         return projectDao.getProjectByChatChannel(channelId)
@@ -504,9 +504,9 @@ class MainRepository(db: CodesquareDatabase) {
         messageDao.updateRestOfTheMessagesInChannel(chatChannelId, selected)
     }
 
-    suspend fun getSelectedMessages(): List<Message> {
+    /*suspend fun getSelectedMessages(): List<Message> {
         return messageDao.getSelectedMessages().orEmpty()
-    }
+    }*/
 
     suspend fun getLocalMessage(messageId: String): Message? {
         return messageDao.getMessage(messageId)
