@@ -64,9 +64,9 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.HashMap
 import android.content.res.TypedArray
-
-
-
+import androidx.core.view.iterator
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 
 fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
@@ -638,6 +638,41 @@ fun getCircleBitmap(bitmap: Bitmap): Bitmap {
     Log.d(TAG, "${output.width} x ${output.height}")
 
     return output
+}
+
+fun BottomNavigationView.attachToViewPager(viewPager: ViewPager2) {
+
+    val menuItems = this.menu.iterator().withIndex()
+
+    this.setOnItemSelectedListener {
+        for (item in menuItems) {
+            if (item.value.itemId == it.itemId) {
+                viewPager.setCurrentItem(item.index, false)
+            }
+        }
+        true
+    }
+
+    viewPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
+        override fun onPageSelected(position: Int) {
+            super.onPageSelected(position)
+            for (item in menuItems) {
+                if (item.index == position) {
+                    this@attachToViewPager.selectedItemId = item.value.itemId
+                }
+            }
+        }
+    })
+}
+
+fun <T: Any> MutableList<T>.removeAtIf(predicate: (T) -> Boolean) {
+    var removePos = -1
+    for (i in this.indices) {
+        if (predicate(this[i])) {
+            removePos = i
+        }
+    }
+    this.removeAt(removePos)
 }
 
 const val TAG = "UtilityTAG"

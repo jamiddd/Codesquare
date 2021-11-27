@@ -15,8 +15,11 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.hide
+import com.jamid.codesquare.listeners.NotificationItemClickListener
 
 class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+
+    private val notificationItemClickListener = view.context as NotificationItemClickListener
 
     private val notificationTime = view.findViewById<TextView>(R.id.notification_time)
     private val notificationTitle = view.findViewById<TextView>(R.id.notification_title)
@@ -32,62 +35,86 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         notificationTime.text = getTextForTime(notification.createdAt)
 
-        if (notification.clazz == "user") {
-            // user based notification
-            val userRef = Firebase.firestore.collection("users").document(notification.contextId)
-            FireUtility.getDocument(userRef) {
-                if (it.isSuccessful) {
-                    if (it.result.exists()) {
-                        val user = it.result.toObject(User::class.java)!!
-                        notificationImg.setImageURI(user.photo)
-                    }
-                } else {
-                    Log.e(TAG, "Something went wrong while fetching user data.")
-                    view.hide()
-                }
-            }
+        when (notification.clazz) {
+            "user" -> {
+                // user based notification
+                val userRef = Firebase.firestore.collection("users")
+                    .document(notification.contextId)
 
-        } else if (notification.clazz == "project") {
-            // project based notification
-            val projectRef = Firebase.firestore.collection("projects").document(notification.contextId)
-            FireUtility.getDocument(projectRef) {
-                if (it.isSuccessful) {
-                    if (it.result.exists()) {
-                        val project = it.result.toObject(Project::class.java)!!
-                        notificationImg.setImageURI(project.images.firstOrNull())
-                    }
-                } else {
-                    Log.e(TAG, "Something went wrong while fetching project data.")
-                    view.hide()
-                }
-            }
-        } else if (notification.clazz == "comment") {
-            Firebase.firestore.collectionGroup("comments")
-                .whereEqualTo("commentId", notification.contextId)
-                .limit(1)
-                .get()
-                .addOnSuccessListener {
-                    if (!it.isEmpty) {
-                        val comment = it.first().toObject(Comment::class.java)
-                        val userRef = Firebase.firestore.collection("users").document(comment.senderId)
-                        FireUtility.getDocument(userRef) { it1 ->
-                            if (it1.isSuccessful) {
-                                if (it1.result.exists()) {
-                                    val user = it1.result.toObject(User::class.java)!!
-                                    notificationImg.setImageURI(user.photo)
-                                }
-                            } else {
-                                Log.e(TAG, "Something went wrong while fetching user data.")
-                                view.hide()
+                FireUtility.getDocument(userRef) {
+                    if (it.isSuccessful) {
+                        if (it.result.exists()) {
+                            val user = it.result.toObject(User::class.java)!!
+                            notificationImg.setImageURI(user.photo)
+
+                            view.setOnClickListener {
+                                notificationItemClickListener.onNotificationClick(user)
                             }
                         }
                     } else {
-                        Log.d(TAG, "Didn't get the comment")
+                        Log.e(TAG, "Something went wrong while fetching user data.")
+                        view.hide()
                     }
-                }.addOnFailureListener {
-                    Log.e(TAG, "Something went wrong while fetching comment data. " + it.localizedMessage)
                 }
+            }
+            "project" -> {
+                // project based notification
+                val projectRef = Firebase.firestore.collection("projects").document(notification.contextId)
+                FireUtility.getDocument(projectRef) {
+                    if (it.isSuccessful) {
+                        if (it.result.exists()) {
+                            val project = it.result.toObject(Project::class.java)!!
+                            notificationImg.setImageURI(project.images.firstOrNull())
+
+                            view.setOnClickListener {
+                                notificationItemClickListener.onNotificationClick(project)
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "Something went wrong while fetching project data.")
+                        view.hide()
+                    }
+                }
+            }
+            "comment" -> {
+
+                val query = Firebase.firestore.collectionGroup("comments")
+                    .whereEqualTo("commentId", notification.contextId)
+                    .limit(1)
+
+                FireUtility.getQuerySnapshot(query) {
+                    if (it.isSuccessful) {
+                        if (!it.result.isEmpty) {
+                            val comment = it.result.first().toObject(Comment::class.java)
+
+                            val userRef = Firebase.firestore.collection("users").document(comment.senderId)
+                            FireUtility.getDocument(userRef) { it1 ->
+                                if (it1.isSuccessful) {
+                                    if (it1.result.exists()) {
+                                        val user = it1.result.toObject(User::class.java)!!
+                                        comment.sender = user.minify()
+                                        notificationImg.setImageURI(user.photo)
+                                        view.setOnClickListener {
+                                            notificationItemClickListener.onNotificationClick(comment)
+                                        }
+                                    }
+                                } else {
+                                    Log.e(TAG, "Something went wrong while fetching user data.")
+                                    view.hide()
+                                }
+                            }
+                        } else {
+                            Log.d(TAG, "Didn't get the comment")
+                        }
+                    } else {
+                        Log.e(TAG, "Something went wrong while fetching comment data. " + it.exception?.localizedMessage)
+                    }
+                }
+            }
         }
+
+        notification.read = true
+        notificationItemClickListener.onNotificationRead(notification)
 
     }
 

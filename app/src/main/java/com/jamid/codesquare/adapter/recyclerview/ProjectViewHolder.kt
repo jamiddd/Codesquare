@@ -1,8 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.annotation.SuppressLint
 import android.widget.Button
 import android.widget.TextView
 import androidx.core.view.doOnLayout
@@ -13,17 +11,15 @@ import androidx.recyclerview.widget.SnapHelper
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.data.Project
 import android.text.Spannable
-import android.text.style.ForegroundColorSpan
 import android.text.SpannableString
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
-import androidx.core.content.ContextCompat
-import androidx.core.text.set
+import android.view.*
+import androidx.core.view.GestureDetectorCompat
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
-import androidx.viewpager2.widget.ViewPager2
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
 import com.jamid.codesquare.*
@@ -32,9 +28,10 @@ import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.ScrollTouchListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 
-class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureDetector.OnGestureListener {
 
     private val userImg: SimpleDraweeView = view.findViewById(R.id.project_user_img)
     private val userName: TextView = view.findViewById(R.id.project_user_name)
@@ -50,6 +47,9 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     private val saveBtn: Button = view.findViewById(R.id.project_save_btn)
     private val imagesCounter: TextView = view.findViewById(R.id.project_images_counter)
     private val time: TextView = view.findViewById(R.id.project_time)
+    var currentImagePosition = 0
+    var totalImagesCount = 0
+    private lateinit var mDetector: GestureDetectorCompat
 
     private val projectClickListener = view.context as ProjectClickListener
 
@@ -58,13 +58,17 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         saveBtn.isSelected = !saveBtn.isSelected
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     fun bind(project: Project?) {
         if (project != null) {
+
+            mDetector = GestureDetectorCompat(view.context, this)
 
             Log.d(TAG, "${project.likes} -- ${project.isLiked}")
 
             val creator = project.creator
             val imagesCount = project.images.size
+            totalImagesCount = imagesCount
             val ct = "1/$imagesCount"
             imagesCounter.text = ct
 
@@ -180,11 +184,16 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             imageAdapter.submitList(project.images)
 
+            val scrollInstance = ScrollTouchListener()
+
+            imagesRecycler.addOnItemTouchListener(scrollInstance)
+
             imagesRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                     super.onScrolled(recyclerView, dx, dy)
                     val pos = manager.findFirstCompletelyVisibleItemPosition()
                     if (pos != -1) {
+                        currentImagePosition = pos
                         val counterText = "${pos + 1}/$imagesCount"
                         imagesCounter.text = counterText
                     }
@@ -258,6 +267,12 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         }
     }
 
+
+    @SuppressLint("ClickableViewAccessibility")
+    private val touchListener = View.OnTouchListener { p0, p1 ->
+        return@OnTouchListener mDetector.onTouchEvent(p1)
+    }
+
     private fun setLikeDislike(project: Project) {
         val likeCommentText = "${project.likes} Likes • ${project.comments} Comments • ${project.contributors.size} Contributors"
         likeComment.text = likeCommentText
@@ -270,6 +285,51 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             return ProjectViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.project_item, parent, false))
         }
 
+    }
+
+    override fun onDown(p0: MotionEvent?): Boolean {
+        return true
+    }
+
+    override fun onShowPress(p0: MotionEvent?) {
+
+    }
+
+    override fun onSingleTapUp(p0: MotionEvent?): Boolean {
+        return true
+    }
+
+    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
+        return true
+    }
+
+    override fun onLongPress(p0: MotionEvent?) {
+
+    }
+
+    private val swipeThreshold = 100
+    private val swipeVelocityThreshold = 100
+
+    override fun onFling(e1: MotionEvent?, e2: MotionEvent?, p2: Float, p3: Float): Boolean {
+        try {
+            if (e1 != null && e2 != null) {
+                val diffY = e2.y - e1.y
+                val diffX = e2.x - e1.x
+                if (abs(diffX) > abs(diffY)) {
+                    if (abs(diffX) > swipeThreshold && abs(p2) > swipeVelocityThreshold) {
+                        if (diffX > 0) {
+                            view.context.toast("Left to Right swipe gesture")
+                        } else {
+                            view.context.toast("Right to Left swipe gesture")
+                        }
+                    }
+                }
+            }
+        }
+        catch (exception: Exception) {
+            exception.printStackTrace()
+        }
+        return true
     }
 
 }

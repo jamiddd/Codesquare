@@ -4,11 +4,10 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.Task
-import com.jamid.codesquare.FireUtility
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
-import com.jamid.codesquare.document
-import com.jamid.codesquare.image
-import com.jamid.codesquare.randomId
 import java.io.File
 
 class MainRepository(db: CodesquareDatabase) {
@@ -25,6 +24,8 @@ class MainRepository(db: CodesquareDatabase) {
     val onMessagesModeChanged = messageDao.onMessagesModeChanged()
 
     val chatChannels = chatChannelDao.chatChannels()
+
+    val allUnreadNotifications = notificationDao.allUnreadNotifications()
 
     val errors = MutableLiveData<Exception>()
 
@@ -78,11 +79,11 @@ class MainRepository(db: CodesquareDatabase) {
 
             val result = if (isLiked) {
                 // dislike
-                val notification = notificationDao.getNotificationByType(project.id, "like")
-                notificationDao.deleteNotificationByType(project.id, "like")
+                val notification = notificationDao.getNotificationByType(project.id, NOTIFICATION_LIKE_PROJECT)
+                notificationDao.deleteNotificationByType(project.id, NOTIFICATION_LIKE_PROJECT)
                 FireUtility.dislikeProject(currentUser.id, project, notification)
             } else {
-                val notification = Notification(randomId(), project.title, currentUser.name + " has liked your project.", System.currentTimeMillis(), currentUser.id, project.creator.userId, project.id, "like", "project")
+                val notification = NotificationProvider.createNotification(project, project.creator.userId, NOTIFICATION_LIKE_PROJECT)
                 notificationDao.insert(notification)
                 FireUtility.likeProject(currentUser, project, notification)
             }
@@ -181,8 +182,20 @@ class MainRepository(db: CodesquareDatabase) {
             val sender = getUser(lastMessage.senderId)
             if (sender != null) {
                 lastMessage.sender = sender
+                chatChannel.lastMessage = lastMessage
             } else {
-                errors.postValue(Exception("No user found for the last message with message id: ${lastMessage.messageId} and chatChannel id: ${chatChannel.chatChannelId}, name => ${chatChannel.projectTitle}"))
+                val ref = Firebase.firestore.collection("users").document(lastMessage.senderId)
+                when (val result = FireUtility.getDocument(ref)) {
+                    is Result.Error -> errors.postValue(result.exception)
+                    is Result.Success -> {
+                        if (result.data.exists()) {
+                            val unknownContributor = result.data.toObject(User::class.java)!!
+                            insertUser(unknownContributor)
+                            lastMessage.sender = unknownContributor
+                            chatChannel.lastMessage = lastMessage
+                        }
+                    }
+                }
             }
         }
         return chatChannel
@@ -241,7 +254,7 @@ class MainRepository(db: CodesquareDatabase) {
             if (newSet.isNotEmpty()) {
                 val requestId = newSet.first()
 
-                val notification = notificationDao.getNotificationByType(project.id, "join")
+                val notification = notificationDao.getNotificationByType(project.id, NOTIFICATION_JOIN_PROJECT)
 
                 when (val undoSendRequestResult = FireUtility.undoJoinProject(currentUser.id, project.id, requestId, notification)) {
                     is Result.Error -> {
@@ -249,7 +262,7 @@ class MainRepository(db: CodesquareDatabase) {
                     }
                     is Result.Success -> {
                         if (notification != null) {
-                            notificationDao.deleteNotificationByType(project.id, "join")
+                            notificationDao.deleteNotificationByType(project.id, NOTIFICATION_JOIN_PROJECT)
                         }
 
                         val projectRequestsList = currentUser.projectRequests.toMutableList()
@@ -265,7 +278,7 @@ class MainRepository(db: CodesquareDatabase) {
                 }
             } else {
 
-                val notification = Notification(randomId(), project.title, "${currentUser.name} has requested to join your project.", System.currentTimeMillis(), currentUser.id, project.creator.userId, project.id, "join", "project")
+                val notification = NotificationProvider.createNotification(project, project.creator.userId, NOTIFICATION_JOIN_PROJECT)
 
                 // join project
                 when (val sendRequestResult = FireUtility.joinProject(currentUser, project, notification)) {
@@ -342,12 +355,12 @@ class MainRepository(db: CodesquareDatabase) {
 
             val result = if (isLiked) {
                 // dislike
-                val notification = notificationDao.getNotificationByType(comment.commentId, "like")
-                notificationDao.deleteNotificationByType(comment.commentId, "type")
+                val notification = notificationDao.getNotificationByType(comment.commentId, NOTIFICATION_LIKE_COMMENT)
+                notificationDao.deleteNotificationByType(comment.commentId, NOTIFICATION_LIKE_COMMENT)
                 FireUtility.dislikeComment(currentUser.id, comment, notification)
             } else {
                 // like
-                val notification = Notification(randomId(), "Your comment", currentUser.name + " has liked your comment.", System.currentTimeMillis(), currentUser.id, comment.senderId, comment.commentId, "like", "comment")
+                val notification = NotificationProvider.createNotification(comment, comment.senderId, NOTIFICATION_LIKE_COMMENT)
                 notificationDao.insert(notification)
                 FireUtility.likeComment(currentUser.id, comment, notification)
             }
@@ -386,7 +399,6 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertUsers(users: List<User>) {
-        Log.d(TAG, "Inserting multiple users")
         userDao.insert(users)
     }
 
@@ -513,10 +525,10 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     suspend fun insertNotifications(notifications: List<Notification>) {
-        notificationDao.insert(notifications)
+        notificationDao.insertNotifications(notifications)
     }
 
-    suspend fun deleteNotificationByType(contextId: String, type: String) {
+    suspend fun deleteNotificationByType(contextId: String, type: Int) {
         notificationDao.deleteNotificationByType(contextId, type)
     }
 
@@ -526,6 +538,14 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun clearProjects() {
         projectDao.clearTable()
+    }
+
+    suspend fun getLastNotification(): Notification? {
+        return notificationDao.getLastNotification()
+    }
+
+    fun getCurrentChatChannel(chatChannelId: String): LiveData<ChatChannel> {
+        return chatChannelDao.getCurrentChatChannel(chatChannelId)
     }
 
     companion object {

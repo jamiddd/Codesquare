@@ -14,7 +14,7 @@
         android:id="@+id/channel_img"
         android:layout_width="56dp"
         android:layout_height="56dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="12dp"
         android:layout_marginEnd="8dp"
         android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -41,12 +41,14 @@
         android:id="@+id/linearLayout8"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="@+id/channel_img"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/channel_time"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/channel_img"
-        app:layout_constraintTop_toTopOf="@+id/channel_img">
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
             android:id="@+id/channel_name"
@@ -55,8 +57,8 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:text="The Project Title"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textSize="18sp" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textSize="16sp" />
 
         <TextView
             android:id="@+id/channel_last_message"

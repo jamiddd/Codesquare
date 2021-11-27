@@ -28,7 +28,7 @@ class OnBoardingChildFragment: Fragment() {
 
         val data = arguments?.getParcelable<OnBoardingData>("data") ?: return
 
-        binding.onBoardingImage.setImageResource(data.image)
+        binding.onBoardingImage.setAnimation(data.image)
 
         binding.onBoardingContent.text = data.content
 

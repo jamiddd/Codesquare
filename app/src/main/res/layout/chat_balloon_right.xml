@@ -8,6 +8,7 @@
 
     <LinearLayout
         android:id="@+id/message_content_container_alt"
+        style="@style/AppTheme.ChatBalloonRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -55,7 +56,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="12dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            android:textSize="18sp" />
+            android:textSize="16sp" />
     </LinearLayout>
 
     <TextView

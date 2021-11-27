@@ -1,338 +1,279 @@
 package com.jamid.codesquare.ui
 
 import android.Manifest
-import android.app.Activity
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.BroadcastReceiver
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.*
+import android.graphics.drawable.BitmapDrawable
 import android.location.Address
 import android.net.*
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
 import android.view.View
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.addCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.FragmentNavigatorExtras
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import androidx.paging.ExperimentalPagingApi
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
 import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.badge.BadgeDrawable
+import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.firebase.auth.GoogleAuthProvider
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.LocationItemClickListener
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
+import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.listeners.*
+import com.jamid.codesquare.ui.home.chat.ChatInterface
 import com.jamid.codesquare.ui.home.chat.ForwardFragment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import android.os.Build
-import androidx.core.content.ContextCompat
-import com.google.android.material.snackbar.Snackbar
-import android.graphics.*
-import androidx.activity.addCallback
-import androidx.appcompat.app.AlertDialog
-import androidx.core.app.NotificationCompat
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.navigation.NavDeepLinkBuilder
-import com.google.firebase.firestore.ListenerRegistration
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
-import kotlinx.coroutines.Dispatchers
 import java.io.IOException
 import java.net.URL
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.messaging.FirebaseMessaging
-import com.jamid.codesquare.MyFirebaseMessagingService.Companion.NOTIFICATION_ID
 
-class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener {
+class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener, NotificationItemClickListener {
+
+    private var networkFlag = false
+    private var loadingDialog: AlertDialog? = null
 
     private lateinit var binding: ActivityMainBinding
-    private val viewModel: MainViewModel by viewModels()
     private lateinit var navController: NavController
-    private var networkFlag = false
-    private var userListenerRegistration: ListenerRegistration? = null
-    private var loadingDialog: AlertDialog? = null
-    private lateinit var notificationManager: NotificationManager
+    private lateinit var networkCallback: MyNetworkCallback
 
-    private val tokenReceiver = object: BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            val token = intent?.extras?.getString(MyFirebaseMessagingService.ARG_TOKEN)
-            if (token != null) {
-                viewModel.sendRegistrationTokenToServer(token)
-            }
-        }
-    }
-
-    private val notificationReceiver = object: BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-
-            val title = intent?.extras?.get(MyFirebaseMessagingService.ARG_NOTIFICATION_TITLE) as String? ?: ""
-            val content = intent?.extras?.get(MyFirebaseMessagingService.ARG_NOTIFICATION_BODY) as String? ?: ""
-
-            val notifyBuilder = getNotificationBuilder(title, content)
-            notificationManager.notify(NOTIFICATION_ID, notifyBuilder.build())
-
-        }
-    }
-
-    private fun getNotificationBuilder(title: String, content: String): NotificationCompat.Builder {
-        val pendingIntent = NavDeepLinkBuilder(this)
-            .setGraph(R.navigation.main_navigation)
-            .setDestination(R.id.notificationFragment)
-            .setArguments(null)
-            .createPendingIntent()
-
-        return NotificationCompat.Builder(this, MyFirebaseMessagingService.NOTIFICATION_CHANNEL_ID)
-            .setContentTitle(title)
-            .setContentText(content)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-    }
-
-    val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
+    private fun setCurrentUserPhotoAsDrawable(photo: String) = lifecycleScope.launch (Dispatchers.IO) {
+        val currentSavedBitmap = viewModel.currentUserBitmap
+        if (currentSavedBitmap != null) {
+            val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
+            setBitmapDrawable(d)
+        } else {
             try {
-                // Google Sign In was successful, authenticate with Firebase
-                val account = task.getResult(ApiException::class.java)
-                Log.d(TAG, "firebaseAuthWithGoogle:" + account.id)
-                account?.idToken?.let { it1 ->
-                    firebaseAuthWithGoogle(it1)
+                val isNetworkAvailable = viewModel.isNetworkAvailable.value
+                if (isNetworkAvailable != null && isNetworkAvailable) {
+                    val url = URL(photo)
+                    val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                    viewModel.currentUserBitmap = getCircleBitmap(image)
+                    val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
+                    setBitmapDrawable(d)
                 }
-            } catch (e: ApiException) {
-                // Google Sign In failed, update UI appropriately
-                Log.w(TAG, "Google sign in failed", e)
+            } catch (e: IOException) {
                 viewModel.setCurrentError(e)
             }
+        }
+    }
+
+    private fun setBitmapDrawable(drawable: BitmapDrawable) = runOnUiThread {
+        if (binding.mainToolbar.menu.size() > 1) {
+            binding.mainToolbar.menu.getItem(3).icon = drawable
+        }
+    }
+
+    private fun getLatestNotifications() {
+        viewModel.getLatestNotifications()
+    }
+
+    private fun startNetworkCallback() {
+        networkCallback = MyNetworkCallback(viewModel)
+        val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val builder = NetworkRequest.Builder()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            cm.registerDefaultNetworkCallback(networkCallback)
         } else {
-            toast("Activity result was not OK!")
+            cm.registerNetworkCallback(
+                builder.build(), networkCallback
+            )
         }
     }
 
-    private val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-            it.data?.data?.let { it1 ->
-                viewModel.setCurrentImage(it1)
+    private fun stopNetworkCallback() {
+        val cm: ConnectivityManager =
+            application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        cm.unregisterNetworkCallback(networkCallback)
+    }
+
+    private fun openFile(file: File) {
+        // Get URI and MIME type of file
+        try {
+            Log.d(TAG, file.path)
+            val uri = FileProvider.getUriForFile(this, "com.jamid.codesquare.fileprovider", file)
+            val mime = contentResolver.getType(uri)
+
+            // Open file with user selected app
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
+            intent.setDataAndType(uri, mime)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.d(TAG, e.localizedMessage.orEmpty())
+        }
+
+    }
+
+    private fun getMultipleImageIntent(): Intent {
+        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
+
+        return Intent().apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+    }
+
+    private fun checkForNetworkPermissions(onCheck: (granted: Boolean) -> Unit) {
+        when {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED -> {
+                onCheck(true)
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_NETWORK_STATE) -> {
+                MaterialAlertDialogBuilder(this).setTitle("This app requires permission to check your internet connection ...")
+                    .setMessage("For locating your device using GPS. This helps us in adding your location to the post so that it can be filtered based on location. ")
+                    .setPositiveButton("OK") { dialog, _ ->
+                        dialog.dismiss()
+                    }.show()
+            }
+            else -> {
+                onCheck(false)
             }
         }
     }
 
-    private val selectProjectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
+    private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit){
 
-            val clipData = it.data?.clipData
+        val name = message.content + message.metadata!!.ext
+        val destination = File(externalFilesDir, message.chatChannelId)
 
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.setCurrentProjectImages(images.map {it1 -> it1.toString() })
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setCurrentProjectImages(listOf(it1.toString()))
-                }
-            }
-        }
-    }
-
-    private val selectChatDocumentsUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val documents = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { doc ->
-                        documents.add(doc)
-                    }
-                }
-
-                viewModel.setChatUploadDocuments(documents)
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadDocuments(listOf(it1))
-                }
-            }
-        }
-    }
-
-    private val selectReportImagesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.setReportUploadImages(images)
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadImages(listOf(it1))
-                }
-            }
-        }
-    }
-
-    private val selectChatImagesUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.setChatUploadImages(images)
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadImages(listOf(it1))
-                }
-            }
-        }
-    }
-
-    private val selectMoreProjectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.addToExistingProjectImages(images.map {it1 -> it1.toString() })
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.addToExistingProjectImages(listOf(it1.toString()))
-                }
-            }
-        }
-    }
-
-    private fun firebaseAuthWithGoogle(idToken: String) {
-        val credential = GoogleAuthProvider.getCredential(idToken, null)
-        FireUtility.signInWithGoogle(credential) {
-            if (it.isSuccessful) {
-                val user = it.result.user
-                if (user != null) {
-                    val ref = Firebase.firestore.collection("users")
-                        .document(user.uid)
-
-                    FireUtility.getDocument(ref) { it1 ->
-                        if (it1.isSuccessful && it1.result.exists()) {
-                            val oldUser = it1.result.toObject(User::class.java)!!
-                            viewModel.insertCurrentUser(oldUser)
+        fun download(des: File) {
+            val file = File(des, name)
+            try {
+                if (file.createNewFile()) {
+                    FireUtility.downloadMedia(file, message.content, message) {
+                        onComplete(it, message)
+                        if (it.isSuccessful) {
+                            message.isDownloaded = true
+                            viewModel.updateMessage(message)
                         } else {
-                            val localUser = User.newUser(user.uid, user.displayName!!, user.email!!)
-                            FireUtility.uploadDocument(ref, localUser) { it2 ->
-                                if (it2.isSuccessful) {
-                                    viewModel.insertCurrentUser(localUser)
-                                } else {
-                                    viewModel.setCurrentError(it.exception)
-                                    Firebase.auth.signOut()
-                                }
+                            file.delete()
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                } else {
+                    if (file.exists()) {
+                        FireUtility.downloadMedia(file, message.content, message) {
+                            onComplete(it, message)
+                            if (it.isSuccessful) {
+                                message.isDownloaded = true
+                                viewModel.updateMessage(message)
+                            } else {
+                                file.delete()
+                                viewModel.setCurrentError(it.exception)
                             }
                         }
                     }
-
-
-                } else {
-                    Firebase.auth.signOut()
+                    Log.d(TAG, "Probably file already exists. Or some other problem for which we are not being able to ")
                 }
-            } else {
-                viewModel.setCurrentError(it.exception)
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
+            } finally {
+                Log.d(TAG, file.path)
             }
         }
-    }
 
-    var isInitialized = false
-
-    private fun createNotificationChannel() {
-        notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(
-                MyFirebaseMessagingService.NOTIFICATION_CHANNEL_ID,
-                "Mascot Notification",
-                NotificationManager.IMPORTANCE_HIGH
-            )
-            notificationChannel.enableLights(true)
-            notificationChannel.lightColor = Color.RED
-            notificationChannel.enableVibration(true)
-            notificationChannel.description = "Notification from Mascot"
-
-            notificationManager.createNotificationChannel(notificationChannel)
+        try {
+            if (destination.mkdir()) {
+                download(destination)
+            } else {
+                Log.d(TAG, "Probably directory already exists")
+                if (destination.exists()) {
+                    download(destination)
+                } else {
+                    throw Exception("Unknown error. Couldn't create file and download.")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, e.localizedMessage.orEmpty())
+        } finally {
+            Log.d(TAG, destination.path)
         }
     }
 
+    fun selectImage() {
+        val intent = Intent().apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+        }
+        selectImageLauncher.launch(intent)
+    }
 
+    fun selectProjectImages() {
+        selectProjectImageLauncher.launch(getMultipleImageIntent())
+    }
+
+    fun selectChatUploadDocuments() {
+        selectChatDocumentsUploadLauncher.launch(getMultipleImageIntent())
+    }
+
+    fun selectChatUploadImages() {
+        selectChatImagesUploadLauncher.launch(getMultipleImageIntent())
+    }
+
+    fun selectReportUploadImages() {
+        selectReportImagesLauncher.launch(getMultipleImageIntent())
+    }
+
+    fun selectMoreProjectImages() {
+        selectMoreProjectImageLauncher.launch(getMultipleImageIntent())
+    }
+
+    // needs checking
+    fun onLinkClick(url: String) {
+        val i = Intent(Intent.ACTION_VIEW)
+        i.data = Uri.parse(url)
+        startActivity(i)
+    }
+
+    /*fun showSnackBar(s: String) {
+        Snackbar.make(binding.root, s, Snackbar.LENGTH_LONG).show()
+    }*/
+
+    fun showLoadingDialog(msg: String) {
+        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
+        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
+
+        loadingLayoutBinding.loadingText.text = msg
+
+        loadingDialog = MaterialAlertDialogBuilder(this)
+            .setView(loadingLayout)
+            .setCancelable(false)
+            .show()
+    }
+
+    @SuppressLint("UnsafeOptInUsageError")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -342,14 +283,13 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         setSupportActionBar(binding.mainToolbar)
 
         // must
-        createNotificationChannel()
+        MyNotificationManager.init(this)
 
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.homeFragment, R.id.loginFragment))
         binding.mainToolbar.setupWithNavController(navController, appBarConfiguration)
-
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
 
@@ -367,7 +307,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             binding.mainToolbar.logo = if (destination.id != R.id.homeFragment) {
                 null
             } else {
-                ContextCompat.getDrawable(this, R.drawable.ic_collab_logo)
+                ContextCompat.getDrawable(this, R.drawable.ic_collab_logo_small)
             }
 
             val sharedPreferences = getSharedPreferences("codesquare_shared", MODE_PRIVATE)
@@ -423,7 +363,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     }
                 }
                 R.id.homeFragment -> {
-
                     binding.mainAppbar.show()
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
                     params.behavior = AppBarLayout.ScrollingViewBehavior()
@@ -491,7 +430,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
                     params.behavior = AppBarLayout.ScrollingViewBehavior()
                     binding.navHostFragment.layoutParams = params
-
                 }
                 R.id.chatDetailFragment -> {
                     userInfoLayout?.hide()
@@ -543,6 +481,7 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     userInfoLayout?.hide()
                     binding.mainToolbar.show()
                     binding.mainTabLayout.show()
+                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                 }
                 R.id.settingsFragment -> {
                     userInfoLayout?.hide()
@@ -555,25 +494,18 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         viewModel.currentUser.observe(this) {
             if (it != null) {
 
-                if (!isInitialized) {
-                    isInitialized = true
-                    Log.d("MessageChecking", "Got User ")
+                NotificationProvider.init(it)
 
-                    // getting all the chat channels first
-                    viewModel.getAllChatChannels(it.id) { it1 ->
-                        if (it1.isSuccessful) {
-                            val chatChannels = it1.result.toObjects(ChatChannel::class.java)
-
-                            Log.d("MessageChecking", "Got channels ${chatChannels.size}")
-
-                            for (channel in chatChannels) {
-                                Log.d("MessageChecking", "Setting up ${channel.projectTitle}")
-                                // getting all the contributors in a chat channel
-                                getChannelData(it, channel)
-                            }
-                        } else {
-                            viewModel.setCurrentError(it1.exception)
+                lifecycleScope.launch (Dispatchers.IO) {
+                    try {
+                        val isNetworkAvailable = viewModel.isNetworkAvailable.value
+                        if (isNetworkAvailable != null && isNetworkAvailable) {
+                            val url = URL(it.photo)
+                            val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
+                            viewModel.currentUserBitmap = getCircleBitmap(image)
                         }
+                    } catch (e: IOException) {
+                        viewModel.setCurrentError(e)
                     }
                 }
             }
@@ -589,85 +521,33 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             if (exception != null) {
                 loadingDialog?.dismiss()
                 Log.e(TAG, exception.localizedMessage.orEmpty())
-//                toast(exception.localizedMessage.orEmpty())
             }
         }
 
         Firebase.auth.addAuthStateListener {
             loadingDialog?.dismiss()
             val firebaseUser = it.currentUser
+            val currentDestination = navController.currentDestination?.id
             if (firebaseUser != null) {
-
-                FirebaseMessaging.getInstance().token
-                    .addOnCompleteListener(OnCompleteListener { task ->
-                        if (!task.isSuccessful) {
-                            Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                            return@OnCompleteListener
-                        }
-
-                        // Get new FCM registration token
-                        val token = task.result
-
-                        viewModel.sendRegistrationTokenToServer(token)
-                    })
-
                 if (firebaseUser.isEmailVerified) {
 
-                    if (navController.currentDestination?.id == R.id.loginFragment) {
-                        // changed this line
-                        navController.navigate(R.id.action_loginFragment_to_homeFragment)
-                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
-                        lifecycleScope.launch {
-                            delay(4000)
-                            navController.navigate(R.id.action_splashFragment_to_homeFragment)
-                        }
+                    UserManager.init(firebaseUser.uid)
+                    lifecycleScope.launch {
+                        ChatInterface.initialize(firebaseUser.uid)
                     }
 
-                    userListenerRegistration?.remove()
-                    userListenerRegistration = Firebase.firestore.collection("users")
-                        .document(firebaseUser.uid)
-                        .addSnapshotListener { value, error ->
-                            if (error != null) {
-                                viewModel.setCurrentError(error)
-                            }
-
-                            if (value != null && value.exists()) {
-                                val newUser = value.toObject(User::class.java)
-                                if (newUser != null) {
-
-                                    val currentUser = viewModel.currentUser.value
-                                    if (currentUser != null) {
-                                        // this will look for any recent changes, so as to not download
-                                        // everything, every time there's a change
-                                        if (currentUser.chatChannels.size < newUser.chatChannels.size) {
-                                            for (channel in newUser.chatChannels) {
-                                                if (!currentUser.chatChannels.contains(channel)) {
-                                                    setUpChatChannel(currentUser, channel)
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    lifecycleScope.launch (Dispatchers.IO) {
-                                        try {
-                                            val isNetworkAvailable = viewModel.isNetworkAvailable.value
-                                            if (isNetworkAvailable != null && isNetworkAvailable) {
-                                                val url = URL(newUser.photo)
-                                                val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                                                viewModel.currentUserBitmap = getCircleBitmap(image)
-                                            }
-                                        } catch (e: IOException) {
-                                            viewModel.setCurrentError(e)
-                                        }
-                                    }
-
-
-                                    viewModel.insertCurrentUser(newUser)
-                                }
-                            }
+                    if (currentDestination == R.id.loginFragment) {
+                        // login fragment will decide
+                    } else if (currentDestination == R.id.splashFragment) {
+                        lifecycleScope.launch {
+                            delay(4000)
+                            val v = findViewById<View>(R.id.splash_logo)
+                            val extras = FragmentNavigatorExtras(v to "logo_transition")
+                            navController.navigate(R.id.action_splashFragment_to_homeFragment, null, null, extras)
                         }
+                    }
                 } else {
-                    when (navController.currentDestination?.id) {
+                    when (currentDestination) {
                         R.id.homeFragment -> {
                             navController.navigate(R.id.action_homeFragment_to_emailVerificationFragment, null, slideRightNavOptions())
                         }
@@ -675,17 +555,21 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                             navController.navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
                         }
                         R.id.splashFragment -> {
-                            navController.navigate(R.id.action_splashFragment_to_loginFragment)
+                            val v = findViewById<View>(R.id.splash_logo)
+                            val extras = FragmentNavigatorExtras(v to "logo_transition")
+                            navController.navigate(R.id.action_splashFragment_to_loginFragment, null, null, extras)
                         }
                     }
                 }
             } else {
                 lifecycleScope.launch {
                     delay(4000)
-                    if (navController.currentDestination?.id == R.id.homeFragment) {
+                    if (currentDestination == R.id.homeFragment) {
                         navController.navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
-                    } else if (navController.currentDestination?.id == R.id.splashFragment) {
-                        navController.navigate(R.id.action_splashFragment_to_loginFragment, null, slideRightNavOptions())
+                    } else if (currentDestination == R.id.splashFragment) {
+                        val v = findViewById<View>(R.id.splash_logo)
+                        val extras = FragmentNavigatorExtras(v to "logo_transition")
+                        navController.navigate(R.id.action_splashFragment_to_loginFragment, null, null, extras)
                     }
                 }
             }
@@ -701,264 +585,94 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
                     networkFlag = true
                     Snackbar.make(binding.root, "Network connection unavailable", Snackbar.LENGTH_INDEFINITE).setBackgroundTint(ContextCompat.getColor(this@MainActivity, R.color.error_color)).show()
                 }
-            } else {
-                // check for network here
             }
         }
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(tokenReceiver, IntentFilter(MyFirebaseMessagingService.TOKEN_INTENT))
-        LocalBroadcastManager.getInstance(this).registerReceiver(notificationReceiver, IntentFilter(MyFirebaseMessagingService.NOTIFICATION_INTENT))
 
         startNetworkCallback()
 
-    }
+//        getLatestNotifications()
 
-
-    fun onLinkClick(url: String) {
-        val i = Intent(Intent.ACTION_VIEW)
-        i.data = Uri.parse(url)
-        startActivity(i)
-    }
-
-
-    override fun onResume() {
-        super.onResume()
-        checkForNetworkPermissions {
-            if (it) {
-                startNetworkCallback()
-            } else {
-                //
+        viewModel.allUnreadNotifications.observe(this) {
+            if (it.isNotEmpty()) {
+                if (navController.currentDestination?.id == R.id.homeFragment) {
+                    val badgeDrawable = BadgeDrawable.create(this)
+                    badgeDrawable.number = it.size
+                    attachBadgeDrawable(badgeDrawable, binding.mainToolbar, R.id.notifications)
+                }
             }
         }
 
-        if (navController.currentDestination?.id == R.id.emailVerificationFragment) {
-            val currentUser = Firebase.auth.currentUser
-            if (currentUser != null) {
-                val task = currentUser.reload()
-                task.addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        if (Firebase.auth.currentUser?.isEmailVerified == true) {
-                            navController.navigate(R.id.action_emailVerificationFragment_to_homeFragment)
+        UserManager.currentUser.observe(this) {
+            if (it != null) {
+                val photo = it.photo
+                if (photo != null) {
+                    setCurrentUserPhotoAsDrawable(photo)
+                }
+
+                // looking for newly added chat channel
+                lifecycleScope.launch (Dispatchers.IO) {
+                    for (channel in it.chatChannels) {
+                        val chatChannel = viewModel.getLocalChatChannel(channel)
+                        if (chatChannel == null) {
+                            when (val result = viewModel.getChatChannel(channel)) {
+                                is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
+                                is Result.Success -> {
+                                    if (result.data.exists()) {
+                                        val chatChannel1 = result.data.toObject(ChatChannel::class.java)!!
+                                        ChatInterface.addChannelMessagesListener(chatChannel1)
+                                        viewModel.insertChatChannels(listOf(chatChannel1))
+                                    }
+                                }
+                            }
                         }
-                    } else {
-                        Log.d(TAG, it.exception?.localizedMessage.orEmpty())
+                    }
+                }
+
+                viewModel.insertCurrentUser(it)
+            }
+        }
+
+        ChatInterface.currentData.observe(this) {
+            val result = it ?: return@observe
+
+            when (result) {
+                is Result.Error -> {
+                    viewModel.setCurrentError(result.exception)
+                }
+                is Result.Success -> {
+                    val data = result.data
+                    for (item in data) {
+                        viewModel.insertChannelWithContributors(item.channel, item.contributors)
+                    }
+
+                    ChatInterface.addChannelsListener { it1 ->
+                        viewModel.insertChatChannels(it1)
                     }
                 }
             }
         }
-    }
 
-    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) {
-            viewModel.setNetworkAvailability(true)
-        }
+        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
-        override fun onLost(network: Network) {
-            viewModel.setNetworkAvailability(false)
-        }
-    }
-
-    private fun startNetworkCallback() {
-        val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val builder = NetworkRequest.Builder()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            cm.registerDefaultNetworkCallback(networkCallback)
-        } else {
-            cm.registerNetworkCallback(
-                builder.build(), networkCallback
-            )
-        }
-    }
-
-    private fun stopNetworkCallback() {
-        val cm: ConnectivityManager =
-            application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        cm.unregisterNetworkCallback(networkCallback)
-    }
-
-
-    private fun setUpChatChannel(currentUser: User, chatChannelId: String) {
-        // getting all the chat channels first
-        viewModel.getChatChannel(chatChannelId) { it1 ->
-            if (it1.isSuccessful) {
-                if (it1.result != null && it1.result.exists()) {
-                    val chatChannel = it1.result.toObject(ChatChannel::class.java)!!
-                    getChannelData(currentUser, chatChannel)
+        ChatInterface.channelMessagesMap.observe(this) {
+            if (it.isNotEmpty()) {
+                if (imagesDir != null && documentsDir != null) {
+                    for (i in it) {
+                        viewModel.insertChannelMessages(i.channel, imagesDir, documentsDir, i.messages)
+                    }
                 }
+            }
+        }
+
+        NotificationProvider.newNotifications.observe(this) {
+            if (!it.isNullOrEmpty()) {
+                viewModel.insertNotifications(it)
             } else {
-                viewModel.setCurrentError(it1.exception)
+                Log.d(TAG, "No notifications provided.")
             }
         }
-    }
 
-    private fun getChannelData(currentUser: User, chatChannel: ChatChannel) {
-        // getting all the contributors in a chat channel
-        viewModel.getChannelUsers(chatChannel.chatChannelId) { it2 ->
-            if (it2.isSuccessful) {
-                val users = it2.result.toObjects(User::class.java).filter {
-                    it.id != currentUser.id
-                }
-                viewModel.insertChannelWithContributors(chatChannel, users)
-
-                // get messages only after getting all the contributors associated with the project
-                getLatestMessagesBaseOnLastMessage(chatChannel)
-
-                // listening for new messages as soon as activity starts
-                addChannelListener(chatChannel)
-            } else {
-                viewModel.setCurrentError(it2.exception)
-            }
-        }
-    }
-
-    // the criteria for checking time is 24 hour
-    private fun isLastMessageReallyOld(message: Message): Boolean {
-        val now = System.currentTimeMillis()
-        val diff = now - message.createdAt
-        return diff > 12 * 60 * 60 * 1000
-    }
-
-    // the criteria for checking time is 12 hour
-    private fun isLastMessageRelativelyNew(message: Message): Boolean {
-        val now = System.currentTimeMillis()
-        val diff = now - message.createdAt
-        return diff <= 6 * 60 * 60 * 1000
-    }
-
-    private fun getLatestMessagesBaseOnLastMessage(chatChannel: ChatChannel) = lifecycleScope.launch {
-
-        val lastMessage = viewModel.getLastMessageForChannel(chatChannel.chatChannelId)
-        if (lastMessage != null) {
-
-            val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-
-            // getting limited new messages cause deleting old messages
-            if (isLastMessageReallyOld(lastMessage)) {
-
-                viewModel.deleteAllMessagesInChannel(chatChannel.chatChannelId)
-
-                // getting 50 new messages
-                viewModel.getLatestMessages(chatChannel.chatChannelId, 50) {
-                    if (it.isSuccessful) {
-                        if (externalImagesDir != null && externalDocumentsDir != null) {
-                            val messages = it.result.toObjects(Message::class.java)
-                            viewModel.insertChannelMessages(chatChannel, externalImagesDir, externalDocumentsDir, messages)
-                        }
-                    } else {
-                        viewModel.setCurrentError(it.exception)
-                    }
-                }
-            }
-
-            // getting all messages since this message
-            if (isLastMessageRelativelyNew(lastMessage)) {
-                Log.d(TAG, "Yes the last message is relatively new .. hence downloading all messages after that")
-                if (externalImagesDir != null && externalDocumentsDir != null) {
-                    viewModel.getLatestMessagesAfter(externalImagesDir, externalDocumentsDir, lastMessage, chatChannel)
-                }
-            }
-        }
-    }
-
-    private fun addChannelListener(chatChannel: ChatChannel) = lifecycleScope.launch {
-
-        val externalImagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val externalDocumentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-
-        Firebase.firestore.collection("chatChannels")
-            .document(chatChannel.chatChannelId)
-            .collection("messages")
-            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-            .limit(chatChannel.contributorsCount)
-            .addSnapshotListener { value, error ->
-                if (error != null) {
-                    Log.e(TAG, error.localizedMessage.orEmpty())
-                    return@addSnapshotListener
-                }
-
-                if (value != null) {
-                    val messages = value.toObjects(Message::class.java)
-                    if (externalDocumentsDir != null && externalImagesDir != null) {
-                        // insert the new messages
-                        viewModel.insertChannelMessages(chatChannel, externalImagesDir, externalDocumentsDir, messages)
-                    }
-                }
-            }
-
-    }
-
-    fun selectImage() {
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-        }
-
-        selectImageLauncher.launch(intent)
-    }
-
-    fun selectProjectImages() {
-
-        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
-
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-
-        selectProjectImageLauncher.launch(intent)
-    }
-
-    fun selectChatUploadDocuments() {
-        val intent = Intent().apply {
-            type = "*/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-
-        selectChatDocumentsUploadLauncher.launch(intent)
-
-    }
-
-    fun selectChatUploadImages() {
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-
-        selectChatImagesUploadLauncher.launch(intent)
-    }
-
-    fun selectReportUploadImages() {
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-
-        selectReportImagesLauncher.launch(intent)
-    }
-
-    fun selectMoreProjectImages() {
-
-        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
-
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-
-        selectMoreProjectImageLauncher.launch(intent)
-    }
-
-    companion object {
-        private const val TAG = "MainActivityDebugTag"
     }
 
     override fun onLocationClick(address: Address) {
@@ -1019,6 +733,9 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
             }
             R.id.projectFragment -> {
                 navController.navigate(R.id.action_projectFragment_to_commentsFragment, bundle, slideRightNavOptions())
+            }
+            R.id.notificationFragment -> {
+                navController.navigate(R.id.action_notificationFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
         }
     }
@@ -1142,8 +859,14 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
 
     override fun onClick(comment: Comment) {
         val bundle = bundleOf("parent" to comment, "title" to "Comments")
-        viewModel.currentCommentChannelIds.push(comment.threadChannelId)
-        navController.navigate(R.id.action_commentsFragment_self, bundle)
+        when (navController.currentDestination?.id) {
+            R.id.commentsFragment -> {
+                navController.navigate(R.id.action_commentsFragment_self, bundle)
+            }
+            R.id.notificationFragment -> {
+                navController.navigate(R.id.action_notificationFragment_to_commentsFragment, bundle)
+            }
+        }
     }
 
     override fun onCommentDelete(comment: Comment) {
@@ -1219,102 +942,6 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         }
     }
 
-    private fun createNewFileAndDownload(externalFilesDir: File, message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit){
-
-        val name = message.content + message.metadata!!.ext
-        val destination = File(externalFilesDir, message.chatChannelId)
-
-        fun download(des: File) {
-            val file = File(des, name)
-            try {
-                if (file.createNewFile()) {
-                    FireUtility.downloadMedia(file, message.content, message) {
-                        onComplete(it, message)
-                        if (it.isSuccessful) {
-                            message.isDownloaded = true
-                            viewModel.updateMessage(message)
-                        } else {
-                            file.delete()
-                            viewModel.setCurrentError(it.exception)
-                        }
-                    }
-                } else {
-                    if (file.exists()) {
-                        FireUtility.downloadMedia(file, message.content, message) {
-                            onComplete(it, message)
-                            if (it.isSuccessful) {
-                                message.isDownloaded = true
-                                viewModel.updateMessage(message)
-                            } else {
-                                file.delete()
-                                viewModel.setCurrentError(it.exception)
-                            }
-                        }
-                    }
-                    Log.d(TAG, "Probably file already exists. Or some other problem for which we are not being able to ")
-                }
-            } catch (e: Exception) {
-                viewModel.setCurrentError(e)
-            } finally {
-                Log.d(TAG, file.path)
-            }
-        }
-
-        try {
-            if (destination.mkdir()) {
-                download(destination)
-            } else {
-                Log.d(TAG, "Probably directory already exists")
-                if (destination.exists()) {
-                    download(destination)
-                } else {
-                    throw Exception("Unknown error. Couldn't create file and download.")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, e.localizedMessage.orEmpty())
-        } finally {
-            Log.d(TAG, destination.path)
-        }
-    }
-
-    private fun openFile(file: File) {
-        // Get URI and MIME type of file
-        try {
-            Log.d(TAG, file.path)
-            val uri = FileProvider.getUriForFile(this, "com.jamid.codesquare.fileprovider", file)
-            val mime = contentResolver.getType(uri)
-
-            // Open file with user selected app
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.setDataAndType(uri, mime)
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.d(TAG, e.localizedMessage.orEmpty())
-        }
-
-    }
-
-    private fun checkForNetworkPermissions(onCheck: (granted: Boolean) -> Unit) {
-        when {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) == PackageManager.PERMISSION_GRANTED -> {
-                onCheck(true)
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_NETWORK_STATE) -> {
-                MaterialAlertDialogBuilder(this).setTitle("This app requires permission to check your internet connection ...")
-                    .setMessage("For locating your device using GPS. This helps us in adding your location to the post so that it can be filtered based on location. ")
-                    .setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }.show()
-            }
-            else -> {
-                onCheck(false)
-            }
-        }
-    }
-
     // make sure to change this later on for null safety
     override fun onMessageRead(message: Message) {
         val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
@@ -1350,6 +977,43 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         viewModel.updateMessage(message)
     }
 
+    override fun onMessageDoubleClick(message: Message) {
+        viewModel.setCurrentlySelectedMessage(message)
+    }
+
+    override fun onNotificationRead(notification: Notification) {
+        notification.read = true
+        viewModel.updateNotification(notification)
+    }
+
+    @ExperimentalPagingApi
+    override fun onNotificationClick(contextObject: Any) {
+        when (contextObject) {
+            is Project -> {
+                onProjectClick(contextObject)
+            }
+            is Comment -> {
+                if (contextObject.commentLevel == 0.toLong()) {
+                    val projectRef = Firebase.firestore.collection("projects").document(contextObject.projectId)
+                    FireUtility.getDocument(projectRef) { it1 ->
+                        if (it1.isSuccessful && it1.result.exists()) {
+                            val project = it1.result.toObject(Project::class.java)!!
+                            onProjectCommentClick(project)
+                        } else {
+                            Log.d(TAG, "Something went wrong" + it1.exception?.localizedMessage)
+                        }
+                    }
+                } else {
+                    onClick(contextObject)
+                }
+            }
+            is User -> {
+                onUserClick(contextObject)
+            }
+            else -> throw IllegalArgumentException("Only object of type Project, Comment and User is allowed.")
+        }
+    }
+
     override suspend fun onGetMessageReply(replyTo: String): Message? {
         return viewModel.getLocalMessage(replyTo)
     }
@@ -1358,37 +1022,65 @@ class MainActivity: AppCompatActivity(), LocationItemClickListener, ProjectClick
         return viewModel.getLocalUser(senderId)
     }
 
-    override fun onMessageDoubleClick(message: Message) {
-        viewModel.setCurrentlySelectedMessage(message)
-    }
-
     override fun onPause() {
         super.onPause()
-        // TODO("Need to hold the last chat channel id value")
         val currentUser = viewModel.currentUser.value
         if (currentUser != null) {
             for (channel in currentUser.chatChannels) {
                 viewModel.updateRestOfTheMessages(channel, -1)
+
+                FirebaseMessaging.getInstance().subscribeToTopic(channel)
+                    .addOnCompleteListener {
+                        //
+                    }
+
             }
         }
 
         stopNetworkCallback()
     }
 
-    fun showSnackBar(s: String) {
-        Snackbar.make(binding.root, s, Snackbar.LENGTH_LONG).show()
+    override fun onResume() {
+        super.onResume()
+        val currentUser = viewModel.currentUser.value
+        if (currentUser != null) {
+            for (channel in currentUser.chatChannels) {
+                FirebaseMessaging.getInstance().unsubscribeFromTopic(channel)
+                    .addOnCompleteListener {
+                        if (it.isSuccessful) {
+                            Log.d(TAG, "Unsubscribed from $channel")
+                        } else {
+                            Log.e(TAG, it.exception?.localizedMessage.orEmpty())
+                        }
+                    }
+            }
+        }
+
+        checkForNetworkPermissions {
+            if (it) {
+                startNetworkCallback()
+            }
+        }
+
+        if (navController.currentDestination?.id == R.id.emailVerificationFragment) {
+            val firebaseUser = Firebase.auth.currentUser
+            if (firebaseUser != null) {
+                val task = firebaseUser.reload()
+                task.addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        if (Firebase.auth.currentUser?.isEmailVerified == true) {
+                            navController.navigate(R.id.action_emailVerificationFragment_to_homeFragment)
+                        }
+                    } else {
+                        Log.d(TAG, it.exception?.localizedMessage.orEmpty())
+                    }
+                }
+            }
+        }
     }
 
-    fun showLoadingDialog(msg: String) {
-        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
-
-        loadingLayoutBinding.loadingText.text = msg
-
-        loadingDialog = MaterialAlertDialogBuilder(this)
-            .setView(loadingLayout)
-            .setCancelable(false)
-            .show()
+    companion object {
+        private const val TAG = "MainActivityDebugTag"
     }
 
 }

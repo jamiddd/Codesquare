@@ -6,6 +6,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.firebase.firestore.ktx.firestore
@@ -82,6 +85,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
             }
         }
+
 
         /*isEmpty.observe(viewLifecycleOwner) {
             if (it != null) {

@@ -11,6 +11,7 @@
     <color name="pink">#E91E63</color>
     <color name="dark_pink">#D3064C</color>
     <color name="darker_white">#AAA9AA</color>
+    <color name="darkest_grey_2">#333</color>
     <color name="darkest_grey">#111111</color>
     <color name="very_dark_grey">#555555</color>
     <color name="lightest_grey">#F5F5F5</color>

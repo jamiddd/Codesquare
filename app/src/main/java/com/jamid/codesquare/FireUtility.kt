@@ -307,7 +307,9 @@ object FireUtility {
 
             val batch = Firebase.firestore.batch()
 
-            batch.set(notificationRef, notification)
+            if (notification.senderId != notification.receiverId) {
+                batch.set(notificationRef, notification)
+            }
 
             batch.update(projectRef, "likes", FieldValue.increment(1))
             batch.update(userRef, "likedProjects", FieldValue.arrayUnion(project.id))
@@ -646,7 +648,11 @@ object FireUtility {
             comment.threadChannelId = newCommentChannel.commentChannelId
             batch.set(commentRef, comment)
 
-            batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
+            // checking if the current user has changed the document
+            if (notification.senderId != notification.receiverId) {
+                batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
+            }
+
 
             val parentCommentChannelRef = db.collection("commentChannels").document(comment.commentChannelId)
             val parentCommentChannelChanges = mapOf("lastComment" to comment)
@@ -722,7 +728,12 @@ object FireUtility {
 
             batch.update(commentRef, mapOf("likesCount" to FieldValue.increment(1), "likes" to FieldValue.arrayUnion(currentUserId)))
 
-            batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
+            if (notification.senderId != notification.receiverId) {
+                batch.set(Firebase.firestore.collection("users")
+                    .document(notification.receiverId)
+                    .collection("notifications")
+                    .document(notification.id), notification)
+            }
 
             val currentUserRef = db.collection("users").document(currentUserId)
 
@@ -1277,6 +1288,31 @@ object FireUtility {
             .document(feedback.id)
             .set(feedback)
             .addOnCompleteListener(onComplete)
+    }
+
+    suspend fun getNotifications(currentUserId: String, lastSnapshot: DocumentSnapshot? = null): Result<QuerySnapshot> {
+        return try {
+            val task = if (lastSnapshot != null) {
+                Firebase.firestore.collection("users")
+                    .document(currentUserId)
+                    .collection("notifications")
+                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                    .startAfter(lastSnapshot)
+                    .limit(50)
+                    .get()
+            } else {
+                Firebase.firestore.collection("users")
+                    .document(currentUserId)
+                    .collection("notifications")
+                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+                    .limit(50)
+                    .get()
+            }
+            val result = task.await()
+            Result.Success(result)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
 

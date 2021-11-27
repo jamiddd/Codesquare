@@ -27,4 +27,7 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels WHERE chatChannelId != :chatChannelId")
     abstract suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel>?
 
+    @Query("SELECT * FROm chat_channels WHERE chatChannelId = :chatChannelId")
+    abstract fun getCurrentChatChannel(chatChannelId: String): LiveData<ChatChannel>
+
 }

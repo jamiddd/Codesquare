@@ -30,7 +30,7 @@ class ProjectRequestFragment: PagerListFragment<ProjectRequest, ProjectRequestVi
             .whereEqualTo("receiverId", currentUser.id)
 
         getItems {
-            viewModel.getPagedProjectRequests(query)
+            viewModel.getPagedProjectRequests(currentUser.id, query)
         }
 
         recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))

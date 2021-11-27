@@ -320,30 +320,41 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
         const chatChannelId = context.params.chatChannelId;
         const chatChannelSnap = await this.getChatChannelById(chatChannelId);
 
+        const senderId = snap.get("senderId");
+        const senderSnap = await this.getUserById(senderId);
+
         if (!chatChannelSnap.exists) {
             return {
-                response: `Document with id - ${contributorId} doesn\'t exist.`
+                response: `Document with id - ${chatChannelId} doesn\'t exist.`
             };
         } else {
 
-            const type = snap.get("type");
-            const projectTitle = chatChannelSnap.get("projectTitle");
-
-            if (type == "image") {
-                return await this.sendNotificationToTopic(chatChannelId, {
-                    title: projectTitle,
-                    content: "Document"
-                })
-            } else if (type == "document") {
-                return await this.sendNotificationToTopic(chatChannelId, {
-                    title: projectTitle,
-                    content: "Image"
-                });
+            if (!senderSnap.exists) {
+                return {
+                    response: `Document with id - ${senderId} doesn\'t exist.`
+                };
             } else {
-                return await this.sendNotificationToTopic(chatChannelId, {
-                    title: projectTitle,
-                    content: snap.get("content") 
-                });
+                const type = snap.get("type");
+                const projectTitle = chatChannelSnap.get("projectTitle");
+
+                const senderName = senderSnap.get("name");
+
+                if (type == "image") {
+                    return await this.sendNotificationToTopic(chatChannelId, {
+                        title: projectTitle,
+                        content: senderName + ": Document"
+                    })
+                } else if (type == "document") {
+                    return await this.sendNotificationToTopic(chatChannelId, {
+                        title: projectTitle,
+                        content: senderName + ": Image"
+                    });
+                } else {
+                    return await this.sendNotificationToTopic(chatChannelId, {
+                        title: projectTitle,
+                        content: senderName + ": " + snap.get("content") 
+                    });
+                }
             }
         }
     });

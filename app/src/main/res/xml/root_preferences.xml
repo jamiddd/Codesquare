@@ -1,8 +1,6 @@
-<PreferenceScreen
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory
-        app:title="Profile">
+    <PreferenceCategory app:title="Profile">
 
         <Preference
             app:key="update_profile"
@@ -14,20 +12,18 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory
-        app:title="Chat">
+    <PreferenceCategory app:title="Chat">
 
         <SwitchPreferenceCompat
-            app:title="Show time in chat"
+            app:defaultValue="true"
             app:key="show_chat_time"
-            app:summaryOn="Disable this for a cleaner look"
             app:summaryOff="Enable this to show time for every chat"
-            app:defaultValue="true"/>
+            app:summaryOn="Disable this for a cleaner look"
+            app:title="Show time in chat" />
 
     </PreferenceCategory>
 
-    <PreferenceCategory
-        app:title="Account">
+    <PreferenceCategory app:title="Account">
 
         <Preference
             app:key="update_password"
@@ -48,12 +44,22 @@
 
         <Preference
             app:key="version"
-            app:title="Version"
-            app:summary="1.0.0"/>
+            app:summary="1.0.0"
+            app:title="Version" />
 
         <Preference
             app:key="logout"
             app:title="Log out" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory>
+
+        <Preference
+            app:key="donate"
+            app:title="Donate"
+            app:summary="You can buy me a coffee if this app helped you in any way."
+            app:icon="@drawable/ic_coffee"/>
 
     </PreferenceCategory>
 

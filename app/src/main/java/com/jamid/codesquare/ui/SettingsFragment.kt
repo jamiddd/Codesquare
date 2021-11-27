@@ -4,18 +4,17 @@ import android.os.Bundle
 import android.text.InputType
 import android.util.Log
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.preference.EditTextPreference
-import androidx.preference.ListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.InputLayoutBinding
 
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -34,7 +33,17 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
 
+        setProfileSection()
 
+        setChatSection()
+
+        setAccountSection()
+
+        setOtherFunctions()
+
+    }
+
+    private fun setProfileSection() {
         val updateProfileItem = findPreference<Preference>("update_profile")
         updateProfileItem?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_editProfileFragment)
@@ -46,7 +55,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findNavController().navigate(R.id.action_settingsFragment_to_savedProjectsFragment)
             true
         }
+    }
 
+    private fun setAccountSection() {
         val updatePasswordItem = findPreference<Preference>("update_password")
         updatePasswordItem?.setOnPreferenceClickListener {
 
@@ -170,6 +181,36 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+
+
+        val providerData = Firebase.auth.currentUser?.providerData
+        if (providerData != null) {
+            for (data in providerData) {
+                if (data.providerId == "google.com") {
+                    updatePasswordItem?.isEnabled = false
+                    forgotPasswordItem?.isEnabled = false
+                }
+            }
+        }
+    }
+
+    private fun setChatSection() {
+        val showChatTime = findPreference<SwitchPreferenceCompat>("show_chat_time")
+        val sharedPreferences = activity?.getSharedPreferences("codesquare_shared", AppCompatActivity.MODE_PRIVATE)
+        showChatTime?.setOnPreferenceChangeListener { preference, newValue ->
+            val editor = sharedPreferences?.edit()
+            if (newValue is Boolean) {
+                editor?.putBoolean("show_chat_time", newValue)
+                editor?.apply()
+            }
+            true
+        }
+
+        showChatTime?.setDefaultValue(sharedPreferences?.getBoolean("show_chat_time", true))
+
+    }
+
+    private fun setOtherFunctions() {
         val logoutItem = findPreference<Preference>("logout")
         logoutItem?.setOnPreferenceClickListener {
             MaterialAlertDialogBuilder(requireContext())
@@ -187,22 +228,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        val providerData = Firebase.auth.currentUser?.providerData
-        if (providerData != null) {
-            for (data in providerData) {
-                if (data.providerId == "google.com") {
-                    updatePasswordItem?.isEnabled = false
-                    forgotPasswordItem?.isEnabled = false
-                }
-            }
-        }
-
         val feedbackItem = findPreference<Preference>("feedback")
         feedbackItem?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_feedbackFragment)
             true
         }
-
     }
 
     companion object {

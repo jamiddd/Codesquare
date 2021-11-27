@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [Project::class, User::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class], version = 3)
+@Database(entities = [Project::class, User::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class], version = 4)
 @TypeConverters(Converters::class)
 abstract class CodesquareDatabase: RoomDatabase() {
 

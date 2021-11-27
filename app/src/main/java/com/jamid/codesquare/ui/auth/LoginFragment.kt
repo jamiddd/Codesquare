@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.auth
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.transition.ChangeBounds
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
@@ -43,9 +45,16 @@ class LoginFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentLoginBinding.inflate(inflater)
+        sharedElementEnterTransition = ChangeBounds().apply {
+            duration = 250
+        }
+        sharedElementReturnTransition= ChangeBounds().apply {
+            duration = 250
+        }
         return binding.root
     }
 
+    @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
@@ -109,12 +118,16 @@ class LoginFragment: Fragment() {
 
         }
 
-       /* Firebase.auth.addAuthStateListener {
-            if (it.currentUser != null) {
-                dialog?.dismiss()
-                findNavController().navigate(R.id.action_loginFragment_to_homeFragment, null, slideRightNavOptions())
+        var initOnce = true
+
+        viewModel.currentUser.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (initOnce) {
+                    findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
+                    initOnce = false
+                }
             }
-        }*/
+        }
 
         viewModel.currentError.observe(viewLifecycleOwner) {
             if (it != null) {
@@ -174,7 +187,6 @@ class LoginFragment: Fragment() {
                         if (it1.isSuccessful && it1.result.exists()) {
                             val localUser = it1.result.toObject(User::class.java)!!
                             viewModel.insertCurrentUser(localUser)
-//                            viewModel.getChannelUsers(localUser.chatChannels)
                         } else {
                             Firebase.auth.signOut()
                             viewModel.setCurrentError(it.exception)

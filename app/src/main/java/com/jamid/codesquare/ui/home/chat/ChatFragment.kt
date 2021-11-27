@@ -26,17 +26,17 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialSharedAxis
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.*
-import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.Metadata
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ChatBottomLayoutBinding
 import com.jamid.codesquare.databinding.ChatOptionLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -48,6 +48,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
     private lateinit var chatChannel: ChatChannel
     private var modeChanged = false
     private var chatsOptionsBinding: ChatOptionLayoutBinding? = null
+    private val imagesDir: File? by lazy { requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES) }
+    private val documentsDir: File? by lazy { requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -89,12 +91,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         chatChannelId = chatChannel.chatChannelId
         recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
 
-        val externalImagesDir =
-            requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
-        val externalDocumentsDir = requireActivity().getExternalFilesDir(
-            Environment.DIRECTORY_DOCUMENTS
-        )!!
-
         recyclerView?.show()
         noItemsText?.hide()
 
@@ -105,8 +101,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         getItems {
             viewModel.getPagedMessages(
                 chatChannel,
-                externalImagesDir,
-                externalDocumentsDir,
+                imagesDir!!,
+                documentsDir!!,
                 chatChannelId,
                 query
             )
@@ -149,6 +145,50 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 }
             }
         })
+
+
+        getLatestMessages(chatChannel)
+
+        // listening for new contributors
+        viewModel.getCurrentChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) {
+            if (it != null) {
+                viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+                    if (chatChannel.contributors != it.contributors) {
+                        for (c in it.contributors) {
+                            val contributor =  viewModel.getLocalUser(c)
+                            if (contributor == null) {
+                                viewModel.getOtherUser(c) { it1 ->
+                                    if (it1.isSuccessful && it1.result.exists()) {
+                                        viewModel.insertUser(it1.result.toObject(User::class.java)!!)
+                                    } else {
+                                        Log.e(TAG, it1.exception?.localizedMessage.orEmpty())
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    private fun getLatestMessages(chatChannel: ChatChannel) = lifecycleScope.launch (Dispatchers.IO) {
+        val lastMessage = viewModel.getLastMessageForChannel(chatChannelId)
+        if (lastMessage != null) {
+            when (val result = ChatInterface.getLatestMessages(chatChannelId, lastMessage)) {
+                is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
+                is Result.Success -> {
+                    val data = result.data
+                    if (!data.isEmpty) {
+                        val messages = data.toObjects(Message::class.java)
+                        if (imagesDir != null && documentsDir != null)
+                            viewModel.insertChannelMessages(chatChannel, imagesDir!!, documentsDir!!, messages)
+                    }
+                }
+            }
+        }
+
     }
 
     @SuppressLint("InflateParams")
@@ -431,7 +471,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         }
 
     }
-
 
     private fun setSendButton(chatChannelId: String, chatInputLayout: EditText, sendButton: Button) {
 

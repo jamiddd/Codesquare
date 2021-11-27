@@ -6,6 +6,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.HOME_PAGE_COUNT
 import com.jamid.codesquare.ui.home.chat.ChatListFragment2
+import com.jamid.codesquare.ui.home.explore.ExploreFragment
 import com.jamid.codesquare.ui.home.feed.FeedFragment
 
 class MainViewPagerAdapter(activity: FragmentActivity): FragmentStateAdapter(activity) {
@@ -14,10 +15,10 @@ class MainViewPagerAdapter(activity: FragmentActivity): FragmentStateAdapter(act
 
     @ExperimentalPagingApi
     override fun createFragment(position: Int): Fragment {
-        return if (position == 0) {
-            FeedFragment.newInstance()
-        } else {
-            ChatListFragment2()
+        return when (position) {
+            0 -> FeedFragment.newInstance()
+            1 -> ChatListFragment2()
+            else -> throw IllegalArgumentException("Doesn't belong to this pager")
         }
     }
 

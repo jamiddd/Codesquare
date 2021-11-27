@@ -8,11 +8,10 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_save_btn"
-        style="@style/AppTheme.Button.IconOnly"
+        style="@style/AppTheme.ProjectItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/right_most_btn"
-        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/save_selector"
         app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
         app:layout_constraintStart_toEndOf="@+id/project_comment_btn"
@@ -116,13 +115,12 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_like_btn"
-        style="@style/AppTheme.Button.IconOnly"
+        style="@style/AppTheme.ProjectItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:background="@drawable/left_most_btn"
-        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/like_selector"
         app:layout_constraintBottom_toTopOf="@+id/project_time"
         app:layout_constraintStart_toStartOf="parent"
@@ -130,11 +128,10 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_comment_btn"
-        style="@style/AppTheme.Button.IconOnly"
+        style="@style/AppTheme.ProjectItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/middle_btn"
-        app:backgroundTint="@color/lightest_grey"
         app:icon="@drawable/ic_round_chat_bubble_outline_24"
         app:layout_constraintBottom_toBottomOf="@+id/project_like_btn"
         app:layout_constraintStart_toEndOf="@+id/project_like_btn"

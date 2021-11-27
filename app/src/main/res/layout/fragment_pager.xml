@@ -28,6 +28,7 @@
 
     <ImageView
         android:id="@+id/no_data_image"
+        style="@style/AppTheme.EmptyScreenImage"
         android:layout_width="wrap_content"
         android:layout_height="250dp"
         android:visibility="gone"
@@ -36,7 +37,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"
-        app:srcCompat="@drawable/ic_empty"
         tools:visibility="visible" />
 
     <TextView

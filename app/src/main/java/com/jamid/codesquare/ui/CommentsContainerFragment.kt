@@ -124,7 +124,6 @@ class CommentsContainerFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         viewModel.replyToContent.postValue(null)
-        viewModel.currentCommentChannelIds.pop()
     }
 
     companion object {

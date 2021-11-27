@@ -38,7 +38,7 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
         when (item.itemId) {
             R.id.clear_notifications -> {
                 Firebase.firestore.collection("users")
-                    .document(viewModel.currentUser.value!!.id)
+                    .document(viewModel.currentUser.value?.id.orEmpty())
                     .collection("notifications")
                     .limit(50)
                     .get()
@@ -69,24 +69,31 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val currentUser = viewModel.currentUser.value!!
-        val query = Firebase.firestore.collection("users")
-            .document(currentUser.id)
-            .collection("notifications")
+        val currentUser = viewModel.currentUser.value
 
-        getItems {
-            viewModel.getNotifications(query)
+        if (currentUser != null) {
+
+            Log.d(TAG, currentUser.id)
+
+            val query = Firebase.firestore.collection("users")
+                .document(currentUser.id)
+                .collection("notifications")
+
+            getItems {
+                viewModel.getNotifications(currentUser.id, query)
+            }
+
+            recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+
+            noItemsText?.text = "No notifications at the moment"
+
+            /*isEmpty.observe(viewLifecycleOwner) {
+                val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+                toolbar?.menu?.getItem(0)?.isVisible = !it
+            }*/
+        } else {
+            Log.d(TAG, "User is null")
         }
-
-        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-
-        noItemsText?.text = "No notifications at the moment"
-
-        isEmpty.observe(viewLifecycleOwner) {
-            val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-            toolbar?.menu?.getItem(0)?.isVisible = !it
-        }
-
     }
 
     override fun getAdapter(): PagingDataAdapter<Notification, NotificationViewHolder> {

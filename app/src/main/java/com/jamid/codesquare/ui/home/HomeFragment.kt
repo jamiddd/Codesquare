@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.home
 
+import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
@@ -32,6 +33,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.net.URL
+import com.google.android.material.badge.BadgeUtils
+
+import com.google.android.material.badge.BadgeDrawable
+
+import androidx.annotation.NonNull
+import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
+import com.google.android.material.bottomnavigation.BottomNavigationView
+
 
 class HomeFragment: Fragment() {
 
@@ -42,8 +51,8 @@ class HomeFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        /*exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)*/
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -52,13 +61,17 @@ class HomeFragment: Fragment() {
         val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
         if (viewModel.currentUserBitmap != null) {
             val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
-            toolbar.menu.getItem(2).icon = d
+            toolbar.menu.getItem(3).icon = d
         }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
+            R.id.notifications -> {
+                findNavController().navigate(R.id.action_homeFragment_to_notificationFragment, null)
+                true
+            }
             R.id.search -> {
                 findNavController().navigate(R.id.action_homeFragment_to_searchFragment, null)
                 true
@@ -84,36 +97,20 @@ class HomeFragment: Fragment() {
         return binding.root
     }
 
+    @SuppressLint("UnsafeOptInUsageError")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         val activity = requireActivity()
-        val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
 
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
-        binding.homeViewPager.isUserInputEnabled = false
-
-        TabLayoutMediator(tabLayout, binding.homeViewPager) { tab, pos ->
-            if (pos == 0) {
-                tab.text = "Projects"
-            } else {
-                tab.text = "Chats"
+        val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
+        TabLayoutMediator(tabLayout, binding.homeViewPager) { a, b ->
+            when (b) {
+                0 -> a.text = "Projects"
+                1 -> a.text = "Chats"
             }
         }.attach()
-
-        viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
-            if (currentUser != null) {
-                val photo = currentUser.photo
-                if (photo != null) {
-                    setCurrentUserPhotoAsDrawable(photo)
-                } else {
-                    Log.d(TAG, "Tried setting up image but current user does not have image")
-                }
-            } else {
-                Log.d(TAG, "Waiting to check if the user will be null in 5 seconds, if it is null then the control should return to auth")
-                job?.cancel()
-                job = checkIfUserStillNull()
-            }
-        }
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             requireActivity().finish()
@@ -129,35 +126,6 @@ class HomeFragment: Fragment() {
         }
     }
 
-    private fun setCurrentUserPhotoAsDrawable(photo: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-        val currentSavedBitmap = viewModel.currentUserBitmap
-        if (currentSavedBitmap != null) {
-            val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
-            setBitmapDrawable(d)
-        } else {
-            try {
-                val isNetworkAvailable = viewModel.isNetworkAvailable.value
-                if (isNetworkAvailable != null && isNetworkAvailable) {
-                    val url = URL(photo)
-                    val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                    viewModel.currentUserBitmap = getCircleBitmap(image)
-                    val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
 
-                    activity?.runOnUiThread {
-                        setBitmapDrawable(d)
-                    }
-                }
-            } catch (e: IOException) {
-                viewModel.setCurrentError(e)
-            }
-        }
-    }
-
-    private fun setBitmapDrawable(drawable: BitmapDrawable) {
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-        if (toolbar.menu.size() > 1) {
-            toolbar.menu.getItem(2).icon = drawable
-        }
-    }
 
 }

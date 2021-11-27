@@ -19,6 +19,8 @@ import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentSplashBinding
+import com.jamid.codesquare.ui.home.chat.ChatInterface
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -38,21 +40,6 @@ class SplashFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        /*if (Firebase.auth.currentUser != null) {
-            Firebase.firestore.collection("projects")
-                .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                .limit(10)
-                .get()
-                .addOnCompleteListener {
-                    if (!it.isSuccessful) {
-                        Log.e(TAG, "Something went wrong when prefetching projects")
-                    } else {
-                        val projects = it.result.toObjects(Project::class.java)
-                        viewModel.insertProjects(projects)
-                    }
-                }
-        }*/
     }
 
     companion object {

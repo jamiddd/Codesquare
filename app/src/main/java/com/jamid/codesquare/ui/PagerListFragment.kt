@@ -9,6 +9,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -113,6 +114,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
             it.setOnRefreshListener {
                 pagingAdapter.refresh()
             }
+
+            it.setColorSchemeColors(requireContext().accentColor())
+            it.setProgressViewOffset(false, convertDpToPx(0), convertDpToPx(56))
         }
 
     }

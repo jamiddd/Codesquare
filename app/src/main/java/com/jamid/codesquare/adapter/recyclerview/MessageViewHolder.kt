@@ -1,6 +1,7 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.annotation.SuppressLint
+import android.content.Context.MODE_PRIVATE
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
@@ -12,6 +13,7 @@ import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
@@ -73,7 +75,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         if (message != null) {
             mMessage = message
             isCurrentUserMessage = message.senderId == currentUserId
-            ViewCompat.setTransitionName(view, message.content)
 
             if (isCurrentUserMessage) {
                 when (viewType) {
@@ -196,6 +197,15 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaRight.text = timeText
                 } else {
                     messageMetaRight.text = getTextForTime(message.createdAt) + suffix
+                }
+
+
+                val sharedPref = view.context.getSharedPreferences("codesquare_shared", MODE_PRIVATE)
+
+                if (sharedPref != null) {
+                    if (sharedPref.contains("show_chat_time")) {
+                        messageMetaRight.isVisible = sharedPref.getBoolean("show_chat_time", true)
+                    }
                 }
 
                 if (message.replyTo != null) {
@@ -352,6 +362,14 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     messageMetaLeft.text = nameTimeText
                 } else {
                     messageMetaLeft.text = message.sender.name + " • " + getTextForTime(message.createdAt)
+                }
+
+                val sharedPref = view.context.getSharedPreferences("codesquare_shared", MODE_PRIVATE)
+
+                if (sharedPref != null) {
+                    if (sharedPref.contains("show_chat_time")) {
+                        messageMetaLeft.isVisible = sharedPref.getBoolean("show_chat_time", true)
+                    }
                 }
 
                 if (message.replyTo != null) {
@@ -566,6 +584,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private fun onMediaImageMessageLoaded(parentView: ViewGroup, message: Message, isLeft: Boolean = true) {
         val progress = parentView.findViewById<ProgressBar>(R.id.message_img_progress)
         val imageView = parentView.findViewById<SimpleDraweeView>(R.id.message_image)
+
+        ViewCompat.setTransitionName(imageView, message.content)
 
         val forwardBtn: Button = if (isLeft) {
             leftImage = imageView
@@ -823,7 +843,11 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             mMessage!!.state = 1
             messageListener.onMessageStateChanged(mMessage!!)
         } else {
-            messageListener.onImageClick(view, mMessage!!, layoutPosition, mMessage!!.content)
+            if (leftImage != null) {
+                messageListener.onImageClick(leftImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+            } else {
+                messageListener.onImageClick(rightImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+            }
         }
     }
 

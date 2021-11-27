@@ -93,7 +93,7 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
 
             content.text = comment.content
 
-            time.text = getTextForTime(comment.createdAt)
+            time.text = "• " + getTextForTime(comment.createdAt)
 
             setLikeAndReplies(comment)
 

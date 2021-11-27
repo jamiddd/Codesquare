@@ -25,6 +25,19 @@
 
     </style>
 
+    <style name="AppTheme.GenericBackground">
+        <item name="background">@color/white</item>
+        <item name="android:background">@color/white</item>
+        <item name="backgroundTint">@color/white</item>
+        <item name="android:backgroundTint">@color/white</item>
+    </style>
+
+
+    <style name="AppTheme.ProjectItemStyledBtn" parent="AppTheme.Button.IconOnly">
+        <item name="backgroundTint">@color/lightest_grey</item>
+        <item name="android:backgroundTint">@color/lightest_grey</item>
+    </style>
+
     <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
         <item name="commitIcon">@drawable/ic_round_arrow_forward_24</item>
         <item name="android:commitIcon">@drawable/ic_round_arrow_forward_24</item>
@@ -69,6 +82,29 @@
     <style name="ThemeOverlay.App.TabLayout" parent="">
         <item name="colorSurface">@color/white</item>
         <item name="colorOnSurface">@color/black</item>
+    </style>
+
+    <style name="AppTheme.EmptyScreenImage">
+        <item name="srcCompat">@drawable/ic_empty</item>
+    </style>
+
+    <style name="AppTheme.ReplyLayout">
+        <item name="background">@drawable/message_body</item>
+        <item name="android:background">@drawable/message_body</item>
+        <item name="backgroundTint">@color/lightest_blue</item>
+        <item name="android:backgroundTint">@color/lightest_blue</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonRight">
+        <item name="backgroundTint">@color/lightest_grey</item>
+        <item name="android:backgroundTint">@color/lightest_grey</item>
+    </style>
+
+    <style name="AppTheme.ChatBottomText">
+        <item name="background">@drawable/chat_edittext_background</item>
+        <item name="android:background">@drawable/chat_edittext_background</item>
+        <item name="backgroundTint">@color/lightest_grey</item>
+        <item name="android:backgroundTint">@color/lightest_grey</item>
     </style>
 
     <style name="AppTheme.TabLayout" parent="Widget.MaterialComponents.TabLayout">

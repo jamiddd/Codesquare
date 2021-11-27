@@ -9,7 +9,6 @@
         android:id="@+id/fullscreen_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/lightest_grey"
         android:contentDescription="@string/generic_image_desc"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -18,9 +17,9 @@
 
     <LinearLayout
         android:id="@+id/bottom_info_view"
+        style="@style/AppTheme.GenericBackground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#CCFFFFFF"
         android:orientation="vertical"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"

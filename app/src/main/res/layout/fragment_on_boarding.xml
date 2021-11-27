@@ -16,6 +16,7 @@
 
     <androidx.cardview.widget.CardView
         android:id="@+id/on_boarding_bottom_action"
+        style="@style/AppTheme.GenericBackground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:cardElevation="12dp"
@@ -44,6 +45,7 @@
 
             <com.google.android.material.tabs.TabLayout
                 android:id="@+id/on_boarding_tabs"
+                style="@style/AppTheme.GenericBackground"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

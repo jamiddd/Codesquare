@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
+import androidx.transition.ChangeBounds
 import androidx.transition.TransitionInflater
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.controller.ControllerListener
@@ -33,7 +34,13 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        postponeEnterTransition()
         sharedElementEnterTransition = MaterialContainerTransform().apply {
+            duration = 250
+            scrimColor = Color.TRANSPARENT
+        }
+        sharedElementReturnTransition = MaterialContainerTransform().apply {
+            duration = 250
             scrimColor = Color.TRANSPARENT
         }
     }
@@ -49,8 +56,6 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        postponeEnterTransition()
 
         val image = arguments?.getString("fullscreenImage") ?: return
         val transitionName = arguments?.getString("transitionName") ?: return
@@ -112,7 +117,9 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
 
         } else {
             appbar.slideReset()
-            binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
+            if (!isNightMode()) {
+                binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
+            }
 
             binding.bottomInfoView.slideReset()
 
