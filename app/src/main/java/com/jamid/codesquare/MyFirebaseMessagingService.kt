@@ -30,11 +30,22 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
 
         val intent = Intent(NOTIFICATION_INTENT)
 
-        intent.putExtra(ARG_NOTIFICATION_TITLE, remoteMessage.notification?.title)
-        intent.putExtra(ARG_NOTIFICATION_BODY, remoteMessage.notification?.body)
+        if (remoteMessage.data.isNotEmpty()) {
+            val senderId = remoteMessage.data["senderId"]
+            if (senderId != null) {
+                // don't do anything
+            } else {
+                intent.putExtra(ARG_NOTIFICATION_TITLE, remoteMessage.notification?.title)
+                intent.putExtra(ARG_NOTIFICATION_BODY, remoteMessage.notification?.body)
 
-        LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+                LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+            }
+        } else {
+            intent.putExtra(ARG_NOTIFICATION_TITLE, remoteMessage.notification?.title)
+            intent.putExtra(ARG_NOTIFICATION_BODY, remoteMessage.notification?.body)
 
+            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+        }
     }
 
 

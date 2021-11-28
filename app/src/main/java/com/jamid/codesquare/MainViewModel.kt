@@ -516,7 +516,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     private fun onAccept(project: Project, projectRequest: ProjectRequest) {
         val notification = NotificationProvider.createNotification(project, projectRequest.senderId, NOTIFICATION_ACCEPT)
-        FireUtility.acceptProjectRequest(project, projectRequest) {
+        FireUtility.acceptProjectRequest(project, projectRequest, notification) {
             if (it.isSuccessful) {
                 postAcceptRequest(project, projectRequest, notification)
             } else {
@@ -918,12 +918,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     insertMessages(imagesDir, documentsDir, firstTimeMessages)
                 }
             }
-
-
-            val lastMessage = messages.first()
-            chatChannel.lastMessage = lastMessage
-            repo.insertChatChannel(chatChannel)
-
         }
     }
 
@@ -1041,13 +1035,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         if (chatChannel != null) {
             FireUtility.updateReadList(chatChannel, currentUser, message) {
                 if (it.isSuccessful) {
+
                     val newList = message.readList.addItemToList(currentUser.id)
                     message.readList = newList
-
-                    if (chatChannel.lastMessage!!.messageId == message.messageId) {
-                        chatChannel.lastMessage = message
-                        insertChatChannelsWithoutProcessing(listOf(chatChannel))
-                    }
 
                     insertMessages(imagesDir, documentsDir, listOf(message))
                 } else {

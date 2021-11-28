@@ -342,17 +342,20 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
                 if (type == "image") {
                     return await this.sendNotificationToTopic(chatChannelId, {
                         title: projectTitle,
-                        content: senderName + ": Document"
+                        content: senderName + ": Document",
+                        senderId: senderId
                     })
                 } else if (type == "document") {
                     return await this.sendNotificationToTopic(chatChannelId, {
                         title: projectTitle,
-                        content: senderName + ": Image"
+                        content: senderName + ": Image",
+                        senderId: senderId
                     });
                 } else {
                     return await this.sendNotificationToTopic(chatChannelId, {
                         title: projectTitle,
-                        content: senderName + ": " + snap.get("content") 
+                        content: senderName + ": " + snap.get("content"),
+                        senderId: senderId
                     });
                 }
             }
@@ -402,7 +405,8 @@ exports.sendNotificationToTopic = async (topic, data) => {
 			  sound: 'default'
 			},
 			data: {
-				image: data.img
+				image: data.img,
+                senderId: data.senderId
 			}
 		};
 	} else {
@@ -411,7 +415,10 @@ exports.sendNotificationToTopic = async (topic, data) => {
 			  title: notificationTitle,
 			  body: msg,
 			  sound: 'default'
-			}
+			},
+            data: {
+                senderId: data.senderId
+            }
 		};
 	}
 

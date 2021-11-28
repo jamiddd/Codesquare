@@ -29,10 +29,14 @@ class MainRepository(db: CodesquareDatabase) {
 
     val errors = MutableLiveData<Exception>()
 
-    suspend fun insertProjects(projects: List<Project>) {
+    suspend fun insertProjects(projects: List<Project>, shouldProcess: Boolean = true) {
         val currentUser = currentUser.value
         if (currentUser != null) {
-            projectDao.insert(processProjects(currentUser, projects))
+            if (shouldProcess) {
+                projectDao.insert(processProjects(currentUser, projects))
+            } else {
+                projectDao.insert(projects)
+            }
         }
     }
 
@@ -258,7 +262,7 @@ class MainRepository(db: CodesquareDatabase) {
 
                 when (val undoSendRequestResult = FireUtility.undoJoinProject(currentUser.id, project.id, requestId, notification)) {
                     is Result.Error -> {
-                        Log.e(TAG, undoSendRequestResult.exception.localizedMessage.orEmpty())
+                        Log.e(TAG, "265" + undoSendRequestResult.exception.localizedMessage.orEmpty())
                     }
                     is Result.Success -> {
                         if (notification != null) {
@@ -273,6 +277,12 @@ class MainRepository(db: CodesquareDatabase) {
                         requestsList.remove(requestId)
                         project.requests = requestsList
 
+                        insertCurrentUser(currentUser)
+
+                        project.isRequested = false
+
+                        insertProjectsWithoutProcessing(listOf(project))
+
                         projectRequestDao.deleteProjectRequest(requestId)
                     }
                 }
@@ -283,7 +293,7 @@ class MainRepository(db: CodesquareDatabase) {
                 // join project
                 when (val sendRequestResult = FireUtility.joinProject(currentUser, project, notification)) {
                     is Result.Error -> {
-                        Log.e(TAG, sendRequestResult.exception.localizedMessage.orEmpty())
+                        Log.e(TAG, "296 -" + sendRequestResult.exception.localizedMessage.orEmpty())
                     }
                     is Result.Success -> {
                         val projectRequest = sendRequestResult.data
@@ -300,13 +310,19 @@ class MainRepository(db: CodesquareDatabase) {
 
                         insertCurrentUser(currentUser)
 
-                        insertProjects(listOf(project))
+                        project.isRequested = true
+
+                        insertProjectsWithoutProcessing(listOf(project))
 
                         projectRequestDao.insert(sendRequestResult.data)
                     }
                 }
             }
         }
+    }
+
+    private suspend fun insertProjectsWithoutProcessing(projects: List<Project>) {
+        insertProjects(projects, false)
     }
 
     suspend fun insertProjectRequests(projectRequests: List<ProjectRequest>) {

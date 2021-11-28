@@ -47,6 +47,9 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
     private val saveBtn: Button = view.findViewById(R.id.project_save_btn)
     private val imagesCounter: TextView = view.findViewById(R.id.project_images_counter)
     private val time: TextView = view.findViewById(R.id.project_time)
+    private val leftBtn: Button = view.findViewById(R.id.left_btn)
+    private val rightBtn: Button = view.findViewById(R.id.right_btn)
+
     var currentImagePosition = 0
     var totalImagesCount = 0
     private lateinit var mDetector: GestureDetectorCompat
@@ -196,6 +199,32 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
                         currentImagePosition = pos
                         val counterText = "${pos + 1}/$imagesCount"
                         imagesCounter.text = counterText
+
+                        rightBtn.setOnClickListener {
+                            imagesRecycler.smoothScrollToPosition(pos + 1)
+                        }
+
+                        leftBtn.setOnClickListener {
+                            imagesRecycler.smoothScrollToPosition(pos - 1)
+                        }
+
+                        if (imagesCount == 1) {
+                            leftBtn.hide()
+                            rightBtn.hide()
+                            imagesCounter.hide()
+                        } else {
+                            if (pos == 0) {
+                                leftBtn.hide()
+                            } else {
+                                leftBtn.show()
+                            }
+
+                            if (pos == imagesCount - 1) {
+                                rightBtn.hide()
+                            } else {
+                                rightBtn.show()
+                            }
+                        }
                     }
                 }
             })

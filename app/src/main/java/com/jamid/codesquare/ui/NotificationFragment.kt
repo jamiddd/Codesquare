@@ -87,10 +87,14 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
 
             noItemsText?.text = "No notifications at the moment"
 
-            /*isEmpty.observe(viewLifecycleOwner) {
+            isEmpty.observe(viewLifecycleOwner) {
                 val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-                toolbar?.menu?.getItem(0)?.isVisible = !it
-            }*/
+                if (toolbar != null) {
+                    if (toolbar.menu.size() > 0) {
+                        toolbar.menu.getItem(0).isVisible = !it
+                    }
+                }
+            }
         } else {
             Log.d(TAG, "User is null")
         }

@@ -34,6 +34,9 @@ class ChatChannelViewHolder(val uid: String, val view: View, private val channel
             channelName.text = chatChannel.projectTitle
 
             val message = chatChannel.lastMessage
+
+            channelTime.text = getTextForTime(chatChannel.updatedAt)
+
             if (message != null) {
                 val content = when (message.type) {
                     image -> {
@@ -47,30 +50,28 @@ class ChatChannelViewHolder(val uid: String, val view: View, private val channel
                     }
                 }
 
-                Log.d(TAG, "Current User ID -> $uid and SenderId -> ${message.senderId}")
-                Log.d(TAG, "Read List -> ${message.readList}")
-
                 if (message.senderId != uid) {
-
 
                     val lastMessageText = "${message.sender.name}: $content"
                     if (message.readList.contains(uid)) {
-
                         channelLastMessage.text = lastMessageText
+                        channelTime.text = getTextForTime(chatChannel.updatedAt)
+                        channelTime.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0)
                     } else {
                         val sp = SpannableString(lastMessageText)
                         sp.setSpan(StyleSpan(Typeface.BOLD), 0, lastMessageText.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
                         channelLastMessage.text = sp
+                        channelTime.text = ""
+                        channelTime.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_baseline_full_moon_24, 0)
                     }
                 } else {
                     val lastMessageText = "You: $content"
                     channelLastMessage.text = lastMessageText
+
                 }
             } else {
                 channelLastMessage.text = "No messages"
             }
-
-            channelTime.text = getTextForTime(chatChannel.updatedAt)
 
             view.setOnClickListener {
                 channelListener.onChannelClick(chatChannel)

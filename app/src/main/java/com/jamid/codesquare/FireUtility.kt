@@ -308,7 +308,16 @@ object FireUtility {
             val batch = Firebase.firestore.batch()
 
             if (notification.senderId != notification.receiverId) {
-                batch.set(notificationRef, notification)
+                Firebase.firestore.collection("users").document(currentUser.id)
+                    .collection("notifications")
+                    .whereEqualTo("content", notification.content)
+                    .get()
+                    .addOnSuccessListener {
+                        if (it.isEmpty) {
+                            notificationRef.set(notification)
+                        }
+                    }
+//                batch.set(notificationRef, notification)
             }
 
             batch.update(projectRef, "likes", FieldValue.increment(1))
@@ -418,7 +427,17 @@ object FireUtility {
             batch.set(projectRequestRef, projectRequest)
 
             // sending a notification along with it
-            batch.set(notificationRef, notification)
+            Firebase.firestore.collection("users")
+                .document(currentUser.id)
+                .collection("notifications")
+                .whereEqualTo("content", notification.content)
+                .get()
+                .addOnSuccessListener {
+                    if (it.isEmpty) {
+                        notificationRef.set(notification)
+                    }
+                }
+//            batch.set(notificationRef, notification)
 
             // update the current user
             batch.update(currentUserRef, userChanges)
@@ -481,7 +500,7 @@ object FireUtility {
         }
     }
 
-    fun acceptProjectRequest(project: Project, projectRequest: ProjectRequest, onComplete: (task: Task<Void>) -> Unit) {
+    fun acceptProjectRequest(project: Project, projectRequest: ProjectRequest, notification: Notification, onComplete: (task: Task<Void>) -> Unit) {
         val batch = Firebase.firestore.batch()
 
         val projectRef = Firebase.firestore.collection("projects").document(projectRequest.projectId)
@@ -505,6 +524,22 @@ object FireUtility {
             "projectRequests" to FieldValue.arrayRemove(projectRequest.projectId),
             "chatChannels" to FieldValue.arrayUnion(project.chatChannel)
         )
+
+        val notificationRef = Firebase.firestore.collection("users")
+            .document(notification.receiverId)
+            .collection("notifications")
+            .document(notification.id)
+
+        Firebase.firestore.collection("users")
+            .document(notification.receiverId)
+            .collection("notifications")
+            .whereEqualTo("content", notification.content)
+            .get()
+            .addOnSuccessListener {
+                if (it.isEmpty) {
+                    notificationRef.set(notification)
+                }
+            }
 
         batch.update(projectRef, projectChanges)
         batch.update(chatChannelRef, chatChannelChanges)
@@ -1189,7 +1224,7 @@ object FireUtility {
             batch.update(Firebase.firestore.collection("chatChannels")
                 .document(chatChannel.chatChannelId),
                     mapOf(
-                        "lastMessage" to message
+                        "lastMessage.readList" to FieldValue.arrayUnion(currentUser.id)
                     )
             )
         }

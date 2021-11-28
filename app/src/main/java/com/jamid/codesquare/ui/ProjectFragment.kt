@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
@@ -138,25 +139,10 @@ class ProjectFragment: Fragment() {
 
         setCommentLayout()
 
-        joinBtn.setOnClickListener {
-            if (joinBtn.text == "Join") {
-                joinBtn.text = "Undo"
-                joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
-            } else {
-                joinBtn.text = "Join"
-                joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
-            }
-            projectClickListener.onProjectJoinClick(project.copy())
-        }
-
         if (project.isMadeByMe) {
             joinBtn.slideDown(convertDpToPx(100).toFloat())
         }
 
-        if (project.isRequested) {
-            joinBtn.text = "Undo"
-            joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
-        }
 
         if (project.isCollaboration) {
             joinBtn.slideDown(convertDpToPx(100).toFloat())
@@ -193,11 +179,11 @@ class ProjectFragment: Fragment() {
             projectClickListener.onProjectCommentClick(project)
         }
 
-        setProjectObserver()
+        setProjectObserver(joinBtn)
 
     }
 
-    private fun setProjectObserver() = viewLifecycleOwner.lifecycleScope.launch {
+    private fun setProjectObserver(joinBtn: MaterialButton) = viewLifecycleOwner.lifecycleScope.launch {
         delay(1000)
         viewModel.getLiveProjectById(project.id).observe(viewLifecycleOwner) {
             if (it != null) {
@@ -210,6 +196,22 @@ class ProjectFragment: Fragment() {
                 if (project.isSaved != it.isSaved) {
                     project.isSaved = it.isSaved
                     setSaveButton()
+                }
+
+                if (project.isRequested) {
+                    joinBtn.text = "Undo"
+                    joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
+                }
+
+                joinBtn.setOnClickListener {
+                    if (joinBtn.text == "Join") {
+                        joinBtn.text = "Undo"
+                        joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
+                    } else {
+                        joinBtn.text = "Join"
+                        joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+                    }
+                    projectClickListener.onProjectJoinClick(project.copy())
                 }
 
             }
