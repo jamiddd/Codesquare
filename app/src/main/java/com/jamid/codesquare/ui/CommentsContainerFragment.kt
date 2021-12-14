@@ -5,14 +5,11 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.text.SpannableString
 import android.text.style.StyleSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.navArgs
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Project
@@ -90,7 +87,7 @@ class CommentsContainerFragment: Fragment() {
 
                 val content = binding.commentInputLayout.text.toString()
 
-                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, replyComment.postTitle)
+                val comment = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser, false, replyComment.postTitle)
 
                 viewModel.sendComment(comment, replyComment)
 
@@ -107,10 +104,10 @@ class CommentsContainerFragment: Fragment() {
                 val content = binding.commentInputLayout.text.toString()
 
                 if (project != null) {
-                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, project!!.title)
+                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser, false, project!!.name)
                     viewModel.sendComment(comment1, project!!)
                 } else {
-                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, comment!!.postTitle)
+                    val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, project!!.id, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser, false, comment!!.postTitle)
                     viewModel.sendComment(comment1, comment!!)
                 }
 

@@ -45,7 +45,7 @@ class ProjectContributorsFragment: Fragment() {
         val administrators = arguments?.getStringArrayList(ARG_ADMINISTRATORS) ?: emptyList()
         val isLocal = arguments?.getBoolean(ARG_IS_LOCAL) ?: false
 
-        val userAdapter = UserAdapter2(administrators)
+        val userAdapter = UserAdapter2(project.id, project.chatChannel, administrators)
         userAdapter.isGrid = true
 
         binding.contributorsRecycler.apply {

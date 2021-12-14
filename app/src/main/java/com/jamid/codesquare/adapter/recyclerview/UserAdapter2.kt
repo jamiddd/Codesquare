@@ -5,7 +5,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.data.User
 
-class UserAdapter2(private val administrators: List<String>): ListAdapter<User, UserSmallViewHolder>(comparator) {
+class UserAdapter2(private val projectId: String, private val chatChannelId: String, private val administrators: List<String>): ListAdapter<User, UserSmallViewHolder>(comparator) {
 
     var isGrid = false
 
@@ -23,7 +23,7 @@ class UserAdapter2(private val administrators: List<String>): ListAdapter<User, 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserSmallViewHolder {
-        val vh = UserSmallViewHolder.newInstance(parent, administrators)
+        val vh = UserSmallViewHolder.newInstance(parent, projectId, chatChannelId, administrators)
         vh.isGrid = isGrid
         return vh
     }

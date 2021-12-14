@@ -21,6 +21,7 @@ import com.google.android.gms.common.SignInButton
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
+import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -45,12 +46,6 @@ class LoginFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentLoginBinding.inflate(inflater)
-        sharedElementEnterTransition = ChangeBounds().apply {
-            duration = 250
-        }
-        sharedElementReturnTransition= ChangeBounds().apply {
-            duration = 250
-        }
         return binding.root
     }
 
@@ -79,8 +74,6 @@ class LoginFragment: Fragment() {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(activity, gso)
-
-        binding.googleSignInBtn.setSize(SignInButton.SIZE_WIDE)
 
         binding.googleSignInBtn.setOnClickListener {
             signInWithGoogle()
@@ -131,19 +124,17 @@ class LoginFragment: Fragment() {
 
         viewModel.currentError.observe(viewLifecycleOwner) {
             if (it != null) {
-                Log.e(TAG, it.localizedMessage.orEmpty())
+                toast(it.localizedMessage.orEmpty())
             }
         }
 
-
-        val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
-        val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
-
-        inputLayoutBinding.inputTextLayout.hint = "Write your email ..."
-
         binding.forgotPasswordBtn.setOnClickListener {
+            val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+            val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
 
-            MaterialAlertDialogBuilder(activity)
+            inputLayoutBinding.inputTextLayout.hint = "Write your email ..."
+
+            val dialog = MaterialAlertDialogBuilder(activity)
                 .setTitle("Forgot password ? ")
                 .setMessage("We will send you a mail on this address with the link for new password.")
                 .setView(inputLayoutBinding.root)
@@ -165,7 +156,7 @@ class LoginFragment: Fragment() {
                 }.setNegativeButton("Cancel") { a, b ->
                     a.dismiss()
                 }
-                .show()
+            dialog.show()
         }
 
     }

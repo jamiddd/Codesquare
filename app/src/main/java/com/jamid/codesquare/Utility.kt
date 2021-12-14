@@ -28,7 +28,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.ui.auth.CreateAccountFragment
 import java.lang.IllegalStateException
 import java.util.*
@@ -64,9 +63,18 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.collections.HashMap
 import android.content.res.TypedArray
+import android.widget.ProgressBar
+import androidx.appcompat.widget.SearchView
+import androidx.core.view.children
 import androidx.core.view.iterator
 import androidx.viewpager2.widget.ViewPager2
+import com.algolia.search.model.IndexName
+import com.algolia.search.saas.Client
+import com.algolia.search.saas.Index
+import com.algolia.search.saas.IndexQuery
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.jamid.codesquare.data.*
+import com.jamid.codesquare.ui.PreSearchFragment
 
 
 fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
@@ -84,6 +92,7 @@ fun Fragment.getFullScreenHeight(): Int {
     return requireActivity().getFullScreenHeight()
 }
 
+fun getWindowWidth() = Resources.getSystem().displayMetrics.widthPixels
 
 fun View.show() {
     this.visibility = View.VISIBLE
@@ -170,13 +179,13 @@ fun CharSequence?.isValidPassword() =
     !isNullOrEmpty() && Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{4,}\$")
         .matcher(this).matches()
 
-fun showSnack(rootLayout: ViewGroup, msg: String, anchor: View? = null, actionText: String? = null, onAction: (() -> Unit)? = null) {
+fun showSnack(rootLayout: ViewGroup, msg: String, duration: Int = Snackbar.LENGTH_LONG, anchor: View? = null, actionText: String? = null, onAction: (() -> Unit)? = null) {
     val snackBar = if (anchor != null) {
-        Snackbar.make(rootLayout, msg, Snackbar.LENGTH_LONG)
+        Snackbar.make(rootLayout, msg, duration)
             .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
             .setAnchorView(anchor)
     } else {
-        Snackbar.make(rootLayout, msg, Snackbar.LENGTH_LONG)
+        Snackbar.make(rootLayout, msg, duration)
             .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
     }
 
@@ -673,6 +682,102 @@ fun <T: Any> MutableList<T>.removeAtIf(predicate: (T) -> Boolean) {
         }
     }
     this.removeAt(removePos)
+}
+/*
+fun Fragment.search(index: Index, query: String, isProject: Boolean = true, progressBar: ProgressBar? = null, onComplete: (Result<List<SearchQuery>>) -> Unit) {
+    search(index, query, isProject, progressBar, onComplete)
+}*/
+
+fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<SearchQuery>>) -> Unit) {
+    client.multipleQueriesAsync(queries, Client.MultipleQueriesStrategy.NONE) { jsonObject, exc ->
+        if (exc != null) {
+            onComplete(Result.Error(exc))
+            Log.e(TAG, exc.localizedMessage.orEmpty())
+        }
+
+        if (jsonObject != null) {
+            val ss = jsonObject.toString()
+            if (ss.isBlank()) {
+                Log.d(TAG, "JSON object is blank")
+                return@multipleQueriesAsync
+            }
+
+            Log.d(TAG, ss)
+
+            val titles = findValuesForKey("name", ss)
+            val ids = findValuesForKey("objectId", ss)
+            val type = findValuesForKey("type", ss)
+
+            val list = mutableListOf<SearchQuery>()
+
+            for (i in ids.indices) {
+                val t = when (type[i]) {
+                    "project" -> 0
+                    "user" -> 1
+                    else -> -1
+                }
+                list.add(SearchQuery(ids[i], titles[i], System.currentTimeMillis(), t))
+            }
+
+            onComplete(Result.Success(list))
+        }
+    }
+}
+
+fun SearchView.disable() {
+    this.isEnabled = false
+    for (v in this.children) {
+        v.isEnabled = false
+    }
+}
+
+fun SearchView.enable() {
+    this.isEnabled = true
+    for (v in this.children) {
+        v.isEnabled = true
+    }
+}
+
+private fun findValuesForKey(key: String, jsonString: String): List<String> {
+    var index: Int
+    val result = mutableListOf<String>()
+    index = jsonString.indexOf(key, 0, true)
+    Log.d(TAG, "Starting index for key = $key => $index")
+    while (index != -1) {
+        var valueString = ""
+        for (i in (index + key.length + 3) until jsonString.length) {
+            if (jsonString[i] != '\"') {
+                valueString += jsonString[i]
+            } else {
+                break
+            }
+        }
+
+        if (!valueString.contains('=') && valueString.isNotEmpty()) {
+            result.add(valueString)
+        }
+
+        index = jsonString.indexOf(key, index + 1, true)
+    }
+
+    return result
+}
+
+fun processProjects(currentUser: User, projects: List<Project>): List<Project> {
+    for (project in projects) {
+        project.isMadeByMe = project.creator.userId == currentUser.id
+        project.isLiked = currentUser.likedProjects.contains(project.id)
+        project.isSaved = currentUser.savedProjects.contains(project.id)
+
+        val set1 = project.requests.toSet()
+        val set2 = currentUser.projectRequests.toSet()
+        val intersection = set1.intersect(set2)
+
+        project.isRequested = intersection.isNotEmpty()
+        project.isCollaboration = currentUser.collaborations.contains(project.id)
+    }
+
+    return projects
 }
 
 const val TAG = "UtilityTAG"

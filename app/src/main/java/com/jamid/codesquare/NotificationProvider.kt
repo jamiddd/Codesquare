@@ -22,6 +22,8 @@ const val NOTIFICATION_PROJECT_CREATION = 8
 const val NOTIFICATION_COMMENT_CREATION = 9
 const val NOTIFICATION_THREAD_CREATION = 10
 const val NOTIFICATION_JOIN_PROJECT = 11
+const val NOTIFICATION_REMOVE_CONTRIBUTOR = 12
+const val NOTIFICATION_INVITE_PROJECT = 13
 
 
 object NotificationProvider {
@@ -65,7 +67,7 @@ object NotificationProvider {
     fun createNotification(context: Any, receiver: String, type: Int): Notification {
 
         val obj = when (context) {
-            is Project -> Za(context.title, context.id, "project")
+            is Project -> Za(context.name, context.id, "project")
             is Comment -> Za(if (context.postTitle.isBlank()) {"Thread"} else {context.postTitle}, context.commentId, "comment")
             is User -> Za(context.name, context.id, "user")
             else -> throw IllegalArgumentException("context object can only be of type project, comment and user")
@@ -95,6 +97,8 @@ object NotificationProvider {
             NOTIFICATION_COMMENT_CREATION -> "has posted a comment on your project"
             NOTIFICATION_THREAD_CREATION -> "has replied to your comment"
             NOTIFICATION_JOIN_PROJECT -> "has requested to join your project."
+            NOTIFICATION_REMOVE_CONTRIBUTOR -> "have been removed from project."
+            NOTIFICATION_INVITE_PROJECT -> "has requested you to join their project."
             else -> ""
         }
     }

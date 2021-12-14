@@ -12,6 +12,7 @@
     <color name="dark_pink">#D3064C</color>
     <color name="darker_white">#AAA9AA</color>
     <color name="darkest_grey_2">#333</color>
+    <color name="dank_grey">#1a1a1a</color>
     <color name="darkest_grey">#111111</color>
     <color name="very_dark_grey">#555555</color>
     <color name="lightest_grey">#F5F5F5</color>
@@ -19,11 +20,15 @@
     <color name="normal_grey">#BABABA</color>
     <color name="darker_grey">#888888</color>
     <color name="lightest_blue">#E2EBF3</color>
+    <color name="lightest_black">#662A2A2B</color>
     <color name="darkest_blue">#0F62EB</color>
     <color name="darkest_transparent">#66000000</color>
     <color name="lightest_purple">#E4DFEF</color>
     <color name="slight_white">#BFFFFFFF</color>
     <color name="green_light">#DAEFDB</color>
     <color name="green_dark">#19801E</color>
+    <color name="green_dark_night">#2D19801E</color>
     <color name="transparent">#00000000</color>
+    <color name="night_primary_background">#2D3668</color>
+    <color name="faded_white">#C6C6C6</color>
 </resources>

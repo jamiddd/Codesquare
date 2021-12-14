@@ -89,7 +89,7 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/main_primary_action"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="54dp"
         android:layout_gravity="bottom|end"
         android:layout_margin="8dp"
         android:text="Join"

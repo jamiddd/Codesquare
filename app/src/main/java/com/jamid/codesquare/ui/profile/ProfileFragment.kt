@@ -7,8 +7,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.NavOptions
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.android.material.transition.platform.MaterialSharedAxis
@@ -19,6 +22,7 @@ import com.jamid.codesquare.adapter.viewpager.ProfilePagerAdapter
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.databinding.UserInfoLayoutBinding
+import com.jamid.codesquare.ui.ProjectListFragment
 
 @ExperimentalPagingApi
 class ProfileFragment: Fragment() {
@@ -51,9 +55,9 @@ class ProfileFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.log_out -> {
-                Firebase.auth.signOut()
-                viewModel.signOut()
-                findNavController().navigate(R.id.action_profileFragment_to_loginFragment)
+                viewModel.signOut {
+                    Firebase.auth.signOut()
+                }
                 true
             }
             R.id.project_requests -> {
@@ -93,8 +97,7 @@ class ProfileFragment: Fragment() {
 
         val otherUser = arguments?.getParcelable<User>("user")
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, otherUser)
-
-//        binding.profileViewPager.isUserInputEnabled = false
+        (binding.profileViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
         TabLayoutMediator(tabLayout, binding.profileViewPager) { tab, pos ->
             if (pos == 0) {
@@ -174,6 +177,9 @@ class ProfileFragment: Fragment() {
         starsCount.text = starsCountText
 
         if (isCurrentUser) {
+
+            inviteBtn.hide()
+
             profilePrimaryBtn.icon = null
             profilePrimaryBtn.text = "Edit"
             profilePrimaryBtn.setOnClickListener {
@@ -181,7 +187,15 @@ class ProfileFragment: Fragment() {
             }
         } else {
 
+            inviteBtn.show()
             val currentUser = viewModel.currentUser.value!!
+
+            // if the current user does not have any project hide the invite btn
+
+            inviteBtn.setOnClickListener {
+                val frag = ProjectListFragment.newInstance(user)
+                frag.show(requireActivity().supportFragmentManager, "ProjectListFragment")
+            }
 
             profilePrimaryBtn.isSelected = currentUser.likedUsers.contains(user.id)
             profilePrimaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.thumb_selector)
@@ -201,7 +215,7 @@ class ProfileFragment: Fragment() {
                     val starsCountText1 = "$likesCount Stars"
                     starsCount.text = starsCountText1
 
-                    viewModel.dislikeUser(user.id)
+                    viewModel.dislikeUser(user = user)
                 } else {
                     profilePrimaryBtn.isSelected = true
                     profilePrimaryBtn.text = "Dislike"
@@ -210,11 +224,10 @@ class ProfileFragment: Fragment() {
                     val starsCountText1 = "$likesCount Stars"
                     starsCount.text = starsCountText1
 
-                    viewModel.likeUser(user.id)
+                    viewModel.likeUser(user = user)
                 }
             }
         }
-
     }
 
 }

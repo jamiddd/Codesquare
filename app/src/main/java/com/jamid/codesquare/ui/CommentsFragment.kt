@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui
 
+import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.os.Parcelable
 import android.text.SpannableString
@@ -48,6 +49,8 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
 
 //        initTopLayout(title)
 
+        showKeyboard()
+
         initBottomLayout()
     }
 
@@ -79,6 +82,7 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
 
     }*/
 
+    @SuppressLint("InflateParams")
     private fun initBottomLayout() {
 
         val bottomView = layoutInflater.inflate(R.layout.comment_bottom_layout, null, false)
@@ -112,6 +116,10 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
             viewModel.replyToContent.postValue(null)
         }
 
+        binding.pagerItemsRecycler.setPadding(0, 0, 0, convertDpToPx(56))
+
+        bottomBinding.commentInputLayout.requestFocus()
+
         viewModel.replyToContent.observe(viewLifecycleOwner) {
             if (it != null) {
                 val sender = it.sender
@@ -136,7 +144,6 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
             }
         }
 
-
     }
 
     private fun setSendButton(sendBtn: Button, inputLayout: EditText, currentUser: User, replyComment: Comment? = null) {
@@ -145,9 +152,9 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
                 if (inputLayout.text.isNullOrBlank())
                     return@setOnClickListener
 
-                val content = inputLayout.text.toString()
+                val content = inputLayout.text.trim().toString()
 
-                val comment1 = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, replyComment.postTitle)
+                val comment1 = Comment(randomId(), content, currentUser.id, replyComment.commentId, replyComment.projectId, replyComment.threadChannelId, randomId(), 0, 0, replyComment.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser, false, replyComment.postTitle)
 
                 viewModel.sendComment(comment1, replyComment)
 
@@ -161,18 +168,17 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
                 if (inputLayout.text.isNullOrBlank())
                     return@setOnClickListener
 
-                val content = inputLayout.text.toString()
+                val content = inputLayout.text.trim().toString()
 
                 if (project != null) {
-                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, project!!.title)
+                    val comment1 = Comment(randomId(), content, currentUser.id, project!!.id, project!!.id, project!!.commentChannel, randomId(), 0, 0, 0, System.currentTimeMillis(), emptyList(), currentUser, false, project!!.name)
                     viewModel.sendComment(comment1, project!!)
                 } else {
                     if (comment != null){
-                        val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, comment!!.projectId, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser.minify(), false, comment!!.postTitle)
+                        val comment1 = Comment(randomId(), content, currentUser.id, comment!!.commentId, comment!!.projectId, comment!!.threadChannelId, randomId(), 0, 0, comment!!.commentLevel + 1, System.currentTimeMillis(), emptyList(), currentUser, false, comment!!.postTitle)
                         viewModel.sendComment(comment1, comment!!)
                     }
                 }
-
 
                 inputLayout.text.clear()
 
@@ -227,6 +233,10 @@ class CommentsFragment: PagerListFragment<Comment, CommentViewHolder>(), Comment
 
     override fun onReportClick(comment: Comment) {
         findNavController().navigate(R.id.action_commentsFragment_to_reportFragment, bundleOf("contextObject" to comment))
+    }
+
+    override fun onCommentUserClick(user: User) {
+        findNavController().navigate(R.id.action_commentsFragment_to_profileFragment, bundleOf("user" to user))
     }
 
     @ExperimentalPagingApi

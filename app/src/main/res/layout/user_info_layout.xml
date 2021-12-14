@@ -130,9 +130,27 @@
         android:id="@+id/profile_primary_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:textAllCaps="false"
         app:layout_constraintBottom_toTopOf="@+id/user_about"
-        app:layout_constraintEnd_toEndOf="@+id/user_tag"
-        app:layout_constraintStart_toStartOf="@+id/user_tag"
+        app:layout_constraintEnd_toStartOf="@+id/invite_btn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/user_tag" />
+
+    <Button
+        android:id="@+id/invite_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Invite"
+        android:textAllCaps="false"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_how_to_reg_24"
+        app:layout_constraintBottom_toBottomOf="@+id/profile_primary_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/profile_primary_btn"
+        app:layout_constraintTop_toTopOf="@+id/profile_primary_btn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -18,7 +18,6 @@ import kotlinx.coroutines.tasks.await
 
 object ChatInterface {
 
-
     data class Zza(var channel: ChatChannel, var contributors: List<User>)
     data class Zzb(var channel: ChatChannel, var messages: List<Message>)
 
@@ -48,7 +47,7 @@ object ChatInterface {
         Firebase.firestore.collection("chatChannels")
             .document(chatChannel.chatChannelId)
             .collection("messages")
-            .limit(10)
+            .limit(20)
             .addSnapshotListener { value, error ->
                 if (error != null) {
                     Log.e(TAG, error.localizedMessage.orEmpty())

@@ -13,7 +13,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-@Database(entities = [Project::class, User::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class], version = 4)
+@Database(entities = [Project::class, User::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class, SearchQuery::class], version = 9)
 @TypeConverters(Converters::class)
 abstract class CodesquareDatabase: RoomDatabase() {
 
@@ -24,34 +24,23 @@ abstract class CodesquareDatabase: RoomDatabase() {
     abstract fun projectRequestDao(): ProjectRequestDao
     abstract fun commentDao(): CommentDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun searchQueryDao(): SearchQueryDao
 
     companion object {
 
         @Volatile private var instance: CodesquareDatabase? = null
 
-        fun getInstance(context: Context, scope: CoroutineScope): CodesquareDatabase {
+        fun getInstance(context: Context): CodesquareDatabase {
             return instance ?: synchronized(this) {
-                instance ?: createDatabase(context, scope)
+                instance ?: createDatabase(context)
             }
         }
 
-        private fun createDatabase(applicationContext: Context, scope: CoroutineScope) : CodesquareDatabase {
+        private fun createDatabase(applicationContext: Context) : CodesquareDatabase {
             return Room.databaseBuilder(applicationContext, CodesquareDatabase::class.java, CODESQUARE_DB)
-                .addCallback(DatabaseCallback(scope))
                 .fallbackToDestructiveMigration()
                 .build()
         }
     }
 
-    private class DatabaseCallback(val scope: CoroutineScope): RoomDatabase.Callback() {
-        override fun onOpen(db: SupportSQLiteDatabase) {
-            super.onOpen(db)
-            scope.launch (Dispatchers.IO) {
-                instance?.apply {
-                    // do something every time the app opens
-//                    projectDao().clearTable()
-                }
-            }
-        }
-    }
 }

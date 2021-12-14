@@ -18,6 +18,9 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
         <action
+            android:id="@+id/action_homeFragment_to_preSearchFragment"
+            app:destination="@id/preSearchFragment" />
+        <action
             android:id="@+id/action_homeFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
         <action
@@ -50,6 +53,9 @@
         <action
             android:id="@+id/action_homeFragment_to_notificationFragment"
             app:destination="@id/notificationFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_projectRequestFragment"
+            app:destination="@id/projectRequestFragment" />
     </fragment>
     <fragment
         android:id="@+id/createProjectFragment"
@@ -102,6 +108,9 @@
         android:label="Profile"
         tools:layout="@layout/fragment_profile" >
         <action
+            android:id="@+id/action_profileFragment_to_preSearchFragment"
+            app:destination="@id/preSearchFragment" />
+        <action
             android:id="@+id/action_profileFragment_to_editProfileFragment"
             app:destination="@id/editProfileFragment" />
         <action
@@ -131,12 +140,19 @@
         <action
             android:id="@+id/action_profileFragment_to_reportFragment"
             app:destination="@id/reportFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_commentsFragment"
+            app:destination="@id/commentsFragment" />
     </fragment>
     <fragment
         android:id="@+id/editProfileFragment"
         android:name="com.jamid.codesquare.ui.profile.EditProfileFragment"
         android:label="Edit Profile"
-        tools:layout="@layout/fragment_edit_profile" />
+        tools:layout="@layout/fragment_edit_profile" >
+        <action
+            android:id="@+id/action_editProfileFragment_to_imageCropperFragment"
+            app:destination="@id/imageCropperFragment" />
+    </fragment>
     <fragment
         android:id="@+id/projectFragment"
         android:name="com.jamid.codesquare.ui.ProjectFragment"
@@ -188,12 +204,15 @@
         <action
             android:id="@+id/action_commentsFragment_to_reportFragment"
             app:destination="@id/reportFragment" />
+        <action
+            android:id="@+id/action_commentsFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
 
     </fragment>
     <fragment
         android:id="@+id/chatFragment"
         android:name="com.jamid.codesquare.ui.home.chat.ChatFragment"
-        tools:layout="@layout/fragment_pager"
+        tools:layout="@layout/fragment_chat_2"
         android:label="{title}">
 
         <argument
@@ -210,6 +229,9 @@
         <action
             android:id="@+id/action_chatFragment_to_imageViewFragment"
             app:destination="@id/imageViewFragment" />
+        <action
+            android:id="@+id/action_chatFragment_to_messageDetailFragment"
+            app:destination="@id/messageDetailFragment" />
 
     </fragment>
     <fragment
@@ -231,6 +253,9 @@
         <action
             android:id="@+id/action_chatDetailFragment_to_imageViewFragment"
             app:destination="@id/imageViewFragment" />
+        <action
+            android:id="@+id/action_chatDetailFragment_to_reportFragment"
+            app:destination="@id/reportFragment" />
 
     </fragment>
     <fragment
@@ -274,7 +299,7 @@
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.jamid.codesquare.ui.SearchFragment"
-        android:label="Search"
+        android:label="Search for projects, accounts .."
         tools:layout="@layout/fragment_search" >
         <action
             android:id="@+id/action_searchFragment_to_projectFragment"
@@ -334,7 +359,8 @@
     <fragment
         android:id="@+id/notificationFragment"
         android:name="com.jamid.codesquare.ui.NotificationFragment"
-        android:label="Notifications" >
+        android:label="Notifications">
+
         <action
             android:id="@+id/action_notificationFragment_to_commentsFragment"
             app:destination="@id/commentsFragment" />
@@ -344,6 +370,15 @@
         <action
             android:id="@+id/action_notificationFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
+        <action
+            android:id="@+id/action_notificationFragment_to_projectRequestFragment"
+            app:destination="@id/projectRequestFragment" />
+        <deepLink
+            android:id="@+id/deepLink"
+            android:autoVerify="true"
+            app:action="ACTION_VIEW"
+            app:uri="app://www.collab.com/notifications" />
+
     </fragment>
     <fragment
         android:id="@+id/reportFragment"
@@ -355,4 +390,24 @@
         android:name="com.jamid.codesquare.ui.FeedbackFragment"
         tools:layout="@layout/fragment_feedback"
         android:label="Feedback" />
+    <fragment
+        android:id="@+id/messageDetailFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.MessageDetailFragment"
+        android:label="Message Detail"
+        tools:layout="@layout/fragment_message_detail" />
+    <fragment
+        android:id="@+id/imageCropperFragment"
+        android:name="com.jamid.codesquare.ui.ImageCropperFragment"
+        tools:layout="@layout/fragment_image_cropper"
+        android:label=" " />
+    <fragment
+        android:id="@+id/preSearchFragment"
+        android:name="com.jamid.codesquare.ui.PreSearchFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_pre_search">
+
+        <action
+            android:id="@+id/action_preSearchFragment_to_searchFragment"
+            app:destination="@id/searchFragment" />
+    </fragment>
 </navigation>

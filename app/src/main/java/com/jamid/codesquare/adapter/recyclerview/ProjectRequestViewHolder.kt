@@ -44,7 +44,7 @@ class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((pr
 
                         projectRequest.project = project
 
-                        projectTitle.text = project.title
+                        projectTitle.text = project.name
                         projectImage.setImageURI(project.images.first())
 
                         Firebase.firestore.collection("users")

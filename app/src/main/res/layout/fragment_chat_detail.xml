@@ -2,10 +2,12 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipToPadding="false"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:overScrollMode="never">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -102,18 +104,12 @@
                 android:layout_marginEnd="12dp"
                 android:background="?android:attr/listDivider" />
 
-            <TextView
-                android:id="@+id/chat_no_media_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="12dp"
-                android:text="No media messages" />
-
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/chat_media_recycler"
+                style="@style/AppTheme.GenericBackground2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:overScrollMode="never"
                 android:paddingTop="12dp"
                 android:paddingBottom="12dp"
                 tools:itemCount="1"
@@ -146,6 +142,7 @@
                 android:id="@+id/chat_contributors_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:overScrollMode="never"
                 android:paddingBottom="8dp"
                 tools:itemCount="1"
                 tools:listitem="@layout/user_item" />

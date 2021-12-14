@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:clipToPadding="false"
     android:fillViewport="true"
+    android:overScrollMode="never"
     android:paddingBottom="64dp">
 
 
@@ -64,6 +65,19 @@
                 android:paddingBottom="8dp"
                 app:drawableStartCompat="@drawable/ic_round_location_on_18" />
 
+            <TextView
+                android:id="@+id/project_like_comment_text"
+                style="@style/TextAppearance.AppCompat.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="?selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:maxLines="1"
+                android:padding="8dp" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -100,21 +114,18 @@
                     android:layout_gravity="center_vertical"
                     app:icon="@drawable/save_selector" />
 
-                <TextView
-                    android:id="@+id/project_like_comment_text"
-                    style="@style/TextAppearance.AppCompat.Body1"
+                <Space
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical|end"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_weight="1"
-                    android:background="?selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:padding="8dp"
-                    android:textAlignment="viewEnd" />
+                    android:layout_weight="1" />
+
             </LinearLayout>
+
+            <View
+                android:id="@+id/divider27"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
 
             <TextView
                 android:id="@+id/links_header"
@@ -210,6 +221,7 @@
                 android:id="@+id/project_contributors_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:overScrollMode="never"
                 android:visibility="gone"
                 tools:itemCount="1"
                 tools:listitem="@layout/user_item">
@@ -260,9 +272,9 @@
 
             <include
                 android:id="@+id/projects_last_comment"
+                layout="@layout/comment_item"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                layout="@layout/comment_item"
                 tools:visibility="gone" />
 
             <View

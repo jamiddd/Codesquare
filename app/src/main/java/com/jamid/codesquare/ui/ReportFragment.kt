@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.ViewModel
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
@@ -58,7 +57,7 @@ class ReportFragment: Fragment() {
                 report.contextId = contextObject.id
                 val firstImage = contextObject.images.firstOrNull()
                 binding.contextImg.setImageURI(firstImage)
-                binding.contextName.text = contextObject.title
+                binding.contextName.text = contextObject.name
             }
             is User -> {
                 report.contextId = contextObject.id

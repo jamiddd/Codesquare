@@ -5,7 +5,6 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
-import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
@@ -16,7 +15,7 @@ import kotlinx.parcelize.Parcelize
 data class Project(
     @PrimaryKey(autoGenerate = false)
     var id: String,
-    var title: String,
+    var name: String,
     var content: String,
     var commentChannel: String,
     var chatChannel: String,
@@ -44,8 +43,12 @@ data class Project(
     var isMadeByMe: Boolean,
     @Exclude @set: Exclude @get: Exclude
     var isRequested: Boolean,
+    @Exclude @set: Exclude @get: Exclude
+    var isBlocked: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    var isNearMe: Boolean = false,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, false, false, false, false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, false, false, false, false, false, false, false)
 
     companion object {
 

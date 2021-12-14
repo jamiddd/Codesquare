@@ -3,7 +3,7 @@ const admin = require("firebase-admin");
 const algoliasearch = require("algoliasearch");
 
 admin.initializeApp();
-
+    
 const ALGOLIA_ID = functions.config().algolia.app_id;
 const ALGOLIA_ADMIN_KEY = functions.config().algolia.api_key;
 const ALGOLIA_SEARCH_KEY = functions.config().algolia.search_key;
@@ -17,6 +17,7 @@ exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
     .onCreate((snap, context) => {
         const project = snap.data();
         project.objectID = context.params.projectId;
+        project.type = "project"
         const index = client.initIndex(ALGOLIA_PROJECTS_INDEX);
 
         return index.saveObject(project);
@@ -33,6 +34,7 @@ exports.onUserCreated = functions.firestore.document("users/{userId}")
     .onCreate((snap, context) => {
         const user = snap.data();
         user.objectID = context.params.userId;
+        user.type = "user"
         const index = client.initIndex(ALGOLIA_USERS_INDEX);
         return index.saveObject(user);
     });
@@ -70,8 +72,32 @@ exports.getChatChannelById = async (channelId) => {
 
 exports.onNewNotification = functions.firestore.document("users/{userId}/notifications/{notificationId}")
     .onCreate( async (snap, context) => {
+
         const title = snap.get("title");
         const body = snap.get("content");
+        const senderId = snap.get("senderId");
+
+        const notificationType = snap.get("type");
+        const contextId = snap.get("contextId");
+
+        var data = {
+            title: title,
+            content: body,
+            senderId: senderId,
+            contextId: contextId,
+            receiverId: context.params.userId,
+            notificationId: context.params.notificationId
+        };
+
+        if (notificationType == 11) {
+            data.deepLink = "www.collab.com/projectRequests"
+            data.clickAction = "OPEN_PROJECT_REQUESTS"
+            data.type = "request"
+        } else {
+            data.deepLink = "www.collab.com/notifications"
+            data.clickAction = "OPEN_NOTIFICATIONS"
+            data.type = "notification"
+        }
 
         const receiverSnap = await this.getUserById(context.params.userId);
 
@@ -82,237 +108,10 @@ exports.onNewNotification = functions.firestore.document("users/{userId}/notific
         } else {
             const registrationTokens = receiverSnap.get("registrationTokens");
 
-            return await this.sendNotification(registrationTokens, title, body);
+            return await this.sendNotification(registrationTokens, title, body, data);
         }
     });
     
-
-exports.onProjectLiked = functions.https.onCall( async (data, context) => {
-
-    if (context.auth == null) {
-		return {
-			reponse: "Permission denied. Request from a client app."
-		};
-	}
-
-    const projectCreatorId = data["creatorId"];
-    const senderId = data["senderId"];
-    const title = data["title"];
-
-    const projectCreatorSnap = await this.getUserById(projectCreatorId);
-
-    if (!projectCreatorSnap.exists) {
-        return {
-            response: `Document with id - ${projectCreatorId} doesn't exist.`
-        }
-    } else {
-
-        const registrationTokens = projectCreatorSnap.get("registrationTokens");
-        const senderSnap = await this.getUserById(senderId);
-
-        if (!senderSnap.exists) {
-            return {
-                response: `Document with id - ${senderId} doesn't exist.`
-            }
-        } else {
-            const name = senderSnap.get("name");
-            const msg = name + " has liked your project.";
-            return this.sendNotification(registrationTokens, title, msg);
-        }
-    }
-
-});
-
-/*
-    @params
-    userId
-    registrationTokens
-    senderName
-    projectTitle
-
-*/
-exports.onCommentLiked = functions.https.onCall( async (data, context) => {
-
-    if (context.auth == null) {
-		return {
-			reponse: "Permission denied. Request from a client app."
-		};
-	}
-
-    const receiverId = data["userId"];
-
-    const receiverSnap = await this.getUserById(receiverId);
-
-    if (!receiverSnap.exists) {
-        return {
-            response: `Document with id - ${receiverId} doesn't exist.`
-        }
-    } else {
-
-        const registrationTokens = receiverSnap.get("registrationTokens");
-
-        const senderName = data["senderName"];
-        const projectTitle = data["projectTitle"];
-
-        const msg = senderName + " liked your comment";
-
-        return this.sendNotification(registrationTokens, projectTitle, msg);
-    }
-});
-
-exports.onCommentPosted = functions.firestore.document("commentChannels/{commentChannelId}/comments/{commentId}")
-    .onCreate( async (snap, context) => {
-
-        const projectId = snap.get("projectId");
-        const projectSnap = await this.getProjectById(projectId);
-        
-        if (!projectSnap.exists) {
-            return {
-                response: `Document with id - ${projectId} doesn't exist.`
-            };
-        } else {
-            const senderId = snap.get("senderId");
-
-            const userSnap = await this.getUserById(senderId);
-
-            if (!userSnap.exists) {
-                return {
-                    response: `Document with id - ${senderId} doesn't exist.`
-                };   
-            } else {
-                const commentLevel = snap.get("commentLevel");
-
-                if (commentLevel == 0) {
-                    
-                    const title = projectSnap.get("title");
-                    const msg = userSnap.get("name") + " has commented on your post.";
-                
-                    return this.sendNotification(userSnap.get("registrationTokens"), title, msg);
-                
-                } else {
-                    
-                    const title = projectSnap.get("title");
-                    const msg = userSnap.get("name") + " has replied to your comment.";
-
-                    return this.sendNotification(userSnap.get("registrationTokens"), title, msg);
-                
-                }
-            }
-        }
-    });
-
-
-
-exports.onProjectRequestCreated = functions.firestore.document("projectRequests/{projectRequestId}")
-    .onCreate( async (snap, context) => {
-        const receiverId = snap.get("receiverId");
-        const senderId = snap.get("senderId");
-        const projectId = snap.get("projectId");
-
-        const receiverSnap = await this.getUserById(receiverId);
-
-        if (!receiverSnap.exists) {
-            return {
-                response: `Document with id - ${receiverId} doesn\'t exist.`
-            };
-        } else {
-            const registrationToken = receiverSnap.get("registrationTokens");
-            const senderSnap = await this.getUserById(senderId);
-
-            if (!senderSnap.exists) {
-                return {
-                    response: `Document with id - ${senderId} doesn\'t exist.`
-                };
-            } else {
-
-                const projectSnap = await this.getProjectById(projectId);
-
-                if (!projectSnap.exists){
-                    return {
-                        response: `Document with id - ${projectId} doesn\'t exist.`
-                    };
-                } else {
-                    const title = projectSnap.get("title");
-                    const msg = `${senderSnap.get("name")} has requested to join your project.`;
-
-                    return this.sendNotification(registrationToken, title, msg);
-                }
-            }
-        }
-    });
-
-
-exports.onProjectRequestRejected = functions.https.onCall( async (data, context) => {
-
-    if (context.auth == null) {
-		return {
-			reponse: "Permission denied. Request from a client app."
-		};
-	}
-
-    const senderId = data["senderId"];
-    const projectTitle = data["projectTitle"];
-
-    const senderSnap = await this.getUserById(senderId);
-
-    if (!senderSnap.exists) {
-        return {
-            response: `Document with id - ${senderId} doesn\'t exist.`
-        };
-    } else {
-        const registrationTokens = senderSnap.get("registrationTokens");
-
-        return this.sendNotification(registrationTokens, projectTitle, `You request to join ${projectTitle} have been accepted.`)
-    }
-});
-
-
-exports.onContributorAdded = functions.https.onCall( async (data, context) => {
-
-    if (context.auth == null) {
-		return {
-			reponse: "Permission denied. Request from a client app."
-		};
-	}
-
-
-    const contributorId = data["contributorId"];
-    const projectTitle = data["projectTitle"];
-
-    const contributorSnap = await this.getUserById(contributorId);
-
-    if (!contributorSnap.exists) {
-        return {
-            response: `Document with id - ${contributorId} doesn\'t exist.`
-        };
-    } else {
-        const registrationTokens = contributorSnap.get("registrationTokens");
-
-        return this.sendNotification(registrationTokens, projectTitle, `You request to join ${projectTitle} have been accepted.`)
-    }
-});
-
-
-exports.onUserLiked = functions.https.onCall( async (data, context) => {
-    const receiverId = data["receiverId"];
-    const senderName = data["senderName"];
-
-    const receiverSnap = await this.getUserById(receiverId);
-
-    if (!receiverSnap.exists) {
-        return {
-            response: `Document with id - ${contributorId} doesn\'t exist.`
-        };
-    } else {
-        const receiverRegistrationTokens = receiverSnap.get("registrationTokens");
-
-        const title = "New Like"
-        const msg = senderName + " has liked you.";
-
-        return await this.sendNotification(receiverRegistrationTokens, title, msg);
-    }
-
-});
 
 
 exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId}/messages/{messageId}")
@@ -338,25 +137,49 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
                 const projectTitle = chatChannelSnap.get("projectTitle");
 
                 const senderName = senderSnap.get("name");
+                const senderRegistrationTokens = senderSnap.get("registrationTokens");
 
+                var channelRegistrationTokens = [];
+                channelRegistrationTokens = chatChannelSnap.get("registrationTokens");
+
+                const finalTokens = channelRegistrationTokens.filter(t => senderRegistrationTokens.indexOf(t) === -1);
+
+                var data = {
+                    title: projectTitle,
+                    senderId: senderId,
+                    channelId: chatChannelId,
+                    deepLink: "www.collab.com/chats/" + chatChannelId,
+                    clickAction: "OPEN_CHATS"
+                };
+                
                 if (type == "image") {
-                    return await this.sendNotificationToTopic(chatChannelId, {
-                        title: projectTitle,
-                        content: senderName + ": Document",
-                        senderId: senderId
-                    })
+                    data.content = senderName + ": Image";
                 } else if (type == "document") {
-                    return await this.sendNotificationToTopic(chatChannelId, {
-                        title: projectTitle,
-                        content: senderName + ": Image",
-                        senderId: senderId
-                    });
+                    data.content = senderName + ": Document";
                 } else {
-                    return await this.sendNotificationToTopic(chatChannelId, {
-                        title: projectTitle,
-                        content: senderName + ": " + snap.get("content"),
-                        senderId: senderId
-                    });
+                    data.content = senderName + ": " + snap.get("content");
+                }
+
+                const result = await this.sendNotification(finalTokens, data);
+
+                const staleTokens = result.results.reduce((acc, cur, idx) => {
+                    if (cur.error && cur.error.code === 'messaging/registration-token-not-registered') {
+                        acc.push(finalTokens[idx])
+                    }
+                    return acc
+                }, [])
+                   
+                if (staleTokens.length > 0) {
+                    // await deleteSessionForDevices(staleTokens, pgdb)
+                    // debug('deleted sessions for stale firebase device tokens', staleTokens)
+            
+                    const goodTokens = channelRegistrationTokens.filter(t => staleTokens.indexOf(t) === -1);
+
+                    return await admin.firestore.collection("chatChannels").doc(chatChannelId).update({registrationTokens: goodTokens});
+                } else {
+                    return {
+                        response: "Successfully sent message to chat channel with no stale tokens."
+                    }
                 }
             }
         }
@@ -368,15 +191,20 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
  * @param {string[]|string} userRegistrationTokens Ids of the device to which this notificaiton will be sent
  * @param {string} notificationTitle The title of the notification
  * @param {string} notificationMsg The content of the notification
+ * @param {string} senderId The id of the sender who sent this notification
+ * @param {string} deepLink Deeplink for android navigation
+ * @param {string} clickAction Action fo android
  */
-exports.sendNotification = async (userRegistrationTokens, notificationTitle, notificationMsg) => {
+exports.sendNotification = async (userRegistrationTokens, dataObject) => {
 
     const payload = {
         notification: {
-          title: notificationTitle,
-          body: notificationMsg,
-          sound: 'default'
-        }
+          title: dataObject.title,
+          body: dataObject.content,
+          sound: 'default',
+          click_action: dataObject.clickAction
+        },
+        data: dataObject
     };
     
     return await admin.messaging().sendToDevice(userRegistrationTokens, payload, {priority: 'high'});
@@ -387,38 +215,32 @@ exports.sendNotification = async (userRegistrationTokens, notificationTitle, not
 /**
  * 
  * @param {string} topic The topic to which the notification should be sent to
- * @param {{title:string, content:string, img:string?}} data Data object that contains the tile, content and image of the notification
+ * @param {any} dataObject Data object that contains the tile, senderId, content, image and deepLink of the notification
  */
-exports.sendNotificationToTopic = async (topic, data) => {
-	const notificationTitle = data.title;
-	const msg = data.content;
-	
+exports.sendNotificationToTopic = async (topic, dataObject) => {	
 	var payload = {};
 
-	if (data.hasOwnProperty("img")) {
+	if (dataObject.hasOwnProperty("img")) {
 		payload = {
 			notification: {
-			  title: notificationTitle,
-			  body: msg,
-			  image: data.img,
-			  imageUrl: data.img, 
-			  sound: 'default'
+			  title: dataObject.title,
+			  body: dataObject.content,
+			  image: dataObject.img,
+			  imageUrl: dataObject.img, 
+			  sound: 'default',
+              click_action: dataObject.clickAction
 			},
-			data: {
-				image: data.img,
-                senderId: data.senderId
-			}
+			data: dataObject
 		};
 	} else {
 		payload = {
 			notification: {
-			  title: notificationTitle,
-			  body: msg,
-			  sound: 'default'
+			  title: dataObject.title,
+			  body: dataObject.content,
+			  sound: 'default',
+              click_action: dataObject.clickAction
 			},
-            data: {
-                senderId: data.senderId
-            }
+            data: dataObject
 		};
 	}
 

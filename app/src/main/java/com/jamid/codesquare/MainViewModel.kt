@@ -18,14 +18,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.io.File
-import java.util.*
+import com.firebase.geofire.GeoLocation
+
+import com.firebase.geofire.GeoFireUtils
+
 
 class MainViewModel(application: Application): AndroidViewModel(application) {
 
     private val repo: MainRepository
 
     init {
-        val db = CodesquareDatabase.getInstance(application.applicationContext, viewModelScope)
+        val db = CodesquareDatabase.getInstance(application.applicationContext)
         repo = MainRepository.getInstance(db)
     }
 
@@ -56,16 +59,16 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val chatScrollPositions = mutableMapOf<String, Int>()
 
-    val onMessagesModeChanged = repo.onMessagesModeChanged
+    val selectedMessages = repo.onMessagesModeChanged
 
     private val _singleSelectedMessage = MutableLiveData<Message?>()
     val singleSelectedMessage: LiveData<Message?> = _singleSelectedMessage
 
-    private val _searchProjectsResult = MutableLiveData<List<SearchResult>?>()
-    val searchProjectsResult: LiveData<List<SearchResult>?> = _searchProjectsResult
+    private val _searchProjectsResult = MutableLiveData<List<SearchQuery>?>()
+    val searchProjectsResult: LiveData<List<SearchQuery>?> = _searchProjectsResult
 
-    private val _searchUsersResult = MutableLiveData<List<SearchResult>?>()
-    val searchUsersResult: LiveData<List<SearchResult>?> = _searchUsersResult
+    private val _searchUsersResult = MutableLiveData<List<SearchQuery>?>()
+    val searchUsersResult: LiveData<List<SearchQuery>?> = _searchUsersResult
 
     val chatChannels = repo.chatChannels
     val errors = repo.errors
@@ -74,15 +77,23 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val allUnreadNotifications = repo.allUnreadNotifications
 
+    val previousProjectQueries = repo.previousProjectQueries
+    val previousUserQueries = repo.previousUserQueries
+
+    val allPreviousQueries = repo.allPreviousQueries
+
     fun setNetworkAvailability(state: Boolean) {
         _isNetworkAvailable.postValue(state)
     }
 
-    fun setProjectsResult(results: List<SearchResult>?) {
+    private val _searchResult = MutableLiveData<List<SearchQuery>>()
+    val searchResult: LiveData<List<SearchQuery>> = _searchResult
+
+    fun setProjectsResult(results: List<SearchQuery>?) {
         _searchProjectsResult.postValue(results)
     }
 
-    fun setUsersResult(results: List<SearchResult>?) {
+    fun setUsersResult(results: List<SearchQuery>?) {
         _searchUsersResult.postValue(results)
     }
 
@@ -139,7 +150,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     fun setCurrentProjectTitle(title: String) {
         val existingProject = currentProject.value
         if (existingProject != null) {
-            existingProject.title = title
+            existingProject.name = title
             setCurrentProject(existingProject)
         }
     }
@@ -190,7 +201,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         val existingProject = currentProject.value
         if (existingProject != null) {
             val existingLocation = existingProject.location
-            val newLocation = Location(existingLocation.latitude, existingLocation.longitude, address)
+            val hash = GeoFireUtils.getGeoHashForLocation(GeoLocation(existingLocation.latitude, existingLocation.longitude))
+            val newLocation = Location(existingLocation.latitude, existingLocation.longitude, address, hash)
             existingProject.location = newLocation
             setCurrentProject(existingProject)
         }
@@ -237,19 +249,23 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 chatChannels.add(project.chatChannel)
 
                 project.isMadeByMe = true
-                insertProject(project)
+                insertNewProject(project)
+
+                val tokens = mutableListOf<String>()
+                tokens.addAll(currentUser.registrationTokens)
 
                 val chatChannel = ChatChannel(
                     chatChannelId,
                     project.id,
-                    project.title,
+                    project.name,
                     project.images.first(),
                     project.contributors.size.toLong(),
                     listOf(project.creator.userId),
                     listOf(project.creator.userId),
                     project.createdAt,
                     project.updatedAt,
-                    null
+                    null,
+                    tokens
                 )
 
                 insertChatChannelsWithoutProcessing(listOf(chatChannel))
@@ -270,8 +286,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun updateUser(updatedUser: User, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
-        val currentUser = currentUser.value!!
-        FireUtility.updateUser2(currentUser, changes) {
+        FireUtility.updateUser2(updatedUser, changes) {
             onComplete(it)
             if (it.isSuccessful) {
                 insertCurrentUser(updatedUser)
@@ -376,8 +391,17 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     }*/
 
-    fun signOut() = viewModelScope.launch (Dispatchers.IO) {
-        repo.clearDatabases()
+    fun signOut(onComplete: () -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        repo.clearDatabases(onComplete)
+    }
+
+    @ExperimentalPagingApi
+    fun getProjectsNearMe(): Flow<PagingData<Project>>{
+        return Pager(
+            config = PagingConfig(pageSize = 20)
+        ) {
+            repo.projectDao.getProjectsNearMe()
+        }.flow.cachedIn(viewModelScope)
     }
 
     @ExperimentalPagingApi
@@ -399,7 +423,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun insertProject(project: Project) = viewModelScope.launch(Dispatchers.IO) {
+    private fun insertNewProject(project: Project) = viewModelScope.launch(Dispatchers.IO) {
         val currentUser = currentUser.value
         if (currentUser != null) {
             repo.insertProjects(listOf(project))
@@ -413,6 +437,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
             insertCurrentUser(currentUser)
         }
+    }
+
+    fun getCurrentUserProjects(): LiveData<List<Project>> {
+        return repo.getCurrentUserProjects()
     }
 
     @ExperimentalPagingApi
@@ -452,7 +480,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             pageSize = 50,
             enablePlaceholders = false,
             maxSize = 150,
-            prefetchDistance = 20,
+            prefetchDistance = 25,
             initialLoadSize= 40),
             remoteMediator = MessageRemoteMediator(chatChannel, imagesDir, documentsDir, viewModelScope, query, repo)
         ) {
@@ -592,7 +620,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         val existingRequests = project.requests.toMutableList()
         existingRequests.remove(requestId)
         project.requests = existingRequests
-        insertProject(project)
+        insertNewProject(project)
     }
 
     @ExperimentalPagingApi
@@ -632,22 +660,25 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.getDocument(ref, onComplete)
     }
 
-    fun likeUser(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+    fun likeUser(userId: String? = null, user: User? = null) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
-        val receiverRef = Firebase.firestore.collection("users").document(userId)
+        val receiverRef = Firebase.firestore.collection("users").document(user?.id ?: userId!!)
         when (val receiverResult = FireUtility.getDocument(receiverRef)) {
             is Result.Success -> {
                 if (receiverResult.data.exists()) {
                     val receiver = receiverResult.data.toObject(User::class.java)!!
-                    val notification = NotificationProvider.createNotification(receiver, userId, NOTIFICATION_LIKE_USER)
+                    val notification = NotificationProvider.createNotification(receiver, user?.id ?: userId!!, NOTIFICATION_LIKE_USER)
 
-                    when (val likeUserResult = FireUtility.likeUser(currentUser, userId, notification)) {
+                    when (val likeUserResult = FireUtility.likeUser(currentUser, user?.id ?: userId!!, notification)) {
                         is Result.Error -> {
                             setCurrentError(likeUserResult.exception)
                         }
                         is Result.Success -> {
                             repo.insertNotifications(listOf(notification))
                             insertCurrentUser(likeUserResult.data)
+                            if (user != null) {
+                                insertUser(user)
+                            }
                         }
                     }
                 }
@@ -658,10 +689,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun dislikeUser(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+    fun dislikeUser(userId: String? = null, user: User? = null) = viewModelScope.launch (Dispatchers.IO) {
         val currentUser = currentUser.value!!
-        val notification = repo.notificationDao.getNotificationByType(userId, NOTIFICATION_LIKE_USER)
-        when (val likeUserResult = FireUtility.dislikeUser(currentUser, userId, notification)) {
+        val notification = repo.notificationDao.getNotificationByType(user?.id ?: userId!!, NOTIFICATION_LIKE_USER)
+        when (val likeUserResult = FireUtility.dislikeUser(currentUser, user?.id ?: userId!!, notification)) {
             is Result.Error -> {
                 setCurrentError(likeUserResult.exception)
             }
@@ -670,6 +701,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     repo.deleteNotificationByType(notification.id, NOTIFICATION_LIKE_USER)
                 }
                 insertCurrentUser(likeUserResult.data)
+                if (user != null) {
+                    insertUser(user)
+                }
             }
         }
     }
@@ -716,7 +750,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 val project = repo.getProject(comment.projectId)
                 if (project != null) {
                     project.comments += 1
-                    insertProject(project)
+                    insertNewProject(project)
                 }
 
                 repo.insertNotifications(listOf(notification))
@@ -881,8 +915,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getLiveProjectByChatChannel(chatChannel)
     }
 
-    suspend fun getLimitedMediaMessages(chatChannel: String, limit: Int): List<Message> {
-        return repo.getLimitedMediaMessages(chatChannel, limit)
+    suspend fun getLimitedMediaMessages(chatChannel: String, limit: Int, type: String = image): List<Message> {
+        return repo.getLimitedMediaMessages(chatChannel, limit, type)
     }
 
     fun deleteChatUploadDocumentAtPosition(delPos: Int) {
@@ -896,22 +930,22 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     // insert channel messages and also update the channel along with it
     fun insertChannelMessages(chatChannel: ChatChannel, imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
-        if (messages.isNotEmpty()) {
+        val uid = Firebase.auth.currentUser?.uid
+        if (messages.isNotEmpty() && uid != null) {
 
-            val currentUser = currentUser.value!!
 
             val firstTimeMessages = messages.filter { message ->
-                !message.deliveryList.contains(currentUser.id)
+                !message.deliveryList.contains(uid)
             }
 
             val alreadyDeliveredMessages = messages.filter { message ->
-                message.deliveryList.contains(currentUser.id)
+                message.deliveryList.contains(uid)
             }
 
             insertMessages(imagesDir, documentsDir, alreadyDeliveredMessages)
 
             // update the delivery list
-            updateDeliveryListOfMessages(chatChannel, currentUser.id, firstTimeMessages) { it1 ->
+            updateDeliveryListOfMessages(chatChannel, uid, firstTimeMessages) { it1 ->
                 if (!it1.isSuccessful) {
                     setCurrentError(it1.exception)
                 } else {
@@ -1178,14 +1212,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.currentUser.value ?: User()
     }*/
 
-    fun processProjects(projects: List<Project>): List<Project> {
+    /*fun processProjects(projects: List<Project>): List<Project> {
         val currentUser = repo.currentUser.value!!
         return repo.processProjects(currentUser, projects)
-    }
+    }*/
 
-    fun sendRegistrationTokenToServer(token: String) {
+    /*fun sendRegistrationTokenToServer(token: String) {
         FireUtility.sendRegistrationTokenToServer(token)
-    }
+    }*/
 
     @ExperimentalPagingApi
     fun getNotifications(currentUserId: String, query: Query): Flow<PagingData<Notification>> {
@@ -1290,6 +1324,129 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun insertNotifications(notifications: List<Notification>) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertNotifications(notifications)
+    }
+
+    fun onUndoProject(project: Project, projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
+        repo.onUndoProject(project, projectRequest)
+    }
+
+    fun insertProjectRequests(projectRequests: List<ProjectRequest>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertProjectRequests(projectRequests)
+    }
+
+    fun getMessagesForChannel(chatChannel: ChatChannel, limit: Int): LiveData<List<Message>> {
+        return repo.getMessagesForChannel(chatChannel, limit)
+    }
+
+    fun insertSearchQuery(searchQuery: SearchQuery) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertSearchQuery(searchQuery)
+    }
+
+    fun deleteSearchQuery(query: SearchQuery) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteSearchQuery(query)
+    }
+
+    fun setOtherUserAsAdmin(chatChannelId: String, userId: String, onComplete: (task: Task<Void>) -> Unit) {
+        FireUtility.setOtherUserAsAdmin(chatChannelId, userId, onComplete)
+    }
+
+    fun removeOtherUserFromAdmin(chatChannelId: String, userId: String, onComplete: (task: Task<Void>) -> Unit) {
+        FireUtility.removeUserFromAdmin(chatChannelId, userId, onComplete)
+    }
+
+    fun leaveProject(user: User, projectId: String, chatChannelId: String, onComplete: () -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        when (val result = FireUtility.removeUserFromProject(user, projectId, chatChannelId)) {
+            is Result.Error -> {
+                setCurrentError(result.exception)
+            }
+            is Result.Success -> {
+
+                onComplete()
+
+                // deleting all messages by removed user
+                FireUtility.getAllMessagesByUser(chatChannelId, user) {
+                    if (it.isSuccessful) {
+                        deleteAllMessagesByUser(user.id, chatChannelId)
+                    } else {
+                        setCurrentError(it.exception)
+                    }
+                }
+
+                val localProject = getLocalProject(projectId)
+                if (localProject != null) {
+                    val newContributorsList = localProject.contributors.removeItemFromList(user.id)
+                    localProject.contributors = newContributorsList
+                    insertProjects(listOf(localProject))
+                }
+            }
+        }
+    }
+
+    private fun deleteAllMessagesByUser(userId: String, chatChannelId: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteAllMessagesByUser(userId, chatChannelId)
+    }
+
+    private suspend fun getLocalProject(projectId: String): Project? {
+        return repo.getProject(projectId)
+    }
+
+    fun castVoteToRemoveUser(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Transaction>) -> Unit) {
+        FireUtility.castVoteRemoveUser(user, projectId, currentUserId, onComplete)
+    }
+
+    fun undoVoteCast(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Void>) -> Unit) {
+        FireUtility.undoVoteCast(user, projectId, currentUserId, onComplete)
+    }
+
+    fun inviteUserToProject(project: Project, userId: String) = viewModelScope.launch (Dispatchers.IO) {
+        val notification = NotificationProvider.createNotification(project, userId, NOTIFICATION_INVITE_PROJECT)
+        when (val result = FireUtility.inviteUserToProject(project, userId, notification)) {
+            is Result.Error -> setCurrentError(result.exception)
+            is Result.Success -> {
+                insertNotifications(listOf(notification))
+            }
+        }
+    }
+
+    fun revokeInvite(invite: ProjectInvite, userId: String) = viewModelScope.launch (Dispatchers.IO) {
+
+        suspend fun onPreviousNotificationFound(notification: Notification?) {
+            when (val result1 = FireUtility.revokeInvite(invite, userId, notification)) {
+                is Result.Error -> setCurrentError(result1.exception)
+                is Result.Success -> {
+                    if (notification != null) {
+                        repo.deleteNotificationByType(notification.contextId, notification.type)
+                    }
+                }
+            }
+        }
+
+        val oldNotification = getNotificationByType(invite.projectId, NOTIFICATION_INVITE_PROJECT)
+
+        if (oldNotification != null) {
+            onPreviousNotificationFound(oldNotification)
+        } else {
+            val result = FireUtility.getOldNotification(userId, invite.projectId, invite.sender, NOTIFICATION_INVITE_PROJECT)
+            if (result != null) {
+                when (result) {
+                    is Result.Error -> setCurrentError(result.exception)
+                    is Result.Success -> {
+                        val notification = result.data
+                        onPreviousNotificationFound(notification)
+                    }
+                }
+            } else {
+                onPreviousNotificationFound(null)
+            }
+        }
+    }
+
+    private suspend fun getNotificationByType(contextId: String, type: Int): Notification? {
+        return repo.getNotificationByType(contextId, type)
+    }
+
+    fun setSearchResult(data: List<SearchQuery>) {
+        _searchResult.postValue(data)
     }
 
     companion object {

@@ -26,11 +26,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/search_result_forward"
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        tools:text=" "
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         app:icon="@drawable/search_result_icon"

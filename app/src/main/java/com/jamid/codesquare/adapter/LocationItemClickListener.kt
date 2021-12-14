@@ -1,7 +1,7 @@
 package com.jamid.codesquare.adapter
 
-import android.location.Address
+import com.google.android.libraries.places.api.model.Place
 
 interface LocationItemClickListener {
-    fun onLocationClick(address: Address)
+    fun onLocationClick(place: Place)
 }

@@ -3,6 +3,8 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.text.InputType
 import android.util.Log
+import android.view.Gravity
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.activityViewModels
@@ -28,6 +30,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
         returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
         exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
         reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        listView?.overScrollMode = View.OVER_SCROLL_NEVER
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -67,7 +74,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             inputLayoutBinding.inputTextLayout.hint = "Enter old password ..."
             inputLayoutBinding.inputTextLayout.inputType = InputType.TYPE_TEXT_VARIATION_PASSWORD
 
-            MaterialAlertDialogBuilder(requireContext())
+            val alertDialog = MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Update password")
                 .setMessage("Enter your old password to set new password")
                 .setView(inputLayoutBinding.root)
@@ -143,6 +150,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
                 .show()
 
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
+
 
             true
         }
@@ -155,7 +164,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
             inputLayoutBinding.inputTextLayout.hint = "Write your email ... "
 
-            MaterialAlertDialogBuilder(requireContext())
+            val alertDialog = MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Forgot password ? ")
                 .setMessage("We will send you a mail on this address with the link for new password.")
                 .setView(inputLayoutBinding.root)
@@ -178,18 +187,18 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     a.dismiss()
                 }
                 .show()
+
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
+
             true
         }
 
 
-
         val providerData = Firebase.auth.currentUser?.providerData
         if (providerData != null) {
-            for (data in providerData) {
-                if (data.providerId == "google.com") {
-                    updatePasswordItem?.isEnabled = false
-                    forgotPasswordItem?.isEnabled = false
-                }
+            if (providerData.size == 1 && providerData.first().providerId == "google.com") {
+                updatePasswordItem?.isEnabled = false
+                forgotPasswordItem?.isEnabled = false
             }
         }
     }
@@ -217,9 +226,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .setTitle("Logging out")
                 .setMessage("Are you sure you want to log out?")
                 .setPositiveButton("Log out") { d, w ->
-                    Firebase.auth.signOut()
-                    viewModel.signOut()
-                    findNavController().navigate(R.id.action_settingsFragment_to_loginFragment, null, slideRightNavOptions())
+                    viewModel.signOut {
+                        Firebase.auth.signOut()
+                    }
                 }.setNegativeButton("Cancel") { d, w ->
                     d.dismiss()
                 }

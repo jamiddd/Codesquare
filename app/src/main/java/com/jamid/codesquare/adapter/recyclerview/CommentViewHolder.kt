@@ -16,31 +16,35 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.databinding.CommentItemBinding
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.CommentListener
 import com.jamid.codesquare.toast
 
 class CommentViewHolder(val view: View, private val commentListener: CommentListener): RecyclerView.ViewHolder(view) {
 
-    private val userImage: SimpleDraweeView = view.findViewById(R.id.comment_user_img)
-    private val content: TextView = view.findViewById(R.id.comment_content)
-    private val userName: TextView = view.findViewById(R.id.comment_user_name)
-    private val time: TextView = view.findViewById(R.id.comment_time)
-    private val likeReplies: TextView = view.findViewById(R.id.comment_likes_replies)
-    private val likeBtn: Button = view.findViewById(R.id.comment_like_btn)
-    private val replyBtn: Button = view.findViewById(R.id.comment_reply_btn)
-    private val optionBtn: Button = view.findViewById(R.id.comment_option_btn)
+    private lateinit var binding: CommentItemBinding
 
     fun bind(comment: Comment?) {
         if (comment != null) {
+            binding = CommentItemBinding.bind(view)
 
-            setUserData(comment.sender)
+            binding.commentUserImg.setImageURI(comment.sender.photo)
+            binding.commentUserName.text = comment.sender.name
 
-            replyBtn.setOnClickListener {
+            binding.commentUserName.setOnClickListener {
+                commentListener.onCommentUserClick(comment.sender)
+            }
+
+            binding.commentUserImg.setOnClickListener {
+                commentListener.onCommentUserClick(comment.sender)
+            }
+
+            binding.commentReplyBtn.setOnClickListener {
                 commentListener.onCommentReply(comment.copy())
             }
 
-            // checking for stale user data, what if user data has been updated
+            /*// checking for stale user data, what if user data has been updated
             FireUtility.getOtherUser(comment.sender.userId) {
                 if (it.isSuccessful) {
                     if (it.result.exists()) {
@@ -89,19 +93,19 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
                 } else {
                     Log.e(TAG, it.exception?.localizedMessage.orEmpty())
                 }
-            }
+            }*/
 
-            content.text = comment.content
+            binding.commentContent.text = comment.content
 
-            time.text = "• " + getTextForTime(comment.createdAt)
+            binding.commentTime.text = "• " + getTextForTime(comment.createdAt)
 
             setLikeAndReplies(comment)
 
-            likeBtn.isSelected = comment.isLiked
+            binding.commentLikeBtn.isSelected = comment.isLiked
 
-            likeBtn.setOnClickListener {
+            binding.commentLikeBtn.setOnClickListener {
                 commentListener.onCommentLike(comment.copy())
-                likeBtn.isSelected = !likeBtn.isSelected
+                binding.commentLikeBtn.isSelected = !binding.commentLikeBtn.isSelected
                 setLikeAndReplies(comment)
             }
 
@@ -109,7 +113,7 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
                 commentListener.onClick(comment)
             }
 
-            optionBtn.setOnClickListener {
+            binding.commentOptionBtn.setOnClickListener {
                 val popUpMenu = PopupMenu(view.context, it)
                 popUpMenu.inflate(R.menu.comment_menu)
                 popUpMenu.show()
@@ -126,14 +130,9 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
         }
     }
 
-    private fun setUserData(sender: UserMinimal) {
-        userImage.setImageURI(sender.photo)
-        userName.text = sender.name
-    }
-
     private fun setLikeAndReplies(comment: Comment) {
         val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
-        likeReplies.text = likeRepliesText
+        binding.commentLikesReplies.text = likeRepliesText
     }
 
     companion object {

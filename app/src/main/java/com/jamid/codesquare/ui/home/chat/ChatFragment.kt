@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.provider.OpenableColumns
 import android.util.Log
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
@@ -23,10 +24,11 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.airbnb.lottie.Lottie
+import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialSharedAxis
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -42,7 +44,7 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @ExperimentalPagingApi
-class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
+class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
@@ -76,7 +78,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 viewModel.chatScrollPositions[chatChannelId] = scrollPosition
 
                 val bundle = bundleOf("title" to title, "chatChannel" to chatChannel)
-
                 findNavController().navigate(R.id.action_chatFragment_to_chatDetailFragment, bundle, slideRightNavOptions())
                 true
             }
@@ -89,10 +90,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         chatChannel = arguments?.getParcelable("chatChannel") ?: return
         chatChannelId = chatChannel.chatChannelId
-        recyclerView?.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
-
-        recyclerView?.show()
-        noItemsText?.hide()
+        binding.pagerItemsRecycler.layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, true)
+        binding.pagerItemsRecycler.show()
+        binding.pagerNoItemsText.hide()
 
         val query = Firebase.firestore.collection("chatChannels")
             .document(chatChannelId)
@@ -108,11 +108,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             )
         }
 
-        swipeRefresher?.isEnabled = false
-        noItemsText?.text = getString(R.string.no_messages)
-        recyclerView?.itemAnimator = null
+        binding.pagerRefresher.isEnabled = false
+        binding.pagerNoItemsText.text = "Be the first one to send a message. Say \"hi\" to other collaborators."
+        binding.pagerItemsRecycler.itemAnimator = null
+        binding.noDataImage.setAnimation(R.raw.messages)
+        binding.noDataImage.repeatCount = 0
 
-        recyclerView?.setPadding(0, 0, 0, convertDpToPx(64))
+        binding.pagerItemsRecycler.setPadding(0, convertDpToPx(4), 0, convertDpToPx(64))
 
         val progressBar = activity?.findViewById<ProgressBar>(R.id.main_progress_bar)
 
@@ -120,13 +122,28 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         if (viewModel.chatScrollPositions.containsKey(chatChannelId)) {
             val pos = viewModel.chatScrollPositions[chatChannelId] ?: 0
-            recyclerView?.doOnLayout {
-                recyclerView?.scrollToPosition(pos)
+            binding.pagerItemsRecycler.doOnLayout {
                 startPostponedEnterTransition()
+                viewLifecycleOwner.lifecycleScope.launch {
+                    delay(500)
+                    binding.pagerItemsRecycler.scrollToPosition(pos)
+                }
             }
         } else {
             startPostponedEnterTransition()
         }
+
+        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                val scrollPosition = layoutManager.findFirstCompletelyVisibleItemPosition()
+                Log.d(TAG, scrollPosition.toString())
+                if (scrollPosition != 0) {
+                    viewModel.chatScrollPositions[chatChannelId] = scrollPosition
+                }
+            }
+        })
 
         pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
@@ -136,12 +153,12 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                     progressBar?.hide()
 
                     // hide recyclerview and show info
-                    recyclerView?.show()
-                    noItemsText?.hide()
+                    binding.pagerItemsRecycler.show()
+                    binding.pagerNoItemsText.hide()
                 } else {
                     // hide info and show recyclerview
-                    recyclerView?.hide()
-                    noItemsText?.show()
+                    binding.pagerItemsRecycler.hide()
+                    binding.pagerNoItemsText.show()
                 }
             }
         })
@@ -213,17 +230,19 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
             val options = arrayOf("Select Images", "Select Document")
 
-            MaterialAlertDialogBuilder(requireContext())
+            val alertDialog = MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Upload")
                 .setItems(options) {_, pos ->
                     if (pos == 0) {
                         (activity as MainActivity).selectChatUploadImages()
                         viewModel.setChatUploadDocuments(emptyList())
                     } else {
-                        viewModel.setChatUploadImages(emptyList())
                         (activity as MainActivity).selectChatUploadDocuments()
+                        viewModel.setChatUploadImages(emptyList())
                     }
                 }.show()
+
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
 
         }
 
@@ -316,16 +335,16 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
 
         val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)!!
 
-        viewModel.onMessagesModeChanged.observe(viewLifecycleOwner) { messages ->
+        viewModel.selectedMessages.observe(viewLifecycleOwner) { messages ->
             if (!messages.isNullOrEmpty()) {
 
-                for (child in binding.pagerItemsRecycler.children) {
-                    val vh = binding.pagerItemsRecycler.getChildViewHolder(child) as MessageViewHolder?
+               /* for (child in binding.pagerItemsRecycler.children) {
+                    val vh = binding.pagerItemsRecycler.getChildViewHolder(child) as MessageViewHolder2<Message>?
                     if (vh != null) {
                         vh.view.findViewById<Button>(R.id.reply_btn)?.hide()
                         vh.view.findViewById<Button>(R.id.reply_btn_alt)?.hide()
                     }
-                }
+                }*/
 
                 val isSingleMessage = messages.size == 1
                 chatsOptionsBinding!!.chatsReplyBtn.isEnabled = isSingleMessage
@@ -387,7 +406,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                     modeChanged = false
                 }
 
-
                 if (toolbar.menu.hasVisibleItems()) {
                     toolbar.menu.getItem(0).isVisible = true
                 } else {
@@ -429,12 +447,23 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
             viewModel.updateRestOfTheMessages(chatChannelId, -1)
         }
 
+        /*viewModel.currentReplyMessage.observe(viewLifecycleOwner) {
+            if (it != null) {
+                onReplyClick(bottomViewBinding, it)
+            } else {
+                bottomViewBinding.chatBottomReplyContainer.root.hide()
+                viewModel.setCurrentlySelectedMessage(null)
+            }
+        }*/
+
     }
 
     private fun onReplyClick(bottomViewBinding: ChatBottomLayoutBinding, currentlySelectedMessage: Message) {
         val imagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         chatsOptionsBinding!!.chatOptionRoot.slideDown(convertDpToPx(150).toFloat())
         bottomViewBinding.chatBottomRoot.slideReset()
+
+        bottomViewBinding.chatBottomReplyContainer.replyCloseBtn.show()
 
         bottomViewBinding.chatBottomReplyContainer.root.show()
 
@@ -571,7 +600,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
                 if (chatInputLayout.text.isNullOrBlank())
                     return@setOnClickListener
 
-                val content = chatInputLayout.text.toString()
+                val content = chatInputLayout.text.trim().toString()
 
                 val currentlySelectedMessage = viewModel.singleSelectedMessage.value
                 viewModel.sendTextMessage(externalImagesDir, externalDocumentsDir, chatChannelId, content, currentlySelectedMessage?.messageId, currentlySelectedMessage?.toReplyMessage())
@@ -589,13 +618,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         recyclerView?.smoothScrollToPosition(0)
     }
 
-    override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder> {
+    override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder2<Message>> {
         val currentUser = viewModel.currentUser.value!!
         val chatChannel = arguments?.getParcelable<ChatChannel>("chatChannel")
         return if (chatChannel == null) {
-            MessageAdapter2(currentUser.id, 0, viewLifecycleOwner.lifecycleScope)
+            MessageAdapter3(currentUser.id)
         } else {
-            MessageAdapter2(currentUser.id, chatChannel.contributors.size, viewLifecycleOwner.lifecycleScope)
+            MessageAdapter3(currentUser.id)
         }
     }
 
@@ -611,6 +640,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder>() {
         super.onPause()
         viewModel.updateRestOfTheMessages(chatChannelId, -1)
     }
+
+
 
     companion object {
         private const val TAG = "ChatFragment"

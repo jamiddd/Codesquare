@@ -34,4 +34,7 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Query("SELECT * FROM notifications WHERE read = 0 AND isReceived = 1 ORDER BY createdAt DESC")
     abstract fun allUnreadNotifications(): LiveData<List<Notification>>
 
+    @Query("DELETE FROM notifications")
+    abstract suspend fun clearTable()
+
 }

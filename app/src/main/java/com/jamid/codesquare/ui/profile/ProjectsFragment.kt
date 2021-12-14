@@ -5,6 +5,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.R
@@ -61,8 +62,6 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
             }
 
         }
-
-//        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
 
     }
 

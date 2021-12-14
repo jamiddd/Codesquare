@@ -2,6 +2,7 @@ package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
+import androidx.room.DeleteTable
 import androidx.room.Query
 import com.jamid.codesquare.data.User
 

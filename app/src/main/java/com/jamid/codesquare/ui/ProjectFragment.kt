@@ -2,11 +2,12 @@ package com.jamid.codesquare.ui
 
 import android.content.res.ColorStateList
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
@@ -20,11 +21,17 @@ import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.transition.platform.MaterialSharedAxis
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
+import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
 import com.jamid.codesquare.data.CommentChannel
 import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.ProjectClickListener
@@ -41,13 +48,15 @@ class ProjectFragment: Fragment() {
     private lateinit var projectClickListener: ProjectClickListener
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var userClickListener: UserClickListener
+    private lateinit var joinBtn: MaterialButton
+    private var lr: ListenerRegistration? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
     }
 
     override fun onCreateView(
@@ -66,18 +75,15 @@ class ProjectFragment: Fragment() {
         projectClickListener = activity as ProjectClickListener
         userClickListener = activity as UserClickListener
 
-        val joinBtn = activity.findViewById<MaterialButton>(R.id.main_primary_action)
+        joinBtn = activity.findViewById(R.id.main_primary_action)
         joinBtn.show()
 
         project = arguments?.getParcelable("project") ?: return
 
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
-        val imageAdapter = ImageAdapter {
-            val transitionName = randomId()
-            ViewCompat.setTransitionName(it, transitionName)
+        val imageAdapter = ImageAdapter { v, controllerListener ->
             val pos = manager.findFirstCompletelyVisibleItemPosition()
-            val bundle = bundleOf("fullscreenImage" to project.images[pos], "transitionName" to transitionName, "ext" to ".jpg")
-            findNavController().navigate(R.id.action_projectFragment_to_imageViewFragment, bundle)
+            (activity as MainActivity).showImageViewFragment(v, project.images[pos].toUri(), ".jpg", controllerListener)
         }
 
         val helper: SnapHelper = LinearSnapHelper()
@@ -90,16 +96,18 @@ class ProjectFragment: Fragment() {
         }
 
         totalImageCount = project.images.size
+        if (totalImageCount == 1) {
+            binding.imagesCounter.hide()
+        }
         imageAdapter.submitList(project.images)
-
-
 
         binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 val pos = manager.findFirstCompletelyVisibleItemPosition()
                 if (pos != -1) {
-                    binding.imagesCounter.text = "${pos + 1}/$totalImageCount"
+                    val imageCount = "${pos + 1}/$totalImageCount"
+                    binding.imagesCounter.text = imageCount
                 }
             }
         })
@@ -139,18 +147,24 @@ class ProjectFragment: Fragment() {
 
         setCommentLayout()
 
-        if (project.isMadeByMe) {
-            joinBtn.slideDown(convertDpToPx(100).toFloat())
+        when {
+            project.isMadeByMe -> {
+                binding.userLikeBtn.hide()
+                joinBtn.slideDown(convertDpToPx(100).toFloat())
+            }
+            project.isRequested -> {
+                joinBtn.show()
+                joinBtn.text = "Undo"
+            }
+            project.isCollaboration -> {
+                joinBtn.slideDown(convertDpToPx(100).toFloat())
+            }
+            else -> joinBtn.show()
         }
 
 
-        if (project.isCollaboration) {
-            joinBtn.slideDown(convertDpToPx(100).toFloat())
-        }
+        setJoinButton()
 
-        if (project.isMadeByMe) {
-            binding.userLikeBtn.hide()
-        }
 
         val currentUser = viewModel.currentUser.value!!
 
@@ -179,11 +193,11 @@ class ProjectFragment: Fragment() {
             projectClickListener.onProjectCommentClick(project)
         }
 
-        setProjectObserver(joinBtn)
+        setProjectObserver()
 
     }
 
-    private fun setProjectObserver(joinBtn: MaterialButton) = viewLifecycleOwner.lifecycleScope.launch {
+    private fun setProjectObserver() = viewLifecycleOwner.lifecycleScope.launch {
         delay(1000)
         viewModel.getLiveProjectById(project.id).observe(viewLifecycleOwner) {
             if (it != null) {
@@ -197,24 +211,43 @@ class ProjectFragment: Fragment() {
                     project.isSaved = it.isSaved
                     setSaveButton()
                 }
-
-                if (project.isRequested) {
-                    joinBtn.text = "Undo"
-                    joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
-                }
-
-                joinBtn.setOnClickListener {
-                    if (joinBtn.text == "Join") {
-                        joinBtn.text = "Undo"
-                        joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
-                    } else {
-                        joinBtn.text = "Join"
-                        joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
-                    }
-                    projectClickListener.onProjectJoinClick(project.copy())
-                }
-
             }
+        }
+    }
+
+    private fun setJoinButton() {
+        val currentUserId = Firebase.auth.currentUser?.uid
+        if (currentUserId != null) {
+            lr = Firebase.firestore.collection("projectRequests")
+                .whereEqualTo("projectId", project.id)
+                .whereEqualTo("senderId", currentUserId)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        Log.e(TAG,  "236 " + error.localizedMessage.orEmpty())
+                        return@addSnapshotListener
+                    }
+
+                    if (value != null) {
+                        if (value.isEmpty) {
+                            joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+                            // no requests have been made
+                            joinBtn.text = "Join"
+                            joinBtn.setOnClickListener {
+                                projectClickListener.onProjectJoinClick(project)
+                            }
+                        } else {
+                            joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
+                            val projectRequest = value.toObjects(ProjectRequest::class.java).first()
+
+                            // already requested
+                            joinBtn.text = "Undo"
+                            joinBtn.setOnClickListener {
+                                projectClickListener.onProjectUndoClick(project, projectRequest)
+                            }
+                        }
+                    }
+                }
+
         }
     }
 
@@ -262,7 +295,13 @@ class ProjectFragment: Fragment() {
         chip.text = link
         chip.isCheckable = false
         chip.isCloseIconVisible = false
-        chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_light))
+
+        if (isNightMode()) {
+            chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_dark_night))
+        } else {
+            chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_light))
+        }
+
         chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_dark))
         binding.projectLinks.addView(chip)
 
@@ -349,7 +388,7 @@ class ProjectFragment: Fragment() {
             findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle)
         }
 
-        val userAdapter2 = UserAdapter2(listOf(project.creator.userId))
+        val userAdapter2 = UserAdapter2(project.id, project.chatChannel, listOf(project.creator.userId))
 
         binding.projectContributorsRecycler.apply {
             adapter = userAdapter2
@@ -416,14 +455,23 @@ class ProjectFragment: Fragment() {
                                 }
                             }
                         } else {
-                            viewModel.setCurrentError(it1.exception)
+                            Log.e(TAG, "453 + " + it1.exception?.localizedMessage)
                         }
                     }
                 }
             } else {
-                viewModel.setCurrentError(it.exception)
+                Log.e(TAG, "458 + " + it.exception?.localizedMessage)
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        lr?.remove()
+    }
+
+    companion object {
+        private const val TAG = "ProjectFragment"
     }
 
 }

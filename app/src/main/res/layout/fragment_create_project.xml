@@ -7,6 +7,7 @@
     android:layout_height="match_parent"
     android:clipToPadding="false"
     android:fillViewport="true"
+    android:overScrollMode="never"
     android:paddingBottom="64dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -21,7 +22,7 @@
             android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp"
             android:background="@drawable/ic_round_account_circle_24"
-            app:layout_constraintBottom_toTopOf="@+id/divider"
+            app:layout_constraintBottom_toTopOf="@+id/project_images_container"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
@@ -29,6 +30,7 @@
             app:roundAsCircle="true" />
 
         <LinearLayout
+            android:id="@+id/linearLayout13"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -41,10 +43,9 @@
 
             <TextView
                 android:id="@+id/user_name"
-                style="@style/TextAppearance.AppCompat.Small"
+                style="@style/TextAppearance.AppCompat.Body2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
                 android:text="Jamid Deka"
                 android:textSize="15sp" />
 
@@ -52,22 +53,18 @@
                 android:id="@+id/project_location_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Gumoria Pathar"
-                android:visibility="gone"
-                app:drawableLeftCompat="@drawable/ic_round_location_on_18" />
+                android:clickable="true"
+                android:drawableTint="?colorAccent"
+                android:ellipsize="end"
+                android:focusable="true"
+                android:maxLines="1"
+                android:text="Add location"
+                android:textColor="?colorAccent"
+                app:drawableStartCompat="@drawable/ic_round_add_location_small"
+                tools:visibility="visible" />
 
         </LinearLayout>
 
-
-        <View
-            android:id="@+id/divider"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintBottom_toTopOf="@+id/project_images_container"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/user_img" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/project_images_container"
@@ -76,10 +73,10 @@
             app:cardBackgroundColor="@color/lightest_primary_color"
             app:cardCornerRadius="0dp"
             app:cardElevation="0dp"
-            app:layout_constraintBottom_toTopOf="@+id/divider2"
+            app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider">
+            app:layout_constraintTop_toBottomOf="@+id/user_img">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/project_images_recycler"
@@ -170,33 +167,25 @@
 
         </com.google.android.material.card.MaterialCardView>
 
-        <View
-            android:id="@+id/divider2"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintBottom_toTopOf="@+id/linearLayout3"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/project_images_container" />
-
         <LinearLayout
             android:id="@+id/linearLayout3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="12dp"
             app:layout_constraintBottom_toTopOf="@id/project_tags_container"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider2">
+            app:layout_constraintTop_toBottomOf="@+id/project_images_container">
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/project_title_text"
-                style="@style/AppTheme.TextInputLayout.Normal"
+                style="@style/AppTheme.WhiteBlackTextBackground"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp">
+                app:boxBackgroundMode="none"
+                app:boxStrokeColor="@color/lightest_grey"
+                app:boxStrokeWidthFocused="1dp"
+                app:hintEnabled="false">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:layout_width="match_parent"
@@ -205,35 +194,30 @@
                     android:inputType="textPersonName" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/project_content_text"
-                style="@style/AppTheme.TextInputLayout.Normal"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Write about the project ..."
-                    android:inputType="textMultiLine"
-                    android:minHeight="100dp" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/add_location_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:checkable="false"
-                android:text="Add Location"
-                app:chipIcon="@drawable/ic_round_add_location_24"
-                app:closeIconEnabled="false" />
-
             <View
                 android:id="@+id/divider3"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/project_content_text"
+                style="@style/AppTheme.WhiteBlackTextBackground"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:boxBackgroundMode="none"
+                app:boxStrokeColor="@color/lightest_grey"
+                app:boxStrokeWidthFocused="1dp"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="start|top"
+                    android:hint="Write about the project ..."
+                    android:inputType="textMultiLine"
+                    android:minHeight="100dp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
         </LinearLayout>
 
@@ -276,7 +260,7 @@
             android:layout_height="wrap_content"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toTopOf="@+id/include"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider20">
@@ -289,6 +273,20 @@
                 app:chipIcon="@drawable/ic_round_add_link_24"
                 app:closeIconEnabled="false" />
         </com.google.android.material.chip.ChipGroup>
+
+        <include
+            android:id="@+id/include"
+            layout="@layout/fragment_create_project_info"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="32dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/project_links_container" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.core.widget.NestedScrollView>

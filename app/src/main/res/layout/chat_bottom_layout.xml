@@ -24,9 +24,9 @@
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/uploading_images_recycler"
+            style="@style/AppTheme.GenericBackground2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#BFFFFFFF"
             android:clipToPadding="false"
             android:paddingStart="8dp"
             android:paddingTop="8dp"
@@ -34,13 +34,14 @@
             android:paddingBottom="8dp"
             android:visibility="gone"
             tools:itemCount="1"
-            tools:listitem="@layout/imageview_layout_small" />
+            tools:listitem="@layout/imageview_layout_small"
+            tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/uploading_documents_recycler"
+            style="@style/AppTheme.GenericBackground2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#BFFFFFFF"
             android:clipToPadding="false"
             android:paddingStart="8dp"
             android:paddingTop="8dp"
@@ -48,7 +49,8 @@
             android:paddingBottom="8dp"
             android:visibility="gone"
             tools:itemCount="1"
-            tools:listitem="@layout/document_layout_small" />
+            tools:listitem="@layout/document_layout_small"
+            tools:visibility="visible" />
 
         <LinearLayout
             android:id="@+id/linearLayout9"

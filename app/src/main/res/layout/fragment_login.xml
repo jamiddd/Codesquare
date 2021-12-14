@@ -66,15 +66,17 @@
 
     <Button
         android:id="@+id/sign_in_btn"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="16dp"
+        android:minHeight="56dp"
         android:text="Sign in"
         app:layout_constraintBottom_toTopOf="@id/google_sign_in_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/sign_up_btn"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/forgot_password_btn" />
 
     <Button
@@ -82,23 +84,26 @@
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:text="Create new account"
-        app:layout_constraintBottom_toBottomOf="@+id/sign_in_btn"
-        app:layout_constraintEnd_toStartOf="@+id/sign_in_btn"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintHorizontal_chainStyle="spread_inside"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/sign_in_btn" />
-
-    <com.google.android.gms.common.SignInButton
-        android:id="@+id/google_sign_in_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="56dp"
+        android:layout_marginTop="8dp"
+        android:text="Don't have an account?\nCreate new account"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/google_sign_in_btn"
+        app:layout_constraintStart_toStartOf="@+id/google_sign_in_btn"
+        app:layout_constraintTop_toBottomOf="@+id/google_sign_in_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/google_sign_in_btn"
+        style="@style/AppTheme.GoogleSignInButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:minHeight="58dp"
+        android:text="Sign in with Google"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        app:buttonSize="wide"
+        app:layout_constraintBottom_toTopOf="@+id/sign_up_btn"
+        app:layout_constraintEnd_toEndOf="@+id/sign_in_btn"
+        app:layout_constraintStart_toStartOf="@+id/sign_in_btn"
         app:layout_constraintTop_toBottomOf="@+id/sign_in_btn" />
 
     <Button
@@ -106,11 +111,12 @@
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:text="Forgot password"
         android:textColor="@color/darker_grey"
         app:layout_constraintBottom_toTopOf="@+id/sign_in_btn"
-        app:layout_constraintStart_toStartOf="@+id/sign_up_btn"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/linearLayout"
         app:rippleColor="@color/lightest_grey" />
 

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -13,12 +14,9 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.MessageListener
-import com.jamid.codesquare.show
-import com.jamid.codesquare.toast
 import java.io.File
 
 class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
@@ -41,34 +39,20 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
     inner class GridImageMessageViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private val imageHolder = view.findViewById<SimpleDraweeView>(R.id.grid_image)
-        private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         private val progress = view.findViewById<ProgressBar>(R.id.small_message_image_progress)
         private val messageListener = view.context as MessageListener
+        private val controllerListener = FrescoImageControllerListener()
 
         fun bind(message: Message) {
-
-            ViewCompat.setTransitionName(view, message.content)
-
             if (message.isDownloaded) {
                 progress.hide()
-                val name = message.content + message.metadata!!.ext
-                val destination = File(imagesDir, message.chatChannelId)
-                val file = File(destination, name)
-                val uri = Uri.fromFile(file)
 
-                if (message.metadata!!.ext == ".webp" || message.metadata!!.ext == ".gif") {
-                    val controller = Fresco.newDraweeControllerBuilder()
-                        .setUri(uri)
-                        .setAutoPlayAnimations(true)
-                        .build()
+                val uri = getImageUriFromMessage(message, view.context)
 
-                    imageHolder.controller = controller
-                } else {
-                    imageHolder.setImageURI(uri.toString())
-                }
+                setMessageImageBasedOnExtension(imageHolder, uri, message)
 
-                view.setOnClickListener {
-                    messageListener.onImageClick(view, message, layoutPosition, message.content)
+                imageHolder.setOnClickListener {
+                    messageListener.onImageClick(imageHolder, message, controllerListener)
                 }
 
             } else {
@@ -76,10 +60,7 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
                 messageListener.onStartDownload(message) { task, newMessage ->
                     if (task.isSuccessful) {
                         progress.hide()
-                        val name = message.content + message.metadata!!.ext
-                        val destination = File(imagesDir, message.chatChannelId)
-                        val file = File(destination, name)
-                        val uri = Uri.fromFile(file)
+                        val uri = getImageUriFromMessage(message, view.context)
 
                         if (message.metadata!!.ext == ".webp") {
                             val controller = Fresco.newDraweeControllerBuilder()
@@ -92,9 +73,8 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
                             imageHolder.setImageURI(uri.toString())
                         }
 
-
                         imageHolder.setOnClickListener {
-                            messageListener.onImageClick(view, newMessage, layoutPosition, message.content)
+                            messageListener.onImageClick(imageHolder, message, controllerListener)
                         }
                     } else {
                         view.context.toast("Something went wrong while downloading media.")
@@ -103,7 +83,38 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
             }
         }
 
+        private fun getImageUriFromMessage(message: Message, context: Context): Uri {
+            val imagesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            val name = message.content + message.metadata!!.ext
+            val destination = File(imagesDir, message.chatChannelId)
+            val file = File(destination, name)
+            return Uri.fromFile(file)
+        }
+
+        private fun setMessageImageBasedOnExtension(
+            imageHolder: SimpleDraweeView,
+            imageUri: Uri,
+            message: Message
+        ) {
+            ViewCompat.setTransitionName(imageHolder, message.content)
+            val metadata = message.metadata
+            if (metadata != null) {
+                val builder = Fresco.newDraweeControllerBuilder()
+                    .setUri(imageUri)
+                    .setControllerListener(controllerListener)
+
+                if (metadata.ext == ".webp") {
+                    builder.autoPlayAnimations = true
+                }
+
+                imageHolder.controller = builder.build()
+
+            }
+        }
+
     }
+
+
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GridImageMessageViewHolder {
         return GridImageMessageViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.grid_image_layout, parent, false))

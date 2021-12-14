@@ -33,7 +33,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @SuppressLint("ClickableViewAccessibility")
-class MessageViewHolder(val view: View, private val currentUserId: String, private val contributorsSize: Int, private val viewType: Int, private val scope: CoroutineScope): RecyclerView.ViewHolder(view), GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+class MessageViewHolder(val view: View, private val currentUserId: String, private val contributorsSize: Int, private val viewType: Int): RecyclerView.ViewHolder(view), GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
 
     private val messageListener = view.context as MessageListener
 
@@ -209,31 +209,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 }
 
                 if (message.replyTo != null) {
-                    val msg1 = message.replyMessage
-                    if (msg1 != null) {
-                        onReplyMessageLoaded(msg1, false)
-                    } else {
-                        scope.launch {
-                            val msg2 = messageListener.onGetMessageReply(message.replyTo!!)
-                            if (msg2 != null) {
-                                onReplyMessageLoaded(msg2.toReplyMessage(), false)
-                            } else {
-                                Firebase.firestore.collection("chatChannels")
-                                    .document(message.chatChannelId)
-                                    .collection("messages")
-                                    .document(message.replyTo!!)
-                                    .get()
-                                    .addOnSuccessListener {
-                                        if (it != null && it.exists()) {
-                                            val msg = it.toObject(Message::class.java)!!
-                                            onReplyMessageLoaded(msg.toReplyMessage(), false)
-                                        }
-                                    }.addOnFailureListener {
-                                        Log.e(TAG, it.localizedMessage.orEmpty())
-                                    }
-                            }
-                        }
-                    }
+                    onReplyMessageLoaded(message.replyMessage!!, false)
                 }
 
                 replyBtnAlt.setOnClickListener {
@@ -373,31 +349,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 }
 
                 if (message.replyTo != null) {
-                    val msg1 = message.replyMessage
-                    if (msg1 != null) {
-                        onReplyMessageLoaded(msg1)
-                    } else {
-                        scope.launch {
-                            val msg2 = messageListener.onGetMessageReply(message.replyTo!!)
-                            if (msg2 != null) {
-                                onReplyMessageLoaded(msg2.toReplyMessage())
-                            } else {
-                                Firebase.firestore.collection("chatChannels")
-                                    .document(message.chatChannelId)
-                                    .collection("messages")
-                                    .document(message.replyTo!!)
-                                    .get()
-                                    .addOnSuccessListener {
-                                        if (it != null && it.exists()) {
-                                            val msg3 = it.toObject(Message::class.java)!!
-                                            onReplyMessageLoaded(msg3.toReplyMessage())
-                                        }
-                                    }.addOnFailureListener {
-                                        Log.e(TAG, it.localizedMessage.orEmpty())
-                                    }
-                            }
-                        }
-                    }
+                    onReplyMessageLoaded(message.replyMessage!!)
                 }
 
                 // end of other user message
@@ -528,28 +480,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             }
 
             replyLayoutBinding.replyCloseBtn.hide()
-
-           /* if (msg.sender.name.isBlank()) {
-                scope.launch {
-                    val sender = messageListener.onGetMessageReplyUser(msg.senderId)
-                    if (sender != null) {
-                        msg.sender = sender
-                        replyLayoutBinding.replyName.text = msg.sender.name
-                    } else {
-                        Firebase.firestore.collection("users").document(msg.senderId)
-                            .get()
-                            .addOnSuccessListener {
-                                if (it != null && it.exists()) {
-                                    val sender1 = it.toObject(User::class.java)!!
-                                    msg.sender = sender1
-                                    replyLayoutBinding.replyName.text = msg.sender.name
-                                }
-                            }.addOnFailureListener {
-                                Log.e(TAG, it.localizedMessage.orEmpty())
-                            }
-                    }
-                }
-            }*/
 
             if (msg.type == image) {
                 replyLayoutBinding.replyImage.show()
@@ -736,8 +666,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
         private const val TAG = "MessageViewHolder"
 
-        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, contributorsSize: Int, viewType: Int, scope: CoroutineScope): MessageViewHolder {
-            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, contributorsSize, viewType, scope)
+        fun newInstance(parent: ViewGroup, @LayoutRes layout: Int, currentUserId: String, contributorsSize: Int, viewType: Int): MessageViewHolder {
+            return MessageViewHolder(LayoutInflater.from(parent.context).inflate(layout, parent, false), currentUserId, contributorsSize, viewType)
         }
     }
 
@@ -807,14 +737,14 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             replyBtn.showWithAnimations()
         }
 
-        scope.launch {
+        /*scope.launch {
             delay(6000)
             if (isCurrentUserMessage) {
                 replyBtnAlt.hideWithAnimation()
             } else {
                 replyBtn.hideWithAnimation()
             }
-        }
+        }*/
 
         return true
     }
@@ -844,9 +774,9 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             messageListener.onMessageStateChanged(mMessage!!)
         } else {
             if (leftImage != null) {
-                messageListener.onImageClick(leftImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+//                messageListener.onImageClick(leftImage!!, mMessage!!, layoutPosition, mMessage!!.content)
             } else {
-                messageListener.onImageClick(rightImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+//                messageListener.onImageClick(rightImage!!, mMessage!!, layoutPosition, mMessage!!.content)
             }
         }
     }

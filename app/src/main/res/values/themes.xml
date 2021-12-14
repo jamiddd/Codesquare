@@ -19,10 +19,77 @@
         <item name="chipStyle">@style/AppTheme.Chip</item>
         <item name="searchViewStyle">@style/AppTheme.SearchView</item>
         <item name="snackbarStyle">@style/AppTheme.Snackbar</item>
+        <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>
+        <item name="popupMenuStyle">@style/AppTheme.PopupMenu</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
+    </style>
+
+
+
+    <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+       <!-- <item name="colorPrimary">@color/shrine_pink_100</item>
+        <item name="colorSecondary">@color/shrine_pink_100</item>
+        <item name="colorSurface">@color/shrine_pink_light</item>
+        <item name="colorOnSurface">@color/shrine_pink_900</item>-->
+        <item name="alertDialogStyle">@style/MaterialAlertDialog.App</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
+        <item name="buttonBarPositiveButtonStyle">@style/AppTheme.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/MaterialAlertDialog.App.NegativeBtn</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App" parent="MaterialAlertDialog.MaterialComponents">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.MediumComponent</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.NegativeBtn" parent="AppTheme.TextButton">
+        <item name="textAllCaps">false</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:layout_marginEnd">8dp</item>
+    </style>
+
+    <style name="MaterialAlertDialog.App.Title.Text" parent="MaterialAlertDialog.MaterialComponents.Title.Text.CenterStacked">
+        <item name="android:textSize">16sp</item>
+        <item name="fontFamily">sans-serif-medium</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+    </style>
+
+    <style name="ShapeAppearance.App.MediumComponent" parent="ShapeAppearance.MaterialComponents.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <style name="AppTheme.GoogleSignInButton" parent="AppTheme.Button">
+        <item name="backgroundTint">@color/white</item>
+        <item name="android:backgroundTint">@color/white</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="color">@color/black</item>
+        <item name="iconTint">@null</item>
+        <item name="icon">@drawable/googleg_standard_color_18</item>
+    </style>
+
+    <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <style name="AppTheme.PopupMenu" parent="@android:style/Widget.PopupMenu">
+        <item name="android:popupBackground">@drawable/popup_menu_background</item>
+        <item name="popupMenuBackground">@drawable/popup_menu_background</item>
+        <item name="android:popupElevation">8dp</item>
+    </style>
+
+    <style name="AppTheme.SnackbarButtonStyle" parent="@style/Widget.MaterialComponents.Button.TextButton.Snackbar">
+        <item name="backgroundTint">@color/transparent</item>
+        <item name="android:textColor">@color/white</item>
     </style>
 
     <style name="AppTheme.Snackbar" parent="Widget.MaterialComponents.Snackbar.FullWidth">
-
+        <item name="backgroundTint">?colorAccent</item>
+        <item name="android:textColor">@color/white</item>
     </style>
 
     <style name="AppTheme.GenericBackground">
@@ -30,6 +97,13 @@
         <item name="android:background">@color/white</item>
         <item name="backgroundTint">@color/white</item>
         <item name="android:backgroundTint">@color/white</item>
+    </style>
+
+    <style name="AppTheme.GenericBackground2">
+        <item name="background">@color/lightest_grey</item>
+        <item name="android:background">@color/lightest_grey</item>
+        <item name="backgroundTint">@color/lightest_grey</item>
+        <item name="android:backgroundTint">@color/lightest_grey</item>
     </style>
 
 
@@ -53,9 +127,22 @@
         <item name="android:submitBackground">@null</item>
     </style>
 
+    <style name="AppTheme.WhiteBlackTextBackground" parent="AppTheme.TextInputLayout.Normal">
+        <item name="boxBackgroundColor">@color/white</item>
+    </style>
+
+    <style name="AppTheme.AnimationNoPosts">
+        <item name="lottie_rawRes">@raw/no_posts</item>
+    </style>
+
+    <style name="AppTheme.AnimationNoChatChannels">
+        <item name="lottie_rawRes">@raw/chat_list</item>
+    </style>
+
     <style name="AppTheme.Headline6" parent="TextAppearance.MaterialComponents.Headline6">
-        <item name="fontFamily">sans-serif-medium</item>
+        <item name="fontFamily">sans-serif</item>
         <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">18sp</item>
     </style>
 
     <style name="AppTheme.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -96,8 +183,45 @@
     </style>
 
     <style name="AppTheme.ChatBalloonRight">
+        <item name="backgroundTint">?colorAccent</item>
+        <item name="android:backgroundTint">?colorAccent</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="color">@color/white</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonRightIcon">
+        <item name="backgroundTint">@color/white</item>
+        <item name="android:backgroundTint">@color/white</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonRightTextPrimary">
+        <item name="color">@color/white</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonRightTextSecondary">
+        <item name="android:textColor">@color/faded_white</item>
+        <item name="color">@color/faded_white</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonLeft">
         <item name="backgroundTint">@color/lightest_grey</item>
         <item name="android:backgroundTint">@color/lightest_grey</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonLeftIcon">
+        <item name="backgroundTint">@color/black</item>
+        <item name="android:backgroundTint">@color/black</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonLeftTextPrimary">
+        <item name="color">@color/black</item>
+        <item name="android:textColor">@color/black</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonLeftTextSecondary">
+        <item name="android:textColor">@color/darker_grey</item>
+        <item name="color">@color/darker_grey</item>
     </style>
 
     <style name="AppTheme.ChatBottomText">
@@ -140,6 +264,12 @@
         <item name="shapeAppearance">@style/AppTheme.SmallComponent</item>
     </style>
 
+    <style name="AppTheme.ButtonOutlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Button</item>
+        <item name="android:textAppearance">@style/AppTheme.TextAppearance.Button</item>
+        <item name="shapeAppearance">@style/AppTheme.SmallComponent</item>
+    </style>
+
     <style name="AppTheme.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.Button</item>
         <item name="android:textAppearance">@style/AppTheme.TextAppearance.Button.TextButton</item>
@@ -173,7 +303,15 @@
     </style>
 
     <style name="AppTheme.Fragment">
-        <item name="android:background">@color/white</item>
+        <item name="android:background">#fafafa</item>
+    </style>
+
+    <style name="AppTheme.TagNextBtn" parent="AppTheme.Button.IconOnly">
+        <item name="android:backgroundTint">@color/white</item>
+    </style>
+
+    <style name="AppTheme.TagPrevBtn" parent="AppTheme.Button.IconOnly">
+        <item name="android:backgroundTint">@color/white</item>
     </style>
 
     <style name="AppTheme.AppBar">
@@ -215,6 +353,10 @@
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.Chip</item>
         <item name="android:textAppearance">@style/Chip.Text</item>
         <item name="checkedIconTint">?colorPrimary</item>
+        <item name="checkedIconEnabled">false</item>
+        <item name="closeIconEnabled">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="checkedIconVisible">false</item>
     </style>
 
     <style name="Chip.Text" parent="TextAppearance.MaterialComponents.Body2">

@@ -83,7 +83,7 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
             startPostponedEnterTransition()
 
             val multiGestureListener = MultiGestureListener()
-            multiGestureListener.addListener(FlingListener(this@ImageViewFragment))
+//            multiGestureListener.addListener(FlingListener(this@ImageViewFragment))
             multiGestureListener.addListener(TapListener(this))
             multiGestureListener.addListener(DoubleTapGestureListener(this))
             setTapListener(multiGestureListener)
@@ -146,7 +146,14 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        val appbar = activity?.findViewById<AppBarLayout>(R.id.main_appbar)!!
         showSystemUI()
+        appbar.slideReset()
+        if (!isNightMode()) {
+            binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
+        }
+
+        binding.bottomInfoView.slideReset()
     }
 
     companion object {

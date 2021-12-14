@@ -9,29 +9,34 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
+import com.jamid.codesquare.adapter.comparators.PreviousQueryComparator
+import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.data.SearchResult
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
-class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener): ListAdapter<SearchResult, SearchResultsAdapter.SearchResultViewHolder>(object: DiffUtil.ItemCallback<SearchResult>() {
-    override fun areItemsTheSame(oldItem: SearchResult, newItem: SearchResult): Boolean {
-        return oldItem.id == newItem.id
-    }
-
-    override fun areContentsTheSame(oldItem: SearchResult, newItem: SearchResult): Boolean {
-        return oldItem == newItem
-    }
-}){
+class SearchResultsAdapter(
+    private val searchItemClickListener: SearchItemClickListener
+): ListAdapter<SearchQuery, SearchResultsAdapter.SearchResultViewHolder>(PreviousQueryComparator()){
 
     inner class SearchResultViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private val searchItemText = view.findViewById<TextView>(R.id.search_result_content)
         private val searchItemForwardBtn = view.findViewById<Button>(R.id.search_result_forward)
 
-        fun bind(searchResult: SearchResult) {
-            searchItemText.text = searchResult.title
+        fun bind(searchQuery: SearchQuery) {
+            searchItemText.text = searchQuery.queryString
 
             view.setOnClickListener {
-                searchItemClickListener.onSearchItemClick(searchResult.id)
+                searchItemClickListener.onSearchItemClick(searchQuery)
+            }
+
+            searchItemForwardBtn.setOnClickListener {
+                searchItemClickListener.onSearchItemForwardClick(searchQuery)
+            }
+
+            view.setOnLongClickListener {
+                searchItemClickListener.onSearchOptionClick(it, searchQuery)
+                true
             }
 
         }

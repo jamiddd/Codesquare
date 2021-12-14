@@ -91,10 +91,11 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     }
 
     open fun onViewLaidOut() {
+        val progressBar = activity?.findViewById<ProgressBar>(R.id.main_progress_bar)
         recyclerView = binding.pagerItemsRecycler
         noItemsText = binding.pagerNoItemsText
         swipeRefresher = binding.pagerRefresher
-        initLayout(binding.pagerItemsRecycler, binding.pagerActionBtn, binding.pagerNoItemsText, image = binding.noDataImage, refresher = binding.pagerRefresher)
+        initLayout(binding.pagerItemsRecycler, binding.pagerActionBtn, binding.pagerNoItemsText, progressBar = progressBar, image = binding.noDataImage, refresher = binding.pagerRefresher)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -116,6 +117,13 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
             }
 
             it.setColorSchemeColors(requireContext().accentColor())
+
+            if (isNightMode()) {
+                it.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(requireContext(), R.color.darkest_grey_2))
+            } else {
+                it.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(requireContext(), R.color.white))
+            }
+
             it.setProgressViewOffset(false, convertDpToPx(0), convertDpToPx(56))
         }
 

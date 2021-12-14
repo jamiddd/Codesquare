@@ -4,8 +4,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
+import com.jamid.codesquare.FrescoImageControllerListener
 
-class ImageAdapter(private val onClick: (v: View) -> Unit): ListAdapter<String, ImageViewHolder>(comparator){
+class ImageAdapter(private val onClick: (v: View, controllerListener: FrescoImageControllerListener) -> Unit): ListAdapter<String, ImageViewHolder>(comparator){
 
     companion object {
 

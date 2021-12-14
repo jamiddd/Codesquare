@@ -1,11 +1,10 @@
 package com.jamid.codesquare.ui
 
-import android.graphics.drawable.BitmapDrawable
-import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.view.*
+import android.webkit.URLUtil
 import androidx.activity.addCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
@@ -19,7 +18,6 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.transition.platform.MaterialSharedAxis
-import com.google.firebase.firestore.FieldValue
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.data.Location
@@ -27,6 +25,7 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentCreateProjectBinding
 import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import java.util.regex.Pattern
 
 class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
@@ -38,8 +37,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
     }
 
     override fun onCreateView(
@@ -141,6 +140,12 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
     }
 
+    private fun validateTag(tag: String): Boolean {
+        val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
+        val m = p.matcher(tag)
+        return !m.matches()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
@@ -162,7 +167,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             }
         }
 
-        imageAdapter = ImageAdapter {
+        imageAdapter = ImageAdapter { a, b ->
             //
         }
 
@@ -198,8 +203,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     binding.removeCurrentImgBtn.hide()
                 }
 
-                if (currentProject.title.isNotBlank()) {
-                    binding.projectTitleText.editText?.setText(currentProject.title)
+                if (currentProject.name.isNotBlank()) {
+                    binding.projectTitleText.editText?.setText(currentProject.name)
                 }
 
                 if (currentProject.content.isNotBlank()) {
@@ -207,13 +212,13 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 }
 
                 if (currentProject.location.address.isNotBlank()) {
-                    binding.addLocationBtn.text = currentProject.location.address
+                    binding.projectLocationText.text = currentProject.location.address
 
-                    binding.addLocationBtn.chipIcon = ContextCompat.getDrawable(activity, R.drawable.ic_round_location_on_24)
+                    binding.projectLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_location_on_small, 0, 0, 0)
 
-                    binding.addLocationBtn.setOnClickListener {
+                    binding.projectLocationText.setOnClickListener {
 
-                        MaterialAlertDialogBuilder(activity)
+                        val alertDialog = MaterialAlertDialogBuilder(activity)
                             .setTitle("Removing location ...")
                             .setMessage("Are you sure you want to remove location attached to this project?")
                             .setPositiveButton("Remove") { _, _ ->
@@ -222,12 +227,14 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                                 a.dismiss()
                             }.show()
 
+                        alertDialog.window?.setGravity(Gravity.BOTTOM)
+
                     }
                 } else {
-                    binding.addLocationBtn.chipIcon = ContextCompat.getDrawable(activity, R.drawable.ic_round_add_location_24)
-                    binding.addLocationBtn.text = "Add Location"
+                    binding.projectLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
+                    binding.projectLocationText.text = "Add Location"
 
-                    binding.addLocationBtn.setOnClickListener {
+                    binding.projectLocationText .setOnClickListener {
                         viewModel.setCurrentProjectTitle(getTitle())
                         viewModel.setCurrentProjectContent(getContent())
 
@@ -270,18 +277,25 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
             inputLayoutBinding.inputTextLayout.hint = "Add tag .. "
 
-            MaterialAlertDialogBuilder(activity)
+            val alertDialog = MaterialAlertDialogBuilder(activity)
                 .setTitle("Add Tag")
-                .setMessage("Tags are helpful in searches and also to make sense of the project as to what category it belongs to.")
+                .setMessage("Tags are helpful in searches and also to make sense of the project as to what category it belongs to. Don't use '#'")
                 .setView(inputLayout)
                 .setPositiveButton("Add") { _, _ ->
                     if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
-                        val tag = inputLayoutBinding.inputTextLayout.text.toString()
-                        addTag(tag)
+                        val tag = inputLayoutBinding.inputTextLayout.text.trim().toString()
+
+                        val tags = processTagText(tag)
+                        for (t in tags) {
+                            addTag(t)
+                        }
+
                     }
                 }.setNegativeButton("Cancel") { a, _ ->
                     a.dismiss()
                 }.show()
+
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
 
         }
 
@@ -290,19 +304,27 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
 
             inputLayoutBinding.inputTextLayout.hint = "Add link .. "
+            inputLayoutBinding.inputTextLayout.inputType = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
+            inputLayoutBinding.inputTextLayout.hint = "Ex: https://wwww.google.com"
 
-            MaterialAlertDialogBuilder(activity)
+            val alertDialog = MaterialAlertDialogBuilder(activity)
                 .setTitle("Add Link")
                 .setMessage("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
                 .setView(inputLayout)
                 .setPositiveButton("Add") { _, _ ->
                     if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
-                        val link = inputLayoutBinding.inputTextLayout.text.toString()
-                        addLink(link)
+                        val link = inputLayoutBinding.inputTextLayout.text.trim().toString()
+                        if (URLUtil.isValidUrl(link)) {
+                            addLink(link)
+                        } else {
+                            toast("Not a proper link.")
+                        }
                     }
                 }.setNegativeButton("Cancel") { a, _ ->
                     a.dismiss()
                 }.show()
+
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
         }
 
         activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
@@ -311,7 +333,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 findNavController().navigateUp()
                 viewModel.setCurrentProject(null)
             } else {
-                MaterialAlertDialogBuilder(activity)
+                val alertDialog = MaterialAlertDialogBuilder(activity)
                     .setTitle("Save project ...")
                     .setMessage("Save the content of this unfinished project?")
                     .setPositiveButton("Save") { _, _ ->
@@ -321,6 +343,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         findNavController().navigateUp()
                         a.dismiss()
                     }.show()
+
+                alertDialog.window?.setGravity(Gravity.BOTTOM)
             }
         }
 
@@ -370,6 +394,17 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             binding.projectTagsContainer.removeView(chip)
         }
         binding.projectTagsContainer.addView(chip, 0)
+    }
+
+    private fun processTagText(tagText: String): List<String> {
+        val re = Regex("[^A-Za-z0-9 ]")
+        val newTagText = re.replace(tagText, "")
+
+        return if (newTagText.contains(' ')) {
+            newTagText.split(' ')
+        } else {
+            listOf(newTagText)
+        }
     }
 
     private fun addLinks(links: List<String>) {

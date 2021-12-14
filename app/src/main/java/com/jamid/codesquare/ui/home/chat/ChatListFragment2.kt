@@ -6,9 +6,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
 import com.jamid.codesquare.hide
@@ -42,17 +44,40 @@ class ChatListFragment2: Fragment() {
                 addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
             }
 
+            binding.noChatChannelsText.text = "No chats found. Collaborate on projects or create your own project to create a collaboration."
+
             viewModel.chatChannels.observe(viewLifecycleOwner) {
                 if (!it.isNullOrEmpty()) {
-                    binding.noChatChannelsText.hide()
+                    onChatChannelExists()
                     chatChannelAdapter2.submitList(it)
                 } else {
-                    binding.noChatChannelsText.text = "No chats. Collaborate on projects or create your own project to create a collaboration."
-                    binding.noChatChannelsText.show()
+                    onChatChannelNotFound()
                 }
             }
 
+            binding.exploreProjectBtn.setOnClickListener {
+                findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment)
+            }
+
+            binding.getStartedBtn.setOnClickListener {
+                findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment)
+            }
+
         }
+    }
+
+    private fun onChatChannelExists() {
+        binding.noChatChannelsText.hide()
+        binding.noChannelsImage.hide()
+        binding.getStartedBtn.hide()
+        binding.exploreProjectBtn.hide()
+    }
+
+    private fun onChatChannelNotFound() {
+        binding.noChatChannelsText.show()
+        binding.noChannelsImage.show()
+        binding.getStartedBtn.show()
+        binding.exploreProjectBtn.show()
     }
 
 }

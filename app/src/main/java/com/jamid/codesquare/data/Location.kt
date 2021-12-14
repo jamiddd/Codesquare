@@ -7,7 +7,8 @@ import kotlinx.parcelize.Parcelize
 data class Location(
     val latitude: Double,
     val longitude: Double,
-    val address: String
+    val address: String,
+    val geoHash: String
 ): Parcelable {
-    constructor(): this(0.0, 0.0, "")
+    constructor(): this(0.0, 0.0, "", "")
 }

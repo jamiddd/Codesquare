@@ -24,9 +24,7 @@ class LocationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         locationName.text = name
         locationAddress.text = addressText
 
-        view.setOnClickListener {
-            locationItemClickListener.onLocationClick(address)
-        }
+
 
     }
 

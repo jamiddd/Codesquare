@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
@@ -28,6 +29,7 @@ data class User(
     var collaborations: List<String>,
     var projects: List<String>,
     var projectRequests: List<String>,
+    var projectInvites: List<String>,
     var chatChannels: List<String>,
     var registrationTokens: List<String>,
     var projectsCount: Long,
@@ -40,9 +42,11 @@ data class User(
     @Exclude @set: Exclude @get: Exclude
     var isFollowing: Boolean,
     @Exclude @set: Exclude @get: Exclude
-    var isCurrentUser: Boolean
+    var isCurrentUser: Boolean,
+    @Embedded(prefix = "user_")
+    var location: Location? = null
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
+    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false, false)
 
     @Exclude
     fun minify(): UserMinimal {
@@ -54,7 +58,7 @@ data class User(
 
     companion object {
         fun newUser(id: String, name: String, email: String) =
-            User(id, name, randomId().take(16), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
+            User(id, name, randomId().take(16), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isFollowed = false, isFollowing = false, isCurrentUser = true)
 
     }
 

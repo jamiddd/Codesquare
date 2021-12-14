@@ -66,4 +66,16 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("SELECT * FROM messages WHERE state = 1")
     abstract suspend fun getSelectedMessages(): List<Message>?
 
+    @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId ORDER BY createdAt DESC LIMIT :limit")
+    abstract fun getMessagesForChannel(chatChannelId: String, limit: Int): LiveData<List<Message>>
+
+    @Query("DELETE FROM messages WHERE chatChannelId = :chatChannelId AND senderId = :userId")
+    abstract suspend fun deleteAllMessagesByUserInChannel(userId: String, chatChannelId: String?)
+
+    @Query("DELETE FROM messages WHERE senderId = :userId")
+    abstract suspend fun deleteAllMessagesByUser(userId: String)
+
+    @Query("DELETE FROM messages")
+    abstract suspend fun clearTable()
+
 }

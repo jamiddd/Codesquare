@@ -7,7 +7,6 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
@@ -37,30 +36,37 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.clear_notifications -> {
-                Firebase.firestore.collection("users")
-                    .document(viewModel.currentUser.value?.id.orEmpty())
-                    .collection("notifications")
-                    .limit(50)
-                    .get()
-                    .addOnSuccessListener {
 
-                        val batch = Firebase.firestore.batch()
+                val currentUser = viewModel.currentUser.value
+                if (currentUser != null) {
 
-                        it.forEach { it1 ->
-                            batch.delete(it1.reference)
-                        }
+                    Log.d(TAG, "hahahahah")
 
-                        batch.commit()
-                            .addOnSuccessListener {
-                                viewModel.clearAllNotifications()
-                            }.addOnFailureListener { it1 ->
-                                Log.e(TAG, it1.localizedMessage.orEmpty())
+                    Firebase.firestore.collection("users")
+                        .document(currentUser.id)
+                        .collection("notifications")
+                        .limit(50)
+                        .get()
+                        .addOnSuccessListener {
+
+                            val batch = Firebase.firestore.batch()
+
+                            it.forEach { it1 ->
+                                batch.delete(it1.reference)
                             }
 
-                    }.addOnFailureListener {
-                        Log.e(TAG, it.localizedMessage.orEmpty())
-                    }
+                            batch.commit()
+                                .addOnSuccessListener {
+                                    viewModel.clearAllNotifications()
+                                }.addOnFailureListener { it1 ->
+                                    Log.e(TAG, it1.localizedMessage.orEmpty())
+                                }
 
+                        }.addOnFailureListener {
+                            Log.e(TAG, it.localizedMessage.orEmpty())
+                        }
+
+                }
             }
         }
         return super.onOptionsItemSelected(item)
@@ -73,8 +79,6 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
 
         if (currentUser != null) {
 
-            Log.d(TAG, currentUser.id)
-
             val query = Firebase.firestore.collection("users")
                 .document(currentUser.id)
                 .collection("notifications")
@@ -83,9 +87,8 @@ class NotificationFragment: PagerListFragment<Notification, NotificationViewHold
                 viewModel.getNotifications(currentUser.id, query)
             }
 
-            recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-
-            noItemsText?.text = "No notifications at the moment"
+            noItemsText?.text = "No notifications at the moment. Your notifications appear here. However notifications like project request and invites appear separately."
+            binding.noDataImage.setAnimation(R.raw.empty_notification)
 
             isEmpty.observe(viewLifecycleOwner) {
                 val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)

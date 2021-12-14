@@ -4,5 +4,5 @@ import com.jamid.codesquare.data.Notification
 
 interface NotificationItemClickListener {
     fun onNotificationRead(notification: Notification)
-    fun onNotificationClick(contextObject: Any)
+    fun onNotificationClick(notification: Notification, contextObj: Any)
 }

@@ -3,7 +3,6 @@ package com.jamid.codesquare
 import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
-import androidx.lifecycle.viewModelScope
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
@@ -18,8 +17,6 @@ import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.google.firebase.storage.ktx.storage
 import com.jamid.codesquare.data.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 
@@ -146,17 +143,22 @@ object FireUtility {
 
         val chatChannelRef = Firebase.firestore.collection("chatChannels").document(project.chatChannel)
 
+        val tokens = mutableListOf<String>()
+
+        tokens.addAll(currentUser.registrationTokens)
+
         val chatChannel = ChatChannel(
             project.chatChannel,
             project.id,
-            project.title,
+            project.name,
             project.images.first(),
             project.contributors.size.toLong(),
             listOf(project.creator.userId),
             listOf(project.creator.userId),
             project.createdAt,
             project.updatedAt,
-            null
+            null,
+            tokens
         )
 
         val commentChannelRef = Firebase.firestore.collection("commentChannels").document()
@@ -167,7 +169,7 @@ object FireUtility {
             commentChannelId,
             project.id,
             project.id,
-            project.title,
+            project.name,
             project.createdAt,
             null
         )
@@ -254,7 +256,9 @@ object FireUtility {
         // updating projects where the creator is current user
         for (project in currentUser.projects) {
             val ref = db.collection("projects").document(project)
-            batch.update(ref, "creator", currentUser.minify())
+            val miniUser = currentUser.minify()
+            Log.d(TAG, miniUser.toString())
+            batch.update(ref, "creator", miniUser)
         }
 
         batch.commit().addOnCompleteListener(onComplete)
@@ -400,6 +404,49 @@ object FireUtility {
         }
     }
 
+    fun inviteUserToProjectAlt(project: Project, userId: String, notification: Notification) {
+        val db = Firebase.firestore
+        db.runTransaction {
+            val projectInviteRef = Firebase.firestore.collection("users")
+                .document(userId).collection("invites")
+                .document()
+
+            val projectInvite = ProjectInvite(projectInviteRef.id, project.id, userId, project.creator.userId, System.currentTimeMillis())
+
+            val notificationRef = Firebase.firestore
+                .collection("users")
+                .document(userId)
+                .collection("notifications")
+                .document(notification.id)
+
+
+            val prevNotificationRef = Firebase.firestore.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .whereEqualTo("content", notification.content)
+
+
+
+        }
+    }
+
+    suspend fun checkIfNotificationAlreadyExists(notification: Notification, userId: String): Result<Pair<QuerySnapshot, Boolean>> {
+        return try {
+            val task = Firebase.firestore.collection("users")
+                .document(userId)
+                .collection("notifications")
+                .whereEqualTo("content", notification.content)
+                .get()
+
+            val result = task.await()
+            Result.Success((result to result.isEmpty))
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+
+
     suspend fun joinProject(currentUser: User, project: Project, notification: Notification): Result<ProjectRequest> {
         return try {
             val batch = Firebase.firestore.batch()
@@ -457,7 +504,7 @@ object FireUtility {
         }
     }
 
-    suspend fun undoJoinProject(userId: String, projectId: String, requestId: String, notification: Notification?): Result<Void> {
+    suspend fun undoJoinProject(userId: String, projectId: String, requestId: String): Result<Void> {
         return try {
 
             val batch = Firebase.firestore.batch()
@@ -478,13 +525,23 @@ object FireUtility {
 
             batch.delete(projectRequestRef)
 
-            if (notification != null) {
-                batch.delete(Firebase.firestore
-                    .collection("users")
-                    .document(notification.receiverId)
-                    .collection("notifications")
-                    .document(notification.id))
-            }
+            // deleting the notification
+            Firebase.firestore.collection("users").document(userId)
+                .collection("notifications")
+                .whereEqualTo("contextId", projectId)
+                .whereEqualTo("type", NOTIFICATION_JOIN_PROJECT)
+                .get()
+                .addOnSuccessListener {
+                    if (it.isEmpty) {
+                        Log.d(TAG, "Probably no notifications based on the info")
+                    } else {
+                        for (i in it) {
+                            i.reference.delete()
+                        }
+                    }
+                }.addOnFailureListener {
+                    Log.e(TAG, "502 " + it.localizedMessage.orEmpty())
+                }
 
             batch.update(projectRef, projectChanges)
 
@@ -685,6 +742,7 @@ object FireUtility {
 
             // checking if the current user has changed the document
             if (notification.senderId != notification.receiverId) {
+                Log.d(TAG, "${notification.senderId} ---- ${notification.receiverId}")
                 batch.set(Firebase.firestore.collection("users").document(notification.receiverId).collection("notifications").document(notification.id), notification)
             }
 
@@ -972,6 +1030,22 @@ object FireUtility {
             }
 
 
+    }
+
+    suspend fun getOtherUser(userId: String): Result<User>? {
+        return try {
+            val ref = Firebase.firestore.collection("users").document(userId)
+            val task = ref.get()
+            val result = task.await()
+            if (result.exists()) {
+                val user = result.toObject(User::class.java)!!
+                Result.Success(user)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
     }
 
     fun getOtherUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
@@ -1350,5 +1424,295 @@ object FireUtility {
         }
     }
 
+    // the changes to the chat channel will be reflected in the local database because there is listener
+    // attached to the channels
+    fun setOtherUserAsAdmin(chatChannelId: String, userId: String, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            .update("administrators", FieldValue.arrayUnion(userId))
+            .addOnCompleteListener(onComplete)
+    }
+
+    // the changes to the chat channel will be reflected in the local database because there is listener
+    // attached to the channels
+    fun removeUserFromAdmin(chatChannelId: String, userId:String, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            .update("administrators", FieldValue.arrayRemove(userId))
+            .addOnCompleteListener(onComplete)
+    }
+
+    // Leaving the group
+    //
+    // 1. remove project id from user document collaborations -------------X
+    // 2. remove chat channel from user document channels list -------------X
+    // 3. remove user id from chatChannel contributors and if admin, from administrators
+    // 4. add user id to blocked list
+    suspend fun removeUserFromProject(user: User, projectId: String, chatChannelId: String): Result<String> {
+        val contributorRef = Firebase.firestore.collection("users").document(user.id)
+        val batch = Firebase.firestore.batch()
+
+        return try {
+            val userChanges = mapOf(
+                "projects" to FieldValue.arrayRemove(projectId),
+                "channels" to FieldValue.arrayRemove(chatChannelId)
+            )
+
+            val chatChannelRef = Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            val channelChanges = mapOf(
+                "contributors" to FieldValue.arrayRemove(user.id),
+                "administrators" to FieldValue.arrayRemove(user.id),
+                "contributorsCount" to FieldValue.increment(-1)
+            )
+
+            val projectRef = Firebase.firestore.collection("projects").document(projectId)
+            val projectChanges = mapOf(
+                "contributors" to FieldValue.arrayRemove(user.id)
+            )
+
+            batch.update(projectRef, projectChanges)
+            batch.update(chatChannelRef, channelChanges)
+            batch.update(contributorRef, userChanges)
+
+            val task = batch.commit()
+
+            task.await()
+
+            Result.Success(projectId)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun castVoteRemoveUser(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Transaction>) -> Unit) {
+
+        val decision = ProjectDecision(user.id, user, "user", emptyList(), projectId)
+
+        Firebase.firestore.runTransaction {
+            val ref = Firebase.firestore.collection("projects").document(projectId)
+                .collection("toBeRemoved")
+                .document(user.id)
+
+            val dec = it.get(ref)
+
+            if (dec.exists()) {
+                it.update(ref, "votersList", FieldValue.arrayUnion(currentUserId))
+            } else {
+                it.set(ref, decision)
+            }
+        }.addOnCompleteListener(onComplete)
+    }
+
+    fun undoVoteCast(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Void>) -> Unit) {
+        val ref = Firebase.firestore.collection("projects").document(projectId)
+            .collection("toBeRemoved")
+            .document(user.id)
+
+        ref.update("votersList", FieldValue.arrayRemove(currentUserId)).addOnCompleteListener(onComplete)
+    }
+
+    fun getAllMessagesByUser(chatChannelId: String, user: User, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            .collection("messages")
+            .whereEqualTo("senderId", user.id)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val batch = Firebase.firestore.batch()
+                    val qs = it.result
+                    for (snapshot in qs) {
+                        batch.delete(snapshot.reference)
+                    }
+                    batch.commit()
+                        .addOnCompleteListener(onComplete)
+                } else {
+                    Log.e(TAG, it.exception?.localizedMessage.orEmpty())
+                }
+            }
+    }
+
+    suspend fun inviteUserToProject(project: Project, userId: String, notification: Notification): Result<Void> {
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+            val ref = Firebase.firestore.collection("users")
+                .document(userId).collection("invites")
+                .document()
+
+            val projectInvite = ProjectInvite(ref.id, project.id, userId, project.creator.userId, System.currentTimeMillis())
+
+            val notificationRef = Firebase.firestore
+                .collection("users")
+                .document(userId)
+                .collection("notifications")
+                .document(notification.id)
+
+            batch.set(notificationRef, notification)
+
+            val currentUserChanges = mapOf(
+                "projectInvites" to FieldValue.arrayUnion(projectInvite.id)
+            )
+
+            batch.set(ref, projectInvite)
+            batch.update(db.collection("users").document(project.creator.userId), currentUserChanges)
+
+            val task = batch.commit()
+            val result = task.await()
+            Result.Success(result)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    suspend fun revokeInvite(invite: ProjectInvite, otherUserId: String, oldNotification: Notification?): Result<Void> {
+        return try {
+            val db = Firebase.firestore
+            val batch = db.batch()
+
+            val inviteRef = db.collection("users").document(otherUserId).collection("invites").document(invite.id)
+            batch.delete(inviteRef)
+
+            if (oldNotification != null) {
+                val notificationRef = db.collection("users").document(otherUserId).collection("notifications").document(oldNotification.id)
+                batch.delete(notificationRef)
+            }
+
+            val currentUserRef = db.collection("users").document(invite.sender)
+
+            val currentUserChanges = mapOf(
+                "projectInvites" to FieldValue.arrayRemove(invite.id)
+            )
+
+            batch.update(currentUserRef, currentUserChanges)
+            val result = batch.commit().await()
+            Result.Success(result)
+        } catch (e: Exception) {
+            return Result.Error(e)
+        }
+    }
+
+
+    // old notification might not exist if cleared by other users
+    suspend fun getOldNotification(receiverId: String, contextId: String, senderId: String, type: Int): Result<Notification>? {
+        return try {
+            val ref = Firebase.firestore
+                .collection("users")
+                .document(receiverId)
+                .collection("notifications")
+                .whereEqualTo("senderId", senderId)
+                .whereEqualTo("type", type)
+                .whereEqualTo("contextId", contextId)
+                .limit(1)
+
+            val task = ref.get()
+            val result = task.await()
+
+            if (!result.isEmpty) {
+                val notification = result.toObjects(Notification::class.java).first()
+                Result.Success(notification)
+            } else {
+                return null
+            }
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun getOldInvite(projectId: String, otherUserId: String, currentUserId: String, onComplete: (Result<ProjectInvite>?) -> Unit) {
+        Firebase.firestore.collection("users")
+            .document(otherUserId)
+            .collection("invites")
+            .whereEqualTo("senderId", currentUserId)
+            .whereEqualTo("projectId", projectId)
+            .limit(1)
+            .get()
+            .addOnCompleteListener {
+                val result = if (it.isSuccessful) {
+                    val querySnapshot = it.result
+                    if (!querySnapshot.isEmpty) {
+                        val projectInvite = querySnapshot.toObjects(ProjectInvite::class.java).first()
+                        Result.Success(projectInvite)
+                    } else {
+                        null
+                    }
+                } else {
+                    it.exception?.let { it1 -> Result.Error(it1) }
+                }
+
+                onComplete(result)
+            }
+    }
+
+    suspend fun getOldInvite(projectId: String, otherUserId: String, currentUserId: String): Result<ProjectInvite>? {
+        return try {
+            val task = Firebase.firestore.collection("users")
+                .document(otherUserId)
+                .collection("invites")
+                .whereEqualTo("senderId", currentUserId)
+                .whereEqualTo("projectId", projectId)
+                .limit(1)
+                .get()
+
+            val querySnapshot = task.await()
+            if (!querySnapshot.isEmpty) {
+                val projectInvite = querySnapshot.toObjects(ProjectInvite::class.java).first()
+                Result.Success(projectInvite)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun getOldProjectRequest(projectId: String, senderId: String, onComplete: (Result<ProjectRequest>?) -> Unit) {
+        Firebase.firestore.collection("projectRequests")
+            .whereEqualTo("senderId", senderId)
+            .whereEqualTo("projectId", projectId)
+            .limit(1)
+            .get()
+            .addOnCompleteListener {
+                val result = if (it.isSuccessful) {
+                    val querySnapshot = it.result
+                    if (!querySnapshot.isEmpty) {
+                        val projectRequest = querySnapshot.toObjects(ProjectRequest::class.java).first()
+                        Result.Success(projectRequest)
+                    } else {
+                        null
+                    }
+                } else {
+                    it.exception?.let { it1 -> Result.Error(it1) }
+                }
+                onComplete(result)
+            }
+    }
+
+    fun getProject(projectId: String, onComplete: (Result<Project>?) -> Unit) {
+        val ref = Firebase.firestore.collection("projects").document(projectId)
+        getDocument(ref) {
+            if (it.isSuccessful) {
+                if (it.result.exists()) {
+                    onComplete(Result.Success(it.result.toObject(Project::class.java)!!))
+                } else {
+                    onComplete(null)
+                }
+            } else {
+                onComplete(it.exception?.let { it1 -> Result.Error(it1) })
+            }
+        }
+    }
+
+    fun getUser(userId: String, onComplete: (Result<User>?) -> Unit) {
+        val ref = Firebase.firestore.collection("users").document(userId)
+        getDocument(ref) {
+            if (it.isSuccessful) {
+                if (it.result.exists()) {
+                    onComplete(Result.Success(it.result.toObject(User::class.java)!!))
+                } else {
+                    onComplete(null)
+                }
+            } else {
+                onComplete(it.exception?.let { it1 -> Result.Error(it1) })
+            }
+        }
+    }
 
 }

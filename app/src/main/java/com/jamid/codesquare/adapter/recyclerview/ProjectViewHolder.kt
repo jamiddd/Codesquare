@@ -17,21 +17,23 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.*
-import androidx.core.view.GestureDetectorCompat
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
+import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.ScrollTouchListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 
-class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureDetector.OnGestureListener {
+class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     private val userImg: SimpleDraweeView = view.findViewById(R.id.project_user_img)
     private val userName: TextView = view.findViewById(R.id.project_user_name)
@@ -52,7 +54,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
 
     var currentImagePosition = 0
     var totalImagesCount = 0
-    private lateinit var mDetector: GestureDetectorCompat
 
     private val projectClickListener = view.context as ProjectClickListener
 
@@ -64,8 +65,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
     @SuppressLint("ClickableViewAccessibility")
     fun bind(project: Project?) {
         if (project != null) {
-
-            mDetector = GestureDetectorCompat(view.context, this)
 
             Log.d(TAG, "${project.likes} -- ${project.isLiked}")
 
@@ -92,7 +91,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
                 location.hide()
             }
 
-            title.text = project.title
+            title.text = project.name
             content.text = project.content
 
             content.doOnLayout {
@@ -159,7 +158,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
             val likeCommentText = "${project.likes} Likes • ${project.comments} Comments • ${project.contributors.size} Contributors"
             likeComment.text = likeCommentText
 
-            val imageAdapter = ImageAdapter {
+            val imageAdapter = ImageAdapter { v, q ->
                 projectClickListener.onProjectClick(project.copy())
             }
             val helper: SnapHelper = LinearSnapHelper()
@@ -260,17 +259,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
                 onSaveProjectClick(project)
             }
 
-            joinBtn.setOnClickListener {
-                projectClickListener.onProjectJoinClick(project.copy())
-                if (joinBtn.isSelected) {
-                    joinBtn.text = "Join"
-                    joinBtn.isSelected = false
-                } else {
-                    joinBtn.text = "Undo"
-                    joinBtn.isSelected = true
-                }
-            }
-
             when {
                 project.isMadeByMe -> {
                     joinBtn.hide()
@@ -293,18 +281,74 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
                 projectClickListener.onProjectOptionClick(this, project)
             }
 
+            setJoinButton(project)
+
         }
     }
 
 
-    @SuppressLint("ClickableViewAccessibility")
-    private val touchListener = View.OnTouchListener { p0, p1 ->
-        return@OnTouchListener mDetector.onTouchEvent(p1)
+    private fun setLikeDislike(project: Project) {
+        val likeCommentText = "${getLikesString(project.likes.toInt())} • ${getCommentsString(project.comments.toInt())} • ${getContributorsString(project.contributors.size)}"
+        likeComment.text = likeCommentText
     }
 
-    private fun setLikeDislike(project: Project) {
-        val likeCommentText = "${project.likes} Likes • ${project.comments} Comments • ${project.contributors.size} Contributors"
-        likeComment.text = likeCommentText
+    private fun getCommentsString(size: Int): String {
+        return if (size == 1) {
+            "1 Comment"
+        } else {
+            "$size Comments"
+        }
+    }
+
+    private fun getLikesString(size: Int): String{
+        return if (size == 1) {
+            "1 Like"
+        } else {
+            "$size Likes"
+        }
+    }
+
+    private fun getContributorsString(size: Int): String{
+        return if (size == 1) {
+            "1 Contributor"
+        } else {
+            "$size Contributors"
+        }
+    }
+
+
+    private fun setJoinButton(project: Project) {
+        val currentUserId = Firebase.auth.currentUser?.uid
+        if (currentUserId != null) {
+            Firebase.firestore.collection("projectRequests")
+                .whereEqualTo("projectId", project.id)
+                .whereEqualTo("senderId", currentUserId)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        Log.e(TAG, error.localizedMessage.orEmpty())
+                        return@addSnapshotListener
+                    }
+
+                    if (value != null) {
+                        if (value.isEmpty) {
+                            // no requests have been made
+                            joinBtn.text = "Join"
+                            joinBtn.setOnClickListener {
+                                projectClickListener.onProjectJoinClick(project)
+                            }
+                        } else {
+                            val projectRequest = value.toObjects(ProjectRequest::class.java).first()
+
+                            // already requested
+                            joinBtn.text = "Undo"
+                            joinBtn.setOnClickListener {
+                                projectClickListener.onProjectUndoClick(project, projectRequest)
+                            }
+                        }
+                    }
+                }
+
+        }
     }
 
     companion object {
@@ -314,51 +358,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view), GestureD
             return ProjectViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.project_item, parent, false))
         }
 
-    }
-
-    override fun onDown(p0: MotionEvent?): Boolean {
-        return true
-    }
-
-    override fun onShowPress(p0: MotionEvent?) {
-
-    }
-
-    override fun onSingleTapUp(p0: MotionEvent?): Boolean {
-        return true
-    }
-
-    override fun onScroll(p0: MotionEvent?, p1: MotionEvent?, p2: Float, p3: Float): Boolean {
-        return true
-    }
-
-    override fun onLongPress(p0: MotionEvent?) {
-
-    }
-
-    private val swipeThreshold = 100
-    private val swipeVelocityThreshold = 100
-
-    override fun onFling(e1: MotionEvent?, e2: MotionEvent?, p2: Float, p3: Float): Boolean {
-        try {
-            if (e1 != null && e2 != null) {
-                val diffY = e2.y - e1.y
-                val diffX = e2.x - e1.x
-                if (abs(diffX) > abs(diffY)) {
-                    if (abs(diffX) > swipeThreshold && abs(p2) > swipeVelocityThreshold) {
-                        if (diffX > 0) {
-                            view.context.toast("Left to Right swipe gesture")
-                        } else {
-                            view.context.toast("Right to Left swipe gesture")
-                        }
-                    }
-                }
-            }
-        }
-        catch (exception: Exception) {
-            exception.printStackTrace()
-        }
-        return true
     }
 
 }

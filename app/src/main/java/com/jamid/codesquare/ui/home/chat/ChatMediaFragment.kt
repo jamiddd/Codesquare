@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -42,6 +43,8 @@ class ChatMediaFragment: Fragment() {
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
 
         binding.chatMediaPager.adapter = ChatMediaAdapter(chatChannel.chatChannelId, activity)
+
+        (binding.chatMediaPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
         TabLayoutMediator(tabLayout, binding.chatMediaPager) { tab, pos ->
             when (pos) {

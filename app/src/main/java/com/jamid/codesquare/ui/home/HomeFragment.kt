@@ -1,67 +1,59 @@
 package com.jamid.codesquare.ui.home
 
 import android.annotation.SuppressLint
-import android.content.res.ColorStateList
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.util.Log
 import android.view.*
-import android.widget.HorizontalScrollView
 import androidx.activity.addCallback
-import androidx.appcompat.widget.SearchView
-import androidx.core.content.ContextCompat
-import androidx.core.view.children
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.chip.Chip
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.io.IOException
-import java.net.URL
-import com.google.android.material.badge.BadgeUtils
 
-import com.google.android.material.badge.BadgeDrawable
-
-import androidx.annotation.NonNull
-import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import androidx.recyclerview.widget.RecyclerView
+import com.jamid.codesquare.ui.MainActivity
 
 
 class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var job: Job? = null
+    private var toolbar: MaterialToolbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        /*exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)*/
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.home_menu, menu)
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+        toolbar = requireActivity().findViewById(R.id.main_toolbar)
         if (viewModel.currentUserBitmap != null) {
-            val d = BitmapDrawable(resources, viewModel.currentUserBitmap)
-            toolbar.menu.getItem(3).icon = d
+            val image = RoundedBitmapDrawableFactory.create(resources, viewModel.currentUserBitmap)
+            image.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
+            toolbar?.menu?.getItem(3)?.icon = image
+        }
+
+        toolbar?.setOnClickListener {
+            if (binding.homeViewPager.currentItem == 0) {
+                val recyclerView = activity?.findViewById<RecyclerView>(R.id.pager_items_recycler)
+                recyclerView?.smoothScrollToPosition(0)
+            } else {
+                val recyclerView = activity?.findViewById<RecyclerView>(R.id.pager_items_recycler)
+                recyclerView?.smoothScrollToPosition(0)
+            }
         }
     }
 
@@ -73,7 +65,7 @@ class HomeFragment: Fragment() {
                 true
             }
             R.id.search -> {
-                findNavController().navigate(R.id.action_homeFragment_to_searchFragment, null)
+                findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment, null)
                 true
             }
             R.id.create_project -> {
@@ -116,6 +108,12 @@ class HomeFragment: Fragment() {
             requireActivity().finish()
         }
 
+        (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+
+        val mAuth = Firebase.auth
+        if (mAuth.currentUser == null || mAuth.currentUser?.isEmailVerified == false) {
+            findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
+        }
     }
 
     private fun checkIfUserStillNull() = viewLifecycleOwner.lifecycleScope.launch {

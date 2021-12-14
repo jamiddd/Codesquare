@@ -2,6 +2,7 @@ package com.jamid.codesquare.ui.profile
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
@@ -256,6 +257,7 @@ class EditProfileFragment: Fragment() {
                 viewModel.uploadImage(currentUser.id, it) { downloadUri ->
                     mainProgress.hide()
                     if (downloadUri != null) {
+                        Log.d("EditProfile", downloadUri.toString())
                         profileImage = downloadUri.toString()
                         binding.userImg.setImageURI(profileImage)
                     } else {
@@ -284,7 +286,7 @@ class EditProfileFragment: Fragment() {
 
             inputLayoutBinding.inputTextLayout.hint = "Add interest .. "
 
-            MaterialAlertDialogBuilder(requireContext())
+            val alertDialog = MaterialAlertDialogBuilder(requireContext())
                 .setView(inputLayout)
                 .setTitle("Add Interest")
                 .setMessage("Adding interest helps us to search for related projects for you.")
@@ -299,6 +301,9 @@ class EditProfileFragment: Fragment() {
                     a.dismiss()
                 }
                 .show()
+
+            alertDialog.window?.setGravity(Gravity.BOTTOM)
+
         }
 
     }

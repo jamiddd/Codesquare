@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.ProjectRequestAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectRequestViewHolder
 import com.jamid.codesquare.data.ProjectRequest
@@ -34,9 +35,8 @@ class ProjectRequestFragment: PagerListFragment<ProjectRequest, ProjectRequestVi
         }
 
         recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-
-        noItemsText?.text = "No requests"
-
+        noItemsText?.text = "No project requests at the moment. When someone requests you to join in your project, they appear here."
+        binding.noDataImage.setAnimation(R.raw.empty_notification)
     }
 
     override fun getAdapter(): PagingDataAdapter<ProjectRequest, ProjectRequestViewHolder> {

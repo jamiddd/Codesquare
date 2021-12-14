@@ -103,6 +103,7 @@ class CreateAccountFragment: Fragment() {
 
         viewModel.currentError.observe(viewLifecycleOwner) { exception ->
             if (exception != null) {
+                toast(exception.localizedMessage.orEmpty())
                 Log.e(TAG, exception.localizedMessage.orEmpty())
             }
         }

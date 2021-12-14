@@ -66,15 +66,20 @@ class ChatDetailFragment: Fragment() {
 
             val messages = viewModel.getLimitedMediaMessages(chatChannel.chatChannelId, 3)
             if (messages.isEmpty()) {
-                binding.chatNoMediaText.show()
+                val documentMessages = viewModel.getLimitedMediaMessages(chatChannel.chatChannelId, 3, document)
+                if (documentMessages.isEmpty()) {
+                    onMediaMessagesNotFound()
+                } else {
+                    onMediaMessagesExists()
+                    binding.chatMediaRecycler.hide()
+                }
             } else {
-                binding.chatNoMediaText.hide()
+                onMediaMessagesExists()
             }
-
 
             setMediaRecyclerAndData(chatChannel.chatChannelId)
 
-            userAdapter = UserAdapter2(channel?.administrators.orEmpty())
+            userAdapter = UserAdapter2(chatChannel.projectId, chatChannel.chatChannelId, channel?.administrators.orEmpty())
             userAdapter.isGrid = true
 
             binding.chatContributorsRecycler.apply {
@@ -106,11 +111,25 @@ class ChatDetailFragment: Fragment() {
                 val guidelines = getFormattedGuidelinesText(it.rules)
                 if (it.rules.isEmpty()) {
                     binding.chatProjectGuidelines.gravity = Gravity.CENTER_HORIZONTAL
+                } else {
+                    binding.chatProjectGuidelines.gravity = Gravity.START
                 }
                 binding.chatProjectGuidelines.text = guidelines
             }
         }
 
+    }
+
+    private fun onMediaMessagesExists() {
+        binding.divider13.show()
+        binding.chatMediaRecycler.show()
+        binding.chatMediaHeader.show()
+    }
+
+    private fun onMediaMessagesNotFound() {
+        binding.divider13.hide()
+        binding.chatMediaRecycler.hide()
+        binding.chatMediaHeader.hide()
     }
 
     private fun setMediaRecyclerAndData(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch {
@@ -162,7 +181,7 @@ class ChatDetailFragment: Fragment() {
     private fun getFormattedGuidelinesText(rules: List<String>): String {
 
         if (rules.isEmpty()) {
-            return "No guidelines"
+            return "Guidelines are rules \uD83D\uDCC4 set by the admin \uD83E\uDD34\uD83C\uDFFB\uD83D\uDC78\uD83C\uDFFB for the contributors to adhere to. To maintain equilibrium ⚖️  and order of \uD83D\uDEE0️ work, guidelines are essential tool ⚒️\uD83D\uDD2C to shape the progress \uD83D\uDCC8 of the project. \uD83C\uDF08\uD83E\uDDD1\uD83C\uDFFB\u200D\uD83D\uDCBB\uD83D\uDC69\uD83C\uDFFB\u200D\uD83D\uDCBB."
         }
 
         var guidelinesText = ""

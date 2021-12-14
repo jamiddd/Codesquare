@@ -55,9 +55,9 @@
 
         <LinearLayout
             android:id="@+id/linearLayout12"
+            style="@style/AppTheme.GenericBackground"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/white"
             android:elevation="100dp"
             android:orientation="horizontal"
             android:paddingTop="8dp"
@@ -68,12 +68,12 @@
 
             <EditText
                 android:id="@+id/new_rule_text"
+                style="@style/AppTheme.ChatBottomText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:layout_marginEnd="12dp"
                 android:layout_weight="1"
-                android:background="@drawable/chat_edittext_background"
                 android:ems="10"
                 android:hint="Write a rule ..."
                 android:inputType="textMultiLine|textPersonName"

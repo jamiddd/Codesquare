@@ -26,11 +26,12 @@ data class Comment(
     var createdAt: Long,
     var likes: List<String>,
     @Embedded(prefix = "comment_sender_")
-    var sender: UserMinimal,
+    @Exclude @set: Exclude @get: Exclude
+    var sender: User,
     @Exclude @set: Exclude @get: Exclude
     var isLiked: Boolean,
     @Exclude @set: Exclude @get: Exclude
     var postTitle: String,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", 0, 0, 0, 0, emptyList(), UserMinimal(), false, "")
+    constructor(): this("", "", "", "", "", "", "", 0, 0, 0, 0, emptyList(), User(), false, "")
 }

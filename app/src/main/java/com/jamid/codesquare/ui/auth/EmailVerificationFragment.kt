@@ -36,14 +36,31 @@ class EmailVerificationFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.verifyEmailBtn.setOnClickListener {
-            binding.verifyEmailBtn.disappear()
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                for (i in 1..20) {
+                    delay(5000)
+                    val currentUser = Firebase.auth.currentUser
+                    if (currentUser != null) {
+                        val task = currentUser.reload()
+                        task.addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                if (Firebase.auth.currentUser?.isEmailVerified == true) {
+                                    findNavController().navigate(R.id.action_emailVerificationFragment_to_homeFragment)
+                                }
+                            } else {
+                                Log.d(TAG, it.exception?.localizedMessage.orEmpty())
+                            }
+                        }
+                    }
+                }
+            }
+
+            binding.verifyEmailBtn.hide()
             binding.emailVerificationProgress.show()
 
             val currentUser = Firebase.auth.currentUser!!
             currentUser.sendEmailVerification().addOnCompleteListener {
-
-                /*binding.verifyEmailBtn.show()
-                binding.emailVerificationProgress.hide()*/
 
                 if (it.isSuccessful) {
                     binding.emailVerificationMessage.text = "Verification email sent. Check your mail."
@@ -57,26 +74,6 @@ class EmailVerificationFragment: Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             requireActivity().finish()
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            for (i in 1..20) {
-                delay(5000)
-                Log.d(TAG, "Checking again")
-                val currentUser = Firebase.auth.currentUser
-                if (currentUser != null) {
-                    val task = currentUser.reload()
-                    task.addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            if (Firebase.auth.currentUser?.isEmailVerified == true) {
-                                findNavController().navigate(R.id.action_emailVerificationFragment_to_homeFragment)
-                            }
-                        } else {
-                            Log.d(TAG, it.exception?.localizedMessage.orEmpty())
-                        }
-                    }
-                }
-            }
         }
 
     }

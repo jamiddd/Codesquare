@@ -48,4 +48,10 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Query("DELETE FROM projects WHERE id = :id")
     abstract suspend fun deleteProjectById(id: String)
 
+    @Query("SELECT * FROM projects WHERE isNearMe = 1")
+    abstract fun getProjectsNearMe(): PagingSource<Int, Project>
+
+    @Query("SELECT * FROM projects WHERE isMadeByMe = 1")
+    abstract fun getCurrentUserProjects(): LiveData<List<Project>>
+
 }

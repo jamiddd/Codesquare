@@ -1,21 +1,28 @@
 package com.jamid.codesquare.ui
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
+import android.os.Bundle
+import android.os.PersistableBundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
+import androidx.navigation.findNavController
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.FireUtility
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.User
-import com.jamid.codesquare.toast
+import com.theartofdev.edmodo.cropper.CropImageOptions
+import com.theartofdev.edmodo.cropper.CropImageView
 
 abstract class LauncherActivity : AppCompatActivity(){
 
@@ -24,6 +31,29 @@ abstract class LauncherActivity : AppCompatActivity(){
     }
 
     val viewModel: MainViewModel by viewModels()
+    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        onCreate()
+    }
+
+    @SuppressLint("VisibleForTests")
+    open fun onCreate() {
+        fusedLocationProviderClient = FusedLocationProviderClient(this)
+        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    val locationStateLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
+        LocationProvider.updateData(fusedLocationProviderClient, state = it.resultCode == RESULT_OK)
+    }
+
+    val requestLocationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        LocationProvider.updateData(fusedLocationProviderClient, permission = isGranted)
+    }
 
     val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -49,7 +79,14 @@ abstract class LauncherActivity : AppCompatActivity(){
     val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
             it.data?.data?.let { it1 ->
-                viewModel.setCurrentImage(it1)
+                val cropOption = CropImageOptions().apply {
+                    fixAspectRatio = true
+                    aspectRatioX = 1
+                    aspectRatioY = 1
+                    cropShape = CropImageView.CropShape.OVAL
+                }
+                findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_imageCropperFragment, bundleOf("image" to it1.toString(), "cropOptions" to cropOption))
+//                viewModel.setCurrentImage(it1)
             }
         }
     }

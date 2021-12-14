@@ -14,14 +14,15 @@ data class ChatChannel(
     var projectId: String,
     var projectTitle: String,
     var projectImage: String?,
-    // need to set a listener to know if a new user has been added to this group TODO()
     var contributorsCount: Long,
     var administrators: List<String>,
     var contributors: List<String>,
     var createdAt: Long,
     var updatedAt: Long,
     @Embedded(prefix = "message_")
-    var lastMessage: Message?
+    var lastMessage: Message?,
+    var registrationTokens: List<String>,
+    var blockedUsers: List<String> = emptyList()
 ): Parcelable {
-    constructor(): this("", "", "", "", 0, emptyList(), emptyList(), 0, 0, Message())
+    constructor(): this("", "", "", "", 0, emptyList(), emptyList(), 0, 0, Message(), emptyList(), emptyList())
 }

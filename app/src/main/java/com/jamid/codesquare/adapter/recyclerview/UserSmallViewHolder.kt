@@ -4,22 +4,19 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.common.callercontext.ContextChain
-import com.facebook.drawee.generic.GenericDraweeHierarchy
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
+import com.facebook.drawee.generic.RoundingParams
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.R
-import com.jamid.codesquare.data.User
-import com.jamid.codesquare.listeners.UserClickListener
-import com.facebook.drawee.generic.RoundingParams
 import com.jamid.codesquare.accentColor
 import com.jamid.codesquare.convertDpToPx
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.listeners.UserClickListener
 import com.jamid.codesquare.updateLayout
 
 
-class UserSmallViewHolder(val view: View, private val administrators: List<String>): RecyclerView.ViewHolder(view) {
+class UserSmallViewHolder(val projectId: String, val chatChannelId: String, val view: View, private val administrators: List<String>): RecyclerView.ViewHolder(view) {
 
     var isGrid = false
 
@@ -54,13 +51,18 @@ class UserSmallViewHolder(val view: View, private val administrators: List<Strin
             if (isGrid) {
                 view.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT)
             }
+
+            view.setOnLongClickListener {
+                userClickListener.onUserOptionClick(projectId, chatChannelId, it, user, administrators)
+                true
+            }
         }
     }
 
     companion object {
 
-        fun newInstance(parent: ViewGroup, administrators: List<String>)
-            = UserSmallViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_item, parent,false), administrators)
+        fun newInstance(parent: ViewGroup, projectId: String, chatChannelId: String, administrators: List<String>)
+            = UserSmallViewHolder(projectId, chatChannelId, LayoutInflater.from(parent.context).inflate(R.layout.user_item, parent,false), administrators)
 
     }
 

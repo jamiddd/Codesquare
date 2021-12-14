@@ -34,7 +34,7 @@ class SavedProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
         }
 
         recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        noItemsText?.text = "No saved projects"
+        noItemsText?.text = "You haven't saved any projects yet. Save project that you might wanna visit later."
 
     }
 

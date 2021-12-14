@@ -30,6 +30,8 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         if (notification == null)
             return
 
+        Log.d(TAG, notification.content + " " + notification.contextId + " " + notification.clazz + " " + notification.type)
+
         notificationTitle.text = notification.title
         notificationBody.text = notification.content
 
@@ -48,7 +50,7 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             notificationImg.setImageURI(user.photo)
 
                             view.setOnClickListener {
-                                notificationItemClickListener.onNotificationClick(user)
+                                notificationItemClickListener.onNotificationClick(notification, user)
                             }
                         }
                     } else {
@@ -67,7 +69,7 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             notificationImg.setImageURI(project.images.firstOrNull())
 
                             view.setOnClickListener {
-                                notificationItemClickListener.onNotificationClick(project)
+                                notificationItemClickListener.onNotificationClick(notification, project)
                             }
                         }
                     } else {
@@ -77,7 +79,6 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 }
             }
             "comment" -> {
-
                 val query = Firebase.firestore.collectionGroup("comments")
                     .whereEqualTo("commentId", notification.contextId)
                     .limit(1)
@@ -92,10 +93,10 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                                 if (it1.isSuccessful) {
                                     if (it1.result.exists()) {
                                         val user = it1.result.toObject(User::class.java)!!
-                                        comment.sender = user.minify()
+                                        comment.sender = user
                                         notificationImg.setImageURI(user.photo)
                                         view.setOnClickListener {
-                                            notificationItemClickListener.onNotificationClick(comment)
+                                            notificationItemClickListener.onNotificationClick(notification, comment)
                                         }
                                     }
                                 } else {
