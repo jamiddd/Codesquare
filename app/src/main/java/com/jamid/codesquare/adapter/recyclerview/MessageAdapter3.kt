@@ -1,6 +1,5 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
@@ -8,7 +7,9 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
 import com.jamid.codesquare.data.Message
 
-class MessageAdapter3(val currentUserId: String): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
+class MessageAdapter3: PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
+
+    private val currentUserId = UserManager.currentUser.id
 
     override fun onBindViewHolder(holder: MessageViewHolder2<Message>, position: Int) {
         getItem(position)?.let { holder.bind(it) }
@@ -67,7 +68,7 @@ class MessageAdapter3(val currentUserId: String): PagingDataAdapter<Message, Mes
             else -> throw IllegalStateException("View type is illegal")
         }
 
-        return MessageViewHolder2(currentUserId, view, viewType)
+        return MessageViewHolder2(view, viewType)
 
     }
 

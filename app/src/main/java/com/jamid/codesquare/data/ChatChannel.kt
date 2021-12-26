@@ -22,7 +22,8 @@ data class ChatChannel(
     @Embedded(prefix = "message_")
     var lastMessage: Message?,
     var registrationTokens: List<String>,
-    var blockedUsers: List<String> = emptyList()
+    var blockedUsers: List<String> = emptyList(),
+    var archived: Boolean = false
 ): Parcelable {
     constructor(): this("", "", "", "", 0, emptyList(), emptyList(), 0, 0, Message(), emptyList(), emptyList())
 }

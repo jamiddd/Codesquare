@@ -32,7 +32,6 @@ import com.jamid.codesquare.listeners.ScrollTouchListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
 class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     private val userImg: SimpleDraweeView = view.findViewById(R.id.project_user_img)
@@ -53,7 +52,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     private val rightBtn: Button = view.findViewById(R.id.right_btn)
 
     var currentImagePosition = 0
-    var totalImagesCount = 0
+    private var totalImagesCount = 0
 
     private val projectClickListener = view.context as ProjectClickListener
 
@@ -158,7 +157,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             val likeCommentText = "${project.likes} Likes • ${project.comments} Comments • ${project.contributors.size} Contributors"
             likeComment.text = likeCommentText
 
-            val imageAdapter = ImageAdapter { v, q ->
+            val imageAdapter = ImageAdapter { _, _ ->
                 projectClickListener.onProjectClick(project.copy())
             }
             val helper: SnapHelper = LinearSnapHelper()
@@ -238,7 +237,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             likeBtn.setOnClickListener {
                 projectClickListener.onProjectLikeClick(project.copy())
-                if (likeBtn.isSelected) {
+                if (project.isLiked) {
                     // dislike
                     project.likes = project.likes - 1
                     project.isLiked = false
@@ -265,7 +264,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 }
                 project.isRequested -> {
                     joinBtn.show()
-                    joinBtn.text = "Undo"
+                    joinBtn.text = view.context.getString(R.string.undo)
                 }
                 project.isCollaboration -> {
                     joinBtn.hide()
@@ -332,7 +331,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                     if (value != null) {
                         if (value.isEmpty) {
                             // no requests have been made
-                            joinBtn.text = "Join"
+                            joinBtn.text = view.context.getString(R.string.join)
                             joinBtn.setOnClickListener {
                                 projectClickListener.onProjectJoinClick(project)
                             }
@@ -340,7 +339,7 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             val projectRequest = value.toObjects(ProjectRequest::class.java).first()
 
                             // already requested
-                            joinBtn.text = "Undo"
+                            joinBtn.text = view.context.getString(R.string.undo)
                             joinBtn.setOnClickListener {
                                 projectClickListener.onProjectUndoClick(project, projectRequest)
                             }

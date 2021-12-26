@@ -14,12 +14,6 @@ import com.jamid.codesquare.data.Project
 @ExperimentalPagingApi
 class TagFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
-
     override fun onViewLaidOut() {
         super.onViewLaidOut()
         val tag = arguments?.getString("tag", "project").orEmpty()

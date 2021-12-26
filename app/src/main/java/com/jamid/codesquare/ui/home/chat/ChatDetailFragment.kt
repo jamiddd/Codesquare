@@ -1,42 +1,32 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.GridLayoutManager
-import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
-import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
-import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.databinding.FragmentChatDetailBinding
-import kotlinx.coroutines.launch
-import android.os.Environment
-import androidx.core.os.bundleOf
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
+import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
+import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
 import com.jamid.codesquare.data.ChatChannel
-import java.io.File
+import com.jamid.codesquare.databinding.FragmentChatDetailBinding
+import kotlinx.coroutines.launch
 
 
+@ExperimentalPagingApi
 class ChatDetailFragment: Fragment() {
 
     private lateinit var binding: FragmentChatDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var userAdapter: UserAdapter2
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,9 +40,9 @@ class ChatDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val chatChannel = arguments?.getParcelable<ChatChannel>("chatChannel") ?: return
+        val chatChannel = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL) ?: return
 
-        val currentUser = viewModel.currentUser.value!!
+        val currentUser = UserManager.currentUser
 
         viewLifecycleOwner.lifecycleScope.launch {
             val channel = viewModel.getLocalChatChannel(chatChannel.chatChannelId)
@@ -145,7 +135,7 @@ class ChatDetailFragment: Fragment() {
 
     }
 
-    private fun adjustImages(messages: List<Message>): List<String> {
+   /* private fun adjustImages(messages: List<Message>): List<String> {
         val diff = messages.size % 3
         return if (diff == 0) {
             messages.map { it.content }
@@ -156,12 +146,12 @@ class ChatDetailFragment: Fragment() {
             }
             newList
         }
-    }
+    }*/
 
     /*
     * @Deprecated
     * */
-    private fun getImages(chatChannelId: String): List<String> {
+    /*private fun getImages(chatChannelId: String): List<String> {
         val images = mutableListOf<String>()
         val externalImagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val file = File(externalImagesDir, chatChannelId)
@@ -176,7 +166,7 @@ class ChatDetailFragment: Fragment() {
             }
         }
         return images
-    }
+    }*/
 
     private fun getFormattedGuidelinesText(rules: List<String>): String {
 

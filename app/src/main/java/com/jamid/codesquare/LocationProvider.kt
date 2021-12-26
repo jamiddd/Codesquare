@@ -65,24 +65,22 @@ object LocationProvider {
         geoCoder = Geocoder(context)
     }
 
+    // call this function only if network exists
     @SuppressLint("MissingPermission")
     fun getLastLocation(fusedLocationProviderClient: FusedLocationProviderClient) {
-        if (isLocationPermissionAvailable) {
-            if (isLocationEnabled) {
-
-                fusedLocationProviderClient.lastLocation
-                    .addOnCompleteListener {
-                        if (it.isSuccessful) {
-                            currentLocation = it.result
-                            if (currentLocation != null) {
-                                val addresses = geoCoder.getFromLocation(currentLocation!!.latitude, currentLocation!!.longitude, 7)
-                                nearbyAddresses = addresses
-                            }
-                        } else {
-                            it.exception?.let { it1 -> error(it1) }
+        if (isLocationPermissionAvailable && isLocationEnabled) {
+            fusedLocationProviderClient.lastLocation
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        currentLocation = it.result
+                        if (currentLocation != null) {
+                            val addresses = geoCoder.getFromLocation(currentLocation!!.latitude, currentLocation!!.longitude, 7)
+                            nearbyAddresses = addresses
                         }
+                    } else {
+                        it.exception?.let { it1 -> error(it1) }
                     }
-            }
+                }
         }
     }
 

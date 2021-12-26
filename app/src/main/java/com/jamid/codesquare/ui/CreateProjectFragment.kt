@@ -1,15 +1,19 @@
 package com.jamid.codesquare.ui
 
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.text.InputType
 import android.view.*
 import android.webkit.URLUtil
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -25,8 +29,8 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentCreateProjectBinding
 import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
-import java.util.regex.Pattern
 
+@ExperimentalPagingApi
 class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
     private lateinit var binding: FragmentCreateProjectBinding
@@ -37,8 +41,6 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
     }
 
     override fun onCreateView(
@@ -71,7 +73,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
                 val view = layoutInflater.inflate(R.layout.loading_layout, null, false)
                 val loadingLayoutBinding = LoadingLayoutBinding.bind(view)
-                loadingLayoutBinding.loadingText.text = "Creating project. Please wait ..."
+                loadingLayoutBinding.loadingText.text = getString(R.string.create_project_loading)
 
                 val dialog = MaterialAlertDialogBuilder(requireContext())
                     .setView(view)
@@ -140,34 +142,22 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
     }
 
-    private fun validateTag(tag: String): Boolean {
-        val p = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE)
-        val m = p.matcher(tag)
-        return !m.matches()
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         tabLayout.hide()
 
-        viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
-            if (currentUser != null) {
-                binding.userName.text = currentUser.name
-                binding.userImg.setImageURI(currentUser.photo)
+        val currentUser = UserManager.currentUser
+        binding.userName.text = currentUser.name
+        binding.userImg.setImageURI(currentUser.photo)
 
-                if (viewModel.currentProject.value == null) {
-                    val newProject = Project.newInstance(currentUser)
-                    viewModel.setCurrentProject(newProject)
-                }
-
-            } else {
-                findNavController().navigateUp()
-            }
+        if (viewModel.currentProject.value == null) {
+            val newProject = Project.newInstance(currentUser)
+            viewModel.setCurrentProject(newProject)
         }
 
-        imageAdapter = ImageAdapter { a, b ->
+        imageAdapter = ImageAdapter { _, _ ->
             //
         }
 
@@ -186,13 +176,21 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 val images = currentProject.images
                 if (images.isNotEmpty()) {
 
+                    val newImages = checkForSizeIssues(images)
+
+                    if (newImages.size > images.size) {
+                        viewModel.setCurrentProjectImages(newImages)
+                        return@observe
+                    }
+
                     imageAdapter.submitList(images)
 
                     imagesCount = images.size
 
                     updateLayoutOnImagesLoaded()
 
-                    binding.imageCounter.text = "1/$imagesCount"
+                    val counterText = "1/$imagesCount"
+                    binding.imageCounter.text = counterText
 
                     binding.removeCurrentImgBtn.show()
 
@@ -232,7 +230,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     }
                 } else {
                     binding.projectLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
-                    binding.projectLocationText.text = "Add Location"
+                    binding.projectLocationText.text = getString(R.string.add_location)
 
                     binding.projectLocationText .setOnClickListener {
                         viewModel.setCurrentProjectTitle(getTitle())
@@ -353,11 +351,53 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 super.onScrolled(recyclerView, dx, dy)
                 val pos = imagesManager.findFirstCompletelyVisibleItemPosition()
                 if (pos != -1) {
-                    binding.imageCounter.text = "${pos + 1}/$imagesCount"
+                    val counterText = "${pos + 1}/$imagesCount"
+                    binding.imageCounter.text = counterText
                 }
             }
         })
 
+        val sharedPref = activity.getSharedPreferences("codesquare_shared", MODE_PRIVATE)
+        val isCreatingProjectFirstTime = sharedPref.getBoolean("isCreatingProjectFirstTime", true)
+        if (isCreatingProjectFirstTime) {
+              binding.createProjectInfo.root.show()
+        }
+
+        binding.createProjectInfo.closeInfoBtn.setOnClickListener {
+            val editor = sharedPref.edit()
+            editor.putBoolean("isCreatingProjectFirstTime", false)
+            editor.apply()
+            binding.createProjectInfo.root.hide()
+        }
+    }
+
+    private fun checkForSizeIssues(images: List<String>): List<String> {
+        val imagesUris = images.map {
+            it.toUri()
+        }
+
+        val newImages = images.toMutableList()
+
+        imagesUris.forEachIndexed { _, uri ->
+            val cursor = requireActivity().contentResolver.query(uri, null, null, null, null)
+
+            try {
+                cursor?.moveToFirst()
+                val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+
+                val size = (cursor?.getLong(sizeIndex ?: 0) ?: 0)
+                cursor?.close()
+
+                if (size/1024 > 1024) {
+                    newImages.remove(uri.toString())
+                }
+
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
+            }
+        }
+
+        return newImages
     }
 
     private fun getTitle() = binding.projectTitleText.editText?.text.toString()
@@ -407,15 +447,6 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
     }
 
-    private fun addLinks(links: List<String>) {
-        if (binding.projectLinksContainer.childCount != 1) {
-            binding.projectLinksContainer.removeViews(0, binding.projectLinksContainer.childCount - 1)
-        }
-        for (link in links) {
-            addLink(link)
-        }
-    }
-
     private fun addLink(link: String) {
         link.trim()
         val chip = Chip(requireContext())
@@ -425,7 +456,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         val splitLink = link.split(".")
         if (splitLink.size > 2) {
             if (splitLink[2].length > 3) {
-                chip.text = link.substring(0, 12) + "..."
+                val linkText = link.substring(0, 12) + "..."
+                chip.text = linkText
                 // trim
             } else {
                 chip.text = link
@@ -454,10 +486,6 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
     private fun updateBtnOnImageCleared() {
         binding.addImagesBtn.show()
         binding.imagesEditorLayout.hide()
-    }
-
-    companion object {
-        private const val TAG = "CreateProjectFragment"
     }
 
 }

@@ -8,7 +8,7 @@ import com.jamid.codesquare.data.OnBoardingData
 import com.jamid.codesquare.isNightMode
 import com.jamid.codesquare.ui.OnBoardingChildFragment
 
-class OnBoardingViewPager(val fa: FragmentActivity): FragmentStateAdapter(fa) {
+class OnBoardingViewPager(private val fa: FragmentActivity): FragmentStateAdapter(fa) {
     override fun getItemCount() = 3
 
     override fun createFragment(position: Int): Fragment {

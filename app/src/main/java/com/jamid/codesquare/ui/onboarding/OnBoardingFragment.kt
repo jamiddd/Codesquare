@@ -31,7 +31,7 @@ class OnBoardingFragment: Fragment() {
 
         binding.onBoardingPager.adapter = OnBoardingViewPager(requireActivity())
 
-        TabLayoutMediator(binding.onBoardingTabs, binding.onBoardingPager) { tab, pos ->
+        TabLayoutMediator(binding.onBoardingTabs, binding.onBoardingPager) { _, _ ->
 
         }.attach()
 
@@ -58,16 +58,16 @@ class OnBoardingFragment: Fragment() {
                 super.onPageSelected(position)
                 when (position) {
                     0 -> {
-                        binding.prevBtn.text = "Skip"
-                        binding.nextBtn.text = "Next"
+                        binding.prevBtn.text = getString(R.string.skip)
+                        binding.nextBtn.text = getString(R.string.next)
                     }
                     1 -> {
-                        binding.prevBtn.text = "Back"
-                        binding.nextBtn.text = "Next"
+                        binding.prevBtn.text = getString(R.string.back)
+                        binding.nextBtn.text = getString(R.string.next)
                     }
                     2 -> {
-                        binding.prevBtn.text = "Back"
-                        binding.nextBtn.text = "Login"
+                        binding.prevBtn.text = getString(R.string.back)
+                        binding.nextBtn.text = getString(R.string.login)
                     }
                 }
             }

@@ -9,7 +9,6 @@ import com.jamid.codesquare.FrescoImageControllerListener
 class ImageAdapter(private val onClick: (v: View, controllerListener: FrescoImageControllerListener) -> Unit): ListAdapter<String, ImageViewHolder>(comparator){
 
     companion object {
-
         val comparator = object : DiffUtil.ItemCallback<String>() {
             override fun areItemsTheSame(oldItem: String, newItem: String): Boolean {
                 return oldItem.length == newItem.length
@@ -18,9 +17,7 @@ class ImageAdapter(private val onClick: (v: View, controllerListener: FrescoImag
             override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
                 return oldItem == newItem
             }
-
         }
-
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {

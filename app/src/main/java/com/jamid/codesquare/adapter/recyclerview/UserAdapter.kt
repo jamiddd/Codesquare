@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.comparators.UserComparator
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.UserItemAltBinding
@@ -32,6 +33,14 @@ class UserViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.userFullName.text = user.name
         binding.userTagDesc.text = user.tag
         binding.userImg.setImageURI(user.photo)
+
+        val currentUser = UserManager.currentUser
+        binding.userLikeBtn.isSelected = currentUser.likedUsers.contains(user.id)
+
+        binding.userLikeBtn.setOnClickListener {
+            userClickListener.onUserLikeClick(user.copy())
+            binding.userLikeBtn.isSelected = !binding.userLikeBtn.isSelected
+        }
 
         view.setOnClickListener {
             userClickListener.onUserClick(user)

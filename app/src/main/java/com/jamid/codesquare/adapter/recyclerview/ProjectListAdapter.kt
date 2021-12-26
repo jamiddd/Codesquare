@@ -52,17 +52,19 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
                                     is Result.Error -> Log.e(TAG, it1.exception.localizedMessage.orEmpty())
                                     is Result.Success -> {
                                         val invite = it1.data
-                                        binding.projectMiniInviteBtn.text = "Revoke"
+                                        binding.projectMiniInviteBtn.text = view.context.getString(R.string.revoke)
                                         binding.projectMiniInviteBtn.icon = null
                                         binding.projectMiniInviteBtn.setOnClickListener {
                                             projectMiniItemClickListener.onRevokeInviteClick(invite, receiverIdForInvite)
+                                            bind(project)
                                         }
                                     }
                                     null -> {
-                                        binding.projectMiniInviteBtn.text = "Invite"
+                                        binding.projectMiniInviteBtn.text = view.context.getString(R.string.invite)
                                         binding.projectMiniInviteBtn.icon = ContextCompat.getDrawable(view.context, R.drawable.ic_round_how_to_reg_24)
                                         binding.projectMiniInviteBtn.setOnClickListener {
                                             projectMiniItemClickListener.onInviteClick(project, receiverIdForInvite)
+                                            bind(project)
                                         }
                                     }
                                 }

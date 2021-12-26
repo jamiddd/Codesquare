@@ -4,6 +4,7 @@ import android.os.Parcelable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.Exclude
 import kotlinx.parcelize.Parcelize
 
@@ -21,7 +22,8 @@ data class ProjectRequest(
     @Embedded(prefix = "request_user_")
     @Exclude @set: Exclude @get: Exclude
     var sender: User?,
-    var createdAt: Long
+    var createdAt: Long,
+    var notificationId: String? = null
 ): Parcelable {
     constructor(): this("", "", "", "", Project(), User(), System.currentTimeMillis())
 }

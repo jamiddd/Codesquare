@@ -22,17 +22,18 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.RoundedBitmapDrawable
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
+import androidx.core.text.isDigitsOnly
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupWithNavController
+import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
@@ -42,7 +43,6 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -55,30 +55,26 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.LocationItemClickListener
+import com.jamid.codesquare.listeners.LocationItemClickListener
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.listeners.*
-import com.jamid.codesquare.ui.home.chat.ChatInterface
 import com.jamid.codesquare.ui.home.chat.ForwardFragment
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.IOException
-import java.net.URL
 import java.text.SimpleDateFormat
+import java.util.*
 
-class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickListener, ProjectRequestListener, UserClickListener, CommentListener, ChatChannelClickListener, MessageListener, NotificationItemClickListener {
+@ExperimentalPagingApi
+class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInviteListener, ProjectClickListener, ProjectRequestListener, UserClickListener, ChatChannelClickListener, MessageListener, NotificationItemClickListener, CommentListener {
 
-    private var networkFlag = false
-    private var loadingDialog: AlertDialog? = null
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private lateinit var networkCallback: MyNetworkCallback
@@ -86,38 +82,10 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
     private var currentlyFocusedMessage: Message? = null
     private var currentMessageView: View? = null
     private var isImageViewMode = false
-
     private var currentImageViewer: View? = null
     private var animationStartView: View? = null
     private var animationEndView: View? = null
 
-    private fun setCurrentUserPhotoAsDrawable(photo: String) = lifecycleScope.launch (Dispatchers.IO) {
-        val currentSavedBitmap = viewModel.currentUserBitmap
-        if (currentSavedBitmap != null) {
-            val d = RoundedBitmapDrawableFactory.create(resources, currentSavedBitmap)
-            setBitmapDrawable(d)
-        } else {
-            try {
-                val isNetworkAvailable = viewModel.isNetworkAvailable.value
-                if (isNetworkAvailable != null && isNetworkAvailable) {
-                    val url = URL(photo)
-                    val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                    viewModel.currentUserBitmap = image
-                    val d = RoundedBitmapDrawableFactory.create(resources, viewModel.currentUserBitmap)
-                    setBitmapDrawable(d)
-                }
-            } catch (e: IOException) {
-                viewModel.setCurrentError(e)
-            }
-        }
-    }
-
-    private fun setBitmapDrawable(drawable: RoundedBitmapDrawable) = runOnUiThread {
-        if (binding.mainToolbar.menu.size() > 1) {
-            drawable.cornerRadius = convertDpToPx(24, this).toFloat()
-            binding.mainToolbar.menu.getItem(3).icon = drawable
-        }
-    }
 
     private fun startNetworkCallback() {
         networkCallback = MyNetworkCallback(viewModel)
@@ -284,11 +252,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         startActivity(i)
     }
 
-    /*fun showSnackBar(s: String) {
-        Snackbar.make(binding.root, s, Snackbar.LENGTH_LONG).show()
-    }*/
-
-    fun showLoadingDialog(msg: String) {
+    fun showLoadingDialog(msg: String): AlertDialog {
         val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
         val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
 
@@ -298,6 +262,8 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             .setView(loadingLayout)
             .setCancelable(false)
             .show()
+
+        return loadingDialog!!
     }
 
     @SuppressLint("UnsafeOptInUsageError", "VisibleForTests")
@@ -314,13 +280,13 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
         // must
         MyNotificationManager.init(this)
-        LocationProvider.initialize(fusedLocationProviderClient, this)
+        startNetworkCallback()
 
         val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
         navController = navHostFragment.navController
 
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.homeFragment, R.id.loginFragment))
-        binding.mainToolbar.setupWithNavController(navController, appBarConfiguration)
+        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
 
@@ -351,239 +317,70 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
 
             when (destination.id) {
-                R.id.splashFragment -> {
-                    binding.mainAppbar.hide()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = null
-                    binding.navHostFragment.layoutParams = params
-                }
-                R.id.reportFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.notificationFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.emailVerificationFragment -> {
-                    binding.mainAppbar.hide()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = null
-                    binding.navHostFragment.layoutParams = params
-                }
-                R.id.onBoardingFragment -> {
-                    binding.mainAppbar.hide()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = null
-                    binding.navHostFragment.layoutParams = params
-                }
+                R.id.splashFragment -> updateUi(
+                    shouldShowAppBar = false,
+                    baseFragmentBehavior = null
+                )
+                R.id.notificationCenterFragment -> updateUi(shouldShowTabLayout = true)
+                R.id.onBoardingFragment -> updateUi(
+                    shouldShowAppBar = false,
+                    baseFragmentBehavior = null
+                )
                 R.id.loginFragment -> {
-                    binding.mainAppbar.hide()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = null
-                    binding.navHostFragment.layoutParams = params
+                    updateUi(
+                        shouldShowAppBar = false,
+                        baseFragmentBehavior = null
+                    )
 
+                    // TODO("Change this")
                     if (!isInitiatedOnce) {
                         navController.navigate(R.id.action_loginFragment_to_onBoardingFragment, null, slideRightNavOptions())
                         val editor = sharedPreferences.edit()
                         editor.putBoolean("is_initiated_once", true)
                         editor.apply()
-                    } else {
-                        userInfoLayout?.hide()
-                        userInfoLayout?.updateLayout(margin = 0)
-                        binding.mainTabLayout.hide()
-                        binding.mainToolbar.hide()
                     }
                 }
                 R.id.homeFragment -> {
-                    binding.mainAppbar.show()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = AppBarLayout.ScrollingViewBehavior()
-                    binding.navHostFragment.layoutParams = params
-
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.show()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-
+                    updateUi(
+                        shouldShowTabLayout = true
+                    )
                     hideKeyboard(binding.root)
-                }
-                R.id.createProjectFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
                 }
                 R.id.profileFragment -> {
-                    userInfoLayout?.show()
+                    updateUi(
+                        shouldShowUserInfo = true,
+                        shouldShowTabLayout = true
+                    )
                     userInfoLayout?.updateLayout(marginTop = convertDpToPx(56))
-                    binding.mainToolbar.show()
-                    binding.mainTabLayout.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
                     hideKeyboard(binding.root)
-
-                    binding.mainToolbar.isTitleCentered = true
-
-                    if (isNightMode()) {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.white))
-                    } else {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.black))
-                    }
-
-                }
-                R.id.editProfileFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
                 }
                 R.id.projectFragment -> {
-                    binding.mainAppbar.show()
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = AppBarLayout.ScrollingViewBehavior()
-                    binding.navHostFragment.layoutParams = params
-
-
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideReset()
-
-                    binding.mainToolbar.isTitleCentered = true
-                    if (isNightMode()) {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.white))
-                    } else {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.black))
-                    }
-
-                }
-                R.id.projectRequestFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.savedProjectsFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.commentsFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.chatFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                    binding.mainAppbar.slideReset()
-
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = AppBarLayout.ScrollingViewBehavior()
-                    binding.navHostFragment.layoutParams = params
-                }
-                R.id.chatDetailFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-
-                    binding.mainAppbar.slideReset()
-
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = AppBarLayout.ScrollingViewBehavior()
-                    binding.navHostFragment.layoutParams = params
+                    updateUi(shouldShowPrimaryAction = true)
                 }
                 R.id.chatMediaFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.show()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-
-                    binding.mainAppbar.slideReset()
-
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = AppBarLayout.ScrollingViewBehavior()
-                    binding.navHostFragment.layoutParams = params
-                }
-                R.id.projectContributorsFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                }
-                R.id.tagFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+                    updateUi(shouldShowTabLayout = true)
                 }
                 R.id.imageViewFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainTabLayout.hide()
-                    binding.mainToolbar.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-
-                    val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
-                    params.behavior = null
-                    binding.navHostFragment.layoutParams = params
-                }
-                R.id.preSearchFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainToolbar.show()
-                    binding.mainTabLayout.hide()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                    binding.mainToolbar.isTitleCentered = true
-                    if (isNightMode()) {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.white))
-                    } else {
-                        binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.black))
-                    }
+                    updateUi(baseFragmentBehavior = null)
                 }
                 R.id.searchFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainToolbar.show()
-                    binding.mainTabLayout.show()
-                    binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
-                    binding.mainToolbar.isTitleCentered = false
-                    binding.mainToolbar.setTitleTextColor(ContextCompat.getColor(this, R.color.normal_grey))
+                    updateUi(toolbarAdjustment = ToolbarAdjustment(true, R.color.normal_grey, false), shouldShowTabLayout = true)
                 }
-                R.id.settingsFragment -> {
-                    userInfoLayout?.hide()
-                    binding.mainToolbar.show()
-                    binding.mainTabLayout.hide()
+                else -> {
+                    updateUi()
                 }
+                /*R.id.reportFragment, R.id.emailVerificationFragment, R.id.createProjectFragment, R.id.editProfileFragment, R.id.projectRequestFragment, R.id.savedProjectsFragment, R.id.commentsFragment, R.id.chatFragment, R.id.chatDetailFragment, R.id.projectContributorsFragment, R.id.tagFragment, R.id.preSearchFragment, R.id.settingsFragment, R.id.forgotPasswordFragment, R.id.updatePasswordFragment, R.id.messageDetailFragment -> {
+                    updateUi()
+                } */
             }
         }
 
         viewModel.currentUser.observe(this) {
             if (it != null) {
-
                 if (previouslyFetchedLocation != null) {
                     it.location = previouslyFetchedLocation
                     viewModel.insertCurrentUser(it)
                     return@observe
-                }
-
-                NotificationProvider.init(it)
-
-                lifecycleScope.launch (Dispatchers.IO) {
-                    try {
-                        val isNetworkAvailable = viewModel.isNetworkAvailable.value
-                        if (isNetworkAvailable != null && isNetworkAvailable) {
-                            val url = URL(it.photo)
-                            val image = BitmapFactory.decodeStream(url.openConnection().getInputStream())
-                            viewModel.currentUserBitmap = getCircleBitmap(image)
-                        }
-                    } catch (e: IOException) {
-                        viewModel.setCurrentError(e)
-                    }
                 }
             }
         }
@@ -601,72 +398,17 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             }
         }
 
-        if (intent != null) {
-            Log.d(TAG, intent.data.toString())
-        }
-
-        Firebase.auth.addAuthStateListener {
-            loadingDialog?.dismiss()
-            val firebaseUser = it.currentUser
-            val currentDestination = navController.currentDestination?.id
-            if (firebaseUser != null) {
-                if (firebaseUser.isEmailVerified) {
-                    // some important stuff
-                    UserManager.init(firebaseUser.uid)
-
-                    lifecycleScope.launch {
-                        ChatInterface.initialize(firebaseUser.uid)
+        UserManager.authState.observe(this) { isSignedIn ->
+            if (isSignedIn != null) {
+                if (isSignedIn) {
+                    if (UserManager.isEmailVerified) {
+                        listenForNotifications()
                     }
                 } else {
-                    if (currentDestination == R.id.createAccountFragment) {
-                        navController.navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
-                    }
+                    viewModel.isNetworkAvailable.removeObservers(this)
                 }
             }
         }
-
-        viewModel.isNetworkAvailable.observe(this) { isNetworkAvailable ->
-            if (isNetworkAvailable != null) {
-                if (isNetworkAvailable) {
-                    if (LocationProvider.isLocationPermissionAvailable) {
-                        if (LocationProvider.isLocationEnabled) {
-                            val currentLocation = LocationProvider.currentLocation
-                            if (currentLocation != null) {
-                                val hash = GeoFireUtils.getGeoHashForLocation(GeoLocation(currentLocation.latitude, currentLocation.longitude))
-                                if (LocationProvider.nearbyAddresses.isEmpty()) {
-                                    return@observe
-                                } else {
-                                    val locationName = LocationProvider.nearbyAddresses.first().getAddressLine(0)
-                                    val location = Location(currentLocation.latitude, currentLocation.longitude, locationName, hash)
-                                    val currentUser = viewModel.currentUser.value
-                                    if (currentUser != null) {
-                                        currentUser.location = location
-                                    } else {
-                                        // update when current user is not null
-                                        previouslyFetchedLocation = location
-                                    }
-                                }
-                            } else {
-                                LocationProvider.getLastLocation(fusedLocationProviderClient)
-                            }
-                        } else {
-                            LocationProvider.checkForLocationSettings(this, locationStateLauncher, fusedLocationProviderClient)
-                        }
-                    } else {
-                        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-                    }
-
-                    if (networkFlag) {
-                        Snackbar.make(binding.root, "Network connected", Snackbar.LENGTH_SHORT).show()
-                    }
-                } else {
-                    networkFlag = true
-                    Snackbar.make(binding.root, "Network connection unavailable", Snackbar.LENGTH_INDEFINITE).setBackgroundTint(ContextCompat.getColor(this@MainActivity, R.color.error_color)).show()
-                }
-            }
-        }
-
-        startNetworkCallback()
 
         viewModel.allUnreadNotifications.observe(this) {
             if (it.isNotEmpty()) {
@@ -678,14 +420,9 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             }
         }
 
-        UserManager.currentUser.observe(this) {
+        UserManager.currentUserLive.observe(this) {
             if (it != null) {
-                val photo = it.photo
-                if (photo != null) {
-                    setCurrentUserPhotoAsDrawable(photo)
-                }
-
-                // looking for newly added chat channel
+              /*  // looking for newly added chat channel
                 lifecycleScope.launch (Dispatchers.IO) {
                     for (channel in it.chatChannels) {
                         val chatChannel = viewModel.getLocalChatChannel(channel)
@@ -695,57 +432,23 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                                 is Result.Success -> {
                                     if (result.data.exists()) {
                                         val chatChannel1 = result.data.toObject(ChatChannel::class.java)!!
-                                        ChatInterface.addChannelMessagesListener(chatChannel1)
+//                                        ChatInterface.addChannelMessagesListener(chatChannel1)
                                         viewModel.insertChatChannels(listOf(chatChannel1))
                                     }
                                 }
                             }
                         }
                     }
-                }
-
+                }*/
                 viewModel.insertCurrentUser(it)
             }
         }
 
-        ChatInterface.currentData.observe(this) {
-            val result = it ?: return@observe
-
-            when (result) {
-                is Result.Error -> {
-                    viewModel.setCurrentError(result.exception)
-                }
-                is Result.Success -> {
-                    val data = result.data
-                    for (item in data) {
-                        viewModel.insertChannelWithContributors(item.channel, item.contributors)
-                    }
-
-                    ChatInterface.addChannelsListener { it1 ->
-                        viewModel.insertChatChannels(it1)
-                    }
-                }
-            }
-        }
-
-        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val documentsDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-
-        ChatInterface.channelMessagesMap.observe(this) {
-            if (it.isNotEmpty()) {
-                if (imagesDir != null && documentsDir != null) {
-                    for (i in it) {
-                        viewModel.insertChannelMessages(i.channel, imagesDir, documentsDir, i.messages)
-                    }
-                }
-            }
-        }
-
-        NotificationProvider.newNotifications.observe(this) {
-            if (!it.isNullOrEmpty()) {
-                viewModel.insertNotifications(it)
+        viewModel.isNetworkAvailable.observe(this) {
+            if (it == true) {
+                LocationProvider.initialize(fusedLocationProviderClient, this)
             } else {
-                Log.d(TAG, "No notifications provided.")
+                toast("Network not available")
             }
         }
 
@@ -770,11 +473,52 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                     }
                 }
                 extras.containsKey("notificationId") -> {
-                    val type = extras["type"] as String?
+
+                    if (extras.containsKey("type")) {
+                        val type = extras["type"] as String?
+                        if (!type.isNullOrBlank()) {
+                            if (type.isDigitsOnly()) {
+                                val t = type.toInt()
+                                navController.navigate(R.id.notificationCenterFragment, bundleOf("type" to t), slideRightNavOptions())
+                            } else {
+                                navController.navigate(R.id.notificationCenterFragment, bundleOf("type" to 0), slideRightNavOptions())
+                            }
+
+                            /*if (extras.containsKey("projectId")) {
+                                val projectId = extras["projectId"] as String?
+                                if (!projectId.isNullOrBlank()) {
+                                    //
+                                }
+                            }
+
+                            if (extras.containsKey("userId")) {
+                                val userId = extras["userId"] as String?
+                                if (!userId.isNullOrBlank()) {
+                                    //
+                                }
+                            }
+
+                            if (extras.containsKey("commentId")) {
+                                val commentId = extras["commentId"] as String?
+                                if (!commentId.isNullOrBlank()) {
+                                    //
+                                }
+                            }
+
+                            if (extras.containsKey("commentChannelId")) {
+                                val commentChannelId = extras["commentChannelId"] as String?
+                                if (!commentChannelId.isNullOrBlank()) {
+                                    //
+                                }
+                            }*/
+                        } else {
+                            navController.navigate(R.id.notificationCenterFragment, bundleOf("type" to 0), slideRightNavOptions())
+                        }
+                    }
+                   /* val type = extras["type"] as String?
                     val notificationId = extras["notificationId"] as String?
                     val receiverId = extras["receiverId"] as String?
-                    val contextId = extras["contextId"] as String?
-                    if (notificationId != null && receiverId != null && type != null && contextId != null) {
+                    if (notificationId != null && receiverId != null && type != null) {
                         if (type == "request") {
                             val query = Firebase.firestore.collection("projectRequests")
                                 .whereEqualTo("projectId", contextId)
@@ -784,8 +528,8 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                                 .addOnSuccessListener {
                                     if (!it.isEmpty) {
                                         val projectRequest = it.toObjects(ProjectRequest::class.java).first()
-                                        viewModel.insertProjectRequests(listOf(projectRequest))
-                                        navController.navigate(R.id.action_homeFragment_to_projectRequestFragment)
+                                        viewModel.insertProjectRequests(projectRequest)
+                                        navController.navigate(R.id.action_homeFragment_to_projectRequestFragment, null, slideRightNavOptions())
                                     }
                                 }.addOnFailureListener {
                                     Log.e(TAG, "694 => " + it.localizedMessage.orEmpty())
@@ -799,8 +543,8 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                                 if (it.exists()) {
                                     val notification = it.toObject(Notification::class.java)
                                     if (notification != null) {
-                                        viewModel.insertNotifications(listOf(notification))
-                                        navController.navigate(R.id.action_homeFragment_to_notificationFragment)
+                                        viewModel.insertNotifications(notification)
+                                        navController.navigate(R.id.action_homeFragment_to_notificationCenterFragment, null, slideRightNavOptions())
                                     }
                                 }
                             }.addOnFailureListener {
@@ -808,7 +552,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                             }
 
                         }
-                    }
+                    }*/
                 }
                 else -> {
                     // nothing
@@ -818,6 +562,68 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
         clearActiveNotifications()
 
+    }
+
+    private fun updateUi(
+        shouldShowAppBar: Boolean = true,
+        shouldShowToolbar: Boolean = true,
+        shouldShowPrimaryAction: Boolean = false,
+        shouldShowTabLayout: Boolean = false,
+        baseFragmentBehavior: CoordinatorLayout.Behavior<View>? = AppBarLayout.ScrollingViewBehavior(),
+        toolbarAdjustment: ToolbarAdjustment = ToolbarAdjustment(),
+        shouldShowUserInfo: Boolean = false
+    ) {
+        binding.mainAppbar.isVisible = shouldShowAppBar
+        binding.mainToolbar.isVisible = shouldShowToolbar
+        binding.mainTabLayout.isVisible = shouldShowTabLayout
+
+        if (shouldShowAppBar){
+            if (binding.mainAppbar.translationY != 0f) {
+                binding.mainAppbar.slideReset()
+            }
+            if (shouldShowToolbar) {
+                binding.mainToolbar.apply {
+                    isTitleCentered = toolbarAdjustment.isTitleCentered
+
+                    if (isNightMode()) {
+                        if (toolbarAdjustment.titleTextColor == R.color.black) {
+                            setTitleTextColor(ContextCompat.getColor(this@MainActivity, R.color.white))
+                        } else {
+                            setTitleTextColor(ContextCompat.getColor(this@MainActivity, toolbarAdjustment.titleTextColor))
+                        }
+                    } else {
+                        setTitleTextColor(ContextCompat.getColor(this@MainActivity, toolbarAdjustment.titleTextColor))
+                    }
+
+                    if (!toolbarAdjustment.shouldShowTitle) {
+                        title = " "
+                    }
+                }
+            }
+        } else {
+            binding.mainToolbar.hide()
+        }
+
+        if (shouldShowPrimaryAction) {
+            binding.mainPrimaryAction.slideReset()
+        } else {
+            binding.mainPrimaryAction.slideDown(convertDpToPx(100).toFloat())
+        }
+
+        val params = binding.navHostFragment.layoutParams as CoordinatorLayout.LayoutParams
+        params.behavior = baseFragmentBehavior
+        binding.navHostFragment.layoutParams = params
+
+        val userInfoLayout = findViewById<View>(R.id.user_info)
+        userInfoLayout?.isVisible = shouldShowUserInfo
+
+    }
+
+
+    private fun listenForNotifications() {
+        FireUtility.listenForNotifications {
+            viewModel.insertNotifications(*it.toTypedArray())
+        }
     }
 
     private fun clearActiveNotifications() {
@@ -836,19 +642,113 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     override fun onProjectClick(project: Project) {
         val bundle = bundleOf("title" to project.name, "project" to project)
-        navController.navigate(R.id.projectFragment, bundle)
+        navController.navigate(R.id.projectFragment, bundle, slideRightNavOptions())
     }
 
     override fun onProjectLikeClick(project: Project) {
-        viewModel.onLikePressed(project)
+
+        val currentUser = UserManager.currentUser
+
+        fun onLike() {
+            project.likes = project.likes + 1
+            project.isLiked = true
+            viewModel.updateLocalProject(project)
+        }
+
+        fun onDislike() {
+            project.likes = project.likes - 1
+            project.isLiked = false
+            viewModel.updateLocalProject(project)
+        }
+
+        if (project.isLiked) {
+            FireUtility.dislikeProject(project) {
+                if (it.isSuccessful) {
+                    onDislike()
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        } else {
+            val content = currentUser.name + " liked your project"
+            val title = project.name
+            val notification = Notification.createNotification(content, currentUser.id, project.creator.userId, projectId = project.id, title = title)
+            FireUtility.likeProject(project) {
+                if (it.isSuccessful) {
+                    // check if notification already exists
+                    if (notification.senderId != notification.receiverId) {
+                        FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                            if (error != null) {
+                                viewModel.setCurrentError(error)
+                                return@checkIfNotificationExistsByContent
+                            }
+                            if (!exists) {
+                                FireUtility.sendNotification(notification) {
+                                    onLike()
+                                }
+                            }
+                        }
+                    } else {
+                        onLike()
+                    }
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        }
     }
 
     override fun onProjectSaveClick(project: Project) {
-        viewModel.onSavePressed(project)
+        FireUtility.dislikeProject(project) {
+            if (it.isSuccessful) {
+                project.likes = project.likes - 1
+                project.isLiked = false
+                viewModel.insertProjects(project)
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     override fun onProjectJoinClick(project: Project) {
-        viewModel.onJoinProject(project)
+        val currentUser = UserManager.currentUser
+        val content = currentUser.name + " wants to join your project"
+        val notification = Notification.createNotification(content, currentUser.id, project.creator.userId, type = 1, userId = currentUser.id, title = project.name)
+
+        fun onRequestSent(projectRequest: ProjectRequest) {
+            viewModel.insertNotifications(notification)
+            val requestsList = project.requests.addItemToList(projectRequest.requestId)
+            project.requests = requestsList
+            project.isRequested = true
+            viewModel.insertProjectsWithoutProcessing(project)
+            viewModel.insertProjectRequests(projectRequest)
+        }
+
+        FireUtility.joinProject(notification.id, project) { task, projectRequest ->
+            if (task.isSuccessful) {
+                if (notification.senderId != notification.receiverId) {
+                    FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                        if (error != null) {
+                            viewModel.setCurrentError(error)
+                        } else {
+                            if (!exists) {
+                                FireUtility.sendNotification(notification) {
+                                    if (it.isSuccessful) {
+                                        onRequestSent(projectRequest)
+                                    } else {
+                                        viewModel.setCurrentError(it.exception)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "It's not possible")
+                }
+            } else {
+                viewModel.setCurrentError(task.exception)
+            }
+        }
     }
 
     // project request must have project included inside it
@@ -858,11 +758,59 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     // project request must have project included inside it
     override fun onProjectRequestCancel(projectRequest: ProjectRequest) {
-        viewModel.rejectRequest(projectRequest)
+        val currentUser = UserManager.currentUser
+        val content = currentUser.name + " rejected your project request"
+        val title = projectRequest.project?.name
+        val notification = Notification.createNotification(content, currentUser.id, projectRequest.senderId, userId = currentUser.id, title = title)
+        FireUtility.rejectRequest(projectRequest) {
+            if (!it.isSuccessful) {
+                viewModel.setCurrentError(it.exception)
+            } else {
+                FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                    if (error != null) {
+                        viewModel.setCurrentError(error)
+                    } else {
+                        if (!exists) {
+
+                            val requestNotificationId = projectRequest.notificationId
+                            if (requestNotificationId != null) {
+                                viewModel.deleteNotificationById(requestNotificationId)
+                            }
+
+                            FireUtility.sendNotification(notification) {
+                                Log.d(TAG, "Project request cancelled")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onProjectRequestProjectDeleted(projectRequest: ProjectRequest) {
+        deleteProjectRequest(projectRequest)
+    }
+
+    private fun deleteProjectRequest(projectRequest: ProjectRequest) {
+        FireUtility.deleteProjectRequest(projectRequest) {
+            if (it.isSuccessful) {
+                viewModel.deleteProjectRequest(projectRequest)
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+    }
+
+    override fun onProjectRequestSenderDeleted(projectRequest: ProjectRequest) {
+        deleteProjectRequest(projectRequest)
+    }
+
+    override fun updateProjectRequest(newProjectRequest: ProjectRequest) {
+        viewModel.insertProjectRequests(newProjectRequest)
     }
 
     override fun onProjectCreatorClick(project: Project) {
-        if (project.creator.userId == viewModel.currentUser.value?.id) {
+        if (project.creator.userId == UserManager.currentUserId) {
             navController.navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
         } else {
             viewModel.getOtherUser(project.creator.userId) {
@@ -876,7 +824,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         }
     }
 
-    @ExperimentalPagingApi
+
     override fun onProjectCommentClick(project: Project) {
         val bundle = bundleOf("commentChannelId" to project.commentChannel, "parent" to project, "title" to project.name)
 
@@ -890,15 +838,26 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             R.id.projectFragment -> {
                 navController.navigate(R.id.action_projectFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
-            R.id.notificationFragment -> {
-                navController.navigate(R.id.action_notificationFragment_to_commentsFragment, bundle, slideRightNavOptions())
+            R.id.notificationCenterFragment -> {
+                navController.navigate(R.id.action_notificationCenterFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
         }
     }
 
-    override fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project) {
 
-        val currentUser = viewModel.currentUser.value!!
+   /* private fun likeUser(userId: String) {
+        val currentUser = UserManager.currentUser
+        val content = currentUser.name + " liked your profile"
+        val notification = Notification.createNotification(content, currentUser.id, userId, userId = userId, title = currentUser.name)
+        FireUtility.likeUser(userId, notification) {
+            if (!it.isSuccessful) {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+    }*/
+
+    override fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project) {
+        val currentUser = UserManager.currentUser
         val creatorId = project.creator.userId
         val isCurrentUser = creatorId == currentUser.id
         val name = project.creator.name
@@ -938,64 +897,22 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                         viewHolder.onSaveProjectClick(project)
                     }
                     option5 -> {
-                        TODO("Must be implemented")
+                        /*
+                        archiving project for 30 days. if no action is taken, project will
+                        be deleted
+                        */
+                        viewModel.archiveProject(currentUser.id, project)
                     }
                     option6 -> {
                         val bundle = bundleOf("contextObject" to project)
 
                         if (navController.currentDestination?.id == R.id.homeFragment) {
-                            navController.navigate(R.id.action_homeFragment_to_reportFragment, bundle)
+                            navController.navigate(R.id.action_homeFragment_to_reportFragment, bundle, slideRightNavOptions())
                         } else if (navController.currentDestination?.id == R.id.profileFragment) {
-                            navController.navigate(R.id.action_profileFragment_to_reportFragment, bundle)
+                            navController.navigate(R.id.action_profileFragment_to_reportFragment, bundle, slideRightNavOptions())
                         }
                     }
                 }
-               /* if (isCurrentUser) {
-                    when (index) {
-                        0 -> {
-                            viewHolder.onSaveProjectClick(project)
-                        }
-                        1 -> {
-                            MaterialAlertDialogBuilder(this)
-                                .setTitle("Deleting project")
-                                .setMessage("Are you sure you want to delete this project?")
-                                .setPositiveButton("Delete") { _, _ ->
-                                    viewModel.deleteProject(project) {
-                                        if (it.isSuccessful) {
-                                            toast("Project Deleted")
-                                        } else {
-                                            toast("Something went wrong. ${it.exception?.localizedMessage.orEmpty()}")
-                                        }
-                                    }
-                                }.setNegativeButton("Cancel") { a, _ ->
-                                    a.dismiss()
-                                }.show()
-                        }
-                    }
-                } else {
-                    when (index) {
-                        0 -> {
-                            if (isCreatorLiked) {
-                                viewModel.dislikeUser(creatorId)
-                            } else {
-                                viewModel.likeUser(creatorId)
-                            }
-                        }
-                        1 -> {
-                            viewHolder.onSaveProjectClick(project)
-                        }
-                        2 -> {
-
-                            val bundle = bundleOf("contextObject" to project)
-
-                            if (navController.currentDestination?.id == R.id.homeFragment) {
-                                navController.navigate(R.id.action_homeFragment_to_reportFragment, bundle)
-                            } else if (navController.currentDestination?.id == R.id.profileFragment) {
-                                navController.navigate(R.id.action_profileFragment_to_reportFragment, bundle)
-                            }
-                        }
-                    }
-                }*/
             }
             .show()
 
@@ -1004,7 +921,16 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
     }
 
     override fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest) {
-        viewModel.onUndoProject(project, projectRequest)
+        FireUtility.undoJoinProject(projectRequest) {
+            if (it.isSuccessful) {
+                project.isRequested = false
+                val newList = project.requests.removeItemFromList(projectRequest.requestId)
+                project.requests = newList
+                viewModel.updateLocalProject(project)
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     override fun onUserClick(user: User) {
@@ -1015,28 +941,31 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         }
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
-                navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_homeFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.projectFragment -> {
-                navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_projectFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.chatDetailFragment -> {
-                navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_chatDetailFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.chatFragment -> {
-                navController.navigate(R.id.action_chatFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_chatFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.projectContributorsFragment -> {
-                navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_projectContributorsFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.profileFragment -> {
-                navController.navigate(R.id.action_profileFragment_self, bundle)
+                navController.navigate(R.id.action_profileFragment_self, bundle, slideRightNavOptions())
             }
             R.id.commentsFragment -> {
-                navController.navigate(R.id.action_commentsFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_commentsFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
             R.id.searchFragment -> {
-                navController.navigate(R.id.action_searchFragment_to_profileFragment, bundle)
+                navController.navigate(R.id.action_searchFragment_to_profileFragment, bundle, slideRightNavOptions())
+            }
+            R.id.messageDetailFragment -> {
+                navController.navigate(R.id.action_messageDetailFragment_to_profileFragment, bundle, slideRightNavOptions())
             }
         }
     }
@@ -1051,7 +980,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         val option6 = "Remove from project"
         val option7 = "Leave project"
 
-        val currentUser = viewModel.currentUser.value!!
+        val currentUser = UserManager.currentUser
         val currentUserId = currentUser.id
         val isCurrentUserAdministrator = administrators.contains(currentUserId)
 
@@ -1115,13 +1044,14 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                             }
                         }
                         option3 -> {
-                            viewModel.likeUser(user = user)
+                            viewModel.likeUser(user.id)
+//                            viewModel.likeUser(user = user)
                         }
                         option4 -> {
-                            viewModel.dislikeUser(user = user)
+                            viewModel.dislikeUser(user.id)
                         }
                         option5 -> {
-                            navController.navigate(R.id.action_chatDetailFragment_to_reportFragment, bundleOf("contextObject" to user))
+                            navController.navigate(R.id.action_chatDetailFragment_to_reportFragment, bundleOf("contextObject" to user), slideRightNavOptions())
                         }
                         option6 -> {
                             viewModel.castVoteToRemoveUser(user, projectId, currentUserId) {
@@ -1157,7 +1087,36 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         }
     }
 
+    override fun onUserLikeClick(user: User) {
+        val currentUser = UserManager.currentUser
+        if (currentUser.likedUsers.contains(user.id)) {
+            // dislike the user
+            viewModel.dislikeUser(user.id)
+        } else {
+            // like the user
+            viewModel.likeUser(user.id)
+        }
+    }
+
     override fun onCommentLike(comment: Comment) {
+        val currentUser = UserManager.currentUser
+        FireUtility.likeComment(comment) {
+            val content = currentUser.name + " liked your comment"
+            val notification = Notification.createNotification(content, currentUser.id, comment.senderId, userId = currentUser.id, title = currentUser.name)
+            FireUtility.sendNotification(notification) {
+                if (it.isSuccessful) {
+                    val newCommentLikesList = comment.likes.toMutableList()
+                    comment.likesCount = comment.likesCount - 1
+                    comment.isLiked = false
+                    newCommentLikesList.remove(currentUser.id)
+
+                    viewModel.updateComment(comment)
+
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        }
         viewModel.onCommentLiked(comment)
     }
 
@@ -1166,19 +1125,26 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
     }
 
     override fun onClick(comment: Comment) {
-        val bundle = bundleOf("parent" to comment, "title" to "Comments")
+        val bundle = bundleOf("parent" to comment, "title" to "Comments", COMMENT_CHANNEL_ID to comment.threadChannelId)
         when (navController.currentDestination?.id) {
             R.id.commentsFragment -> {
-                navController.navigate(R.id.action_commentsFragment_self, bundle)
+                navController.navigate(R.id.action_commentsFragment_self, bundle, slideRightNavOptions())
             }
-            R.id.notificationFragment -> {
-                navController.navigate(R.id.action_notificationFragment_to_commentsFragment, bundle)
+            R.id.notificationCenterFragment -> {
+                navController.navigate(R.id.action_notificationCenterFragment_to_commentsFragment, bundle, slideRightNavOptions())
             }
         }
     }
 
     override fun onCommentDelete(comment: Comment) {
-        viewModel.deleteComment(comment)
+        FireUtility.deleteComment(comment) {
+            if (it.isSuccessful) {
+                viewModel.deleteComment(comment)
+                toast("Your comment was deleted.")
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     override fun onCommentUpdate(comment: Comment) {
@@ -1190,16 +1156,43 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
     }
 
     override fun onReportClick(comment: Comment) {
-        navController.navigate(R.id.action_commentsFragment_to_reportFragment, bundleOf("contextObject" to comment))
+        navController.navigate(R.id.action_commentsFragment_to_reportFragment, bundleOf(
+            CONTEXT_OBJECT to comment), slideRightNavOptions())
     }
 
     override fun onCommentUserClick(user: User) {
         onUserClick(user)
     }
 
+    override fun onOptionClick(comment: Comment) {
+        val isCommentByMe = comment.senderId == UserManager.currentUserId
+
+        val option1 = "Report"
+        val option2 = "Delete"
+
+        val choices = if (isCommentByMe) {
+            arrayOf(option1, option2)
+        } else {
+            arrayOf(option1)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Comment")
+            .setItems(choices) { _, index ->
+                when (choices[index]) {
+                    option1 -> {
+                        onReportClick(comment)
+                    }
+                    option2 -> {
+                        onCommentDelete(comment)
+                    }
+                }
+            }.show()
+    }
+
     override fun onChannelClick(chatChannel: ChatChannel) {
         val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
-        navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle)
+        navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle, slideRightNavOptions())
     }
 
     override fun onChatChannelSelected(chatChannel: ChatChannel) {
@@ -1369,8 +1362,8 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
         if (message?.metadata != null) {
             imageViewBinding.bottomInfoView.show()
-
-            imageViewBinding.userTimeInfo.text = "Sent by ${message.sender.name} • " + SimpleDateFormat("hh:mm a, dd/MM/yyyy").format(message.createdAt)
+            val imageViewInfo = "Sent by ${message.sender.name} • " + SimpleDateFormat("hh:mm a, dd/MM/yyyy", Locale.UK).format(message.createdAt)
+            imageViewBinding.userTimeInfo.text = imageViewInfo
             imageViewBinding.imageSize.text = getTextForSizeInBytes(message.metadata!!.size)
         } else {
             imageViewBinding.bottomInfoView.hide()
@@ -1404,6 +1397,10 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         isImageViewMode = true
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp() || super.onSupportNavigateUp()
+    }
+
     private fun onImageViewerClick(backgroundView: View, bottomInfoView: View) {
         val appbar = currentImageViewer?.findViewById<AppBarLayout>(R.id.image_view_appbar)
 
@@ -1428,9 +1425,9 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
         val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
         val a2 = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
 
-        val currentUser = viewModel.currentUser.value!!
-        if (!message.readList.contains(currentUser.id)) {
-            viewModel.updateReadList(currentUser, a1, a2, message)
+        val currentUserId = UserManager.currentUserId
+        if (!message.readList.contains(currentUserId)) {
+            viewModel.updateReadList(a1, a2, message)
         }
     }
 
@@ -1506,7 +1503,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     override fun onMessageDoubleTapped(p0: MotionEvent?): Boolean {
         if (viewModel.selectedMessages.value.isNullOrEmpty() && viewModel.singleSelectedMessage.value == null) {
-            val flag = currentlyFocusedMessage?.senderId != viewModel.currentUser.value?.id
+            val flag = currentlyFocusedMessage?.senderId != UserManager.currentUserId
 
             val popupMenu = if (!flag) {
                 PopupMenu(this, currentMessageView!!, Gravity.END)
@@ -1529,52 +1526,81 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                 true
             }
 
-            if (currentlyFocusedMessage?.senderId != viewModel.currentUser.value?.id) {
+            if (currentlyFocusedMessage?.senderId != UserManager.currentUserId) {
                 popupMenu.menu.getItem(2).isVisible = false
             }
 
             popupMenu.show()
-        } else {
-            //
         }
         return true
     }
 
     override fun onNotificationRead(notification: Notification) {
         notification.read = true
-        viewModel.updateNotification(notification)
+        FireUtility.checkIfNotificationExistsById(notification.receiverId, notification.id) { exists, error ->
+
+            if (error != null) {
+                viewModel.setCurrentError(error)
+                return@checkIfNotificationExistsById
+            }
+
+            if (!exists) {
+                viewModel.deleteNotification(notification)
+            } else {
+                viewModel.updateNotification(notification)
+            }
+        }
     }
 
+    override fun onNotificationClick(
+        notification: Notification,
+        user: User?,
+        project: Project?,
+        comment: Comment?
+    ) {
 
-    @ExperimentalPagingApi
-    override fun onNotificationClick(notification: Notification, contextObj: Any) {
-        when (contextObj) {
-            is Project -> {
-                if (notification.type == NOTIFICATION_JOIN_PROJECT) {
-                    navController.navigate(R.id.action_notificationFragment_to_projectRequestFragment)
-                } else {
-                    onProjectClick(contextObj)
-                }
-            }
-            is Comment -> {
-                if (contextObj.commentLevel == 0.toLong()) {
-                    val projectRef = Firebase.firestore.collection("projects").document(contextObj.projectId)
-                    FireUtility.getDocument(projectRef) { it1 ->
-                        if (it1.isSuccessful && it1.result.exists()) {
-                            val project = it1.result.toObject(Project::class.java)!!
-                            onProjectCommentClick(project)
-                        } else {
-                            Log.d(TAG, "Something went wrong" + it1.exception?.localizedMessage)
+        if (user != null) {
+            onUserClick(user)
+        }
+
+        if (project != null) {
+            navController.navigate(R.id.action_notificationCenterFragment_to_projectFragment, null, slideRightNavOptions())
+        }
+
+        if (comment != null) {
+            if (comment.commentLevel.toInt() == 0) {
+                FireUtility.getProject(comment.projectId) {
+                    when (it) {
+                        is Result.Error -> viewModel.setCurrentError(it.exception)
+                        is Result.Success -> {
+                            val project1 = it.data
+                            onProjectCommentClick(project1)
+                        }
+                        null -> {
+                            // delete notification
                         }
                     }
-                } else {
-                    onClick(contextObj)
                 }
+            } else {
+                onClick(comment)
             }
-            is User -> {
-                onUserClick(contextObj)
+        }
+    }
+
+    /*private fun deleteNotification(notification: Notification) {
+        FireUtility.deleteNotification(notification) { it1 ->
+            if (it1.isSuccessful) {
+                viewModel.deleteNotification(notification)
+            } else {
+                viewModel.setCurrentError(it1.exception)
             }
-            else -> throw IllegalArgumentException("Only object of type Project, Comment and User is allowed.")
+        }
+    }*/
+
+    override fun onNotificationUserNotFound(notification: Notification) {
+        // the user is probably archived or deleted, this notification must be deleted.
+        FireUtility.deleteNotification(notification) {
+            viewModel.deleteNotification(notification)
         }
     }
 
@@ -1628,8 +1654,9 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     override fun onPause() {
         super.onPause()
-        val currentUser = viewModel.currentUser.value
-        if (currentUser != null) {
+
+        if (UserManager.isInitialized) {
+            val currentUser = UserManager.currentUser
             val batch = Firebase.firestore.batch()
 
             for (channel in currentUser.chatChannels) {
@@ -1655,8 +1682,9 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     override fun onResume() {
         super.onResume()
-        val currentUser = viewModel.currentUser.value
-        if (currentUser != null) {
+        val firebaseUser = Firebase.auth.currentUser
+        if (firebaseUser != null && UserManager.isInitialized) {
+            val currentUser = UserManager.currentUser
             val batch = Firebase.firestore.batch()
             for (channel in currentUser.chatChannels) {
                 for (token in currentUser.registrationTokens) {
@@ -1672,7 +1700,6 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                     Log.e(TAG, "1142 - ${it.exception?.localizedMessage}")
                 }
             }
-
         }
 
         checkForNetworkPermissions {
@@ -1681,15 +1708,20 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
             }
         }
 
-        if (::navController.isInitialized) {
+        lifecycleScope.launch {
+            UserManager.listenForUserVerification(20, 5)
+        }
+
+        /*if (::navController.isInitialized) {
+            // if the user has returned from checking their mail in the phone,
+            // this will check again if the user is verified or not.
             if (navController.currentDestination?.id == R.id.emailVerificationFragment) {
-                val firebaseUser = Firebase.auth.currentUser
                 if (firebaseUser != null) {
                     val task = firebaseUser.reload()
                     task.addOnCompleteListener {
                         if (it.isSuccessful) {
                             if (Firebase.auth.currentUser?.isEmailVerified == true) {
-                                navController.navigate(R.id.action_emailVerificationFragment_to_homeFragment)
+                                navController.navigate(R.id.action_emailVerificationFragment_to_homeFragment, null, slideRightNavOptions())
                             }
                         } else {
                             Log.d(TAG, it.exception?.localizedMessage.orEmpty())
@@ -1697,7 +1729,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
                     }
                 }
             }
-        }
+        }*/
     }
 
     override fun onStop() {
@@ -1707,6 +1739,127 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectClickL
 
     companion object {
         private const val TAG = "MainActivityDebugTag"
+    }
+
+    override fun updateProjectInvite(newProjectInvite: ProjectInvite) {
+        viewModel.insertProjectInvites(newProjectInvite)
+    }
+
+    override fun onProjectInviteAccept(projectInvite: ProjectInvite) {
+        val currentUser = UserManager.currentUser
+        val content = currentUser.name + " accepted your project invite"
+        val title = projectInvite.project?.name
+        val notification = Notification.createNotification(content, currentUser.id, projectInvite.senderId, userId = currentUser.id, title = title)
+
+        FireUtility.acceptProjectInvite(currentUser, projectInvite) {
+            if (it.isSuccessful) {
+                if (notification.senderId != notification.receiverId) {
+                    FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                        if (error != null) {
+                            viewModel.setCurrentError(error)
+                        } else {
+                            if (!exists) {
+                                FireUtility.sendNotification(notification) { it1 ->
+                                    if (it1.isSuccessful) {
+                                        // current user was added to project successfully
+                                        viewModel.addCurrentUserToProject(projectInvite)
+                                        val inviteNotificationId = projectInvite.notificationId
+                                        if (inviteNotificationId != null) {
+                                            viewModel.deleteNotificationById(inviteNotificationId)
+                                        }
+                                        // extra
+                                        val otherUser = projectInvite.sender
+                                        if (otherUser != null) {
+                                            val newList = otherUser.projectInvites.removeItemFromList(projectInvite.id)
+                                            otherUser.projectInvites = newList
+                                            viewModel.updateOtherUserLocally(otherUser)
+                                        }
+                                    } else {
+                                        viewModel.setCurrentError(it1.exception)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "Not possible")
+                }
+            } else {
+                // something went wrong while trying to add the current user to the project
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+
+    }
+
+    override fun onProjectInviteCancel(projectInvite: ProjectInvite) {
+        val currentUser = UserManager.currentUser
+        val title = projectInvite.project?.name
+        val content = currentUser.name + " has rejected your project invite"
+        val notification = Notification.createNotification(content, currentUser.id, projectInvite.senderId, userId = currentUser.id, title = title)
+        FireUtility.cancelProjectInvite(currentUser, projectInvite) {
+            if (it.isSuccessful) {
+                if (notification.senderId != notification.receiverId) {
+                    FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                        if (error != null) {
+                            viewModel.setCurrentError(error)
+                        } else {
+                            if (!exists) {
+                                FireUtility.sendNotification(notification) { it1 ->
+                                    if (it1.isSuccessful) {
+                                        viewModel.deleteProjectInvite(projectInvite)
+                                        val inviteNotificationId = projectInvite.notificationId
+                                        if (inviteNotificationId != null) {
+                                            viewModel.deleteNotificationById(inviteNotificationId)
+                                        }
+
+                                        // extra
+                                        val otherUser = projectInvite.sender
+                                        if (otherUser != null) {
+                                            val newList = otherUser.projectInvites.removeItemFromList(projectInvite.id)
+                                            otherUser.projectInvites = newList
+                                            viewModel.updateOtherUserLocally(otherUser)
+                                        }
+                                    } else {
+                                        viewModel.setCurrentError(it1.exception)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.d(TAG, "Not possible")
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+    }
+
+    override fun onProjectInviteProjectDeleted(projectInvite: ProjectInvite) {
+        // either the project was deleted or archived
+        FireUtility.deleteProjectInvite(projectInvite) {
+            if (it.isSuccessful) {
+                viewModel.deleteProjectInvite(projectInvite)
+                // extra
+                val otherUser = projectInvite.sender
+                if (otherUser != null) {
+                    val newList = otherUser.projectInvites.removeItemFromList(projectInvite.id)
+                    otherUser.projectInvites = newList
+                    viewModel.updateOtherUserLocally(otherUser)
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+    }
+
+    fun selectImage1() {
+        val intent = Intent().apply {
+            type = "image/*"
+            action = Intent.ACTION_GET_CONTENT
+        }
+        selectImageLauncher1.launch(intent)
     }
 
 }

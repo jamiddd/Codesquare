@@ -7,21 +7,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentEmailVerificationBinding
-import com.jamid.codesquare.ui.MainActivity
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+@ExperimentalPagingApi
 class EmailVerificationFragment: Fragment() {
 
     private lateinit var binding: FragmentEmailVerificationBinding
-    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,40 +34,21 @@ class EmailVerificationFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.verifyEmailBtn.setOnClickListener {
+        val currentUser = Firebase.auth.currentUser
 
-            viewLifecycleOwner.lifecycleScope.launch {
-                for (i in 1..20) {
-                    delay(5000)
-                    val currentUser = Firebase.auth.currentUser
-                    if (currentUser != null) {
-                        val task = currentUser.reload()
-                        task.addOnCompleteListener {
-                            if (it.isSuccessful) {
-                                if (Firebase.auth.currentUser?.isEmailVerified == true) {
-                                    findNavController().navigate(R.id.action_emailVerificationFragment_to_homeFragment)
-                                }
-                            } else {
-                                Log.d(TAG, it.exception?.localizedMessage.orEmpty())
-                            }
-                        }
-                    }
-                }
-            }
+        Log.d(TAG, "Started email verification")
 
-            binding.verifyEmailBtn.hide()
-            binding.emailVerificationProgress.show()
+        binding.emailVerificationProgress.show()
+        currentUser?.sendEmailVerification()?.addOnCompleteListener {
+            binding.emailVerificationProgress.hide()
+            if (it.isSuccessful) {
+                Log.d(TAG, "Sent email for verification. Waiting for confirmation ...")
 
-            val currentUser = Firebase.auth.currentUser!!
-            currentUser.sendEmailVerification().addOnCompleteListener {
-
-                if (it.isSuccessful) {
-                    binding.emailVerificationMessage.text = "Verification email sent. Check your mail."
-                    binding.emailVerificationMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_round_done_24, 0, 0)
-                    binding.verifyEmailBtn.hide()
-                } else {
-                    toast(it.exception?.localizedMessage.orEmpty())
-                }
+                setListenerForEmailVerification()
+                binding.emailVerificationMessage.text = getString(R.string.email_verification_message)
+                binding.emailVerificationMessage.setCompoundDrawablesRelativeWithIntrinsicBounds(0, R.drawable.ic_round_done_24, 0, 0)
+            } else {
+                it.exception?.localizedMessage?.let { it1 -> Log.e(TAG, it1) }
             }
         }
 
@@ -76,6 +56,20 @@ class EmailVerificationFragment: Fragment() {
             requireActivity().finish()
         }
 
+        UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
+            if (isSignedIn != null && isSignedIn) {
+                if (UserManager.isEmailVerified) {
+                    Log.d(TAG, "User is signed in and email is verified.")
+                    findNavController().navigate(R.id.action_emailVerificationFragment_to_profileImageFragment, null, slideRightNavOptions())
+                }
+            }
+        }
+
+    }
+
+    private fun setListenerForEmailVerification() = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+        Log.d(TAG, "Setting listener to listen for email verification changes.")
+        UserManager.listenForUserVerification(20, 5)
     }
 
     companion object {

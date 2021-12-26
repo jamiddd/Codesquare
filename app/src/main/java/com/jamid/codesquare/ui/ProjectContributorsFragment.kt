@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.MainViewModel
@@ -16,18 +17,11 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProjectContributorsBinding
 import kotlinx.coroutines.launch
 
+@ExperimentalPagingApi
 class ProjectContributorsFragment: Fragment() {
 
     private lateinit var binding: FragmentProjectContributorsBinding
     private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -74,12 +68,9 @@ class ProjectContributorsFragment: Fragment() {
     }
 
     companion object {
-
         const val ARG_PROJECT = "ARG_PROJECT"
         const val ARG_ADMINISTRATORS = "ARG_ADMINISTRATORS"
         const val ARG_IS_LOCAL = "ARG_IS_LOCAL"
-
-        private const val TAG = "ProjectContributorsFragment"
     }
 
 }

@@ -8,7 +8,7 @@ import com.jamid.codesquare.listeners.ChatChannelClickListener
 
 class ChatChannelAdapter(private val uid: String, private val channelClickListener: ChatChannelClickListener): PagingDataAdapter<ChatChannel, ChatChannelViewHolder>(comparator) {
 
-    var isSelectAvailable = false
+    private var isSelectAvailable = false
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<ChatChannel>() {

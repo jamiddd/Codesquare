@@ -52,6 +52,17 @@
             tools:listitem="@layout/document_layout_small"
             tools:visibility="visible" />
 
+        <TextView
+            android:id="@+id/chat_upload_helper_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="4dp"
+            android:text="One or more of the files to be uploaded is too big. Try uploading files of smaller size."
+            android:visibility="gone" />
+
         <LinearLayout
             android:id="@+id/linearLayout9"
             android:layout_width="match_parent"
@@ -66,9 +77,9 @@
 
             <Button
                 android:id="@+id/add_media_btn"
-                style="@style/AppTheme.Button.IconOnly"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/AppTheme.ChatAddMediaBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="4dp"
@@ -96,17 +107,15 @@
 
             <Button
                 android:id="@+id/chat_send_btn"
-                style="@style/AppTheme.Button.IconOnly"
+                style="@style/AppTheme.ChatSendButton"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="4dp"
-                android:backgroundTint="?colorPrimary"
                 android:paddingStart="8dp"
                 android:paddingEnd="0dp"
-                app:icon="@drawable/ic_round_arrow_forward_24"
-                app:iconTint="@color/white" />
+                app:icon="@drawable/ic_round_arrow_forward_24" />
         </LinearLayout>
 
     </LinearLayout>

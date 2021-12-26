@@ -8,16 +8,17 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.adapter.recyclerview.DocumentAdapter
-import com.jamid.codesquare.data.DocumentHolder
 import com.jamid.codesquare.databinding.FragmentChatDocumentsBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
 import kotlinx.coroutines.launch
 
+@ExperimentalPagingApi
 class ChatDocumentsFragment: Fragment() {
 
     private lateinit var binding: FragmentChatDocumentsBinding
@@ -47,14 +48,7 @@ class ChatDocumentsFragment: Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
 
             val documentMessages = viewModel.getDocumentMessages(chatChannelId)
-//            val documents = mutableListOf<DocumentHolder>()
 
-            /*for (message in documentMessages) {
-                if (message.metadata != null) {
-                    val documentHolder = DocumentHolder(chatChannelId, message.content, message.metadata!!)
-                    documents.add(documentHolder)
-                }
-            }*/
             if (documentMessages.isNotEmpty()) {
                 binding.noDocumentsText.hide()
                 documentAdapter.submitList(documentMessages)

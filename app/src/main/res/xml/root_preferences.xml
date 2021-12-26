@@ -1,36 +1,72 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="Profile">
 
         <Preference
-            app:key="update_profile"
+            app:key="profile_update"
             app:title="Update profile" />
 
         <Preference
-            app:key="saved_projects"
+            app:key="profile_saved"
             app:title="Saved projects" />
 
     </PreferenceCategory>
+
+    <PreferenceCategory app:title="Location">
+
+        <EditTextPreference
+            app:key="location_radius"
+            app:title="Radius of search"
+            app:dialogTitle="Location radius"
+            app:persistent="true"
+            app:summary="10 KM"
+            app:dialogMessage="Set radius for location based search." />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Project">
+
+        <EditTextPreference
+            app:key="project_expiry"
+            app:title="Project expiration duration"
+            app:summary="Duration after which an archived project will be deleted. (In Days)"
+            app:dialogTitle="Set archive duration"
+            app:persistent="true"
+            app:dialogMessage="Set duration for the number of days a project can be archived."
+            app:defaultValue="10"/>
+
+    </PreferenceCategory>
+
 
     <PreferenceCategory app:title="Chat">
 
         <SwitchPreferenceCompat
             app:defaultValue="true"
-            app:key="show_chat_time"
+            app:key="chat_time"
+            app:persistent="true"
             app:summaryOff="Enable this to show time for every chat"
             app:summaryOn="Disable this for a cleaner look"
             app:title="Show time in chat" />
+
+        <SwitchPreferenceCompat
+            app:defaultValue="false"
+            app:persistent="true"
+            app:key="chat_download"
+            app:summaryOff="Enable to download media automatically"
+            app:summaryOn="Disable to download media manually"
+            app:title="Automatically download media" />
 
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Account">
 
         <Preference
-            app:key="update_password"
+            app:key="account_update_password"
             app:title="Update password" />
 
         <Preference
-            app:key="forgot_password"
+            app:key="account_forgot_password"
             app:title="Forgot password" />
 
 

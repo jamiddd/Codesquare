@@ -9,20 +9,22 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.paging.ExperimentalPagingApi
+import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.R
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
-
+@ExperimentalPagingApi
 class CreateAccountFragment: Fragment() {
 
     private lateinit var binding: FragmentCreateAccountBinding
     private val viewModel: MainViewModel by activityViewModels()
+    private var loadingDialog: AlertDialog? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -94,16 +96,30 @@ class CreateAccountFragment: Fragment() {
             findNavController().navigateUp()
         }
 
-       /* Firebase.auth.addAuthStateListener {
-            if (it.currentUser != null) {
-                dialog?.dismiss()
+        UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
+            if (isSignedIn != null && isSignedIn) {
+                loadingDialog?.dismiss()
                 findNavController().navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
             }
-        }*/
+        }
 
         viewModel.currentError.observe(viewLifecycleOwner) { exception ->
             if (exception != null) {
-                toast(exception.localizedMessage.orEmpty())
+                loadingDialog?.dismiss()
+                when (exception) {
+                    is FirebaseAuthWeakPasswordException -> {
+                        Log.d(TAG, "FirebaseAuthWeakPasswordException")
+                    }
+                    is FirebaseAuthUserCollisionException -> {
+                        Log.d(TAG, "FirebaseAuthUserCollisionException")
+                    }
+                    is FirebaseAuthInvalidUserException -> {
+                        Log.d(TAG, "FirebaseAuthInvalidUserException")
+                    }
+                    is FirebaseAuthInvalidCredentialsException -> {
+                        Log.d(TAG, "FirebaseAuthInvalidCredentialsException")
+                    }
+                }
                 Log.e(TAG, exception.localizedMessage.orEmpty())
             }
         }
@@ -112,7 +128,7 @@ class CreateAccountFragment: Fragment() {
 
     private fun showDialog() {
         val msg = "Creating account .. Please wait for a while"
-        (activity as MainActivity).showLoadingDialog(msg)
+        loadingDialog = (activity as MainActivity).showLoadingDialog(msg)
     }
 
     private fun createAccount(name: String, email: String, password: String) {
@@ -123,10 +139,11 @@ class CreateAccountFragment: Fragment() {
             if (it.isSuccessful) {
                 val user = it.result.user
                 if (user != null) {
-                    val ref = Firebase.firestore.collection("users").document(user.uid)
                     val localUser = User.newUser(user.uid, name, email)
-                    FireUtility.uploadDocument(ref, localUser) { it1 ->
+
+                    FireUtility.uploadUser(localUser) { it1 ->
                         if (it1.isSuccessful) {
+                            UserManager.updateUser(localUser)
                             viewModel.insertCurrentUser(localUser)
                         } else {
                             viewModel.setCurrentError(it1.exception)

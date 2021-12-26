@@ -15,34 +15,19 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.*
 import com.jamid.codesquare.listeners.MessageListener
 import java.io.File
-import java.text.SimpleDateFormat
 import java.util.*
-import androidx.palette.graphics.Palette
-
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.view.GestureDetector
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import com.jamid.codesquare.*
-import com.facebook.imagepipeline.image.CloseableImage
 
-import com.facebook.common.references.CloseableReference
-import com.facebook.datasource.DataSource
-
-import com.facebook.imagepipeline.request.ImageRequestBuilder
-import com.google.android.datatransport.runtime.ExecutionModule_ExecutorFactory.executor
-
-import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
-
-class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, private val itemType: Int): RecyclerView.ViewHolder(view) {
+class MessageViewHolder2<T: Any>(val view: View, private val itemType: Int): RecyclerView.ViewHolder(view) {
 
     private val messageListener = view.context as MessageListener
     private val controllerListener = FrescoImageControllerListener()
     private lateinit var mDetector: GestureDetectorCompat
     private lateinit var mMessage: Message
+    private val currentUserId = UserManager.currentUser.id
 
     fun bind(item: T) {
         when (item::class.java) {
@@ -136,7 +121,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    private val touchListener = View.OnTouchListener { p0, p1 ->
+    private val touchListener = View.OnTouchListener { _, p1 ->
         messageListener.onMessageFocused(mMessage, view)
         return@OnTouchListener mDetector.onTouchEvent(p1)
     }
@@ -151,7 +136,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         if (replyMessage != null) {
             binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = "You"
+                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
@@ -237,7 +222,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         if (replyMessage != null) {
             binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = "You"
+                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
@@ -335,7 +320,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         if (replyMessage != null) {
             binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = "You"
+                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
@@ -351,8 +336,8 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         }
     }
 
-    // Generate palette synchronously and return it
-    fun createPaletteSync(bitmap: Bitmap): Palette = Palette.from(bitmap).generate()
+    /*// Generate palette synchronously and return it
+    fun createPaletteSync(bitmap: Bitmap): Palette = Palette.from(bitmap).generate()*/
 
     private fun setMessageMiddleDocumentItem(message: Message) {
         val binding = MessageMiddleDocumentItemBinding.bind(view)
@@ -426,7 +411,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
             binding.replyComponent.root.show()
 
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = "You"
+                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
@@ -538,12 +523,12 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         setTimeForTextView(binding.messageCreatedAt, message.createdAt)
     }
 
-    private fun setTimeForTextView(tv: TextView, time: Long, format: String = "hh:mm a") {
-        val timeText = SimpleDateFormat(format, Locale.UK).format(time)
+    private fun setTimeForTextView(tv: TextView, time: Long) {
+        val timeText = getTextForChatTime(time)
         tv.text = timeText
     }
 
-    fun setDominantColorFromBitmap(uri: Uri, target: View) {
+    /*fun setDominantColorFromBitmap(uri: Uri, target: View) {
         val imagePipeline = Fresco.getImagePipeline()
 
         val imageRequest = ImageRequestBuilder.newBuilderWithSource(uri)
@@ -575,7 +560,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
             executor()
         )
 
-    }
+    }*/
 
     private fun setMessageImageBasedOnExtension(
         imageHolder: SimpleDraweeView,
@@ -609,7 +594,7 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         }
     }
 
-    private fun getBitmapFromView(v: View, width: Int = v.layoutParams.width, height: Int = v.layoutParams.height): Bitmap? {
+    /*private fun getBitmapFromView(v: View, width: Int = v.layoutParams.width, height: Int = v.layoutParams.height): Bitmap? {
         val b = Bitmap.createBitmap(
             width,
             height,
@@ -619,11 +604,11 @@ class MessageViewHolder2<T: Any>(val currentUserId: String, val view: View, priv
         v.layout(v.left, v.top, v.right, v.bottom)
         v.draw(c)
         return b
-    }
+    }*/
 
     private fun bind(listSeparator: ListSeparator) {
         val binding = MessageTimeSeparatorBinding.bind(view)
-        setTimeForTextView(binding.timeSeparatorText, listSeparator.time, "EEEE")
+        setTimeForTextView(binding.timeSeparatorText, listSeparator.time)
     }
 
     private val onImageLongClickListener = View.OnLongClickListener {

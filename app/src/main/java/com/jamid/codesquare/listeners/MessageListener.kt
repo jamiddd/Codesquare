@@ -4,10 +4,8 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.FrescoImageControllerListener
-import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.User
 

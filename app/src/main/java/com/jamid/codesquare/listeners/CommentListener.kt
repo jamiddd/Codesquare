@@ -12,4 +12,5 @@ interface CommentListener {
     fun onNoUserFound(userId: String)
     fun onReportClick(comment: Comment)
     fun onCommentUserClick(user: User)
+    fun onOptionClick(comment: Comment)
 }

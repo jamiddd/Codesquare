@@ -9,11 +9,11 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
-import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +27,6 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
 import com.jamid.codesquare.data.CommentChannel
 import com.jamid.codesquare.data.Project
@@ -39,7 +38,7 @@ import com.jamid.codesquare.listeners.UserClickListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
+@ExperimentalPagingApi
 class ProjectFragment: Fragment() {
 
     private lateinit var binding: FragmentProjectBinding
@@ -50,14 +49,6 @@ class ProjectFragment: Fragment() {
     private lateinit var userClickListener: UserClickListener
     private lateinit var joinBtn: MaterialButton
     private var lr: ListenerRegistration? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -154,7 +145,7 @@ class ProjectFragment: Fragment() {
             }
             project.isRequested -> {
                 joinBtn.show()
-                joinBtn.text = "Undo"
+                joinBtn.text = requireContext().getString(R.string.undo)
             }
             project.isCollaboration -> {
                 joinBtn.slideDown(convertDpToPx(100).toFloat())
@@ -166,21 +157,21 @@ class ProjectFragment: Fragment() {
         setJoinButton()
 
 
-        val currentUser = viewModel.currentUser.value!!
+        val currentUser = UserManager.currentUser
 
         binding.userLikeBtn.isSelected = currentUser.likedUsers.contains(project.creator.userId)
         if (binding.userLikeBtn.isSelected) {
-            binding.userLikeBtn.text = "Dislike"
+            binding.userLikeBtn.text = requireContext().getString(R.string.dislike)
         } else {
-            binding.userLikeBtn.text = "Like"
+            binding.userLikeBtn.text = requireContext().getString(R.string.like)
         }
 
         binding.userLikeBtn.setOnClickListener {
             if (binding.userLikeBtn.isSelected) {
-                binding.userLikeBtn.text = "Like"
+                binding.userLikeBtn.text = requireContext().getString(R.string.like)
                 viewModel.dislikeUser(project.creator.userId)
             } else {
-                binding.userLikeBtn.text = "Dislike"
+                binding.userLikeBtn.text = requireContext().getString(R.string.dislike)
                 viewModel.likeUser(project.creator.userId)
             }
         }
@@ -231,7 +222,7 @@ class ProjectFragment: Fragment() {
                         if (value.isEmpty) {
                             joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
                             // no requests have been made
-                            joinBtn.text = "Join"
+                            joinBtn.text = requireContext().getString(R.string.join)
                             joinBtn.setOnClickListener {
                                 projectClickListener.onProjectJoinClick(project)
                             }
@@ -240,7 +231,7 @@ class ProjectFragment: Fragment() {
                             val projectRequest = value.toObjects(ProjectRequest::class.java).first()
 
                             // already requested
-                            joinBtn.text = "Undo"
+                            joinBtn.text = requireContext().getString(R.string.undo)
                             joinBtn.setOnClickListener {
                                 projectClickListener.onProjectUndoClick(project, projectRequest)
                             }
@@ -333,7 +324,7 @@ class ProjectFragment: Fragment() {
 
         chip.setOnClickListener {
             val bundle = bundleOf("title" to "#$tag", "tag" to tag)
-            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle)
+            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle, slideRightNavOptions())
         }
 
     }
@@ -385,7 +376,7 @@ class ProjectFragment: Fragment() {
                 ProjectContributorsFragment.ARG_ADMINISTRATORS to arrayListOf(project.creator.userId)
             )
 
-            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle)
+            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle, slideRightNavOptions())
         }
 
         val userAdapter2 = UserAdapter2(project.id, project.chatChannel, listOf(project.creator.userId))

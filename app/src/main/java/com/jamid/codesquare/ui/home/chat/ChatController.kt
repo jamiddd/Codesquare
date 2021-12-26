@@ -1,0 +1,149 @@
+package com.jamid.codesquare.ui.home.chat
+
+import android.content.Context
+import android.os.Environment
+import android.util.Log
+import androidx.paging.ExperimentalPagingApi
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.jamid.codesquare.*
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.User
+
+@ExperimentalPagingApi
+class ChatController(private val viewModel: MainViewModel, private val mContext: Context) {
+
+    private val onChannelsReceived = OnCompleteListener<QuerySnapshot> {
+        if (it.isSuccessful) {
+            val querySnapshot = it.result
+            if (querySnapshot.isEmpty) {
+                return@OnCompleteListener
+            } else {
+                val chatChannels = querySnapshot.toObjects(ChatChannel::class.java)
+                viewModel.insertChatChannels(chatChannels)
+                for (chatChannel in chatChannels) {
+                    getChannelContributors(chatChannel)
+                    setChannelMessagesListener(chatChannel)
+                }
+            }
+        } else {
+            it.exception?.localizedMessage?.let { it1 -> Log.e(TAG, it1) }
+        }
+    }
+
+    init {
+        val currentUser = Firebase.auth.currentUser
+        if (currentUser != null) {
+            Firebase.firestore.collection(CHAT_CHANNELS)
+                .whereArrayContains(CONTRIBUTORS, currentUser.uid)
+                .get()
+                .addOnCompleteListener(onChannelsReceived)
+
+            addChannelsListener(currentUser.uid)
+        }
+    }
+
+    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .document(chatChannel.chatChannelId)
+            .collection(MESSAGES)
+            .document(lastMessage.messageId)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Firebase.firestore.collection(CHAT_CHANNELS).document(chatChannel.chatChannelId)
+                        .collection(MESSAGES)
+                        .startAfter(it.result)
+                        .get()
+                        .addOnCompleteListener { it1 ->
+                            if (it1.isSuccessful) {
+                                val querySnapshot = it1.result
+                                val imagesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                                val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+                                val messages = querySnapshot.toObjects(Message::class.java)
+                                if (imagesDir != null && documentsDir != null) {
+                                    viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                                }
+                            } else {
+                                it1.exception?.let { it2 -> Log.e(TAG, it2.localizedMessage!!) }
+                            }
+                        }
+                } else {
+                    it.exception?.let { it1 -> Log.e(TAG, it1.localizedMessage!!) }
+                }
+            }
+
+    }
+
+    private fun addChannelsListener(currentUserId: String) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
+            .addSnapshotListener { value, error ->
+
+                if (error != null) {
+                    Log.e(TAG, error.localizedMessage.orEmpty())
+                    return@addSnapshotListener
+                }
+
+                if (value != null && !value.isEmpty) {
+                    val chatChannels = value.toObjects(ChatChannel::class.java)
+                    viewModel.insertChatChannels(chatChannels)
+                }
+            }
+    }
+
+
+
+    private fun setChannelMessagesListener(chatChannel: ChatChannel) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .document(chatChannel.chatChannelId)
+            .collection(MESSAGES)
+            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+            .limit(chatChannel.contributorsCount)
+            .addSnapshotListener { querySnapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, error.localizedMessage!!)
+                    return@addSnapshotListener
+                }
+
+                if (querySnapshot != null && !querySnapshot.isEmpty) {
+                    val messages = querySnapshot.toObjects(Message::class.java)
+                    val imagesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                    val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+
+                    if (imagesDir != null && documentsDir != null) {
+                        viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                    }
+                }
+            }
+    }
+
+    private fun getChannelContributors(channel: ChatChannel) {
+        Firebase.firestore.collection(USERS)
+            .whereArrayContains(CHANNELS, channel.chatChannelId)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val querySnapshot = it.result
+                    if (querySnapshot.isEmpty) {
+                        val contributors = querySnapshot.toObjects(User::class.java)
+                        viewModel.insertUsers(*contributors.toTypedArray())
+                    }
+                } else {
+                    it.exception?.let { it1 -> Log.e(TAG, it1.localizedMessage!!) }
+                }
+            }
+    }
+
+
+    companion object {
+        private const val TAG = "ChatController"
+    }
+
+
+}

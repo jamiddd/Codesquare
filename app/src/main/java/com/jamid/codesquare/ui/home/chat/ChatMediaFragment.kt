@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
@@ -15,15 +16,10 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
 
+@ExperimentalPagingApi
 class ChatMediaFragment: Fragment() {
 
     private lateinit var binding: FragmentChatMediaBinding
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,6 +51,7 @@ class ChatMediaFragment: Fragment() {
 
     }
 
+    @ExperimentalPagingApi
     private inner class ChatMediaAdapter(val chatChannelId: String, activity: FragmentActivity): FragmentStateAdapter(activity) {
         override fun getItemCount() = 2
 

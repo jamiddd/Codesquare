@@ -6,16 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.activityViewModels
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.ProjectListAdapter
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.ProjectInvite
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ProjectListLayoutBinding
 import com.jamid.codesquare.listeners.ProjectMiniItemClickListener
 
+@ExperimentalPagingApi
 class ProjectListFragment: BottomSheetDialogFragment(), ProjectMiniItemClickListener {
 
     private lateinit var binding: ProjectListLayoutBinding
@@ -37,7 +39,7 @@ class ProjectListFragment: BottomSheetDialogFragment(), ProjectMiniItemClickList
 
         val projectListAdapter = ProjectListAdapter(this).apply {
             receiverIdForInvite = receiver.id
-            currentUserId = viewModel.currentUser.value?.id.orEmpty()
+            currentUserId = UserManager.currentUserId
         }
 
         binding.projectsList.apply {
@@ -54,19 +56,48 @@ class ProjectListFragment: BottomSheetDialogFragment(), ProjectMiniItemClickList
     }
 
     companion object {
-        private const val TAG = "ProjectListFragment"
-
         fun newInstance(user: User) = ProjectListFragment().apply {
             arguments = bundleOf("user" to user)
         }
     }
 
     override fun onInviteClick(project: Project, receiverId: String) {
-        viewModel.inviteUserToProject(project, receiverId)
+        val currentUser = UserManager.currentUser
+        val title = project.name
+        val content = currentUser.name + " has invited you to join their project: ${project.name}"
+        val notification = Notification.createNotification(content, currentUser.id, receiverId, type = -1,  projectId = project.id, title = title)
+
+        FireUtility.inviteUserToProject(project, receiverId, notification.id) {
+            if (it.isSuccessful) {
+                if (notification.senderId != notification.receiverId) {
+                    FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                        if (error != null) {
+                            viewModel.setCurrentError(error)
+                        } else {
+                            if (!exists) {
+                                FireUtility.sendNotification(notification) { it1 ->
+                                    if (it1.isSuccessful) {
+                                        viewModel.insertNotifications(notification)
+                                    } else {
+                                        viewModel.setCurrentError(it1.exception)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     override fun onRevokeInviteClick(invite: ProjectInvite, receiverId: String) {
-        viewModel.revokeInvite(invite, receiverId)
+        FireUtility.revokeInvite(invite) {
+            if (!it.isSuccessful) {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
 

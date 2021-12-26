@@ -3,33 +3,32 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import android.widget.ProgressBar
 import androidx.appcompat.widget.SearchView
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.algolia.search.saas.Client
-import com.algolia.search.saas.IndexQuery
-import com.algolia.search.saas.Query
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PreviousQueryAdapter
 import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
-import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.SearchQuery
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPreSearchBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
+@ExperimentalPagingApi
 class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQueryTextListener {
 
     private lateinit var binding: FragmentPreSearchBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var previousQueryAdapter: PreviousQueryAdapter
     private var searchView: SearchView? = null
-    private lateinit var client: Client
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +44,6 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
         val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
         val searchItem = toolbar.menu.getItem(0)
         searchItem.expandActionView()
-        client = Client(getString(R.string.algolia_id), getString(R.string.algolia_secret))
 
         searchItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
             override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
@@ -88,6 +86,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
         super.onViewCreated(view, savedInstanceState)
 
         previousQueryAdapter = PreviousQueryAdapter(this)
+
         val searchAdapter = SearchResultsAdapter(this)
 
         binding.recentSearchRecycler.apply {
@@ -100,7 +99,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
             layoutManager = LinearLayoutManager(requireContext())
         }
 
-        viewModel.searchResult.observe(viewLifecycleOwner) {
+        viewModel.recentSearchList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
                 searchAdapter.submitList(it)
             } else {
@@ -117,25 +116,6 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
             }
         }
 
-    }
-
-    private fun search(query: String) {
-        val progressBar = activity?.findViewById<ProgressBar>(R.id.main_progress_bar)
-        val queries = mutableListOf<IndexQuery>()
-
-        queries.add(IndexQuery("projects", Query(query).setAttributesToRetrieve("name", "objectId", "type")))
-        queries.add(IndexQuery("users", Query(query).setAttributesToRetrieve("name", "objectId", "type")))
-        progressBar?.show()
-
-        search(client, queries) {
-            progressBar?.hide()
-            when (it) {
-                is Result.Error -> viewModel.setCurrentError(it.exception)
-                is Result.Success -> {
-                    viewModel.setSearchResult(it.data)
-                }
-            }
-        }
     }
 
     private fun onSearchItemsExist() {
@@ -171,8 +151,12 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
     }
 
     override fun onSearchItemClick(searchQuery: SearchQuery) {
-        findNavController().navigate(R.id.action_preSearchFragment_to_searchFragment, bundleOf("query" to searchQuery))
+        findNavController().navigate(R.id.action_preSearchFragment_to_searchFragment, bundleOf("query" to searchQuery), slideRightNavOptions())
         viewModel.insertSearchQuery(searchQuery)
+    }
+
+    override fun onRecentSearchClick(searchQuery: SearchQuery) {
+        searchView?.setQuery(searchQuery.queryString, false)
     }
 
     override fun onSearchItemForwardClick(query: SearchQuery) {
@@ -184,7 +168,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
     }
 
     companion object {
-//        private const val TAG = "PreSearchFragment"
+        private const val TAG = "PreSearchFragment"
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
@@ -198,7 +182,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
                 onQueryRemoved()
             } else {
                 onQueryPresent()
-                search(newText)
+                viewModel.search(newText)
             }
 
         } else {
@@ -206,5 +190,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
         }
         return true
     }
+
+
 
 }

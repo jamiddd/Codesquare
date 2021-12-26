@@ -1,15 +1,26 @@
 package com.jamid.codesquare.ui.home
 
 import android.annotation.SuppressLint
-import android.graphics.drawable.BitmapDrawable
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.activity.addCallback
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
+import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.RecyclerView
+import com.facebook.common.references.CloseableReference
+import com.facebook.datasource.DataSource
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
+import com.facebook.imagepipeline.image.CloseableImage
+import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -18,13 +29,12 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 
-import androidx.recyclerview.widget.RecyclerView
-import com.jamid.codesquare.ui.MainActivity
-
-
+@ExperimentalPagingApi
 class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
@@ -36,15 +46,62 @@ class HomeFragment: Fragment() {
         setHasOptionsMenu(true)
     }
 
+    private fun setBitmapDrawable(bitmap: Bitmap?) {
+        val drawable = RoundedBitmapDrawableFactory.create(resources, bitmap)
+        drawable.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
+        var isMenuReady = false
+        while (!isMenuReady) {
+            val menu = toolbar?.menu
+            isMenuReady = menu != null && menu.size() > 3 && menu.findItem(R.id.profile) != null
+            if (menu == null) {
+                Log.d(TAG, "Menu is null")
+            } else {
+                Log.d(TAG, "Menu size is ${menu.size()} and profile item is ${menu.findItem(R.id.profile)}")
+            }
+
+        }
+        requireActivity().runOnUiThread {
+            toolbar?.menu?.getItem(3)?.icon = drawable
+        }
+    }
+
+    private fun downloadBitmapUsingFresco(photo: String, onComplete: (bitmap: Bitmap?) -> Unit) {
+
+        val imagePipeline = Fresco.getImagePipeline()
+        val imageRequest = ImageRequestBuilder.newBuilderWithSource(photo.toUri())
+            .build()
+
+        val dataSource = imagePipeline.fetchDecodedImage(imageRequest, this)
+
+        dataSource.subscribe(object: BaseBitmapDataSubscriber() {
+            override fun onNewResultImpl(bitmap: Bitmap?) {
+                onComplete(bitmap)
+            }
+
+            override fun onFailureImpl(dataSource: DataSource<CloseableReference<CloseableImage>>) {
+                onComplete(null)
+            }
+
+        }, Executors.newSingleThreadExecutor())
+
+    }
+
+    private fun setCurrentUserPhotoAsDrawable(photo: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+        val currentSavedBitmap = viewModel.currentUserBitmap
+        if (currentSavedBitmap != null) {
+            setBitmapDrawable(currentSavedBitmap)
+        } else {
+            downloadBitmapUsingFresco(photo) {
+                viewModel.currentUserBitmap = it
+                setBitmapDrawable(it)
+            }
+        }
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.home_menu, menu)
         toolbar = requireActivity().findViewById(R.id.main_toolbar)
-        if (viewModel.currentUserBitmap != null) {
-            val image = RoundedBitmapDrawableFactory.create(resources, viewModel.currentUserBitmap)
-            image.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
-            toolbar?.menu?.getItem(3)?.icon = image
-        }
 
         toolbar?.setOnClickListener {
             if (binding.homeViewPager.currentItem == 0) {
@@ -61,19 +118,19 @@ class HomeFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.notifications -> {
-                findNavController().navigate(R.id.action_homeFragment_to_notificationFragment, null)
+                findNavController().navigate(R.id.action_homeFragment_to_notificationCenterFragment, bundleOf("type" to 0), slideRightNavOptions())
                 true
             }
             R.id.search -> {
-                findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment, null)
+                findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment, null, slideRightNavOptions())
                 true
             }
             R.id.create_project -> {
-                findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null)
+                findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
                 true
             }
             R.id.profile -> {
-                findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null)
+                findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
                 true
             }
             else -> true
@@ -114,16 +171,14 @@ class HomeFragment: Fragment() {
         if (mAuth.currentUser == null || mAuth.currentUser?.isEmailVerified == false) {
             findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
         }
-    }
 
-    private fun checkIfUserStillNull() = viewLifecycleOwner.lifecycleScope.launch {
-        delay(5000)
-        val currentUser = viewModel.currentUser.value
-        if (currentUser == null) {
-            findNavController().navigate(R.id.action_homeFragment_to_loginFragment)
+        UserManager.currentUserLive.observe(viewLifecycleOwner) {
+            if (it != null) {
+                val currentUserPhoto = it.photo
+                if (currentUserPhoto != null) {
+                    setCurrentUserPhotoAsDrawable(currentUserPhoto)
+                }
+            }
         }
     }
-
-
-
 }

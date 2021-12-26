@@ -8,10 +8,13 @@ import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 @IgnoreExtraProperties
 @Entity(tableName = "projects")
 @Parcelize
+@Serializable
 data class Project(
     @PrimaryKey(autoGenerate = false)
     var id: String,
@@ -33,22 +36,33 @@ data class Project(
     var location: Location,
     var createdAt: Long,
     var updatedAt: Long,
+    var expiredAt: Long,
     @Exclude @set: Exclude @get: Exclude
-    var isLiked: Boolean,
+    @Transient
+    var isLiked: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
-    var isSaved: Boolean,
+    @Transient
+    var isSaved: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
-    var isCollaboration: Boolean,
+    @Transient
+    var isCollaboration: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
-    var isMadeByMe: Boolean,
+    @Transient
+    var isMadeByMe: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
-    var isRequested: Boolean,
+    @Transient
+    var isRequested: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
+    @Transient
     var isBlocked: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
+    @Transient
     var isNearMe: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    @Transient
+    var isArchived: Boolean = false,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, false, false, false, false, false, false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, false, false, false, false, false, false, false)
 
     companion object {
 

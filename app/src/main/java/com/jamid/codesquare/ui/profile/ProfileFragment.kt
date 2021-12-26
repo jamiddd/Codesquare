@@ -7,8 +7,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.navigation.NavOptions
-import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
@@ -31,14 +29,11 @@ class ProfileFragment: Fragment() {
     private val viewModel: MainViewModel by activityViewModels()
     private var mUser: User? = null
     private var likesCount: Long = 0
+    private lateinit var currentUser: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -57,23 +52,20 @@ class ProfileFragment: Fragment() {
             R.id.log_out -> {
                 viewModel.signOut {
                     Firebase.auth.signOut()
+                    findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
                 }
                 true
             }
-            R.id.project_requests -> {
-                findNavController().navigate(R.id.action_profileFragment_to_projectRequestFragment, null)
-                true
-            }
             R.id.saved_projects -> {
-                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null)
+                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null, slideRightNavOptions())
                 true
             }
             R.id.settings -> {
-                findNavController().navigate(R.id.action_profileFragment_to_settingsFragment, null)
+                findNavController().navigate(R.id.action_profileFragment_to_settingsFragment, null, slideRightNavOptions())
                 true
             }
             R.id.report_user -> {
-                findNavController().navigate(R.id.action_profileFragment_to_reportFragment, bundleOf("contextObject" to mUser))
+                findNavController().navigate(R.id.action_profileFragment_to_reportFragment, bundleOf("contextObject" to mUser), slideRightNavOptions())
                 true
             }
             else -> true
@@ -94,8 +86,8 @@ class ProfileFragment: Fragment() {
         val activity = requireActivity()
 
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
-
         val otherUser = arguments?.getParcelable<User>("user")
+        currentUser = UserManager.currentUser
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, otherUser)
         (binding.profileViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
@@ -132,13 +124,7 @@ class ProfileFragment: Fragment() {
             }
 
             if (otherUser == null) {
-                viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
-                    if (currentUser != null) {
-                        setUser(currentUser)
-                    } else {
-                        findNavController().navigate(R.id.action_profileFragment_to_loginFragment)
-                    }
-                }
+                setUser(currentUser)
             } else {
                 setUser(otherUser, false)
             }
@@ -181,14 +167,17 @@ class ProfileFragment: Fragment() {
             inviteBtn.hide()
 
             profilePrimaryBtn.icon = null
-            profilePrimaryBtn.text = "Edit"
+            profilePrimaryBtn.text = getString(R.string.edit)
             profilePrimaryBtn.setOnClickListener {
-                findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment)
+                findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment, null, slideRightNavOptions())
             }
         } else {
 
-            inviteBtn.show()
-            val currentUser = viewModel.currentUser.value!!
+            if (currentUser.projectsCount.toInt() == 0) {
+                inviteBtn.hide()
+            } else {
+                inviteBtn.show()
+            }
 
             // if the current user does not have any project hide the invite btn
 
@@ -201,30 +190,30 @@ class ProfileFragment: Fragment() {
             profilePrimaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.thumb_selector)
             if (profilePrimaryBtn.isSelected) {
                 profilePrimaryBtn.isSelected = true
-                profilePrimaryBtn.text = "Dislike"
+                profilePrimaryBtn.text = getString(R.string.dislike)
             } else {
                 profilePrimaryBtn.isSelected = false
-                profilePrimaryBtn.text = "Like"
+                profilePrimaryBtn.text = getString(R.string.like)
             }
 
             profilePrimaryBtn.setOnClickListener {
                 if (profilePrimaryBtn.isSelected) {
                     profilePrimaryBtn.isSelected = false
-                    profilePrimaryBtn.text = "Like"
+                    profilePrimaryBtn.text = getString(R.string.like)
                     likesCount -= 1
                     val starsCountText1 = "$likesCount Stars"
                     starsCount.text = starsCountText1
 
-                    viewModel.dislikeUser(user = user)
+                    viewModel.dislikeUser(user.id)
                 } else {
                     profilePrimaryBtn.isSelected = true
-                    profilePrimaryBtn.text = "Dislike"
+                    profilePrimaryBtn.text = getString(R.string.dislike)
 
                     likesCount += 1
                     val starsCountText1 = "$likesCount Stars"
                     starsCount.text = starsCountText1
 
-                    viewModel.likeUser(user = user)
+                    viewModel.likeUser(user.id)
                 }
             }
         }

@@ -6,7 +6,7 @@
     android:layout_height="wrap_content">
 
     <com.facebook.drawee.view.SimpleDraweeView
-        android:id="@+id/project_img"
+        android:id="@+id/request_img"
         android:layout_width="54dp"
         android:layout_height="54dp"
         android:layout_marginStart="8dp"
@@ -30,7 +30,7 @@
         app:layout_constraintBottom_toTopOf="@+id/request_accept"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/project_img"
+        app:layout_constraintStart_toEndOf="@+id/request_img"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed">
 
@@ -38,21 +38,18 @@
             android:id="@+id/project_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="The Project Title"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textSize="16sp" />
 
         <TextView
             android:id="@+id/request_content"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Jamid Deka has requested to joing project" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/request_time"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="12:34 PM" />
+            android:layout_height="wrap_content" />
     </LinearLayout>
 
     <Button
@@ -62,7 +59,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
         android:text="Cancel"
-        android:visibility="gone"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="@+id/request_accept"
         app:layout_constraintEnd_toStartOf="@+id/request_accept"
         app:layout_constraintTop_toTopOf="@+id/request_accept"
@@ -86,7 +83,7 @@
         style="?android:attr/progressBarStyle"
         android:layout_width="30dp"
         android:layout_height="30dp"
-        android:visibility="gone"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="@+id/request_accept"
         app:layout_constraintEnd_toEndOf="@+id/request_accept"
         app:layout_constraintStart_toStartOf="@+id/request_accept"

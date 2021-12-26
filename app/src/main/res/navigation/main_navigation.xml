@@ -51,8 +51,8 @@
             android:id="@+id/action_homeFragment_to_reportFragment"
             app:destination="@id/reportFragment" />
         <action
-            android:id="@+id/action_homeFragment_to_notificationFragment"
-            app:destination="@id/notificationFragment" />
+            android:id="@+id/action_homeFragment_to_notificationCenterFragment"
+            app:destination="@id/notificationCenterFragment" />
         <action
             android:id="@+id/action_homeFragment_to_projectRequestFragment"
             app:destination="@id/projectRequestFragment" />
@@ -87,6 +87,9 @@
         <action
             android:id="@+id/action_loginFragment_to_splashFragment"
             app:destination="@id/splashFragment" />
+        <action
+            android:id="@+id/action_loginFragment_to_forgotPasswordFragment"
+            app:destination="@id/forgotPasswordFragment" />
     </fragment>
     <fragment
         android:id="@+id/createAccountFragment"
@@ -132,8 +135,8 @@
             android:id="@+id/action_profileFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
         <action
-            android:id="@+id/action_profileFragment_to_notificationFragment"
-            app:destination="@id/notificationFragment" />
+            android:id="@+id/action_profileFragment_to_notificationCenterFragment"
+            app:destination="@id/notificationCenterFragment" />
         <action
             android:id="@+id/action_profileFragment_self"
             app:destination="@id/profileFragment" />
@@ -191,8 +194,7 @@
     <fragment
         android:id="@+id/commentsFragment"
         android:label="{title}"
-        android:name="com.jamid.codesquare.ui.CommentsFragment"
-        tools:layout="@layout/fragment_comments_container">
+        android:name="com.jamid.codesquare.ui.CommentsFragment">
 
         <argument
             android:name="title"
@@ -328,6 +330,9 @@
         <action
             android:id="@+id/action_emailVerificationFragment_to_homeFragment"
             app:destination="@id/homeFragment" />
+        <action
+            android:id="@+id/action_emailVerificationFragment_to_profileImageFragment"
+            app:destination="@id/profileImageFragment" />
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
@@ -345,6 +350,14 @@
         <action
             android:id="@+id/action_settingsFragment_to_feedbackFragment"
             app:destination="@id/feedbackFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_updatePasswordFragment"
+            app:destination="@id/updatePasswordFragment" />
+
+        <action
+            android:id="@+id/action_settingsFragment_to_forgotPasswordFragment"
+            app:destination="@id/forgotPasswordFragment" />
+
     </fragment>
     <fragment
         android:id="@+id/splashFragment"
@@ -355,29 +368,43 @@
         <action
             android:id="@+id/action_splashFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_emailVerificationFragment"
+            app:destination="@id/emailVerificationFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_profileImageFragment"
+            app:destination="@id/profileImageFragment" />
+        <action
+            android:id="@+id/action_splashFragment_to_userInfoFragment"
+            app:destination="@id/userInfoFragment" />
     </fragment>
     <fragment
-        android:id="@+id/notificationFragment"
-        android:name="com.jamid.codesquare.ui.NotificationFragment"
+        android:id="@+id/notificationCenterFragment"
+        android:name="com.jamid.codesquare.ui.NotificationCenterFragment"
+        tools:layout="@layout/fragment_notification_center"
         android:label="Notifications">
 
         <action
-            android:id="@+id/action_notificationFragment_to_commentsFragment"
+            android:id="@+id/action_notificationCenterFragment_to_commentsFragment"
             app:destination="@id/commentsFragment" />
         <action
-            android:id="@+id/action_notificationFragment_to_projectFragment"
+            android:id="@+id/action_notificationCenterFragment_to_projectFragment"
             app:destination="@id/projectFragment" />
         <action
-            android:id="@+id/action_notificationFragment_to_profileFragment"
+            android:id="@+id/action_notificationCenterFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
         <action
-            android:id="@+id/action_notificationFragment_to_projectRequestFragment"
+            android:id="@+id/action_notificationCenterFragment_to_projectRequestFragment"
             app:destination="@id/projectRequestFragment" />
         <deepLink
             android:id="@+id/deepLink"
             android:autoVerify="true"
             app:action="ACTION_VIEW"
             app:uri="app://www.collab.com/notifications" />
+        <argument
+            android:name="type"
+            app:argType="integer"
+            android:defaultValue="0" />
 
     </fragment>
     <fragment
@@ -394,7 +421,11 @@
         android:id="@+id/messageDetailFragment"
         android:name="com.jamid.codesquare.ui.home.chat.MessageDetailFragment"
         android:label="Message Detail"
-        tools:layout="@layout/fragment_message_detail" />
+        tools:layout="@layout/fragment_message_detail" >
+        <action
+            android:id="@+id/action_messageDetailFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+    </fragment>
     <fragment
         android:id="@+id/imageCropperFragment"
         android:name="com.jamid.codesquare.ui.ImageCropperFragment"
@@ -410,4 +441,41 @@
             android:id="@+id/action_preSearchFragment_to_searchFragment"
             app:destination="@id/searchFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/profileImageFragment"
+        android:name="com.jamid.codesquare.ui.auth.ProfileImageFragment"
+        android:label="ProfileImageFragment">
+
+        <action
+            android:id="@+id/action_profileImageFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+
+        <action
+            android:id="@+id/action_profileImageFragment_to_userInfoFragment"
+            app:destination="@id/userInfoFragment" />
+        <action
+            android:id="@+id/action_profileImageFragment_to_imageCropperFragment"
+            app:destination="@id/imageCropperFragment" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/userInfoFragment"
+        android:name="com.jamid.codesquare.ui.auth.UserInfoFragment"
+        android:label="UserInfoFragment">
+
+        <action
+            android:id="@+id/action_userInfoFragment_to_homeFragment"
+            app:destination="@id/homeFragment" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/updatePasswordFragment"
+        android:name="com.jamid.codesquare.ui.UpdatePasswordFragment"
+        tools:layout="@layout/fragment_update_password"
+        android:label="Update password" />
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.jamid.codesquare.ui.ForgotPasswordFragment"
+        tools:layout="@layout/fragment_forgot_password"
+        android:label="Reset password" />
 </navigation>

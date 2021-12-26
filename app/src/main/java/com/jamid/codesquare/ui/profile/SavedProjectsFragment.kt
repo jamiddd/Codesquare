@@ -7,6 +7,8 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.jamid.codesquare.R
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
@@ -15,16 +17,10 @@ import com.jamid.codesquare.ui.PagerListFragment
 @ExperimentalPagingApi
 class SavedProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
-
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val currentUser = viewModel.currentUser.value!!
+        val currentUser = UserManager.currentUser
         val query = Firebase.firestore.collection("users")
             .document(currentUser.id)
             .collection("savedProjects")
@@ -33,8 +29,8 @@ class SavedProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
             viewModel.getSavedProjects(query)
         }
 
-        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        noItemsText?.text = "You haven't saved any projects yet. Save project that you might wanna visit later."
+        binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+        binding.pagerNoItemsText.text = getString(R.string.empty_saved_projects_greet)
 
     }
 

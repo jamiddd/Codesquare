@@ -344,6 +344,28 @@
         <item name="cornerRadius">24dp</item>
     </style>
 
+    <style name="AppTheme.ChatSendButton" parent="Widget.MaterialComponents.Button">
+        <item name="iconPadding">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingLeft">12dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="cornerRadius">24dp</item>
+    </style>
+
+    <style name="AppTheme.ChatAddMediaBtn" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="iconPadding">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingLeft">8dp</item>
+        <item name="android:paddingRight">12dp</item>
+        <item name="android:minWidth">48dp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="cornerRadius">20dp</item>
+    </style>
+
     <style name="ThemeOverlay.App.Chip" parent="">
         <item name="colorOnSurface">?colorPrimary</item>
         <item name="chipIconTint">?colorPrimary</item>

@@ -1,13 +1,14 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
-import androidx.room.Ignore
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
 @IgnoreExtraProperties
 @Parcelize
+@Serializable
 data class UserMinimal(
     var userId: String,
     var name: String,

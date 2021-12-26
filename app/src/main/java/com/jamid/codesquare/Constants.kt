@@ -17,6 +17,13 @@ const val TOP_TO_TOP = "TOP_TO_TOP"
 const val TOP_TO_BOTTOM = "TOP_TO_BOTTOM"
 const val BOTTOM_TO_BOTTOM = "BOTTOM_TO_BOTTOM"
 const val BOTTOM_TO_TOP = "BOTTOM_TO_TOP"
+/*const val NOTIFICATION_LIKE_PROJECT = 0
+const val NOTIFICATION_LIKE_COMMENT = 1
+const val NOTIFICATION_LIKE_USER = 2
+const val NOTIFICATION_ACCEPT = 6*/
+const val NOTIFICATION_JOIN_PROJECT = 11
+/*const val NOTIFICATION_INVITE_PROJECT = 13*/
+
 
 
 const val msg_at_start = 101
@@ -48,3 +55,19 @@ const val image = "Image"
 const val text = "Text"
 const val document = "Document"
 
+const val COMMENT_CHANNEL_ID = "commentChannelId"
+const val COMMENT_CHANNELS = "commentChannels"
+const val CHAT_CHANNELS = "chatChannels"
+const val MESSAGES = "messages"
+const val CHANNELS = "channels"
+const val COMMENTS = "comments"
+const val PARENT = "parent"
+const val CONTEXT_OBJECT = "contextObject"
+const val USER = "user"
+const val TITLE = "title"
+const val PROJECTS = "projects"
+const val CONTRIBUTORS = "contributors"
+const val CHAT_CHANNEL = "chatChannel"
+const val USERS = "users"
+const val NOTIFICATIONS = "notifications"
+const val CONTENT = "content"

@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui.home.feed
 
 import android.annotation.SuppressLint
-import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
@@ -27,7 +26,6 @@ import com.firebase.geofire.GeoFireUtils
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.android.gms.tasks.Tasks
-import com.jamid.codesquare.data.Location
 
 @ExperimentalPagingApi
 class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
@@ -40,19 +38,16 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val query = Firebase.firestore.collection("projects")
+        val query = Firebase.firestore.collection(PROJECTS)
+        val currentUser = UserManager.currentUser
+        getItems { viewModel.getFeedItems(query) }
 
-        val currentUser = viewModel.currentUser.value
-        if (currentUser != null) {
-            getItems { viewModel.getFeedItems(query) }
-        }
-
-        recyclerView?.itemAnimator = null
+        binding.pagerItemsRecycler.itemAnimator = null
 
         val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
         val tagsContainerBinding = TagsContainerBinding.bind(tagsContainerView)
 
-        tagsContainerBinding.tagsContainer.setOnScrollChangeListener { view, i, i2, i3, i4 ->
+        tagsContainerBinding.tagsContainer.setOnScrollChangeListener { _, _, _, _, _ ->
             if (tagsContainerBinding.tagsContainer.canScrollHorizontally(1)) {
                 tagsContainerBinding.nextTagBtn.show()
             } else {
@@ -89,28 +84,23 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         recyclerView?.setPadding(0, convertDpToPx(48), 0, convertDpToPx(8))
 
         tagsContainerBinding.random.setOnClickListener {
-            if (currentUser != null) {
-                getItems {
-                    viewModel.getFeedItems(query)
-                }
+            getItems {
+                viewModel.getFeedItems(query)
             }
         }
 
-        tagsContainerBinding.tagsHolder.setOnCheckedChangeListener { group, checkedId ->
+        tagsContainerBinding.tagsHolder.setOnCheckedChangeListener { _, checkedId ->
             if (checkedId == R.id.near_me) {
-                if (currentUser != null) {
-                    if (currentUser.location != null) {
-                        searchBasedOnLocation(GeoLocation(currentUser.location!!.latitude, currentUser.location!!.longitude))
-                    } else {
-                        val tempLocation = LocationProvider.currentLocation
-                        if (tempLocation != null) {
-                            searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
-                        } else {
-                            toast("Temp location is null")
-                        }
-                    }
+                val currentUserLocation = currentUser.location
+                if (currentUserLocation != null) {
+                    searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
                 } else {
-                    toast("User is null")
+                    val tempLocation = LocationProvider.currentLocation
+                    if (tempLocation != null) {
+                        searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
+                    } else {
+                        toast("Temp location is null")
+                    }
                 }
             }
         }
@@ -147,8 +137,12 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
                 tagsContainerBinding.tagsHolder.removeViews(2, tagsContainerBinding.tagsHolder.childCount - 2)
 
                 if (it.interests.isEmpty()) {
+                    tagsContainerBinding.nextTagBtn.hide()
+                    tagsContainerBinding.prevTagBtn.hide()
                     tagsContainerBinding.tagsHolder.addUpdateInterestButton()
                 } else {
+                    tagsContainerBinding.prevTagBtn.hide()
+                    tagsContainerBinding.nextTagBtn.show()
                     for (interest in it.interests) {
                         tagsContainerBinding.tagsHolder.addTag(interest)
                     }
@@ -200,14 +194,14 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
                     }
                 }
 
-                val projects = mutableListOf<Project>()
-                for (doc in matchingDocs) {
-                    val project = doc.toObject(Project::class.java)!!
+                val projects = Array(matchingDocs.size) { Project() }
+                matchingDocs.forEachIndexed { i, d ->
+                    val project = d.toObject(Project::class.java)!!
                     project.isNearMe = true
-                    projects.add(project)
+                    projects[i] = project
                 }
 
-                viewModel.insertProjects(projects)
+                viewModel.insertProjects(*projects)
             }
 
         getItems {
@@ -217,7 +211,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
     private fun ChipGroup.addUpdateInterestButton() {
         val chip = Chip(requireContext())
-        chip.text = "Update interests"
+        chip.text = requireContext().getString(R.string.update_interests)
         chip.isCheckable = false
         chip.isCloseIconVisible = false
 

@@ -1,17 +1,15 @@
 package com.jamid.codesquare.ui.profile
 
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.children
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.transition.platform.MaterialSharedAxis
@@ -22,6 +20,7 @@ import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
 
+@ExperimentalPagingApi
 class EditProfileFragment: Fragment() {
 
     private lateinit var binding: FragmentEditProfileBinding
@@ -29,12 +28,11 @@ class EditProfileFragment: Fragment() {
     private var profileImage: String? = null
     private var loadingDialog: AlertDialog? = null
     private var firstTime: Boolean = true
+    private lateinit var currentUser: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -54,9 +52,7 @@ class EditProfileFragment: Fragment() {
                 val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
                 val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
 
-                loadingLayoutBinding.loadingText.text = "Updating profile. Please wait ..."
-
-                val currentUser = viewModel.currentUser.value!!
+                loadingLayoutBinding.loadingText.text = getString(R.string.profile_upload_loading_text)
 
                 val updatedUser = currentUser.copy()
 
@@ -210,6 +206,8 @@ class EditProfileFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
 
+        currentUser = UserManager.currentUser
+
         val mainProgress = activity.findViewById<ProgressBar>(R.id.main_progress_bar)
 
         binding.userImg.setOnClickListener {
@@ -232,32 +230,21 @@ class EditProfileFragment: Fragment() {
             popupMenu.show()
         }
 
-        viewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
-            if (currentUser != null) {
-
-                profileImage = currentUser.photo
-
-                binding.userImg.setImageURI(profileImage)
-
-                binding.nameText.editText?.setText(currentUser.name)
-                binding.usernameText.editText?.setText(currentUser.username)
-
-                binding.tagText.editText?.setText(currentUser.tag)
-
-                binding.aboutText.editText?.setText(currentUser.about)
-
-                addInterests(currentUser.interests)
-            }
-        }
+        // setting views on load
+        profileImage = currentUser.photo
+        binding.userImg.setImageURI(profileImage)
+        binding.nameText.editText?.setText(currentUser.name)
+        binding.usernameText.editText?.setText(currentUser.username)
+        binding.tagText.editText?.setText(currentUser.tag)
+        binding.aboutText.editText?.setText(currentUser.about)
+        addInterests(currentUser.interests)
 
         viewModel.currentImage.observe(viewLifecycleOwner) {
             mainProgress.show()
             if (it != null) {
-                val currentUser = viewModel.currentUser.value!!
                 viewModel.uploadImage(currentUser.id, it) { downloadUri ->
                     mainProgress.hide()
                     if (downloadUri != null) {
-                        Log.d("EditProfile", downloadUri.toString())
                         profileImage = downloadUri.toString()
                         binding.userImg.setImageURI(profileImage)
                     } else {
@@ -273,7 +260,7 @@ class EditProfileFragment: Fragment() {
 
                 if (firstTime) {
                     firstTime = false
-                    profileImage = viewModel.currentUser.value?.photo
+                    profileImage = currentUser.photo
                     binding.userImg.setImageURI(profileImage)
                 }
             }

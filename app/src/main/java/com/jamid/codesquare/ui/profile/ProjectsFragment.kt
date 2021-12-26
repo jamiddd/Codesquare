@@ -5,17 +5,13 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
-import com.jamid.codesquare.hide
-import com.jamid.codesquare.show
-import com.jamid.codesquare.slideRightNavOptions
 import com.jamid.codesquare.ui.PagerListFragment
 
 @ExperimentalPagingApi
@@ -26,13 +22,13 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         val otherUser = arguments?.getParcelable<User>("user")
         if (otherUser == null) {
-            val currentUser = viewModel.currentUser.value!!
+            val currentUser = UserManager.currentUser
             val query = Firebase.firestore.collection("projects")
                 .whereEqualTo("creator.userId", currentUser.id)
 
             setIsViewPagerFragment(true)
 
-            binding.pagerNoItemsText.text = "Create new project so that other people can see your work and collaborate"
+            binding.pagerNoItemsText.text = getString(R.string.empty_user_projects_greet)
 
             getItems {
                 viewModel.getCurrentUserProjects(query)
@@ -42,7 +38,7 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
                 if (it != null && it) {
                     binding.pagerActionBtn.show()
 
-                    binding.pagerActionBtn.text = "Create project"
+                    binding.pagerActionBtn.text = getString(R.string.create_project)
                     binding.pagerActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
 
                     binding.pagerActionBtn.setOnClickListener {
@@ -70,8 +66,6 @@ class ProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
     }
 
     companion object {
-
-        private const val TAG = "ProjectsFragment"
 
         fun newInstance(user: User? = null)
             = ProjectsFragment().apply {

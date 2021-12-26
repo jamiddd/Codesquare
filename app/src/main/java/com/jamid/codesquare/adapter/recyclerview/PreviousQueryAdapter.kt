@@ -26,11 +26,12 @@ class PreviousQueryAdapter(
             }
 
             view.setOnClickListener {
-                searchItemClickListener.onSearchItemClick(query)
+                searchItemClickListener.onRecentSearchClick(query)
             }
 
-            view.setOnClickListener {
+            view.setOnLongClickListener {
                 searchItemClickListener.onSearchOptionClick(it, query)
+                true
             }
 
         }

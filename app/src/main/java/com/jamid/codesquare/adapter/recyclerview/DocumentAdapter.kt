@@ -3,18 +3,12 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
-import com.jamid.codesquare.data.DocumentHolder
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.DocumentLayoutBinding
-import com.jamid.codesquare.listeners.DocumentListener
 import com.jamid.codesquare.listeners.MessageListener
 
 class DocumentAdapter: ListAdapter<Message, DocumentAdapter.DocumentViewHolder>(MessageComparator()) {

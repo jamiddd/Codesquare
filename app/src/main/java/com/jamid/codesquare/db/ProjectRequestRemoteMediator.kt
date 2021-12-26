@@ -9,7 +9,7 @@ import com.jamid.codesquare.data.ProjectRequest
 @ExperimentalPagingApi
 class ProjectRequestRemoteMediator(query: Query, repo: MainRepository): FirebaseRemoteMediator<Int, ProjectRequest>(query, repo) {
     override suspend fun onLoadComplete(items: QuerySnapshot) {
-        val projectRequests = items.toObjects(ProjectRequest::class.java)
+        val projectRequests = items.toObjects(ProjectRequest::class.java).toTypedArray()
         repository.insertProjectRequests(projectRequests)
     }
 

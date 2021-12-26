@@ -5,13 +5,14 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.navigation.findNavController
+import androidx.paging.ExperimentalPagingApi
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -24,7 +25,10 @@ import com.jamid.codesquare.data.User
 import com.theartofdev.edmodo.cropper.CropImageOptions
 import com.theartofdev.edmodo.cropper.CropImageView
 
+@ExperimentalPagingApi
 abstract class LauncherActivity : AppCompatActivity(){
+
+    var loadingDialog: AlertDialog? = null
 
     companion object {
         private const val TAG = "LauncherActivity"
@@ -46,18 +50,24 @@ abstract class LauncherActivity : AppCompatActivity(){
     }
 
     val locationStateLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-        LocationProvider.updateData(fusedLocationProviderClient, state = it.resultCode == RESULT_OK)
+        val isNetworkAvailable = viewModel.isNetworkAvailable.value
+        if (isNetworkAvailable != null && isNetworkAvailable) {
+            LocationProvider.updateData(fusedLocationProviderClient, state = it.resultCode == RESULT_OK)
+        }
     }
 
     val requestLocationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        LocationProvider.updateData(fusedLocationProviderClient, permission = isGranted)
+        val isNetworkAvailable = viewModel.isNetworkAvailable.value
+        if (isNetworkAvailable != null && isNetworkAvailable) {
+            LocationProvider.updateData(fusedLocationProviderClient, permission = isGranted)
+        }
     }
 
     val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        loadingDialog?.dismiss()
         if (it.resultCode == Activity.RESULT_OK) {
-
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
             try {
                 // Google Sign In was successful, authenticate with Firebase
@@ -71,8 +81,6 @@ abstract class LauncherActivity : AppCompatActivity(){
                 Log.w(TAG, "Google sign in failed", e)
                 viewModel.setCurrentError(e)
             }
-        } else {
-            toast("Activity result was not OK!")
         }
     }
 
@@ -86,7 +94,20 @@ abstract class LauncherActivity : AppCompatActivity(){
                     cropShape = CropImageView.CropShape.OVAL
                 }
                 findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_imageCropperFragment, bundleOf("image" to it1.toString(), "cropOptions" to cropOption))
-//                viewModel.setCurrentImage(it1)
+            }
+        }
+    }
+
+    val selectImageLauncher1 = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            it.data?.data?.let { it1 ->
+                val cropOption = CropImageOptions().apply {
+                    fixAspectRatio = true
+                    aspectRatioX = 1
+                    aspectRatioY = 1
+                    cropShape = CropImageView.CropShape.OVAL
+                }
+                findNavController(R.id.nav_host_fragment).navigate(R.id.action_profileImageFragment_to_imageCropperFragment, bundleOf("image" to it1.toString(), "cropOptions" to cropOption))
             }
         }
     }

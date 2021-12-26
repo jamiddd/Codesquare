@@ -1,32 +1,24 @@
 package com.jamid.codesquare.ui
 
 import android.graphics.Color
-import android.graphics.drawable.Animatable
-import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
-import androidx.transition.ChangeBounds
-import androidx.transition.TransitionInflater
 import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.drawee.controller.ControllerListener
 import com.facebook.imagepipeline.request.ImageRequest
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.transition.MaterialSharedAxis
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
-import com.jamid.codesquare.ui.zoomableView.FlingListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
 import java.text.SimpleDateFormat
+import java.util.*
 
 class ImageViewFragment: Fragment(), View.OnClickListener {
 
@@ -95,8 +87,8 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
 
         if (message?.metadata != null) {
             binding.bottomInfoView.show()
-
-            binding.userTimeInfo.text = "Sent by ${message.sender.name} • " + SimpleDateFormat("hh:mm a, dd/MM/yyyy").format(message.createdAt)
+            val sentByText = "Sent by ${message.sender.name} • " + SimpleDateFormat("hh:mm a, dd/MM/yyyy", Locale.UK).format(message.createdAt)
+            binding.userTimeInfo.text = sentByText
             binding.imageSize.text = getTextForSizeInBytes(message.metadata!!.size)
         } else {
             binding.bottomInfoView.hide()

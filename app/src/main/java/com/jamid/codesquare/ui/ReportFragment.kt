@@ -8,32 +8,28 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.Report
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentReportBinding
-import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.toast
+import java.text.SimpleDateFormat
+import java.util.*
 
+@ExperimentalPagingApi
 class ReportFragment: Fragment() {
 
     private lateinit var binding: FragmentReportBinding
     private val viewModel: MainViewModel by activityViewModels()
 
     private val report = Report()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,9 +44,8 @@ class ReportFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val contextObject = arguments?.get("contextObject") ?: return
-        binding.reportTimeText.text = getTextForTime(System.currentTimeMillis())
-
-        val currentUser = viewModel.currentUser.value!!
+        val now = SimpleDateFormat("hh:mm a, EEEE", Locale.UK).format(System.currentTimeMillis())
+        binding.reportTimeText.text = now
 
         when (contextObject) {
             is Project -> {
@@ -76,8 +71,8 @@ class ReportFragment: Fragment() {
                             val project = it.result.toObject(Project::class.java)!!
                             val firstImage = project.images.firstOrNull()
                             binding.contextImg.setImageURI(firstImage)
-
-                            binding.contextName.text = "Comment by " + project.creator.name
+                            val commentByText = "Comment by " + project.creator.name
+                            binding.contextName.text = commentByText
 
                         } else {
                             Log.e(TAG, it.exception?.localizedMessage.orEmpty())
@@ -100,7 +95,7 @@ class ReportFragment: Fragment() {
             } else {
                 val reason = binding.reportReasonText.editText?.text.toString()
                 report.reason = reason
-                report.senderId = currentUser.id
+                report.senderId = UserManager.currentUserId
 
                 viewModel.sendReport(report) {
                     if (it.isSuccessful) {

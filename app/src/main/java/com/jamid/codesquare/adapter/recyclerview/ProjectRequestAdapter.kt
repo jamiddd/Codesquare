@@ -4,8 +4,9 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.ProjectRequest
+import com.jamid.codesquare.data.User
 
-class ProjectRequestAdapter(private val onRequestLoaded: ((projectRequest: ProjectRequest) -> Unit)? = null): PagingDataAdapter<ProjectRequest, ProjectRequestViewHolder>(comparator) {
+class ProjectRequestAdapter(): PagingDataAdapter<ProjectRequest, ProjectRequestViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<ProjectRequest>() {
@@ -31,7 +32,7 @@ class ProjectRequestAdapter(private val onRequestLoaded: ((projectRequest: Proje
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectRequestViewHolder {
-        return ProjectRequestViewHolder.newInstance(parent, onRequestLoaded)
+        return ProjectRequestViewHolder.newInstance(parent)
     }
 
 }

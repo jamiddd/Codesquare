@@ -1,13 +1,11 @@
 package com.jamid.codesquare.listeners
 
-import android.util.Log
 import android.view.MotionEvent
-
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.OnItemTouchListener
 import kotlin.math.abs
 
-class ScrollTouchListener() : OnItemTouchListener {
+class ScrollTouchListener : OnItemTouchListener {
 
     private var dir: Int = 1
     var recyclerView: RecyclerView? = null
@@ -57,10 +55,6 @@ class ScrollTouchListener() : OnItemTouchListener {
         if (!disallowIntercept) {
             recyclerView?.parent?.requestDisallowInterceptTouchEvent(true)
         }
-    }
-
-    companion object {
-        private const val TAG = "ScrollTouchListener"
     }
 
 }

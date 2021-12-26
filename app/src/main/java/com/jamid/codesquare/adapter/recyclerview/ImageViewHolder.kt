@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
-import com.google.android.material.button.MaterialButton
 import com.jamid.codesquare.FrescoImageControllerListener
 import com.jamid.codesquare.R
 
@@ -29,13 +28,9 @@ class ImageViewHolder(val view: View, val onClick: (view: View, controllerListen
     }
 
     companion object {
-
-        private const val TAG = "ImageViewHolder"
-
         fun newInstance(parent: ViewGroup, onClick: (view: View, controllerListener: FrescoImageControllerListener) -> Unit): ImageViewHolder {
             return ImageViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.imageview_layout, parent, false), onClick)
         }
-
     }
 
 }

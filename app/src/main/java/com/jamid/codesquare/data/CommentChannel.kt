@@ -16,7 +16,8 @@ data class CommentChannel(
     var postTitle: String,
     var createdAt: Long,
     @Embedded(prefix = "comment_channel_")
-    val lastComment: Comment?
+    val lastComment: Comment?,
+    var archived: Boolean = false
 ): Parcelable {
     constructor(): this("", "", "", "", System.currentTimeMillis(), Comment())
 }

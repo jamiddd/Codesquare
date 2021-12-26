@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
@@ -29,6 +30,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
+@ExperimentalPagingApi
 abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment() {
 
     open var job: Job? = null
@@ -37,7 +39,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     lateinit var binding: FragmentPagerBinding
     protected var recyclerView: RecyclerView? = null
     protected var noItemsText: TextView? = null
-    protected var swipeRefresher: SwipeRefreshLayout? = null
+    private var swipeRefresher: SwipeRefreshLayout? = null
     var shouldHideRecyclerView = false
     var shouldShowImage = true
 
@@ -177,7 +179,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         if (shouldHideRecyclerView) {
                             recyclerView.hide()
                         }
-                        infoText?.text = "Something went wrong :("
+                        infoText?.text = getString(R.string.common_error_text)
                         if (shouldShowImage) {
                             image?.show()
                         }
@@ -207,7 +209,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                             recyclerView.hide()
                         }
 
-                        infoText?.text = "Something went wrong :("
+                        infoText?.text = getString(R.string.common_error_text)
                         infoText?.show()
                         if (shouldShowImage) {
                             image?.show()

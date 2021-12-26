@@ -17,17 +17,12 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.MessageMinimal
 import com.jamid.codesquare.databinding.MessageDocumentLayoutBinding
 import com.jamid.codesquare.databinding.ReplyLayoutBinding
 import com.jamid.codesquare.listeners.MessageListener
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,7 +32,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
 
     private val messageListener = view.context as MessageListener
 
-    private val rootLeft = view.findViewById<View>(R.id.left_balloon_root)
     private val rootRight = view.findViewById<View>(R.id.right_balloon_root)
     private val senderImg = view.findViewById<SimpleDraweeView>(R.id.message_sender_img)
     private val containerLeft = view.findViewById<LinearLayout>(R.id.message_content_container)
@@ -65,7 +59,6 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
     private var rightDocument: View? = null
 
     private val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    private val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
     private lateinit var mDetector: GestureDetectorCompat
     private var mMessage: Message? = null
@@ -196,7 +189,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     val timeText = SimpleDateFormat("hh:mm a", Locale.UK).format(message.createdAt) + suffix
                     messageMetaRight.text = timeText
                 } else {
-                    messageMetaRight.text = getTextForTime(message.createdAt) + suffix
+                    val messageTimeText = getTextForTime(message.createdAt) + suffix
+                    messageMetaRight.text = messageTimeText
                 }
 
 
@@ -337,7 +331,8 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                     val nameTimeText = message.sender.name + " • " + SimpleDateFormat("hh:mm a", Locale.UK).format(message.createdAt)
                     messageMetaLeft.text = nameTimeText
                 } else {
-                    messageMetaLeft.text = message.sender.name + " • " + getTextForTime(message.createdAt)
+                    val messageTimeText = message.sender.name + " • " + getTextForTime(message.createdAt)
+                    messageMetaLeft.text = messageTimeText
                 }
 
                 val sharedPref = view.context.getSharedPreferences("codesquare_shared", MODE_PRIVATE)
@@ -374,7 +369,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
         }
     }
 
-    private val touchListener = View.OnTouchListener { p0, p1 ->
+    private val touchListener = View.OnTouchListener { _, p1 ->
         return@OnTouchListener mDetector.onTouchEvent(p1)
     }
 
@@ -469,7 +464,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             val replyLayoutBinding = ReplyLayoutBinding.bind(view1)
 
             if (msg.senderId == currentUserId) {
-                replyLayoutBinding.replyName.text = "You"
+                replyLayoutBinding.replyName.text = view.context.getString(R.string.you)
             } else {
                 replyLayoutBinding.replyName.text = msg.name
             }
@@ -637,7 +632,7 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, newMessage ->
+                messageListener.onStartDownload(message) { task, _ ->
                     if (task.isSuccessful) {
                         forwardBtn.show()
 
@@ -773,11 +768,12 @@ class MessageViewHolder(val view: View, private val currentUserId: String, priva
             mMessage!!.state = 1
             messageListener.onMessageStateChanged(mMessage!!)
         } else {
-            if (leftImage != null) {
-//                messageListener.onImageClick(leftImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+            TODO("Must implement something here")
+           /* if (leftImage != null) {
+                messageListener.onImageClick(leftImage!!, mMessage!!, layoutPosition, mMessage!!.content)
             } else {
-//                messageListener.onImageClick(rightImage!!, mMessage!!, layoutPosition, mMessage!!.content)
-            }
+                messageListener.onImageClick(rightImage!!, mMessage!!, layoutPosition, mMessage!!.content)
+            }*/
         }
     }
 

@@ -6,14 +6,13 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.HOME_PAGE_COUNT
 import com.jamid.codesquare.ui.home.chat.ChatListFragment2
-import com.jamid.codesquare.ui.home.explore.ExploreFragment
 import com.jamid.codesquare.ui.home.feed.FeedFragment
 
+@ExperimentalPagingApi
 class MainViewPagerAdapter(activity: FragmentActivity): FragmentStateAdapter(activity) {
 
     override fun getItemCount() = HOME_PAGE_COUNT
 
-    @ExperimentalPagingApi
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> FeedFragment.newInstance()

@@ -3,7 +3,6 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,9 +21,6 @@ import java.io.File
 class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
 
     companion object {
-
-        private const val TAG = "GridImageMessage"
-
         private val comparator = object : DiffUtil.ItemCallback<Message>() {
             override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
                 return oldItem.messageId == newItem.messageId
@@ -57,7 +53,7 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
 
             } else {
                 progress.show()
-                messageListener.onStartDownload(message) { task, newMessage ->
+                messageListener.onStartDownload(message) { task, _ ->
                     if (task.isSuccessful) {
                         progress.hide()
                         val uri = getImageUriFromMessage(message, view.context)

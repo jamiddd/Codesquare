@@ -5,6 +5,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
+import com.jamid.codesquare.BuildConfig
+import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
@@ -18,13 +20,26 @@ data class Notification(
     var createdAt: Long,
     var senderId: String,
     var receiverId: String,
-    var contextId: String,
-    var type: Int,
-    var clazz: String,
+    var image: String? = null,
+    var projectId: String? = null,
+    var commentChannelId: String? = null,
+    var commentId: String? = null,
+    var userId: String? = null,
+    var type: Int = 0,
     @Exclude @set: Exclude @get: Exclude
     var read: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
     var isReceived: Boolean = true
 ): Parcelable {
-    constructor(): this("", "", "", 0, "", "", "", 0, "")
+    constructor(): this("", "", "", 0, "", "")
+
+    companion object {
+
+        fun createNotification(content: String, senderId: String, receiverId: String, type: Int = 0, userId: String? = null, projectId: String? = null, commentId: String? = null, commentChannelId: String? = null, id: String? = null, title: String? = null, image: String? = null): Notification {
+            val mId = id ?: randomId()
+            val mTitle = title ?: "Codesquare"
+            return Notification(mId, mTitle, content, System.currentTimeMillis(), senderId, receiverId, image, projectId, commentChannelId, commentId, userId, type)
+        }
+    }
+
 }

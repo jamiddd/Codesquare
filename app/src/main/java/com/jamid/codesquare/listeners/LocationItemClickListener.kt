@@ -1,4 +1,4 @@
-package com.jamid.codesquare.adapter
+package com.jamid.codesquare.listeners
 
 import com.google.android.libraries.places.api.model.Place
 

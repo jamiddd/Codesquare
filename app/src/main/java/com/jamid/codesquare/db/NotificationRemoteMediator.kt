@@ -10,7 +10,7 @@ class NotificationRemoteMediator(q: Query, r: MainRepository): FirebaseRemoteMed
 
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val notifications = items.toObjects(Notification::class.java)
-        repository.insertNotifications(notifications)
+        repository.insertNotifications(notifications.toTypedArray())
     }
 
     override suspend fun onRefresh() {

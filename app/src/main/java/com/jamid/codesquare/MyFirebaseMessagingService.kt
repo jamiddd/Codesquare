@@ -7,7 +7,6 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import android.app.PendingIntent
 import android.app.Notification
 import android.graphics.BitmapFactory
 import androidx.core.app.NotificationCompat
@@ -110,7 +109,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
                 R.id.projectRequestFragment
             }
             else -> {
-                R.id.notificationFragment
+                R.id.notificationCenterFragment
             }
         }
 

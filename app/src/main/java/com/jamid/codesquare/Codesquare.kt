@@ -4,6 +4,7 @@ import android.app.Application
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
+import com.jamid.codesquare.ui.home.chat.ChatController
 
 class Codesquare: Application() {
 
@@ -12,6 +13,10 @@ class Codesquare: Application() {
         FirebaseApp.initializeApp(applicationContext)
         Fresco.initialize(applicationContext)
         Places.initialize(applicationContext, getString(R.string.google_maps_key))
+
+        // these are all custom objects, and hence require that firebase is
+        // initialized first
+        UserManager.initialize()
     }
 
 }

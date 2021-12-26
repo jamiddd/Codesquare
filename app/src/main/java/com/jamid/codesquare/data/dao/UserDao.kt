@@ -2,7 +2,6 @@ package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
-import androidx.room.DeleteTable
 import androidx.room.Query
 import com.jamid.codesquare.data.User
 
@@ -23,5 +22,8 @@ abstract class UserDao: BaseDao<User>() {
 
     @Query("DELETE FROM users WHERE id = :userId")
     abstract suspend fun deleteUserById(userId: String)
+
+    @Query("UPDATE users SET ")
+    abstract suspend fun likeLocalUserById(userId: String)
 
 }

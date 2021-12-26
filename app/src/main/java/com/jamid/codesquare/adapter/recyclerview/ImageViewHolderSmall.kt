@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.R
 
 class ImageViewHolderSmall(val view: View, val onClick: (view: View) -> Unit): RecyclerView.ViewHolder(view) {
@@ -24,13 +23,9 @@ class ImageViewHolderSmall(val view: View, val onClick: (view: View) -> Unit): R
     }
 
     companion object {
-
-        private const val TAG = "ImageViewHolder"
-
         fun newInstance(parent: ViewGroup, onClick: (view: View) -> Unit): ImageViewHolderSmall {
             return ImageViewHolderSmall(LayoutInflater.from(parent.context).inflate(R.layout.imageview_layout_small, parent, false), onClick)
         }
-
     }
 
 }

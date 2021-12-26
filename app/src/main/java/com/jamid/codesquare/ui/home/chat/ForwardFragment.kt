@@ -3,13 +3,13 @@ package com.jamid.codesquare.ui.home.chat
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -21,10 +21,10 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentForwardBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
+@ExperimentalPagingApi
 class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
 
     private lateinit var binding: FragmentForwardBinding
@@ -128,7 +128,7 @@ class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
     }
 
     private fun setForwardChannels(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-        val currentUser = viewModel.currentUser.value!!
+        val currentUser = UserManager.currentUser
 
         val channelAdapter = ChatChannelAdapter2(currentUser.id, this@ForwardFragment).apply {
             isSelectAvailable =  true

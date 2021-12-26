@@ -10,6 +10,7 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
@@ -19,6 +20,7 @@ import com.jamid.codesquare.show
 import kotlinx.coroutines.launch
 import java.io.File
 
+@ExperimentalPagingApi
 class ChatImagesFragment: Fragment() {
 
     private lateinit var binding: FragmentChatImagesBinding
@@ -60,7 +62,7 @@ class ChatImagesFragment: Fragment() {
 
     }
 
-    private fun getImages(chatChannelId: String): List<String> {
+    /*private fun getImages(chatChannelId: String): List<String> {
         val images = mutableListOf<String>()
         val externalImagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val file = File(externalImagesDir, chatChannelId)
@@ -75,7 +77,7 @@ class ChatImagesFragment: Fragment() {
             }
         }
         return images
-    }
+    }*/
 
 
     companion object {

@@ -3,13 +3,13 @@ package com.jamid.codesquare.ui
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Environment
-import android.util.Log
 import android.view.*
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentImageCropperBinding
@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
+@ExperimentalPagingApi
 class ImageCropperFragment: Fragment() {
 
     private lateinit var binding: FragmentImageCropperBinding
@@ -39,40 +40,7 @@ class ImageCropperFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.crop_image_done -> {
-                val bitmap = binding.mainCropView.croppedImage
-
-                val externalDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-                val name = "temp_" + System.currentTimeMillis().toString() + ".jpg"
-                val file = File(externalDir, name)
-                if (file.createNewFile()) {
-                    if (bitmap != null) {
-                        val byteArrayOutputStream = ByteArrayOutputStream()
-
-                        runBlocking {
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100 , byteArrayOutputStream)
-                        }
-
-                        val ba = byteArrayOutputStream.toByteArray()
-                        val fos = FileOutputStream(file)
-                        fos.write(ba)
-                        fos.flush()
-                        fos.close()
-                        byteArrayOutputStream.flush()
-
-                        val uri = FileProvider.getUriForFile(
-                            requireContext(),
-                            "com.jamid.codesquare.fileprovider",
-                            file
-                        )
-
-                        viewModel.setCurrentImage(uri)
-
-                        findNavController().navigateUp()
-
-                    }
-                } else {
-                    viewModel.setCurrentError(Exception("Something went wrong while creating a file."))
-                }
+                crop()
             }
         }
         return super.onOptionsItemSelected(item)
@@ -85,6 +53,43 @@ class ImageCropperFragment: Fragment() {
     ): View {
         binding = FragmentImageCropperBinding.inflate(inflater)
         return binding.root
+    }
+
+    private fun crop() {
+        val bitmap = binding.mainCropView.croppedImage
+
+        val externalDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        val name = "temp_" + System.currentTimeMillis().toString() + ".jpg"
+        val file = File(externalDir, name)
+        if (file.createNewFile()) {
+            if (bitmap != null) {
+                val byteArrayOutputStream = ByteArrayOutputStream()
+
+                runBlocking {
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 100 , byteArrayOutputStream)
+                }
+
+                val ba = byteArrayOutputStream.toByteArray()
+                val fos = FileOutputStream(file)
+                fos.write(ba)
+                fos.flush()
+                fos.close()
+                byteArrayOutputStream.flush()
+
+                val uri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "com.jamid.codesquare.fileprovider",
+                    file
+                )
+
+                viewModel.setCurrentImage(uri)
+
+                findNavController().navigateUp()
+
+            }
+        } else {
+            viewModel.setCurrentError(Exception("Something went wrong while creating a file."))
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -120,6 +125,10 @@ class ImageCropperFragment: Fragment() {
         binding.cropFree.setOnClickListener {
             binding.mainCropView.setFixedAspectRatio(false)
             binding.mainCropView.cropShape = CropImageView.CropShape.RECTANGLE
+        }
+
+        binding.btnCrop.setOnClickListener {
+            crop()
         }
 
     }

@@ -4,88 +4,82 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.drawee.view.SimpleDraweeView
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.R
-import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ProjectRequest
-import com.jamid.codesquare.data.User
-import com.jamid.codesquare.disappear
-import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectRequestListener
-import com.jamid.codesquare.show
 
-class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((projectRequest: ProjectRequest) -> Unit)? = null): RecyclerView.ViewHolder(view) {
+class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
-    private val projectTitle = view.findViewById<TextView>(R.id.project_name)
-    private val requestContent = view.findViewById<TextView>(R.id.request_content)
-    private val requestAcceptBtn = view.findViewById<Button>(R.id.request_accept)
-    private val requestCancelBtn = view.findViewById<Button>(R.id.request_cancel)
-    private val requestTime = view.findViewById<TextView>(R.id.request_time)
-    private val projectImage = view.findViewById<SimpleDraweeView>(R.id.project_img)
-    private val requestProgress = view.findViewById<ProgressBar>(R.id.request_accept_progress)
-
+    private lateinit var binding: RequestItemBinding
     private val projectRequestListener = view.context as ProjectRequestListener
 
     fun bind(projectRequest: ProjectRequest?) {
         if (projectRequest != null) {
+            binding = RequestItemBinding.bind(view)
 
-            Firebase.firestore.collection("projects")
-                .document(projectRequest.projectId)
-                .get()
-                .addOnSuccessListener {
-                    if (it != null && it.exists()) {
-                        val project = it.toObject(Project::class.java)!!
+            binding.requestAcceptProgress.show()
+            binding.requestAccept.disappear()
+            binding.requestCancel.disappear()
 
-                        projectRequest.project = project
+            binding.requestTime.text = getTextForTime(projectRequest.createdAt)
 
-                        projectTitle.text = project.name
-                        projectImage.setImageURI(project.images.first())
+            onProjectRequestUpdated(projectRequest)
+        }
+    }
 
-                        Firebase.firestore.collection("users")
-                            .document(projectRequest.senderId)
-                            .get()
-                            .addOnSuccessListener { it1 ->
-                                if (it1 != null && it1.exists()) {
-                                    val sender = it1.toObject(User::class.java)!!
+    private fun onProjectRequestUpdated(projectRequest: ProjectRequest) {
+        /*if (projectRequest.sender != null && projectRequest.project != null) {
 
+
+            // update the new project request to local database
+            projectRequestListener.updateProjectRequest(projectRequest)
+        } else {
+            FireUtility.getProject(projectRequest.projectId) {
+                when (it) {
+                    is Result.Error -> Log.e(TAG, it.exception.localizedMessage.orEmpty())
+                    is Result.Success -> {
+                        FireUtility.getUser(projectRequest.senderId) { it1 ->
+                            when (it1) {
+                                is Result.Error -> Log.e(TAG, it1.exception.localizedMessage.orEmpty())
+                                is Result.Success -> {
+                                    val project = processProjects(arrayOf(it.data)).first()
+                                    projectRequest.project = project
+                                    binding.projectName.text = project.name
+                                    val sender = it1.data
                                     projectRequest.sender = sender
-
+                                    binding.requestImg.setImageURI(sender.photo)
                                     val contentText = "${sender.name} has requested to join your project."
-                                    requestContent.text = contentText
-
-                                    requestTime.text = getTextForTime(projectRequest.createdAt)
-
-                                    requestAcceptBtn.show()
-
-                                    requestAcceptBtn.setOnClickListener {
-                                        requestProgress.show()
-                                        requestAcceptBtn.disappear()
-                                        projectRequestListener.onProjectRequestAccept(projectRequest)
-                                    }
-
-                                    requestCancelBtn.show()
-
-                                    requestCancelBtn.setOnClickListener {
-                                        projectRequestListener.onProjectRequestCancel(projectRequest)
-                                    }
-
-                                    onRequestLoaded?.let { it2 -> it2(projectRequest) }
-
+                                    binding.requestContent.text = contentText
+                                    onProjectRequestUpdated(projectRequest)
                                 }
-                            }.addOnFailureListener { it1 ->
-                                Log.e(TAG, it1.localizedMessage.orEmpty())
+                                null -> projectRequestListener.onProjectRequestProjectDeleted(projectRequest)
                             }
+                        }
                     }
-                }.addOnFailureListener {
-                    Log.e(TAG, it.localizedMessage.orEmpty())
+                    null -> projectRequestListener.onProjectRequestProjectDeleted(projectRequest)
                 }
+            }
+        }*/
+        binding.requestAcceptProgress.hide()
+        binding.requestAccept.show()
+        binding.requestCancel.show()
 
+        binding.projectName.text = projectRequest.project?.name
+        binding.requestImg.setImageURI(projectRequest.project?.images?.firstOrNull())
+        binding.requestContent.text = projectRequest.sender?.name + " wants to join your project."
+
+        binding.requestAccept.setOnClickListener {
+            binding.requestAcceptProgress.show()
+            binding.requestAccept.disappear()
+            projectRequestListener.onProjectRequestAccept(projectRequest)
+        }
+
+
+        binding.requestCancel.setOnClickListener {
+            projectRequestListener.onProjectRequestCancel(projectRequest)
         }
     }
 
@@ -93,8 +87,8 @@ class ProjectRequestViewHolder(val view: View, private val onRequestLoaded: ((pr
 
         private const val TAG = "RequestViewHolder"
 
-        fun newInstance(parent: ViewGroup, onRequestLoaded: ((projectRequest: ProjectRequest) -> Unit)? = null): ProjectRequestViewHolder {
-            return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false), onRequestLoaded)
+        fun newInstance(parent: ViewGroup): ProjectRequestViewHolder {
+            return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false))
         }
 
     }

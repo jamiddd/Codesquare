@@ -30,14 +30,6 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             app:drawableTopCompat="@drawable/ic_round_report_problem_24" />
 
-        <Button
-            android:id="@+id/verify_email_btn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="Verify email"
-            tools:visibility="gone" />
-
         <ProgressBar
             android:id="@+id/email_verification_progress"
             style="?android:attr/progressBarStyle"

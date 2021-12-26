@@ -8,6 +8,7 @@ import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.R
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.ProjectRequestAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectRequestViewHolder
 import com.jamid.codesquare.data.ProjectRequest
@@ -16,32 +17,19 @@ import com.jamid.codesquare.ui.PagerListFragment
 @ExperimentalPagingApi
 class ProjectRequestFragment: PagerListFragment<ProjectRequest, ProjectRequestViewHolder>() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, /* forward= */ false)
-    }
-
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val currentUser = viewModel.currentUser.value!!
-
-        val query = Firebase.firestore.collection("projectRequests")
-            .whereEqualTo("receiverId", currentUser.id)
-
         getItems {
-            viewModel.getPagedProjectRequests(currentUser.id, query)
+            viewModel.getPagedProjectRequests()
         }
 
         recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        noItemsText?.text = "No project requests at the moment. When someone requests you to join in your project, they appear here."
+        noItemsText?.text = getString(R.string.empty_project_requests_greet)
         binding.noDataImage.setAnimation(R.raw.empty_notification)
     }
 
     override fun getAdapter(): PagingDataAdapter<ProjectRequest, ProjectRequestViewHolder> {
-        return ProjectRequestAdapter {
-            viewModel.insertUserAndProject(it)
-        }
+        return ProjectRequestAdapter()
     }
 }

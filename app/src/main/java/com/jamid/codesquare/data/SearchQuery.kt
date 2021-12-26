@@ -13,3 +13,4 @@ data class SearchQuery(@PrimaryKey val id: String, val queryString: String, val 
 
 const val QUERY_TYPE_PROJECT = 0
 const val QUERY_TYPE_USER = 1
+const val QUERY_TYPE_INTEREST = 2

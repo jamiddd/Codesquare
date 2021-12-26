@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.libraries.places.api.model.Place
 import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.LocationItemClickListener
+import com.jamid.codesquare.listeners.LocationItemClickListener
 import com.jamid.codesquare.adapter.comparators.PlaceComparator
 import com.jamid.codesquare.databinding.LocationItemBinding
 

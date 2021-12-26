@@ -18,79 +18,33 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.animation.doOnEnd
+import androidx.core.text.isDigitsOnly
+import androidx.core.view.isVisible
 import androidx.core.view.setMargins
 import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.ui.auth.CreateAccountFragment
-import java.lang.IllegalStateException
+import com.algolia.search.saas.Client
+import com.algolia.search.saas.IndexQuery
+import com.jamid.codesquare.data.*
+import kotlinx.serialization.json.JsonObject
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Pattern
-import com.facebook.imagepipeline.image.CloseableImage
+import kotlin.math.abs
 
-import com.facebook.common.references.CloseableReference
+//fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
 
-import com.facebook.imagepipeline.request.ImageRequest
-
-import com.facebook.imagepipeline.common.ResizeOptions
-
-import com.facebook.imagepipeline.request.ImageRequestBuilder
-
-import com.facebook.drawee.backends.pipeline.Fresco
-
-import com.facebook.imagepipeline.core.ImagePipeline
-
-import com.facebook.datasource.DataSubscriber
-
-import android.net.Uri
-import androidx.core.animation.doOnEnd
-import androidx.core.text.isDigitsOnly
-
-import com.facebook.imagepipeline.image.CloseableBitmap
-
-import com.facebook.datasource.BaseDataSubscriber
-import com.facebook.datasource.DataSource
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.Query
-import org.json.JSONObject
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.collections.HashMap
-import android.content.res.TypedArray
-import android.widget.ProgressBar
-import androidx.appcompat.widget.SearchView
-import androidx.core.view.children
-import androidx.core.view.iterator
-import androidx.viewpager2.widget.ViewPager2
-import com.algolia.search.model.IndexName
-import com.algolia.search.saas.Client
-import com.algolia.search.saas.Index
-import com.algolia.search.saas.IndexQuery
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.jamid.codesquare.data.*
-import com.jamid.codesquare.ui.PreSearchFragment
-
-
-fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
-
-fun Activity.getFullScreenHeight(): Int {
+/*fun Activity.getFullScreenHeight(): Int {
     return if (Build.VERSION.SDK_INT > 29) {
         val rect = windowManager.maximumWindowMetrics.bounds
         rect.bottom - rect.top
     } else {
         getWindowHeight()
     }
-}
-
-fun Fragment.getFullScreenHeight(): Int {
-    return requireActivity().getFullScreenHeight()
-}
+}*/
 
 fun getWindowWidth() = Resources.getSystem().displayMetrics.widthPixels
 
@@ -98,22 +52,29 @@ fun View.show() {
     this.visibility = View.VISIBLE
 }
 
+fun checkIfNetworkExists() {
+
+}
+
 fun View.showWithAnimations() {
 
-    this.scaleX = 0f
-    this.scaleY = 0f
+    if (!this.isVisible) {
+        this.scaleX = 0f
+        this.scaleY = 0f
 
-    this.show()
+        this.show()
 
-    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f, 1f)
-    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f, 1f)
+        val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f, 1f)
+        val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f, 1f)
 
-    AnimatorSet().apply {
-        duration = 250
-        interpolator = AccelerateDecelerateInterpolator()
-        playTogether(objAnimator, objAnimator1)
-        start()
+        AnimatorSet().apply {
+            duration = 250
+            interpolator = AccelerateDecelerateInterpolator()
+            playTogether(objAnimator, objAnimator1)
+            start()
+        }
     }
+
 }
 
 fun View.hide() {
@@ -121,17 +82,21 @@ fun View.hide() {
 }
 
 fun View.hideWithAnimation() {
-    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f)
-    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f )
 
-    AnimatorSet().apply {
-        duration = 250
-        interpolator = AccelerateDecelerateInterpolator()
-        playTogether(objAnimator, objAnimator1)
-        start()
-    }.doOnEnd {
-        this.visibility = View.GONE
+    if (this.isVisible) {
+        val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f)
+        val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f )
+
+        AnimatorSet().apply {
+            duration = 250
+            interpolator = AccelerateDecelerateInterpolator()
+            playTogether(objAnimator, objAnimator1)
+            start()
+        }
+
+        this.disappear()
     }
+
 }
 
 fun View.disappear() {
@@ -157,16 +122,16 @@ fun slideRightNavOptions(): NavOptions {
     }
 }
 
-fun Fragment.showError(exception: Exception) {
+/*fun Fragment.showError(exception: Exception) {
     requireContext().showError(exception)
-}
+}*/
 
-fun Context.showError(exception: Exception) {
+/*fun Context.showError(exception: Exception) {
     exception.localizedMessage?.let {
         toast(it)
         Log.e(TAG, it)
     }
-}
+}*/
 
 fun randomId(): String {
     return UUID.randomUUID().toString().replace("-", "")
@@ -179,7 +144,7 @@ fun CharSequence?.isValidPassword() =
     !isNullOrEmpty() && Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{4,}\$")
         .matcher(this).matches()
 
-fun showSnack(rootLayout: ViewGroup, msg: String, duration: Int = Snackbar.LENGTH_LONG, anchor: View? = null, actionText: String? = null, onAction: (() -> Unit)? = null) {
+/*fun showSnack(rootLayout: ViewGroup, msg: String, duration: Int = Snackbar.LENGTH_LONG, anchor: View? = null, actionText: String? = null, onAction: (() -> Unit)? = null) {
     val snackBar = if (anchor != null) {
         Snackbar.make(rootLayout, msg, duration)
             .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
@@ -196,7 +161,7 @@ fun showSnack(rootLayout: ViewGroup, msg: String, duration: Int = Snackbar.LENGT
     }
 
     snackBar.show()
-}
+}*/
 
 fun View.updateLayout(
     height: Int? = null,
@@ -304,6 +269,24 @@ fun getTextForTime(time: Long): String {
     return DateUtils.getRelativeTimeSpanString(time, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS).toString()
 }
 
+fun getTextForChatTime(time: Long): String {
+    val oneDay = 24 * 60 * 60 * 1000
+    val oneWeek = 7 * oneDay
+    val now = System.currentTimeMillis()
+    val diff = abs(now - time)
+    return when {
+        diff > oneWeek -> {
+            SimpleDateFormat("hh:mm a dd/MM/yyyy", Locale.UK).format(time)
+        }
+        diff > oneDay -> {
+            SimpleDateFormat("hh:mm a EEEE", Locale.UK).format(time)
+        }
+        else -> {
+            SimpleDateFormat("hh:mm a", Locale.UK).format(time)
+        }
+    }
+}
+
 fun <T: Any> List<T>.addItemToList(item: T): List<T> {
     val newList = this.toMutableList()
     newList.add(item)
@@ -320,7 +303,7 @@ fun <T: Any> List<T>.removeItemFromList(item: T): List<T> {
     }
 }
 
-fun <T: Any> List<T>.removeItemFromList(pos: Int): List<T> {
+/*fun <T: Any> List<T>.removeItemFromList(pos: Int): List<T> {
     return if (this.isEmpty()) {
         emptyList()
     } else {
@@ -328,7 +311,7 @@ fun <T: Any> List<T>.removeItemFromList(pos: Int): List<T> {
         newList.removeAt(pos)
         newList
     }
-}
+}*/
 
 
 fun View.slideReset() {
@@ -379,8 +362,7 @@ fun Context.hideKeyboard(view: View) {
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
-
-fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) -> Unit) {
+/*fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) -> Unit) {
     val linearLayoutManager = this.layoutManager
     if (linearLayoutManager is LinearLayoutManager && linearLayoutManager.orientation == LinearLayoutManager.VERTICAL) {
         this.addOnScrollListener(object: RecyclerView.OnScrollListener() {
@@ -394,7 +376,7 @@ fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) 
     } else {
         throw IllegalStateException("Recyclerview must be vertical and linear.")
     }
-}
+}*/
 
 fun Fragment.isNightMode(): Boolean {
     return requireContext().isNightMode()
@@ -577,11 +559,11 @@ fun String.toHashMap(): Map<String, Any> {
     return map
 }
 
-fun CollectionReference.addOrder(field: String, direction: Query.Direction): Query {
+/*fun CollectionReference.addOrder(field: String, direction: Query.Direction): Query {
     return this.orderBy(field, direction)
-}
+}*/
 
-fun getRoundedCroppedBitmap(bitmap: Bitmap): Bitmap? {
+/*fun getRoundedCroppedBitmap(bitmap: Bitmap): Bitmap? {
     val widthLight = bitmap.width
     val heightLight = bitmap.height
 
@@ -608,7 +590,7 @@ fun getRoundedCroppedBitmap(bitmap: Bitmap): Bitmap? {
     paintImage.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_ATOP)
     canvas.drawBitmap(bitmap, 0f, 0f, paintImage)
     return output
-}
+}*/
 
 fun Context.accentColor(): Int {
     val typedValue = TypedValue()
@@ -649,7 +631,7 @@ fun getCircleBitmap(bitmap: Bitmap): Bitmap {
     return output
 }
 
-fun BottomNavigationView.attachToViewPager(viewPager: ViewPager2) {
+/*fun BottomNavigationView.attachToViewPager(viewPager: ViewPager2) {
 
     val menuItems = this.menu.iterator().withIndex()
 
@@ -672,7 +654,7 @@ fun BottomNavigationView.attachToViewPager(viewPager: ViewPager2) {
             }
         }
     })
-}
+}*/
 
 fun <T: Any> MutableList<T>.removeAtIf(predicate: (T) -> Boolean) {
     var removePos = -1
@@ -688,6 +670,10 @@ fun Fragment.search(index: Index, query: String, isProject: Boolean = true, prog
     search(index, query, isProject, progressBar, onComplete)
 }*/
 
+fun search() {
+
+}
+
 fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<SearchQuery>>) -> Unit) {
     client.multipleQueriesAsync(queries, Client.MultipleQueriesStrategy.NONE) { jsonObject, exc ->
         if (exc != null) {
@@ -696,6 +682,7 @@ fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<S
         }
 
         if (jsonObject != null) {
+
             val ss = jsonObject.toString()
             if (ss.isBlank()) {
                 Log.d(TAG, "JSON object is blank")
@@ -724,19 +711,6 @@ fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<S
     }
 }
 
-fun SearchView.disable() {
-    this.isEnabled = false
-    for (v in this.children) {
-        v.isEnabled = false
-    }
-}
-
-fun SearchView.enable() {
-    this.isEnabled = true
-    for (v in this.children) {
-        v.isEnabled = true
-    }
-}
 
 private fun findValuesForKey(key: String, jsonString: String): List<String> {
     var index: Int
@@ -763,7 +737,8 @@ private fun findValuesForKey(key: String, jsonString: String): List<String> {
     return result
 }
 
-fun processProjects(currentUser: User, projects: List<Project>): List<Project> {
+fun processProjects(projects: Array<out Project>): Array<out Project> {
+    val currentUser = UserManager.currentUser
     for (project in projects) {
         project.isMadeByMe = project.creator.userId == currentUser.id
         project.isLiked = currentUser.likedProjects.contains(project.id)

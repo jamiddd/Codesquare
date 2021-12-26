@@ -68,7 +68,7 @@ object MyNotificationManager {
     private fun Context.getNotificationBuilder(title: String, content: String): NotificationCompat.Builder {
         val pendingIntent = NavDeepLinkBuilder(this)
             .setGraph(R.navigation.main_navigation)
-            .setDestination(R.id.notificationFragment)
+            .setDestination(R.id.notificationCenterFragment)
             .setArguments(null)
             .createPendingIntent()
 

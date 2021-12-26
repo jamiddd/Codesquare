@@ -21,9 +21,6 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannel")
     abstract suspend fun getChatChannel(chatChannel: String): ChatChannel?
 
-    @Query("SELECT * FROM chat_channels")
-    abstract suspend fun allChannels(): List<ChatChannel>?
-
     @Query("SELECT * FROM chat_channels WHERE chatChannelId != :chatChannelId")
     abstract suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel>?
 

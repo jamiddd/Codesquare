@@ -2,24 +2,24 @@ package com.jamid.codesquare.ui.home.chat
 
 import android.app.Dialog
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GuidelinesAdapter
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
-import com.jamid.codesquare.ui.SuperBottomSheetFragment
 
+@ExperimentalPagingApi
 class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentChannelGuidelinesBinding
@@ -51,7 +51,7 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
     }
 
     private fun getNewAdapter(): GuidelinesAdapter {
-        return GuidelinesAdapter { v, p ->
+        return GuidelinesAdapter { _, p ->
             val existingList = currentGuidelines.value.orEmpty().toMutableList()
             existingList.removeAt(p)
             currentGuidelines.postValue(existingList)

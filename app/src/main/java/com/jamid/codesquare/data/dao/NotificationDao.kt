@@ -2,13 +2,8 @@ package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
-import androidx.room.Dao
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
+import androidx.room.*
 import com.jamid.codesquare.data.Notification
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.Result
 
 @Dao
 abstract class NotificationDao: BaseDao<Notification>() {
@@ -16,14 +11,11 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertNotifications(notifications: List<Notification>)
 
-    @Query("DELETE FROM notifications WHERE contextId = :id AND type = :type")
-    abstract suspend fun deleteNotificationByType(id: String, type: Int)
-
-    @Query("SELECT * FROM notifications WHERE contextId = :id AND type = :type")
-    abstract suspend fun getNotificationByType(id: String, type: Int): Notification?
-
     @Query("SELECT * FROM notifications WHERE receiverId = :currentUserId ORDER BY createdAt DESC")
     abstract fun getNotifications(currentUserId: String): PagingSource<Int, Notification>
+
+    @Query("SELECT * FROM notifications WHERE receiverId = :currentUserId AND type = :type ORDER BY createdAt DESC")
+    abstract fun getNotifications(currentUserId: String, type: Int): PagingSource<Int, Notification>
 
     @Query("DELETE FROM notifications")
     abstract suspend fun clearNotifications()
@@ -36,5 +28,11 @@ abstract class NotificationDao: BaseDao<Notification>() {
 
     @Query("DELETE FROM notifications")
     abstract suspend fun clearTable()
+
+    @Delete
+    abstract suspend fun deleteNotification(notification: Notification)
+
+    @Query("DELETE FROM notifications WHERE id = :id")
+    abstract suspend fun deleteNotificationById(id: String)
 
 }

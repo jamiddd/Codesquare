@@ -5,17 +5,16 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.jamid.codesquare.CODESQUARE_DB
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.data.dao.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
-@Database(entities = [Project::class, User::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class, SearchQuery::class], version = 9)
+@Database(
+    entities = [Project::class, User::class, Interest::class, ProjectInvite::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class, SearchQuery::class],
+    version = 13
+)
 @TypeConverters(Converters::class)
-abstract class CodesquareDatabase: RoomDatabase() {
+abstract class CodesquareDatabase : RoomDatabase() {
 
     abstract fun projectDao(): ProjectDao
     abstract fun userDao(): UserDao
@@ -25,10 +24,13 @@ abstract class CodesquareDatabase: RoomDatabase() {
     abstract fun commentDao(): CommentDao
     abstract fun notificationDao(): NotificationDao
     abstract fun searchQueryDao(): SearchQueryDao
+    abstract fun projectInviteDao(): ProjectInviteDao
+    abstract fun interestDao(): InterestDao
 
     companion object {
 
-        @Volatile private var instance: CodesquareDatabase? = null
+        @Volatile
+        private var instance: CodesquareDatabase? = null
 
         fun getInstance(context: Context): CodesquareDatabase {
             return instance ?: synchronized(this) {
@@ -36,8 +38,12 @@ abstract class CodesquareDatabase: RoomDatabase() {
             }
         }
 
-        private fun createDatabase(applicationContext: Context) : CodesquareDatabase {
-            return Room.databaseBuilder(applicationContext, CodesquareDatabase::class.java, CODESQUARE_DB)
+        private fun createDatabase(applicationContext: Context): CodesquareDatabase {
+            return Room.databaseBuilder(
+                applicationContext,
+                CodesquareDatabase::class.java,
+                CODESQUARE_DB
+            )
                 .fallbackToDestructiveMigration()
                 .build()
         }

@@ -28,7 +28,7 @@ class MessageRemoteMediator(private val chatChannel: ChatChannel, private val im
             !it.deliveryList.contains(currentUser.id)
         }
 
-        repository.updateDeliveryListOfMessages(chatChannel, currentUser.id, nonUpdatedMessages) {
+        repository.updateDeliveryListOfMessages(currentUser.id, nonUpdatedMessages) {
             if (it.isSuccessful) {
                 scope.launch (Dispatchers.IO) {
                     repository.insertMessages(imagesDir, documentsDir, nonUpdatedMessages)

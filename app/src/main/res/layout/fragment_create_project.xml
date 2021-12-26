@@ -12,7 +12,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true">
 
         <com.facebook.drawee.view.SimpleDraweeView
             android:id="@+id/user_img"
@@ -20,7 +21,7 @@
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="20dp"
             android:background="@drawable/ic_round_account_circle_24"
             app:layout_constraintBottom_toTopOf="@+id/project_images_container"
             app:layout_constraintStart_toStartOf="parent"
@@ -30,13 +31,12 @@
             app:roundAsCircle="true" />
 
         <LinearLayout
-            android:id="@+id/linearLayout13"
+            android:id="@+id/name_location_container"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="16dp"
             android:orientation="vertical"
-            app:layout_constraintBottom_toBottomOf="@+id/user_img"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/user_img"
             app:layout_constraintTop_toTopOf="@+id/user_img">
@@ -47,17 +47,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Jamid Deka"
-                android:textSize="15sp" />
+                android:textSize="18sp" />
 
             <TextView
                 android:id="@+id/project_location_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:background="?selectableItemBackground"
                 android:clickable="true"
                 android:drawableTint="?colorAccent"
                 android:ellipsize="end"
                 android:focusable="true"
+                android:gravity="center_vertical"
                 android:maxLines="1"
+                android:minHeight="28dp"
                 android:text="Add location"
                 android:textColor="?colorAccent"
                 app:drawableStartCompat="@drawable/ic_round_add_location_small"
@@ -260,7 +263,7 @@
             android:layout_height="wrap_content"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            app:layout_constraintBottom_toTopOf="@+id/include"
+            app:layout_constraintBottom_toTopOf="@+id/create_project_info"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/divider20">
@@ -275,7 +278,7 @@
         </com.google.android.material.chip.ChipGroup>
 
         <include
-            android:id="@+id/include"
+            android:id="@+id/create_project_info"
             layout="@layout/fragment_create_project_info"
             android:layout_width="0dp"
             android:layout_height="wrap_content"

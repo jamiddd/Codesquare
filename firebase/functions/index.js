@@ -12,15 +12,70 @@ const ALGOLIA_PROJECTS_INDEX = "projects";
 const ALGOLIA_USERS_INDEX = "users";
 const client = algoliasearch(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 
+class Notification {
+    id = "";
+    title = "";
+    content = "";
+    createdAt = 0;
+    senderId = "";
+    receiverId = "";
+    image = "";
+    projectId = "";
+    commentChannelId = "";
+    commentId = "";
+    userId = "";
+    type = 0;
+
+    /**
+     * 
+     * @param {functions.firestore.QueryDocumentSnapshot} snapshot The firestore document that holds the notification values
+     */
+    constructor(snapshot) {
+        this.id = snapshot.get("id");
+        this.title = snapshot.get("title");
+        this.content = snapshot.get("content");
+        this.createdAt = snapshot.get("createdAt");
+        this.senderId = snapshot.get("senderId");
+        this.receiverId = snapshot.get("receiverId");
+        this.image = snapshot.get("image");
+        this.projectId = snapshot.get("projectId");
+        this.commentChannelId = snapshot.get("commentChannelId");
+        this.commentId = snapshot.get("commentId");
+        this.userId = snapshot.get("userId");
+        this.type = snapshot.get("type");
+    }
+    
+}
+
 
 exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
-    .onCreate((snap, context) => {
+    .onCreate(async (snap, context) => {
         const project = snap.data();
         project.objectID = context.params.projectId;
         project.type = "project"
         const index = client.initIndex(ALGOLIA_PROJECTS_INDEX);
+        const index1 = client.initIndex("interests");
 
-        return index.saveObject(project);
+        var tags = [];
+        tags = project.tags;
+        const tagsSize = tags.length;
+        var objects = [];
+        if (tagsSize != 0) {
+            for (let i = 0; i < tagsSize; i++) {
+                const s = tags[i];
+                const id = s.toLowerCase().split(' ').join('_');
+
+                objects.push({
+                    objectID: id,
+                    interest: s
+                });
+            }
+
+            await index1.saveObjects(objects);
+
+        }
+
+        return await index.saveObject(project);
     });
 
 exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
@@ -31,12 +86,33 @@ exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
 
 
 exports.onUserCreated = functions.firestore.document("users/{userId}")
-    .onCreate((snap, context) => {
+    .onCreate(async (snap, context) => {
         const user = snap.data();
         user.objectID = context.params.userId;
         user.type = "user"
         const index = client.initIndex(ALGOLIA_USERS_INDEX);
-        return index.saveObject(user);
+        const index1 = client.initIndex("interests");
+        
+        var interests = [];
+        interests = user.interests;
+        const interestsSize = interests.length;
+        var objects = [];
+        if (interestsSize != 0) {
+            for (let i = 0; i < interestsSize; i++) {
+                const s = interests[i];
+                const id = s.toLowerCase().split(' ').join('_');
+
+                objects.push({
+                    objectID: id,
+                    interest: s
+                });
+            }
+
+            await index1.saveObjects(objects);
+
+        }
+ 
+        return await index.saveObject(user);
     });
 
 
@@ -73,30 +149,40 @@ exports.getChatChannelById = async (channelId) => {
 exports.onNewNotification = functions.firestore.document("users/{userId}/notifications/{notificationId}")
     .onCreate( async (snap, context) => {
 
-        const title = snap.get("title");
-        const body = snap.get("content");
-        const senderId = snap.get("senderId");
+        var notification = new Notification(snap);
 
-        const notificationType = snap.get("type");
-        const contextId = snap.get("contextId");
+        var notificationType = ""
+        if (notification.type > 0) {
+            notificationType = "request"
+        } else if(notification.type < 0) {
+            notificationType = "invite"
+        } else {
+            notificationType = "general"
+        }
 
         var data = {
-            title: title,
-            content: body,
-            senderId: senderId,
-            contextId: contextId,
-            receiverId: context.params.userId,
-            notificationId: context.params.notificationId
+            title: notification.title,
+            content: notification.content,
+            senderId: notification.senderId,
+            receiverId: notification.receiverId,
+            notificationId: notification.id,
+            type: notificationType
         };
 
-        if (notificationType == 11) {
-            data.deepLink = "www.collab.com/projectRequests"
-            data.clickAction = "OPEN_PROJECT_REQUESTS"
-            data.type = "request"
-        } else {
-            data.deepLink = "www.collab.com/notifications"
-            data.clickAction = "OPEN_NOTIFICATIONS"
-            data.type = "notification"
+        if (notification.projectId) {
+            data.projectId = notification.projectId;
+        }
+
+        if (notification.commentChannelId) {
+            data.commentChannelId = notification.commentChannelId;
+        }
+
+        if (notification.userId) {
+            data.userId = notification.userId;
+        }
+
+        if (notification.commentId) {
+            data.commentId = notification.commentId;
         }
 
         const receiverSnap = await this.getUserById(context.params.userId);
@@ -107,8 +193,13 @@ exports.onNewNotification = functions.firestore.document("users/{userId}/notific
             }
         } else {
             const registrationTokens = receiverSnap.get("registrationTokens");
-
-            return await this.sendNotification(registrationTokens, title, body, data);
+            if (registrationTokens.length > 0) {
+                return await this.sendNotification(registrationTokens, data);
+            } else {
+                return {
+                    response: `No registration tokens found for user: ${context.params.userId}`
+                }
+            }
         }
     });
     
@@ -120,6 +211,7 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
         const chatChannelSnap = await this.getChatChannelById(chatChannelId);
 
         const senderId = snap.get("senderId");
+
         const senderSnap = await this.getUserById(senderId);
 
         if (!chatChannelSnap.exists) {
@@ -148,8 +240,6 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
                     title: projectTitle,
                     senderId: senderId,
                     channelId: chatChannelId,
-                    deepLink: "www.collab.com/chats/" + chatChannelId,
-                    clickAction: "OPEN_CHATS"
                 };
                 
                 if (type == "image") {
@@ -202,7 +292,6 @@ exports.sendNotification = async (userRegistrationTokens, dataObject) => {
           title: dataObject.title,
           body: dataObject.content,
           sound: 'default',
-          click_action: dataObject.clickAction
         },
         data: dataObject
     };
@@ -217,42 +306,104 @@ exports.sendNotification = async (userRegistrationTokens, dataObject) => {
  * @param {string} topic The topic to which the notification should be sent to
  * @param {any} dataObject Data object that contains the tile, senderId, content, image and deepLink of the notification
  */
-exports.sendNotificationToTopic = async (topic, dataObject) => {	
-	var payload = {};
+// exports.sendNotificationToTopic = async (topic, dataObject) => {	
+// 	var payload = {};
 
-	if (dataObject.hasOwnProperty("img")) {
-		payload = {
-			notification: {
-			  title: dataObject.title,
-			  body: dataObject.content,
-			  image: dataObject.img,
-			  imageUrl: dataObject.img, 
-			  sound: 'default',
-              click_action: dataObject.clickAction
-			},
-			data: dataObject
-		};
-	} else {
-		payload = {
-			notification: {
-			  title: dataObject.title,
-			  body: dataObject.content,
-			  sound: 'default',
-              click_action: dataObject.clickAction
-			},
-            data: dataObject
-		};
-	}
+// 	if (dataObject.hasOwnProperty("img")) {
+// 		payload = {
+// 			notification: {
+// 			  title: dataObject.title,
+// 			  body: dataObject.content,
+// 			  image: dataObject.img,
+// 			  imageUrl: dataObject.img, 
+// 			  sound: 'default',
+//               click_action: dataObject.clickAction
+// 			},
+// 			data: dataObject
+// 		};
+// 	} else {
+// 		payload = {
+// 			notification: {
+// 			  title: dataObject.title,
+// 			  body: dataObject.content,
+// 			  sound: 'default',
+//               click_action: dataObject.clickAction
+// 			},
+//             data: dataObject
+// 		};
+// 	}
 
-	// Send a message to devices subscribed to the provided topic.
-	try {
-		return await admin.messaging().sendToTopic(topic, payload, { priority: 'high' });
-	} catch (error) {
-		return {
-            response: `Error sending message:, ${error}`
+// 	// Send a message to devices subscribed to the provided topic.
+// 	try {
+// 		return await admin.messaging().sendToTopic(topic, payload, { priority: 'high' });
+// 	} catch (error) {
+// 		return {
+//             response: `Error sending message:, ${error}`
+//         }
+// 	}
+// }
+
+
+exports.onCommentDeleted = functions.firestore.document("commentChannels/{commentChannelId}/comments/{commentId}")
+    .onDelete(async (snap, context) => {
+        const threadChannelId = snap.get("threadChannelId");
+
+        return await admin.firestore()
+            .collection("commentChannels")
+            .doc(threadChannelId)
+            .delete();
+    });
+
+
+exports.onCommentChannelDeleted = functions.firestore.document("commentChannels/{commentChannelId}")
+    .onDelete(async (snap, context) => {
+        const documents = await snap.ref.collection("comments").listDocuments();
+    
+        const batch = admin.firestore().batch();
+        documents.forEach((doc, i) => {
+            batch.delete(doc);
+        });
+
+        return await batch.commit();
+    });
+
+
+exports.onUserUpdated = functions.firestore.document("users/{userId}")
+    .onUpdate(async (change, context) => {
+
+        const newDocument = change.after
+        const updatedUser = newDocument.data();
+
+        updatedUser.type = "user";
+        updatedUser.objectID = context.params.userId;
+
+        const index = client.initIndex("users");
+        const index1 = client.initIndex("interests");
+
+        var interests = [];
+        interests = updatedUser.interests;
+        const interestsSize = interests.length;
+        var objects = [];
+        if (interestsSize != 0) {
+            for (let i = 0; i < interestsSize; i++) {
+                const s = interests[i];
+                const id = s.toLowerCase().split(' ').join('_');
+
+                objects.push({
+                    objectID: id,
+                    interest: s
+                });
+            }
+
+            await index1.saveObjects(objects);
+
         }
-	}
-}
+
+        return await index.partialUpdateObjects([updatedUser], {
+            createIfNotExists: true,
+          });
+
+    });
 
     // NOTIFICATIONS
     // ------------------

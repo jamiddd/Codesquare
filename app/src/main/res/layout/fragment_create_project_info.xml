@@ -6,10 +6,12 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="16dp"
-    android:elevation="16dp">
+    android:background="@drawable/rounded_outline"
+    android:backgroundTint="@null"
+    android:visibility="gone">
 
     <Button
-        android:id="@+id/button2"
+        android:id="@+id/close_info_btn"
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -18,7 +20,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textView12"
+        android:id="@+id/project_info_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -33,12 +35,12 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         android:textSize="16sp"
         app:drawableEndCompat="@drawable/ic_round_help_outline_24"
-        app:layout_constraintBottom_toTopOf="@+id/textView15"
+        app:layout_constraintBottom_toTopOf="@+id/project_info_desc"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/textView15"
+        android:id="@+id/project_info_desc"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -49,5 +51,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView12" />
+        app:layout_constraintTop_toBottomOf="@+id/project_info_header" />
 </androidx.constraintlayout.widget.ConstraintLayout>

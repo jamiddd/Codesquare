@@ -1,39 +1,26 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.util.Log
-import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ProgressBar
-import androidx.appcompat.widget.PopupMenu
-import androidx.appcompat.widget.SearchView
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.navigation.fragment.findNavController
+import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.algolia.search.saas.Client
-import com.algolia.search.saas.Index
-import com.algolia.search.saas.Query
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.PreviousQueryAdapter
-import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
-import com.jamid.codesquare.adapter.recyclerview.VagueProjectAdapter
+import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.adapter.recyclerview.VagueUserAdapter
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.QUERY_TYPE_USER
 import com.jamid.codesquare.databinding.FragmentSearchUsersBinding
-import com.jamid.codesquare.listeners.SearchItemClickListener
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.show
 
+@ExperimentalPagingApi
 class SearchUsersFragment: Fragment() {
 
     private lateinit var binding: FragmentSearchUsersBinding
     private lateinit var vagueUserAdapter: VagueUserAdapter
-
     private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
@@ -48,9 +35,7 @@ class SearchUsersFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val currentUser = viewModel.currentUser.value!!
-
-        viewModel.searchResult.observe(viewLifecycleOwner) {
+        viewModel.recentSearchList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
 
                 binding.noSearchedUsers.hide()
@@ -66,7 +51,9 @@ class SearchUsersFragment: Fragment() {
                         it1.id
                     }
 
-                    vagueUserAdapter = VagueUserAdapter(currentUser, ids)
+                    vagueUserAdapter = VagueUserAdapter(ids, viewLifecycleOwner.lifecycleScope) { userId ->
+                        viewModel.getLocalUser(userId)
+                    }
 
                     binding.searchUsersRecycler.apply {
                         layoutManager = LinearLayoutManager(requireContext())
@@ -79,10 +66,6 @@ class SearchUsersFragment: Fragment() {
             }
         }
 
-    }
-
-    companion object {
-        private const val TAG = "SearchUsersFragment"
     }
 
 

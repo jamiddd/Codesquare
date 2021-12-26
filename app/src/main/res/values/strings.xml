@@ -53,4 +53,39 @@
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="no_messages">No messages</string>
 
+    <string name="empty_messages_greet">Be the first one to send a message. Say \"hi\" to other collaborators.</string>
+    <string name="empty_project_requests_greet">No project requests at the moment. When someone requests you to join in your project, they appear here.</string>
+    <string name="empty_project_invites_greet">No project invites at the moment. When someone invites you to join in their project, they appear here.</string>
+    <string name="empty_comments_greet">No comments yet. Be the first one to comment.</string>
+    <string name="replying_to">Replying to</string>
+    <string name="comment">Comment</string>
+    <string name="report">Report</string>
+    <string name="delete">Delete</string>
+    <string name="update_interests">Update interests</string>
+    <string name="you">You</string>
+    <string name="revoke">Revoke</string>
+    <string name="invite">Invite</string>
+    <string name="undo">Undo</string>
+    <string name="join">Join</string>
+    <string name="email_verification_message">Verification email sent. Check your mail.</string>
+    <string name="empty_chat_list_greet">No chats found. Collaborate on projects or create your own project to create a collaboration.</string>
+    <string name="skip">Skip</string>
+    <string name="skip_u"><u>Skip</u></string>
+    <string name="skip_cap_u"><u>SKIP</u></string>
+    <string name="next">Next</string>
+    <string name="back">Back</string>
+    <string name="login">Login</string>
+    <string name="search_for_projects">Search for projects</string>
+    <string name="empty_collaborations_greet">You haven\'t collaborated with anyone. Your collaborations appear here.</string>
+    <string name="profile_upload_loading_text">Updating profile. Please wait ...</string>
+    <string name="edit">Edit</string>
+    <string name="dislike">Dislike</string>
+    <string name="like">Like</string>
+    <string name="empty_user_projects_greet">Create new project so that other people can see your work and collaborate</string>
+    <string name="empty_saved_projects_greet">You haven\'t saved any projects yet. Save project that you might wanna visit later.</string>
+    <string name="create_project_loading">Creating project. Please wait ...</string>
+    <string name="add_location">Add Location</string>
+    <string name="empty_notifications_greet">No notifications at the moment. Your notifications appear here. However notifications like project request and invites appear separately.</string>
+    <string name="common_error_text">Something went wrong :(</string>
+
 </resources>

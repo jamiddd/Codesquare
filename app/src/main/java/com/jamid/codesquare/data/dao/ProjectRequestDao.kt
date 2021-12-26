@@ -2,6 +2,7 @@ package com.jamid.codesquare.data.dao
 
 import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Query
 import com.jamid.codesquare.data.ProjectRequest
 
@@ -14,8 +15,8 @@ abstract class ProjectRequestDao: BaseDao<ProjectRequest>() {
     @Query("SELECT * FROM project_requests WHERE projectId = :projectId")
     abstract suspend fun getProjectRequestByProject(projectId: String): ProjectRequest?
 
-    @Query("DELETE FROM project_requests WHERE requestId = :requestId")
-    abstract suspend fun deleteProjectRequest(requestId: String)
+    @Delete
+    abstract suspend fun deleteProjectRequest(projectRequest: ProjectRequest)
 
     @Query("SELECT * FROM project_requests WHERE receiverId = :receiverId ORDER BY createdAt DESC")
     abstract fun getPagedProjectRequests(receiverId: String): PagingSource<Int, ProjectRequest>
