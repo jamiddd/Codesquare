@@ -23,7 +23,10 @@ abstract class UserDao: BaseDao<User>() {
     @Query("DELETE FROM users WHERE id = :userId")
     abstract suspend fun deleteUserById(userId: String)
 
-    @Query("UPDATE users SET ")
+    @Query("UPDATE users SET isLiked = 1 WHERE id = :userId")
     abstract suspend fun likeLocalUserById(userId: String)
+
+    @Query("UPDATE users SET isLiked = 0 WHERE id = :userId")
+    abstract suspend fun dislikeLocalUserById(userId: String)
 
 }

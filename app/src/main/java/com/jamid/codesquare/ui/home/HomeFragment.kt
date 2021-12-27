@@ -30,7 +30,6 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
@@ -172,13 +171,23 @@ class HomeFragment: Fragment() {
             findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
         }
 
-        UserManager.currentUserLive.observe(viewLifecycleOwner) {
+        val currentUser = UserManager.currentUser
+        val currentUserPhoto = currentUser.photo
+        if (currentUserPhoto != null) {
+            setCurrentUserPhotoAsDrawable(currentUserPhoto)
+        }
+
+        /*UserManager.currentUserLive.observe(viewLifecycleOwner) {
             if (it != null) {
                 val currentUserPhoto = it.photo
                 if (currentUserPhoto != null) {
                     setCurrentUserPhotoAsDrawable(currentUserPhoto)
                 }
             }
-        }
+        }*/
+    }
+
+    companion object {
+        private const val TAG = "HomeFragment"
     }
 }

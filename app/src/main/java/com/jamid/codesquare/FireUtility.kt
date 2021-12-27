@@ -501,7 +501,7 @@ object FireUtility {
         }
     }
 
-    suspend fun joinProject(currentUser: User, project: Project, notification: Notification): Result<ProjectRequest> {
+    /*suspend fun joinProject(currentUser: User, project: Project, notification: Notification): Result<ProjectRequest> {
         return try {
             val batch = Firebase.firestore.batch()
 
@@ -556,7 +556,7 @@ object FireUtility {
         } catch (e: Exception) {
             Result.Error(e)
         }
-    }
+    }*/
 
     fun undoJoinProject(projectRequest: ProjectRequest, onComplete: (task: Task<Void>) -> Unit) {
         val batch = Firebase.firestore.batch()
@@ -592,7 +592,7 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    suspend fun undoJoinProject(userId: String, projectId: String, requestId: String): Result<Void> {
+    /*suspend fun undoJoinProject(userId: String, projectId: String, requestId: String): Result<Void> {
         return try {
 
             val batch = Firebase.firestore.batch()
@@ -643,7 +643,7 @@ object FireUtility {
         } catch (e: Exception) {
             Result.Error(e)
         }
-    }
+    }*/
 
     fun acceptProjectRequest(project: Project, projectRequest: ProjectRequest, onComplete: (task: Task<Void>) -> Unit) {
         val batch = Firebase.firestore.batch()
@@ -916,6 +916,25 @@ object FireUtility {
 
 
     }*/
+
+    fun dislikeComment(comment: Comment, onComplete: (task: Task<Void>) -> Unit) {
+        val db = Firebase.firestore
+
+        val batch = db.batch()
+
+        val commentRef = Firebase.firestore.collection("commentChannels")
+            .document(comment.commentChannelId)
+            .collection("comments")
+            .document(comment.commentId)
+
+        batch.update(commentRef, mapOf("likesCount" to FieldValue.increment(-1), "likes" to FieldValue.arrayRemove(UserManager.currentUserId)))
+
+        val currentUserRef = db.collection("users").document(UserManager.currentUserId)
+
+        batch.update(currentUserRef, mapOf("likedComments" to FieldValue.arrayRemove(comment.commentId)))
+
+        batch.commit().addOnCompleteListener(onComplete)
+    }
 
     suspend fun dislikeComment(currentUserId: String, comment: Comment): Result<Comment> {
         return try {

@@ -12,7 +12,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -50,10 +49,10 @@ class ProfileFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.log_out -> {
-                viewModel.signOut {
-                    Firebase.auth.signOut()
-                    findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
-                }
+                Firebase.auth.signOut()
+                UserManager.setAuthStateForceful(false)
+                findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
+                viewModel.signOut {}
                 true
             }
             R.id.saved_projects -> {

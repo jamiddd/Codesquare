@@ -16,6 +16,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.slideRightNavOptions
 
 @ExperimentalPagingApi
@@ -165,10 +166,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 .setTitle("Logging out")
                 .setMessage("Are you sure you want to log out?")
                 .setPositiveButton("Log out") { _, _ ->
-                    viewModel.signOut {
-                        Firebase.auth.signOut()
-                        findNavController().navigate(R.id.action_settingsFragment_to_loginFragment, null, slideRightNavOptions())
-                    }
+                    Firebase.auth.signOut()
+                    UserManager.setAuthStateForceful(false)
+                    findNavController().navigate(R.id.action_settingsFragment_to_loginFragment, null, slideRightNavOptions())
+                    viewModel.signOut {}
                 }.setNegativeButton("Cancel") { d, _ ->
                     d.dismiss()
                 }

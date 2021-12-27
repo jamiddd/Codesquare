@@ -10,7 +10,7 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import java.io.File
 
-class MainRepository(db: CodesquareDatabase) {
+class MainRepository(private val db: CodesquareDatabase) {
 
     val projectDao = db.projectDao()
     private val userDao = db.userDao()
@@ -62,15 +62,16 @@ class MainRepository(db: CodesquareDatabase) {
     }
 
     // clear all tables
-    suspend fun clearDatabases(onComplete: () -> Unit) {
-        userDao.clearTable()
+    fun clearDatabases(onComplete: () -> Unit) {
+        db.clearAllTables()
+        /*userDao.clearTable()
         projectDao.clearTable()
         chatChannelDao.clearTable()
         messageDao.clearTable()
         projectRequestDao.clearTable()
         notificationDao.clearTable()
         commentDao.clearTable()
-        searchQueryDao.clearTable()
+        searchQueryDao.clearTable()*/
         onComplete()
     }
 
@@ -536,6 +537,10 @@ class MainRepository(db: CodesquareDatabase) {
 
     suspend fun updateComment(comment: Comment) {
         commentDao.update(comment)
+    }
+
+    suspend fun dislikeLocalUserById(userId: String) {
+        userDao.dislikeLocalUserById(userId)
     }
 
     companion object {

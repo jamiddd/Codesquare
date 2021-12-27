@@ -769,8 +769,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.dislikeUser(userId) {
             if (!it.isSuccessful) {
                 setCurrentError(it.exception)
+            } else {
+                dislikeLocalUserById(userId)
             }
         }
+    }
+
+    private fun dislikeLocalUserById(userId: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.dislikeLocalUserById(userId)
     }
 
     @ExperimentalPagingApi
@@ -874,9 +880,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow
     }
 
-    fun onCommentLiked(comment: Comment) = viewModelScope.launch (Dispatchers.IO)  {
+    /*fun onCommentLiked(comment: Comment) = viewModelScope.launch (Dispatchers.IO)  {
         repo.onCommentLiked(comment)
-    }
+    }*/
 
     fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String, replyTo: String? = null, replyMessage: MessageMinimal? = null) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.sendTextMessage(chatChannelId, content, replyTo, replyMessage)) {

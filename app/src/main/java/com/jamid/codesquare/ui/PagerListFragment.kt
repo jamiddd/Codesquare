@@ -26,6 +26,7 @@ import com.google.android.material.button.MaterialButton
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -169,7 +170,6 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         }
                         infoText?.hide()
                         image?.hide()
-
                     }
                     is LoadState.Error -> {
                         Log.d(TAG, "Refresh function - Error")
@@ -186,8 +186,11 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         image?.show()
                     }
                     is LoadState.NotLoading -> {
-                        progressBar?.hide()
-                        refresher?.isRefreshing = false
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            delay(500)
+                            progressBar?.hide()
+                            refresher?.isRefreshing = false
+                        }
                     }
                 }
 
@@ -216,8 +219,11 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         }
                     }
                     is LoadState.NotLoading -> {
-                        progressBar?.hide()
-                        refresher?.isRefreshing = false
+                        viewLifecycleOwner.lifecycleScope.launch {
+                            delay(500)
+                            progressBar?.hide()
+                            refresher?.isRefreshing = false
+                        }
                     }
                 }
 

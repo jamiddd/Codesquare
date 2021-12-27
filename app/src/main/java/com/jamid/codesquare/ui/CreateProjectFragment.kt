@@ -239,7 +239,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         val tags = getTags()
                         viewModel.setCurrentProjectTags(tags)
 
-                        findNavController().navigate(R.id.action_createProjectFragment_to_locationFragment)
+                        findNavController().navigate(R.id.action_createProjectFragment_to_locationFragment, null, slideRightNavOptions())
                     }
                 }
 

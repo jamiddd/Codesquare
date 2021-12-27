@@ -95,7 +95,7 @@
         android:id="@+id/createAccountFragment"
         android:name="com.jamid.codesquare.ui.auth.CreateAccountFragment"
         tools:layout="@layout/fragment_create_account"
-        android:label="CreateAccountFragment" >
+        android:label="Create account" >
         <action
             android:id="@+id/action_createAccountFragment_to_emailVerificationFragment"
             app:destination="@id/emailVerificationFragment" />
@@ -258,6 +258,9 @@
         <action
             android:id="@+id/action_chatDetailFragment_to_reportFragment"
             app:destination="@id/reportFragment" />
+        <action
+            android:id="@+id/action_chatDetailFragment_to_channelGuidelinesFragment"
+            app:destination="@id/channelGuidelinesFragment" />
 
     </fragment>
     <fragment
@@ -478,4 +481,8 @@
         android:name="com.jamid.codesquare.ui.ForgotPasswordFragment"
         tools:layout="@layout/fragment_forgot_password"
         android:label="Reset password" />
+    <fragment
+        android:id="@+id/channelGuidelinesFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChannelGuidelinesFragment"
+        android:label="Update guidelines" />
 </navigation>

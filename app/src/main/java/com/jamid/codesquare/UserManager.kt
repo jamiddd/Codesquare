@@ -44,7 +44,6 @@ object UserManager {
         currentUserData.postValue(newUser)
     }
 
-
     private fun addTokenListener() {
         FirebaseMessaging.getInstance().token
             .addOnCompleteListener(OnCompleteListener { task ->
@@ -92,6 +91,16 @@ object UserManager {
                     onComplete(it)
                 }
             }
+        }
+    }
+
+    fun setAuthStateForceful(isSignedIn: Boolean) {
+        authStateData.postValue(isSignedIn)
+        this.isSignedIn = isSignedIn
+        if (!isSignedIn) {
+            isEmailVerified = false
+            isInitialized = false
+            currentUserData.postValue(null)
         }
     }
 

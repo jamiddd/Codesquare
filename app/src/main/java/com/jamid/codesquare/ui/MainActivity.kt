@@ -30,7 +30,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -313,32 +312,21 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 ContextCompat.getDrawable(this, R.drawable.ic_collab_logo_small)
             }
 
-            val sharedPreferences = getSharedPreferences("codesquare_shared", MODE_PRIVATE)
-            val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
+            val authFragments = arrayOf(R.id.splashFragment,
+                R.id.onBoardingFragment,
+                R.id.loginFragment,
+                R.id.createAccountFragment,
+                R.id.emailVerificationFragment,
+                R.id.profileImageFragment,
+                R.id.userInfoFragment)
 
             when (destination.id) {
-                R.id.splashFragment -> updateUi(
-                    shouldShowAppBar = false,
-                    baseFragmentBehavior = null
-                )
                 R.id.notificationCenterFragment -> updateUi(shouldShowTabLayout = true)
-                R.id.onBoardingFragment -> updateUi(
-                    shouldShowAppBar = false,
-                    baseFragmentBehavior = null
-                )
-                R.id.loginFragment -> {
+                in authFragments -> {
                     updateUi(
                         shouldShowAppBar = false,
                         baseFragmentBehavior = null
                     )
-
-                    // TODO("Change this")
-                    if (!isInitiatedOnce) {
-                        navController.navigate(R.id.action_loginFragment_to_onBoardingFragment, null, slideRightNavOptions())
-                        val editor = sharedPreferences.edit()
-                        editor.putBoolean("is_initiated_once", true)
-                        editor.apply()
-                    }
                 }
                 R.id.homeFragment -> {
                     updateUi(
@@ -367,6 +355,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                     updateUi(toolbarAdjustment = ToolbarAdjustment(true, R.color.normal_grey, false), shouldShowTabLayout = true)
                 }
                 else -> {
+                    // default fragment style
                     updateUi()
                 }
                 /*R.id.reportFragment, R.id.emailVerificationFragment, R.id.createProjectFragment, R.id.editProfileFragment, R.id.projectRequestFragment, R.id.savedProjectsFragment, R.id.commentsFragment, R.id.chatFragment, R.id.chatDetailFragment, R.id.projectContributorsFragment, R.id.tagFragment, R.id.preSearchFragment, R.id.settingsFragment, R.id.forgotPasswordFragment, R.id.updatePasswordFragment, R.id.messageDetailFragment -> {
@@ -422,24 +411,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
         UserManager.currentUserLive.observe(this) {
             if (it != null) {
-              /*  // looking for newly added chat channel
-                lifecycleScope.launch (Dispatchers.IO) {
-                    for (channel in it.chatChannels) {
-                        val chatChannel = viewModel.getLocalChatChannel(channel)
-                        if (chatChannel == null) {
-                            when (val result = viewModel.getChatChannel(channel)) {
-                                is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                                is Result.Success -> {
-                                    if (result.data.exists()) {
-                                        val chatChannel1 = result.data.toObject(ChatChannel::class.java)!!
-//                                        ChatInterface.addChannelMessagesListener(chatChannel1)
-                                        viewModel.insertChatChannels(listOf(chatChannel1))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }*/
+                viewModel.currentUserBitmap = null
                 viewModel.insertCurrentUser(it)
             }
         }
@@ -1100,24 +1072,36 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
     override fun onCommentLike(comment: Comment) {
         val currentUser = UserManager.currentUser
-        FireUtility.likeComment(comment) {
-            val content = currentUser.name + " liked your comment"
-            val notification = Notification.createNotification(content, currentUser.id, comment.senderId, userId = currentUser.id, title = currentUser.name)
-            FireUtility.sendNotification(notification) {
+        if (comment.isLiked) {
+            FireUtility.likeComment(comment) {
+                val content = currentUser.name + " liked your comment"
+                val notification = Notification.createNotification(content, currentUser.id, comment.senderId, userId = currentUser.id, title = currentUser.name)
+                FireUtility.sendNotification(notification) {
+                    if (it.isSuccessful) {
+                        val newCommentLikesList = comment.likes.removeItemFromList(currentUser.id)
+                        comment.likesCount = comment.likesCount - 1
+                        comment.isLiked = false
+                        comment.likes = newCommentLikesList
+
+                        viewModel.updateComment(comment)
+                    } else {
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
+            }
+        } else {
+            FireUtility.dislikeComment(comment) {
                 if (it.isSuccessful) {
-                    val newCommentLikesList = comment.likes.toMutableList()
-                    comment.likesCount = comment.likesCount - 1
-                    comment.isLiked = false
-                    newCommentLikesList.remove(currentUser.id)
-
+                    val newCommentLikesList = comment.likes.addItemToList(currentUser.id)
+                    comment.likesCount = comment.likesCount + 1
+                    comment.isLiked = true
+                    comment.likes = newCommentLikesList
                     viewModel.updateComment(comment)
-
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
             }
         }
-        viewModel.onCommentLiked(comment)
     }
 
     override fun onCommentReply(comment: Comment) {
@@ -1577,7 +1561,13 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                             onProjectCommentClick(project1)
                         }
                         null -> {
-                            // delete notification
+                            FireUtility.deleteNotification(notification) { it1 ->
+                                if (it1.isSuccessful) {
+                                    viewModel.deleteNotification(notification)
+                                } else {
+                                    viewModel.setCurrentError(it1.exception)
+                                }
+                            }
                         }
                     }
                 }
@@ -1586,16 +1576,6 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
             }
         }
     }
-
-    /*private fun deleteNotification(notification: Notification) {
-        FireUtility.deleteNotification(notification) { it1 ->
-            if (it1.isSuccessful) {
-                viewModel.deleteNotification(notification)
-            } else {
-                viewModel.setCurrentError(it1.exception)
-            }
-        }
-    }*/
 
     override fun onNotificationUserNotFound(notification: Notification) {
         // the user is probably archived or deleted, this notification must be deleted.

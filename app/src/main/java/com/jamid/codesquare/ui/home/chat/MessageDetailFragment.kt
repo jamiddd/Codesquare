@@ -17,6 +17,7 @@ import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentMessageDetailBinding
+import com.jamid.codesquare.getTextForChatTime
 import com.jamid.codesquare.toast
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -27,8 +28,8 @@ class MessageDetailFragment: Fragment() {
 
     private lateinit var binding: FragmentMessageDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private val readListAdapter = UserAdapter()
-    private val deliveryListAdapter = UserAdapter()
+    private val readListAdapter = UserAdapter().apply { shouldShowLikeButton = false }
+    private val deliveryListAdapter = UserAdapter().apply { shouldShowLikeButton = false }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,7 +65,7 @@ class MessageDetailFragment: Fragment() {
             }
 
         binding.currentUserMessage.messageContent.text = message.content
-        binding.currentUserMessage.messageCreatedAt.text = SimpleDateFormat("hh:mm a, EEEE", Locale.UK).format(message.createdAt)
+        binding.currentUserMessage.messageCreatedAt.text = getTextForChatTime(message.createdAt)
 
         binding.readByRecycler.apply {
             adapter = readListAdapter

@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -43,11 +44,17 @@ class LoginFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
 
-        val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
-        tabLayout.hide()
+        val sharedPreferences = activity.getSharedPreferences("codesquare_shared",
+            AppCompatActivity.MODE_PRIVATE
+        )
+        val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
 
-        val toolbar = activity.findViewById<MaterialToolbar>(R.id.main_toolbar)
-        toolbar.hide()
+        if (!isInitiatedOnce) {
+            findNavController().navigate(R.id.action_loginFragment_to_onBoardingFragment, null, slideRightNavOptions())
+            val editor = sharedPreferences.edit()
+            editor.putBoolean("is_initiated_once", true)
+            editor.apply()
+        }
 
         binding.signUpBtn.setOnClickListener {
             findNavController().navigate(R.id.action_loginFragment_to_createAccountFragment, null, slideRightNavOptions())

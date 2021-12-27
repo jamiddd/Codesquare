@@ -85,8 +85,7 @@ class ChatDetailFragment: Fragment() {
                 binding.chatProjectImage.setImageURI(project.images.first())
 
                 binding.updateGuidelinesBtn.setOnClickListener {
-                    val frag = ChannelGuidelinesFragment.newInstance(project)
-                    frag.show(requireActivity().supportFragmentManager, "ChannelGuidelinesUpdate")
+                    findNavController().navigate(R.id.action_chatDetailFragment_to_channelGuidelinesFragment, bundleOf("project" to project), slideRightNavOptions())
                 }
             }
         }

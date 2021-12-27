@@ -2,12 +2,12 @@ package com.jamid.codesquare.ui.home.chat
 
 import android.app.Dialog
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.FrameLayout
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,11 +20,12 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
 
 @ExperimentalPagingApi
-class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
+class ChannelGuidelinesFragment: Fragment() {
 
     private lateinit var binding: FragmentChannelGuidelinesBinding
     private val viewModel: MainViewModel by activityViewModels()
     private val currentGuidelines = MutableLiveData<List<String>>()
+    private lateinit var project: Project
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -32,10 +33,38 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentChannelGuidelinesBinding.inflate(inflater)
+        setHasOptionsMenu(true)
         return binding.root
     }
 
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.update_guidelines_menu, menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.update_guidelines -> {
+
+                val changes = mapOf(
+                    "rules" to currentGuidelines.value.orEmpty()
+                )
+
+                viewModel.updateProject(project.id, changes) {
+                    if (it.isSuccessful) {
+                        project.rules = currentGuidelines.value.orEmpty()
+                        viewModel.updateLocalProject(project)
+                        toast("Project guidelines updated")
+                        findNavController().navigateUp()
+                    } else {
+                        toast("Something went wrong!")
+                    }
+                }
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+ /*   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val dialog = super.onCreateDialog(savedInstanceState)
         dialog.setCancelable(false)
 
@@ -49,7 +78,7 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
 
         return dialog
     }
-
+*/
     private fun getNewAdapter(): GuidelinesAdapter {
         return GuidelinesAdapter { _, p ->
             val existingList = currentGuidelines.value.orEmpty().toMutableList()
@@ -61,11 +90,7 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.rulesToolbar.setNavigationOnClickListener {
-            dismiss()
-        }
-
-        val project = arguments?.getParcelable<Project>("project") ?: return
+        project = arguments?.getParcelable("project") ?: return
 
         currentGuidelines.postValue(project.rules)
 
@@ -88,8 +113,6 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
             }
         }
 
-
-
         binding.addRuleBtn.setOnClickListener {
             val newRuleText = binding.newRuleText.text
             if (!newRuleText.isNullOrBlank()) {
@@ -100,29 +123,6 @@ class ChannelGuidelinesFragment: BottomSheetDialogFragment() {
                 currentGuidelines.postValue(newList)
                 binding.newRuleText.text.clear()
             }
-        }
-
-        binding.rulesToolbar.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.update_guidelines -> {
-
-                    val changes = mapOf(
-                        "rules" to currentGuidelines.value.orEmpty()
-                    )
-
-                    viewModel.updateProject(project.id, changes) {
-                        if (it.isSuccessful) {
-                            project.rules = currentGuidelines.value.orEmpty()
-                            viewModel.updateLocalProject(project)
-                            toast("Project guidelines updated")
-                            dismiss()
-                        } else {
-                            toast("Something went wrong!")
-                        }
-                    }
-                }
-            }
-            true
         }
 
     }
