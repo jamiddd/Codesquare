@@ -49,9 +49,25 @@ class ProjectListFragment: BottomSheetDialogFragment(), ProjectMiniItemClickList
 
         viewModel.getCurrentUserProjects().observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
+                if (receiver.projectsCount.toInt() != it.size) {
+                    // download all projects
+                    FireUtility.downloadAllUserProjects { it1 ->
+                        when (it1) {
+                            is Result.Error -> viewModel.setCurrentError(it1.exception)
+                            is Result.Success -> {
+                                viewModel.insertProjects(*it1.data.toTypedArray())
+                            }
+                            null -> {
+                                // no projects
+                            }
+                        }
+                    }
+                }
                 projectListAdapter.submitList(it)
             }
         }
+
+
 
     }
 

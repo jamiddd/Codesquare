@@ -49,11 +49,13 @@ class ProfileImageFragment: Fragment() {
         binding.imageUpdateNextBtn.setOnClickListener {
             binding.profileImageCompleteProgress.show()
             binding.imageUpdateNextBtn.disappear()
+            binding.skipImageUpdateBtn.isEnabled = false
             FireUtility.updateUser2(currentUser, mapOf("photo" to profileImage)) {
-                binding.profileImageCompleteProgress.show()
+                binding.profileImageCompleteProgress.hide()
                 if (it.isSuccessful) {
                     findNavController().navigate(R.id.action_profileImageFragment_to_userInfoFragment, null, slideRightNavOptions())
                 } else {
+                    binding.skipImageUpdateBtn.isEnabled = true
                     binding.imageUpdateNextBtn.show()
                     viewModel.setCurrentError(it.exception)
                 }

@@ -392,6 +392,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
                         listenForNotifications()
+                        viewModel.lateInitChatController(UserManager.currentUserId)
                     }
                 } else {
                     viewModel.isNetworkAvailable.removeObservers(this)

@@ -18,6 +18,8 @@ import com.jamid.codesquare.data.User
 @ExperimentalPagingApi
 class ChatController(private val viewModel: MainViewModel, private val mContext: Context) {
 
+    private var isInitialized = false
+
     private val onChannelsReceived = OnCompleteListener<QuerySnapshot> {
         if (it.isSuccessful) {
             val querySnapshot = it.result
@@ -39,12 +41,23 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
     init {
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null) {
-            Firebase.firestore.collection(CHAT_CHANNELS)
-                .whereArrayContains(CONTRIBUTORS, currentUser.uid)
-                .get()
-                .addOnCompleteListener(onChannelsReceived)
+            isInitialized = true
+            initialize(currentUser.uid)
+        }
+    }
 
-            addChannelsListener(currentUser.uid)
+    private fun initialize(currentUserId: String) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
+            .get()
+            .addOnCompleteListener(onChannelsReceived)
+
+        addChannelsListener(currentUserId)
+    }
+
+    fun lateInitialize(currentUserId: String) {
+        if (!isInitialized) {
+            initialize(currentUserId)
         }
     }
 

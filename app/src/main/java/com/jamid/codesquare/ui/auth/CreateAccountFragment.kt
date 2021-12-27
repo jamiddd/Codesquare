@@ -6,21 +6,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.auth.*
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
 import com.jamid.codesquare.ui.MainActivity
+
 @ExperimentalPagingApi
-class CreateAccountFragment: Fragment() {
+class CreateAccountFragment : Fragment() {
 
     private lateinit var binding: FragmentCreateAccountBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -42,46 +43,86 @@ class CreateAccountFragment: Fragment() {
             findNavController().navigateUp()
         }
 
+        binding.nameText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.nameText.error = null
+            binding.nameText.isErrorEnabled = false
+        }
+
+        binding.emailText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.emailText.error = null
+            binding.emailText.isErrorEnabled = false
+        }
+
+        binding.passowrdText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.passowrdText.error = null
+            binding.passowrdText.isErrorEnabled = false
+        }
+
+        binding.confirmPasswordText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.confirmPasswordText.error = null
+            binding.confirmPasswordText.isErrorEnabled = false
+        }
+
         binding.createBtn.setOnClickListener {
+
+            binding.createBtn.isEnabled = false
 
             val nameText = binding.nameText.editText?.text
             if (nameText.isNullOrBlank()) {
-                toast("Name cannot be empty")
+                binding.nameText.isErrorEnabled = true
+                binding.nameText.error = "Name cannot be empty"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val emailText = binding.emailText.editText?.text
             if (emailText.isNullOrBlank()) {
-                toast("Email cannot be empty")
+                binding.emailText.isErrorEnabled = true
+                binding.emailText.error = "Email cannot be empty"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             if (!emailText.toString().isValidEmail()) {
-                toast("Email is not valid")
+                binding.emailText.isErrorEnabled = true
+                binding.emailText.error = "Email is not valid"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val passwordText = binding.passowrdText.editText?.text
             if (passwordText.isNullOrBlank()) {
-                toast("Password cannot be empty")
+                binding.passowrdText.isErrorEnabled = true
+                binding.passowrdText.error = "Password cannot be empty"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val password = passwordText.toString()
 
             if (!password.isValidPassword()) {
-                toast("Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol")
+                binding.passowrdText.isErrorEnabled = true
+                binding.passowrdText.error = "Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val confirmPasswordText = binding.confirmPasswordText.editText?.text
             if (confirmPasswordText.isNullOrBlank()) {
-                toast("Confirm the given password again.")
+                binding.confirmPasswordText.isErrorEnabled = true
+                binding.confirmPasswordText.error = "Confirm the given password again."
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             if (password != confirmPasswordText.toString()) {
-                toast("Password do not match")
+                binding.confirmPasswordText.isErrorEnabled = true
+                binding.confirmPasswordText.error = "Password does not match"
+                binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
 
@@ -97,9 +138,14 @@ class CreateAccountFragment: Fragment() {
         }
 
         UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
+            loadingDialog?.dismiss()
+            binding.createBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
-                loadingDialog?.dismiss()
-                findNavController().navigate(R.id.action_createAccountFragment_to_emailVerificationFragment, null, slideRightNavOptions())
+                findNavController().navigate(
+                    R.id.action_createAccountFragment_to_emailVerificationFragment,
+                    null,
+                    slideRightNavOptions()
+                )
             }
         }
 
@@ -124,6 +170,20 @@ class CreateAccountFragment: Fragment() {
             }
         }
 
+        binding.createBtn.isEnabled = false
+
+    }
+
+    private fun onTextChange() {
+        val nameText = binding.nameText.editText?.text
+        val emailText = binding.emailText.editText?.text
+        val passwordText = binding.passowrdText.editText?.text
+        val confirmPasswordText = binding.confirmPasswordText.editText?.text
+
+        binding.createBtn.isEnabled = !nameText.isNullOrBlank() && nameText.trim()
+            .toString().length >= 4 && !emailText.isNullOrBlank() && emailText.toString()
+            .isValidEmail() && !passwordText.isNullOrBlank() && passwordText.toString()
+            .isValidPassword() && !confirmPasswordText.isNullOrBlank() && confirmPasswordText.toString() == passwordText.toString()
     }
 
     private fun showDialog() {
@@ -152,6 +212,7 @@ class CreateAccountFragment: Fragment() {
                     }
                 }
             } else {
+                binding.createBtn.isEnabled = true
                 viewModel.setCurrentError(it.exception)
                 Firebase.auth.signOut()
             }

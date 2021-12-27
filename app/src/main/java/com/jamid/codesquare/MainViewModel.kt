@@ -1459,6 +1459,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.deleteNotificationById(id)
     }
 
+    fun lateInitChatController(currentUserId: String) {
+        chatController.lateInitialize(currentUserId)
+    }
+
     companion object {
         private const val TAG = "MainViewModel"
     }

@@ -1857,6 +1857,18 @@ object FireUtility {
         }
     }
 
+    /**
+     * @param documentRef Reference of the document to be deleted
+     * @param onComplete Callback for deletion (Optional).
+    * */
+    private fun deleteDocument(documentRef: DocumentReference, onComplete: ((task: Task<Void>) -> Unit)? = null) {
+        // passive one shot, low risk call
+        val task = documentRef.delete()
+        if (onComplete != null) {
+            task.addOnCompleteListener(onComplete)
+        }
+    }
+
     fun getProject(projectId: String, onComplete: (Result<Project>?) -> Unit) {
         val ref = Firebase.firestore.collection("projects").document(projectId)
         getDocument(ref) {
@@ -1864,6 +1876,7 @@ object FireUtility {
                 if (it.result.exists()) {
                     onComplete(Result.Success(it.result.toObject(Project::class.java)!!))
                 } else {
+                    deleteDocument(it.result.reference)
                     onComplete(null)
                 }
             } else {
@@ -1897,6 +1910,7 @@ object FireUtility {
                 if (it.result.exists()) {
                     onComplete(Result.Success(it.result.toObject(User::class.java)!!))
                 } else {
+                    deleteDocument(it.result.reference)
                     onComplete(null)
                 }
             } else {
@@ -2160,6 +2174,29 @@ object FireUtility {
                     onComplete(false, it.exception)
                 }
             }
+    }
+
+    fun downloadAllUserProjects(onComplete: (result: Result<List<Project>>?) -> Unit) {
+        val currentUser = UserManager.currentUser
+        Firebase.firestore.collection(PROJECTS)
+            .whereEqualTo("creator.userId", currentUser.id)
+            .whereEqualTo("expiredAt", -1)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val querySnapshot = it.result
+                    if (querySnapshot != null && !querySnapshot.isEmpty) {
+                        val projects = querySnapshot.toObjects(Project::class.java)
+                        onComplete(Result.Success(projects))
+                    } else {
+                        onComplete(null)
+                    }
+                } else {
+                    onComplete(it.exception?.let { it1 -> Result.Error(it1) })
+                }
+            }
+
+
     }
 
 }

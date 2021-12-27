@@ -31,6 +31,7 @@ import com.algolia.search.saas.IndexQuery
 import com.jamid.codesquare.data.*
 import kotlinx.serialization.json.JsonObject
 import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.abs
@@ -273,12 +274,22 @@ fun getTextForChatTime(time: Long): String {
     val oneDay = 24 * 60 * 60 * 1000
     val oneWeek = 7 * oneDay
     val now = System.currentTimeMillis()
+    val messageDate = Calendar.getInstance()
+    messageDate.time = Date(time)
+
+    val nowDate = Calendar.getInstance()
+    nowDate.time = Date(time)
+
     val diff = abs(now - time)
+    val isDifferentDay = messageDate.get(Calendar.DAY_OF_MONTH) != nowDate.get(Calendar.DAY_OF_MONTH)
     return when {
         diff > oneWeek -> {
             SimpleDateFormat("hh:mm a dd/MM/yyyy", Locale.UK).format(time)
         }
         diff > oneDay -> {
+            SimpleDateFormat("hh:mm a EEEE", Locale.UK).format(time)
+        }
+        isDifferentDay -> {
             SimpleDateFormat("hh:mm a EEEE", Locale.UK).format(time)
         }
         else -> {

@@ -9,6 +9,7 @@ import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -16,14 +17,14 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentLoginBinding
 import com.jamid.codesquare.ui.MainActivity
 
 @ExperimentalPagingApi
-class LoginFragment: Fragment() {
+class LoginFragment : Fragment() {
 
     private lateinit var binding: FragmentLoginBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -44,20 +45,29 @@ class LoginFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
         val activity = requireActivity()
 
-        val sharedPreferences = activity.getSharedPreferences("codesquare_shared",
+        val sharedPreferences = activity.getSharedPreferences(
+            "codesquare_shared",
             AppCompatActivity.MODE_PRIVATE
         )
         val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
 
         if (!isInitiatedOnce) {
-            findNavController().navigate(R.id.action_loginFragment_to_onBoardingFragment, null, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_loginFragment_to_onBoardingFragment,
+                null,
+                slideRightNavOptions()
+            )
             val editor = sharedPreferences.edit()
             editor.putBoolean("is_initiated_once", true)
             editor.apply()
         }
 
         binding.signUpBtn.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_createAccountFragment, null, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_loginFragment_to_createAccountFragment,
+                null,
+                slideRightNavOptions()
+            )
         }
 
         activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
@@ -75,31 +85,54 @@ class LoginFragment: Fragment() {
             signInWithGoogle()
         }
 
+        binding.emailText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.emailText.error = null
+            binding.emailText.isErrorEnabled = false
+        }
+
+        binding.passwordText.editText?.doAfterTextChanged {
+            onTextChange()
+            binding.passwordText.error = null
+            binding.passwordText.isErrorEnabled = false
+        }
+
         binding.signInBtn.setOnClickListener {
+
             hideKeyboard()
+
+            binding.signInBtn.isEnabled = false
+
             val emailText = binding.emailText.editText?.text
             if (emailText.isNullOrBlank()) {
-                toast("Email cannot be empty")
+                binding.emailText.isErrorEnabled = true
+                binding.emailText.error = "Email cannot be empty"
+                binding.signInBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val email = emailText.toString()
 
             if (!email.isValidEmail()) {
-                toast("Email must be valid")
+                binding.emailText.isErrorEnabled = true
+                binding.emailText.error = "Email must be valid"
+                binding.signInBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val passwordText = binding.passwordText.editText?.text
             if (passwordText.isNullOrBlank()) {
-                toast("Password cannot be empty")
+                binding.passwordText.isErrorEnabled = true
+                binding.passwordText.error = "Password cannot be empty"
+                binding.signInBtn.isEnabled = true
                 return@setOnClickListener
             }
 
             val password = passwordText.toString()
-
             if (!password.isValidPassword()) {
-                toast("Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol")
+                binding.passwordText.isErrorEnabled = true
+                binding.passwordText.error = "Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol"
+                binding.signInBtn.isEnabled = true
                 return@setOnClickListener
             }
 
@@ -109,19 +142,42 @@ class LoginFragment: Fragment() {
 
         UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
             loadingDialog?.dismiss()
+            binding.signInBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
-                findNavController().navigate(R.id.action_loginFragment_to_homeFragment, null, slideRightNavOptions())
+                findNavController().navigate(
+                    R.id.action_loginFragment_to_homeFragment,
+                    null,
+                    slideRightNavOptions()
+                )
             }
         }
 
         binding.forgotPasswordBtn.setOnClickListener {
-            findNavController().navigate(R.id.action_loginFragment_to_forgotPasswordFragment, null, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_loginFragment_to_forgotPasswordFragment,
+                null,
+                slideRightNavOptions()
+            )
         }
+
+        binding.signInBtn.isEnabled = false
+
 
     }
 
+    private fun onTextChange() {
+        val emailText = binding.emailText.editText?.text
+        val passwordText = binding.passwordText.editText?.text
+
+        binding.signInBtn.isEnabled =
+            emailText.isNullOrBlank() == false && emailText.trim().toString()
+                .isValidEmail() && passwordText.isNullOrBlank() == false && passwordText.toString()
+                .isValidPassword()
+    }
+
     private fun showDialog() {
-        loadingDialog = (activity as MainActivity).showLoadingDialog("Signing in .. Please wait for a while")
+        loadingDialog =
+            (activity as MainActivity).showLoadingDialog("Signing in .. Please wait for a while")
     }
 
     private fun signIn(email: String, password: String) {
@@ -132,8 +188,27 @@ class LoginFragment: Fragment() {
             if (it.isSuccessful) {
                 Log.d(TAG, "Login successful")
             } else {
+                binding.signInBtn.isEnabled = true
                 loadingDialog?.dismiss()
                 viewModel.setCurrentError(it.exception)
+
+                when (it.exception) {
+                    is FirebaseAuthInvalidCredentialsException -> {
+                        binding.passwordText.isErrorEnabled = true
+                        binding.passwordText.error = "Either email or password do not match"
+                    }
+                    is FirebaseAuthInvalidUserException -> {
+                        binding.passwordText.isErrorEnabled = true
+                        binding.passwordText.error = "No user account exists with this email"
+                    }
+                    else -> {
+                        binding.passwordText.isErrorEnabled = true
+                        binding.passwordText.error = "Unknown error occurred. Maybe check your internet connection."
+                    }
+                }
+
+
+
             }
         }
     }
