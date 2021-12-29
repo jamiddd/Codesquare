@@ -7,7 +7,6 @@ import android.view.MotionEvent
 import androidx.annotation.IntDef
 import androidx.annotation.Nullable
 import com.facebook.common.logging.FLog
-import com.jamid.eastyliantest.views.zoomable.ZoomableController
 
 
 open class DefaultZoomableController(

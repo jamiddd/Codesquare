@@ -1,9 +1,7 @@
 package com.jamid.codesquare.listeners
 
 import android.view.View
-import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.SearchQuery
-import com.jamid.codesquare.data.User
 
 interface SearchItemClickListener {
     fun onSearchItemClick(searchQuery: SearchQuery)

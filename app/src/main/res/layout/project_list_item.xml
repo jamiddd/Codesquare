@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -41,7 +40,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="@font/title_semi"
         android:minWidth="60dp"
-        android:text="Cancel"
+        android:text="@string/cancel"
         android:textAllCaps="false"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         android:visibility="gone"
@@ -58,7 +57,7 @@
         android:layout_marginStart="4dp"
         android:layout_marginEnd="8dp"
         android:fontFamily="@font/title_semi"
-        android:text="Invite"
+        android:text="@string/invite"
         android:textAllCaps="false"
         android:textAppearance="@style/TextAppearance.AppCompat.Small"
         app:cornerRadius="8dp"

@@ -1,10 +1,8 @@
 package com.jamid.codesquare.ui
 
-import android.os.Bundle
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter

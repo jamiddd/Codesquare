@@ -12,7 +12,6 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.viewpager.SearchPagerAdapter
 import com.jamid.codesquare.data.SearchQuery

@@ -59,12 +59,12 @@
     <string name="empty_comments_greet">No comments yet. Be the first one to comment.</string>
     <string name="replying_to">Replying to</string>
     <string name="comment">Comment</string>
-    <string name="report">Report</string>
+
     <string name="delete">Delete</string>
     <string name="update_interests">Update interests</string>
     <string name="you">You</string>
     <string name="revoke">Revoke</string>
-    <string name="invite">Invite</string>
+
     <string name="undo">Undo</string>
     <string name="join">Join</string>
     <string name="email_verification_message">Verification email sent. Check your mail.</string>
@@ -72,20 +72,61 @@
     <string name="skip">Skip</string>
     <string name="skip_u"><u>Skip</u></string>
     <string name="skip_cap_u"><u>SKIP</u></string>
-    <string name="next">Next</string>
-    <string name="back">Back</string>
+
+
     <string name="login">Login</string>
     <string name="search_for_projects">Search for projects</string>
     <string name="empty_collaborations_greet">You haven\'t collaborated with anyone. Your collaborations appear here.</string>
-    <string name="profile_upload_loading_text">Updating profile. Please wait ...</string>
+    <string name="profile_upload_loading_text">Updating profile. Please wait …</string>
     <string name="edit">Edit</string>
     <string name="dislike">Dislike</string>
     <string name="like">Like</string>
     <string name="empty_user_projects_greet">Create new project so that other people can see your work and collaborate</string>
-    <string name="empty_saved_projects_greet">You haven\'t saved any projects yet. Save project that you might wanna visit later.</string>
-    <string name="create_project_loading">Creating project. Please wait ...</string>
+    <string name="empty_saved_projects_greet">You haven\'t saved any projects yet. Save project that you might want to visit later.</string>
+    <string name="create_project_loading">Creating project. Please wait …</string>
     <string name="add_location">Add Location</string>
     <string name="empty_notifications_greet">No notifications at the moment. Your notifications appear here. However notifications like project request and invites appear separately.</string>
     <string name="common_error_text">Something went wrong :(</string>
+    <string name="name">Name</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="get_started">Get started,</string>
+    <string name="create_account_msg">Create an account to connect and collaborate with others to create awesome projects</string>
+    <string name="create">Create</string>
+    <string name="already_have_an_account">Already have an account?</string>
+    <string name="back">Back</string>
+    <string name="creating_your_project">Creating your project …</string>
+    <string name="create_project_info">1. A project can have images and information regarding what you\'re creating.\n2.Add links to your project (Ex: links to source files, youtube videos, reference, etc.). \n3. Add tags to your project to make your project searchable by other users and also it is a good practice to know the field and info related to your project.</string>
+    <string name="username">Username</string>
+    <string name="tag">Tag</string>
+    <string name="about">About</string>
+    <string name="add_interest">Add Interest</string>
+    <string name="feedback_info">Let us know what we can do to improve our app experience even more. Report if there are any bugs or if there are any feature requests.</string>
+    <string name="give_feedback">Give feedback</string>
+    <string name="write_your_feedback">Write your feedback …</string>
+    <string name="forgot_password_info">Enter your email. We will send you a link to reset your password.</string>
+    <string name="done">Done</string>
+    <string name="sign_in_info">Sign in to get the latest projects people are working on, participate and learn.</string>
+    <string name="sign_in">Sign in</string>
+    <string name="create_account_link">Don\'t have an account?\nCreate new account</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="forgot_password">Forgot password</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="update_profile_image">Update profile image</string>
+    <string name="reason">Reason</string>
+    <string name="report_info">Your reason must be valid and informative. Add screenshots to support your claim (optional).</string>
+    <string name="report">Report</string>
+    <string name="add_screenshots">Add screenshots</string>
+    <string name="name_of_context">Name of Context</string>
+    <string name="no_projects_found">No projects found</string>
+    <string name="no_accounts_found">No accounts found</string>
+    <string name="update_password_header">Enter old password to change password …</string>
+    <string name="old_password">Old password</string>
+    <string name="new_password">New password</string>
+    <string name="verify">Verify</string>
+    <string name="cancel">Cancel</string>
+    <string name="invite">Invite</string>
 
 </resources>

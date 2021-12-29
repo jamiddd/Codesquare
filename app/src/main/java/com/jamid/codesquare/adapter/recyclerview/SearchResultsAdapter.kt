@@ -9,11 +9,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
-import com.jamid.codesquare.SearchViewModel
 import com.jamid.codesquare.adapter.comparators.PreviousQueryComparator
-import com.jamid.codesquare.data.QUERY_TYPE_PROJECT
 import com.jamid.codesquare.data.SearchQuery
-import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
 class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener): ListAdapter<SearchQuery, SearchResultsAdapter.SearchResultViewHolder>(PreviousQueryComparator()){

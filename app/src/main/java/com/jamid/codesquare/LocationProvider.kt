@@ -35,7 +35,7 @@ object LocationProvider {
     var isLocationEnabled = false
     var isLocationPermissionAvailable = false
     var currentLocation: Location? = null
-    var nearbyAddresses: List<Address> = emptyList()
+    private var nearbyAddresses: List<Address> = emptyList()
     private var errors: List<Exception> = emptyList()
     private lateinit var geoCoder: Geocoder
 

@@ -306,54 +306,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun onCommentLiked(comment: Comment) {
-        val currentUser = UserManager.currentUser
-
-        val isLiked = currentUser.likedComments.contains(comment.commentId)
-
-        val result = if (isLiked) {
-            // dislike
-            FireUtility.dislikeComment(currentUser.id, comment)
-        } else {
-            // like
-            val content = currentUser.name + " liked your comment"
-            val notification = Notification.createNotification(content, currentUser.id, comment.senderId, userId = currentUser.id, title = currentUser.name)
-            notificationDao.insert(notification)
-            FireUtility.likeComment(currentUser.id, comment, notification)
-        }
-
-        when (result) {
-            is Result.Error -> {
-                Log.e(TAG, "Error while liking or disliking a comment -> " + result.exception.localizedMessage.orEmpty())
-            }
-            is Result.Success -> {
-                // insert the new project
-                val newLikedCommentsList = currentUser.likedComments.toMutableList()
-                val newCommentLikesList = comment.likes.toMutableList()
-
-                if (isLiked) {
-                    comment.likesCount = comment.likesCount - 1
-                    comment.isLiked = false
-                    newLikedCommentsList.remove(comment.commentId)
-                    newCommentLikesList.remove(currentUser.id)
-                } else {
-                    comment.likesCount = comment.likesCount + 1
-                    comment.isLiked = true
-                    newLikedCommentsList.add(comment.commentId)
-                    newCommentLikesList.add(currentUser.id)
-                }
-
-                comment.likes = newCommentLikesList
-                commentDao.insert(comment)
-
-                // insert the new user
-                currentUser.likedComments = newLikedCommentsList
-                userDao.insert(currentUser)
-            }
-        }
-
-    }
-
     suspend fun insertUsers(users: Array<out User>) {
         val currentUser = UserManager.currentUser
         val usersList = mutableListOf<User>()
@@ -541,6 +493,10 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun dislikeLocalUserById(userId: String) {
         userDao.dislikeLocalUserById(userId)
+    }
+
+    suspend fun getLocalProject(projectId: String): Project? {
+        return projectDao.getProject(projectId)
     }
 
     companion object {

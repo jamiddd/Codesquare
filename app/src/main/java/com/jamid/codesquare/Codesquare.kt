@@ -4,7 +4,6 @@ import android.app.Application
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.android.libraries.places.api.Places
 import com.google.firebase.FirebaseApp
-import com.jamid.codesquare.ui.home.chat.ChatController
 
 class Codesquare: Application() {
 

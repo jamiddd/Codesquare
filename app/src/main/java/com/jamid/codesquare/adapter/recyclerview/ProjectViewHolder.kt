@@ -21,7 +21,6 @@ import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -317,11 +316,14 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
 
     private fun setJoinButton(project: Project) {
-        val currentUserId = Firebase.auth.currentUser?.uid
-        if (currentUserId != null) {
-            Firebase.firestore.collection("projectRequests")
-                .whereEqualTo("projectId", project.id)
-                .whereEqualTo("senderId", currentUserId)
+        val currentUserId = UserManager.currentUserId
+
+        if (project.isBlocked) {
+            joinBtn.hide()
+        } else {
+            Firebase.firestore.collection(PROJECT_REQUESTS)
+                .whereEqualTo(PROJECT_ID, project.id)
+                .whereEqualTo(SENDER_ID, currentUserId)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
                         Log.e(TAG, error.localizedMessage.orEmpty())
@@ -346,7 +348,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         }
                     }
                 }
-
         }
     }
 

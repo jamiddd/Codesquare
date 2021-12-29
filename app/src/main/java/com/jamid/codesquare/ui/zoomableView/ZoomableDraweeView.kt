@@ -22,7 +22,6 @@ import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
 import com.facebook.drawee.generic.GenericDraweeHierarchyInflater
 import com.facebook.drawee.interfaces.DraweeController
 import com.facebook.drawee.view.DraweeView
-import com.jamid.eastyliantest.views.zoomable.ZoomableController
 
 
 /**

@@ -1,9 +1,6 @@
 package com.jamid.codesquare.db
 
-import android.util.Log
 import androidx.paging.ExperimentalPagingApi
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.imagepipeline.request.ImageRequest
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Project

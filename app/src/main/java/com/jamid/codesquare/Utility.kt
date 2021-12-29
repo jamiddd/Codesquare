@@ -18,7 +18,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.animation.doOnEnd
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
 import androidx.core.view.setMargins
@@ -29,9 +28,7 @@ import androidx.navigation.navOptions
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.IndexQuery
 import com.jamid.codesquare.data.*
-import kotlinx.serialization.json.JsonObject
 import java.text.SimpleDateFormat
-import java.time.Instant
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.math.abs
@@ -51,10 +48,6 @@ fun getWindowWidth() = Resources.getSystem().displayMetrics.widthPixels
 
 fun View.show() {
     this.visibility = View.VISIBLE
-}
-
-fun checkIfNetworkExists() {
-
 }
 
 fun View.showWithAnimations() {
@@ -611,37 +604,6 @@ fun Context.accentColor(): Int {
     return color
 }
 
-fun getCircleBitmap(bitmap: Bitmap): Bitmap {
-
-    Log.d(TAG, "${bitmap.width} x ${bitmap.height}")
-
-    val output = Bitmap.createBitmap(
-        bitmap.width,
-        bitmap.height,
-        Bitmap.Config.ARGB_8888
-    )
-    val canvas = Canvas(output)
-
-    val color = -0xbdbdbe
-    val paint = Paint()
-    val rect = Rect(0, 0, bitmap.width, bitmap.height)
-
-    paint.isAntiAlias = true
-    canvas.drawARGB(0, 0, 0, 0)
-    paint.color = color
-
-    canvas.drawCircle(
-        bitmap.width / 2f, bitmap.height / 2f,
-        (minOf(bitmap.width, bitmap.height)) / 2f, paint
-    )
-    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-    canvas.drawBitmap(bitmap, rect, rect, paint)
-
-    Log.d(TAG, "${output.width} x ${output.height}")
-
-    return output
-}
-
 /*fun BottomNavigationView.attachToViewPager(viewPager: ViewPager2) {
 
     val menuItems = this.menu.iterator().withIndex()
@@ -667,15 +629,6 @@ fun getCircleBitmap(bitmap: Bitmap): Bitmap {
     })
 }*/
 
-fun <T: Any> MutableList<T>.removeAtIf(predicate: (T) -> Boolean) {
-    var removePos = -1
-    for (i in this.indices) {
-        if (predicate(this[i])) {
-            removePos = i
-        }
-    }
-    this.removeAt(removePos)
-}
 /*
 fun Fragment.search(index: Index, query: String, isProject: Boolean = true, progressBar: ProgressBar? = null, onComplete: (Result<List<SearchQuery>>) -> Unit) {
     search(index, query, isProject, progressBar, onComplete)
@@ -752,6 +705,7 @@ fun processProjects(projects: Array<out Project>): Array<out Project> {
     val currentUser = UserManager.currentUser
     for (project in projects) {
         project.isMadeByMe = project.creator.userId == currentUser.id
+        project.isBlocked = project.blockedList.contains(currentUser.id)
         project.isLiked = currentUser.likedProjects.contains(project.id)
         project.isSaved = currentUser.savedProjects.contains(project.id)
 
@@ -764,6 +718,34 @@ fun processProjects(projects: Array<out Project>): Array<out Project> {
     }
 
     return projects
+}
+
+fun <T: Any> List<T>.removeItemsFromList(vararg items: T): List<T> {
+    val opList = this.toMutableList()
+
+    for (item in items) {
+        for (i in this) {
+            if (item == i) {
+                opList.remove(item)
+            }
+        }
+    }
+
+    return opList
+}
+
+fun <T: Any> List<T>.removeItemsFromList(items: List<T>): List<T> {
+    val opList = this.toMutableList()
+
+    for (item in items) {
+        for (i in this) {
+            if (item == i) {
+                opList.remove(item)
+            }
+        }
+    }
+
+    return opList
 }
 
 const val TAG = "UtilityTAG"

@@ -20,7 +20,6 @@ import com.jamid.codesquare.databinding.FragmentMessageDetailBinding
 import com.jamid.codesquare.getTextForChatTime
 import com.jamid.codesquare.toast
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.*
 
 @ExperimentalPagingApi

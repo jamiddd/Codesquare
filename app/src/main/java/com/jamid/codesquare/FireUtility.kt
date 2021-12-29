@@ -226,7 +226,7 @@ object FireUtility {
 
     fun uploadImage(locationId: String, image: Uri, onComplete: (image: Uri?) -> Unit) {
         val randomImageName = randomId()
-        val ref = Firebase.storage.reference.child("images/$locationId/$randomImageName")
+        val ref = Firebase.storage.reference.child("images/$locationId/$randomImageName.jpg")
         ref.putFile(image)
             .addOnSuccessListener {
                 ref.downloadUrl.addOnSuccessListener {
@@ -1473,12 +1473,6 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-   /* fun reportProject(project: Project) {
-        TODO("Reporting a project")
-    }*/
-
-
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     /*
@@ -1605,6 +1599,44 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
+    fun removeUserFromProject(user: User, projectId: String, chatChannelId: String, onComplete: (task: Task<Void>) -> Unit) {
+        val contributorRef = Firebase.firestore
+            .collection(USERS)
+            .document(user.id)
+
+        val batch = Firebase.firestore.batch()
+
+        val userChanges = mapOf(
+            COLLABORATIONS to FieldValue.arrayRemove(projectId),
+            CHANNELS to FieldValue.arrayRemove(chatChannelId)
+        )
+
+        val chatChannelRef = Firebase.firestore
+            .collection(CHAT_CHANNELS)
+            .document(chatChannelId)
+
+        val channelChanges = mapOf(
+            CONTRIBUTORS to FieldValue.arrayRemove(user.id),
+            ADMINISTRATORS to FieldValue.arrayRemove(user.id),
+            CONTRIBUTORS_COUNT to FieldValue.increment(-1)
+        )
+
+        val projectRef = Firebase.firestore
+            .collection(PROJECTS)
+            .document(projectId)
+
+        val projectChanges = mapOf(
+            CONTRIBUTORS to FieldValue.arrayRemove(user.id)
+        )
+
+        batch.update(projectRef, projectChanges)
+        batch.update(chatChannelRef, channelChanges)
+        batch.update(contributorRef, userChanges)
+
+        batch.commit()
+            .addOnCompleteListener(onComplete)
+    }
+
     // Leaving the group
     //
     // 1. remove project id from user document collaborations -------------X
@@ -1612,25 +1644,35 @@ object FireUtility {
     // 3. remove user id from chatChannel contributors and if admin, from administrators
     // 4. add user id to blocked list
     suspend fun removeUserFromProject(user: User, projectId: String, chatChannelId: String): Result<String> {
-        val contributorRef = Firebase.firestore.collection("users").document(user.id)
+        val contributorRef = Firebase.firestore
+            .collection(USERS)
+            .document(user.id)
+
         val batch = Firebase.firestore.batch()
 
         return try {
+
             val userChanges = mapOf(
-                "projects" to FieldValue.arrayRemove(projectId),
-                "channels" to FieldValue.arrayRemove(chatChannelId)
+                COLLABORATIONS to FieldValue.arrayRemove(projectId),
+                CHANNELS to FieldValue.arrayRemove(chatChannelId)
             )
 
-            val chatChannelRef = Firebase.firestore.collection("chatChannels").document(chatChannelId)
+            val chatChannelRef = Firebase.firestore
+                .collection(CHAT_CHANNELS)
+                .document(chatChannelId)
+
             val channelChanges = mapOf(
-                "contributors" to FieldValue.arrayRemove(user.id),
-                "administrators" to FieldValue.arrayRemove(user.id),
-                "contributorsCount" to FieldValue.increment(-1)
+                CONTRIBUTORS to FieldValue.arrayRemove(user.id),
+                ADMINISTRATORS to FieldValue.arrayRemove(user.id),
+                CONTRIBUTORS_COUNT to FieldValue.increment(-1)
             )
 
-            val projectRef = Firebase.firestore.collection("projects").document(projectId)
+            val projectRef = Firebase.firestore
+                .collection(PROJECTS)
+                .document(projectId)
+
             val projectChanges = mapOf(
-                "contributors" to FieldValue.arrayRemove(user.id)
+                CONTRIBUTORS to FieldValue.arrayRemove(user.id)
             )
 
             batch.update(projectRef, projectChanges)
@@ -2196,6 +2238,28 @@ object FireUtility {
                 }
             }
 
+
+    }
+
+    fun updateNotification(notification: Notification, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection(USERS).document(notification.receiverId)
+            .collection(NOTIFICATIONS)
+            .document(notification.id)
+            .update(mapOf("read" to true))
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun removeUserFromChatChannel(user: User, chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+        val administrators = chatChannel.administrators
+        val channelTokens = chatChannel.registrationTokens
+
+        val newAdministrators = administrators.removeItemFromList(user.id)
+        val newTokens = channelTokens.removeItemsFromList(user.registrationTokens)
+
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .document(chatChannel.chatChannelId)
+            .update(mapOf(ADMINISTRATORS to newAdministrators, REGISTRATION_TOKENS to newTokens))
+            .addOnCompleteListener(onComplete)
 
     }
 

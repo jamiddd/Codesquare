@@ -15,9 +15,7 @@ import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PreviousQueryAdapter
 import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
-import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.SearchQuery
-import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPreSearchBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
 

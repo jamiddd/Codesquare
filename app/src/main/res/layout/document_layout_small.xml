@@ -18,6 +18,7 @@
         android:layout_marginEnd="4dp"
         android:backgroundTint="@color/darkest_transparent"
         android:paddingStart="6dp"
+        android:paddingEnd="0dp"
         app:icon="@drawable/ic_round_close_24"
         app:iconSize="18dp"
         app:iconTint="@color/white"
@@ -54,7 +55,7 @@
             android:layout_gravity="center"
             android:gravity="center_horizontal"
             android:maxWidth="200dp"
-            android:text="Document Name that ahsdh kjahsdk askdjhaksd aksd haksdh aksdjh" />
+            tools:text="Document Name that ahsdh kjahsdk askdjhaksd aksd haksdh aksdjh" />
 
         <TextView
             android:id="@+id/small_document_size"
@@ -62,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center_horizontal"
-            android:text="Size" />
+            tools:text="Size" />
 
     </LinearLayout>
 

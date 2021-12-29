@@ -1,6 +1,5 @@
 package com.jamid.codesquare.ui.auth
 
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater

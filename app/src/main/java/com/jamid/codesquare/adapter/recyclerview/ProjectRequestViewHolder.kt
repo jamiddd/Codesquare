@@ -1,13 +1,11 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ProjectRequest
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectRequestListener
 
@@ -84,8 +82,6 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     }
 
     companion object {
-
-        private const val TAG = "RequestViewHolder"
 
         fun newInstance(parent: ViewGroup): ProjectRequestViewHolder {
             return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false))

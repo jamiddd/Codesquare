@@ -43,6 +43,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     private var swipeRefresher: SwipeRefreshLayout? = null
     var shouldHideRecyclerView = false
     var shouldShowImage = true
+    var shouldScrollToBottomOnNewData = false
 
     val isEmpty = MutableLiveData<Boolean>()
 
@@ -53,6 +54,10 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {
                 pagingAdapter.submitData(it)
+                if (!shouldScrollToBottomOnNewData) {
+                    delay(500)
+                    binding.pagerItemsRecycler.scrollToPosition(0)
+                }
             }
         }
     }

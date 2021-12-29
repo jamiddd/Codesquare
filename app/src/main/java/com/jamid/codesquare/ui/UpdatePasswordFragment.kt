@@ -1,20 +1,16 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentUpdatePasswordBinding
-import com.jamid.codesquare.databinding.InputLayoutBinding
 
 class UpdatePasswordFragment: Fragment() {
 

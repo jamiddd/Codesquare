@@ -55,10 +55,10 @@ class CreateAccountFragment : Fragment() {
             binding.emailText.isErrorEnabled = false
         }
 
-        binding.passowrdText.editText?.doAfterTextChanged {
+        binding.passwordText.editText?.doAfterTextChanged {
             onTextChange()
-            binding.passowrdText.error = null
-            binding.passowrdText.isErrorEnabled = false
+            binding.passwordText.error = null
+            binding.passwordText.isErrorEnabled = false
         }
 
         binding.confirmPasswordText.editText?.doAfterTextChanged {
@@ -94,10 +94,10 @@ class CreateAccountFragment : Fragment() {
                 return@setOnClickListener
             }
 
-            val passwordText = binding.passowrdText.editText?.text
+            val passwordText = binding.passwordText.editText?.text
             if (passwordText.isNullOrBlank()) {
-                binding.passowrdText.isErrorEnabled = true
-                binding.passowrdText.error = "Password cannot be empty"
+                binding.passwordText.isErrorEnabled = true
+                binding.passwordText.error = "Password cannot be empty"
                 binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
@@ -105,8 +105,8 @@ class CreateAccountFragment : Fragment() {
             val password = passwordText.toString()
 
             if (!password.isValidPassword()) {
-                binding.passowrdText.isErrorEnabled = true
-                binding.passowrdText.error = "Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol"
+                binding.passwordText.isErrorEnabled = true
+                binding.passwordText.error = "Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol"
                 binding.createBtn.isEnabled = true
                 return@setOnClickListener
             }
@@ -177,7 +177,7 @@ class CreateAccountFragment : Fragment() {
     private fun onTextChange() {
         val nameText = binding.nameText.editText?.text
         val emailText = binding.emailText.editText?.text
-        val passwordText = binding.passowrdText.editText?.text
+        val passwordText = binding.passwordText.editText?.text
         val confirmPasswordText = binding.confirmPasswordText.editText?.text
 
         binding.createBtn.isEnabled = !nameText.isNullOrBlank() && nameText.trim()

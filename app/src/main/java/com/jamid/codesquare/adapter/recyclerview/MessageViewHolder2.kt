@@ -21,7 +21,10 @@ import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
 import com.jamid.codesquare.*
 
-class MessageViewHolder2<T: Any>(val view: View, private val itemType: Int): RecyclerView.ViewHolder(view) {
+class MessageViewHolder2<T: Any>(
+    val view: View,
+    private val itemType: Int
+): RecyclerView.ViewHolder(view) {
 
     private val messageListener = view.context as MessageListener
     private val controllerListener = FrescoImageControllerListener()

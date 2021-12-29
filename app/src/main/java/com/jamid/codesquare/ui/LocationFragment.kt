@@ -2,6 +2,7 @@ package com.jamid.codesquare.ui
 
 import android.Manifest
 import android.content.Context
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -12,7 +13,6 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.*
@@ -20,7 +20,6 @@ import com.jamid.codesquare.LocationProvider.toPlaces
 import com.jamid.codesquare.adapter.recyclerview.LocationAdapter
 import com.jamid.codesquare.databinding.FragmentLocationBinding
 import kotlinx.coroutines.launch
-import android.net.ConnectivityManager
 
 @ExperimentalPagingApi
 class LocationFragment: Fragment() {

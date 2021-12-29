@@ -34,9 +34,10 @@ data class Project(
     var requests: List<String>,
     @Embedded(prefix = "project_")
     var location: Location,
-    var createdAt: Long,
-    var updatedAt: Long,
-    var expiredAt: Long,
+    var createdAt: Long = 0,
+    var updatedAt: Long = 0,
+    var expiredAt: Long = -1,
+    var blockedList: List<String> = emptyList(),
     @Exclude @set: Exclude @get: Exclude
     @Transient
     var isLiked: Boolean = false,
@@ -62,7 +63,7 @@ data class Project(
     @Transient
     var isArchived: Boolean = false,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, false, false, false, false, false, false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
 
     companion object {
 

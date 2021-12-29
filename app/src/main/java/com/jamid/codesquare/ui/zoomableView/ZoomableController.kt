@@ -1,4 +1,4 @@
-package com.jamid.eastyliantest.views.zoomable
+package com.jamid.codesquare.ui.zoomableView
 
 import android.graphics.Matrix
 import android.graphics.RectF

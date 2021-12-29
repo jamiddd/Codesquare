@@ -1,13 +1,10 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.R
 import com.jamid.codesquare.UserManager
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -47,7 +44,6 @@ class VagueUserAdapter(private val userIds: List<String>, private val scope: Cor
     }
 
     companion object  {
-        private val TAG = VagueUserAdapter::class.simpleName
     }
 
 }

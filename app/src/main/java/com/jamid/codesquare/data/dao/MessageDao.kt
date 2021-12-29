@@ -31,16 +31,6 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("SELECT * FROM messages WHERE createdAt < :time AND chatChannelId = :channelId ORDER BY createdAt DESC LIMIT :limit")
     abstract suspend fun getMessagesBefore(channelId: String, time: Long, limit: Int): List<Message>
 
-    @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId ORDER BY createdAt DESC LIMIT :pageSize")
-    abstract suspend fun getMessagesOnRefresh(chatChannelId: String, pageSize: Int): List<Message>?
-
-    @Query("SELECT * FROM messages WHERE createdAt < :nextKey AND chatChannelId = :chatChannelId ORDER BY createdAt DESC LIMIT :pageSize")
-    abstract suspend fun getMessagesOnAppend(
-        chatChannelId: String,
-        pageSize: Int,
-        nextKey: Long
-    ): List<Message>?
-
     @Query("SELECT * FROM messages WHERE createdAt > :anchorMessageTimeStart AND chatChannelId = :chatChannelId ORDER BY createdAt DESC LIMIT :pageSize")
     abstract fun getMessagesOnPrepend(
         chatChannelId: String,

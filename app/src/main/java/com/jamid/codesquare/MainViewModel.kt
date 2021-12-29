@@ -282,7 +282,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         insertUser(localUser)
     }
 
-    fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
+    private fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertUser(localUser)
     }
 
@@ -535,7 +535,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }*/
 
     @ExperimentalPagingApi
-    fun getPagedMessages(chatChannel: ChatChannel, imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
+    fun getPagedMessages(imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
         return Pager(config =
         PagingConfig(
             pageSize = 50,
@@ -543,7 +543,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             maxSize = 150,
             prefetchDistance = 25,
             initialLoadSize= 40),
-            remoteMediator = MessageRemoteMediator(chatChannel, imagesDir, documentsDir, viewModelScope, query, repo)
+            remoteMediator = MessageRemoteMediator(
+                imagesDir,
+                documentsDir,
+                viewModelScope,
+                query,
+                repo
+            )
         ) {
             repo.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.cachedIn(viewModelScope)
@@ -963,6 +969,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.updateLocalProject(project)
     }
 
+    fun getLocalChatChannel(chatChannelId: String, onComplete: (ChatChannel?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        val chatChannel = repo.getLocalChatChannel(chatChannelId)
+        onComplete(chatChannel)
+    }
+
     suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
         return repo.getLocalChatChannel(chatChannel)
     }
@@ -1279,31 +1290,17 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.notificationDao.insert(notification)
     }
 
-    fun getCurrentChatChannel(chatChannelId: String): LiveData<ChatChannel> {
-        return repo.getCurrentChatChannel(chatChannelId)
-    }
-
     fun insertNotifications(vararg notifications: Notification) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertNotifications(notifications)
     }
-
-
-    /*fun onUndoProject(project: Project, projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
-        repo.onUndoProject(project, projectRequest)
-    }*/
 
     fun insertProjectRequests(vararg projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertProjectRequests(projectRequest)
     }
 
-    /*fun getMessagesForChannel(chatChannel: ChatChannel, limit: Int): LiveData<List<Message>> {
-        return repo.getMessagesForChannel(chatChannel, limit)
-    }*/
-
     fun insertSearchQuery(searchQuery: SearchQuery) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertSearchQuery(searchQuery)
     }
-
 
     fun setOtherUserAsAdmin(chatChannelId: String, userId: String, onComplete: (task: Task<Void>) -> Unit) {
         FireUtility.setOtherUserAsAdmin(chatChannelId, userId, onComplete)
@@ -1313,40 +1310,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.removeUserFromAdmin(chatChannelId, userId, onComplete)
     }
 
-    fun leaveProject(user: User, projectId: String, chatChannelId: String, onComplete: () -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        when (val result = FireUtility.removeUserFromProject(user, projectId, chatChannelId)) {
-            is Result.Error -> {
-                setCurrentError(result.exception)
-            }
-            is Result.Success -> {
-
-                onComplete()
-
-                // deleting all messages by removed user
-                FireUtility.getAllMessagesByUser(chatChannelId, user) {
-                    if (it.isSuccessful) {
-                        deleteAllMessagesByUser(user.id, chatChannelId)
-                    } else {
-                        setCurrentError(it.exception)
-                    }
-                }
-
-                val localProject = getLocalProject(projectId)
-                if (localProject != null) {
-                    val newContributorsList = localProject.contributors.removeItemFromList(user.id)
-                    localProject.contributors = newContributorsList
-                    insertProjects(localProject)
-                }
-            }
-        }
-    }
-
-    private fun deleteAllMessagesByUser(userId: String, chatChannelId: String) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteAllMessagesByUser(userId, chatChannelId)
-    }
-
     suspend fun getLocalProject(projectId: String): Project? {
         return repo.getProject(projectId)
+    }
+
+    fun getLocalProject(projectId: String, onComplete: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        val project = repo.getLocalProject(projectId)
+        onComplete(project)
     }
 
     fun castVoteToRemoveUser(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Transaction>) -> Unit) {
@@ -1356,19 +1326,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     fun undoVoteCast(user: User, projectId: String, currentUserId: String, onComplete: (task: Task<Void>) -> Unit) {
         FireUtility.undoVoteCast(user, projectId, currentUserId, onComplete)
     }
-
-    /*fun inviteUserToProject(project: Project, userId: String) = viewModelScope.launch (Dispatchers.IO) {
-        val currentUser = UserManager.currentUser
-        val title = project.name
-        val content = currentUser.name + " has invited you to join their project: ${project.name}"
-        val notification = Notification.createNotification(content, currentUser.id, userId, projectId = project.id, title = title)
-        when (val result = FireUtility.inviteUserToProject(project, userId, notification)) {
-            is Result.Error -> setCurrentError(result.exception)
-            is Result.Success -> {
-                insertNotifications(notification)
-            }
-        }
-    }*/
 
     fun archiveProject(currentUserId: String, project: Project) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.archiveProject(currentUserId, project)) {

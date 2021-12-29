@@ -19,9 +19,4 @@ data class UserMinimal(
 
     @Exclude
     fun isEmpty() = userId.isBlank()
-
-    companion object {
-
-    }
-
 }

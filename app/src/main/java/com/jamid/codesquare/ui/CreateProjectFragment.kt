@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.data.Location

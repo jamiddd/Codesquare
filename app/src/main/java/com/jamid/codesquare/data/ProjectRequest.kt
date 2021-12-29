@@ -4,7 +4,6 @@ import android.os.Parcelable
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.Exclude
 import kotlinx.parcelize.Parcelize
 

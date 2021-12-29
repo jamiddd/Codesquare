@@ -965,9 +965,35 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 .setItems(choices) { _, index ->
                     when (choices[index]) {
                         option7 -> {
-                            viewModel.leaveProject(user, projectId, chatChannelId) {
-                                TODO("1. send a notification that the user has left the group to himself" +
-                                        "2. send another notification to all other members that current user has left the group")
+                            FireUtility.removeUserFromProject(currentUser, projectId, chatChannelId) {
+                                if (it.isSuccessful) {
+                                    viewModel.getLocalChatChannel(chatChannelId) { channel ->
+                                        if (channel != null) {
+                                            FireUtility.removeUserFromChatChannel(currentUser, channel) { task ->
+                                                if (task.isSuccessful) {
+
+                                                    // TODO("Find a way to notify other people in the project that the user has left.")
+
+                                                    viewModel.getLocalProject(projectId) { project ->
+                                                        if (project != null) {
+                                                            val contributors = project.contributors.removeItemFromList(currentUserId)
+                                                            project.contributors = contributors
+                                                            viewModel.updateLocalProject(project)
+                                                        } else {
+                                                            Log.d(TAG, "Tried fetching local project with id: $projectId but received null.")
+                                                        }
+                                                    }
+                                                } else {
+                                                    viewModel.setCurrentError(task.exception)
+                                                }
+                                            }
+                                        } else {
+                                            Log.d(TAG, "Tried fetching local chat channel with id: $chatChannelId but received null.")
+                                        }
+                                    }
+                                } else {
+                                    viewModel.setCurrentError(it.exception)
+                                }
                             }
                         }
                     }
@@ -1018,7 +1044,6 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                         }
                         option3 -> {
                             viewModel.likeUser(user.id)
-//                            viewModel.likeUser(user = user)
                         }
                         option4 -> {
                             viewModel.dislikeUser(user.id)
@@ -1442,11 +1467,10 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
     override fun onMessageDoubleClick(message: Message) {
         viewModel.setCurrentlySelectedMessage(message)
-        toast("Double CLicked")
     }
 
     override fun onMessageLongPress(p0: MotionEvent?) {
-        if (currentlyFocusedMessage != null) {
+        if (currentlyFocusedMessage != null && currentlyFocusedMessage?.isDownloaded == true) {
             if (currentlyFocusedMessage!!.state == -1) {
                 currentlyFocusedMessage!!.state = 0
 
@@ -1488,6 +1512,10 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
     override fun onMessageDoubleTapped(p0: MotionEvent?): Boolean {
         if (viewModel.selectedMessages.value.isNullOrEmpty() && viewModel.singleSelectedMessage.value == null) {
+
+            if (currentlyFocusedMessage?.isDownloaded != true)
+                return true
+
             val flag = currentlyFocusedMessage?.senderId != UserManager.currentUserId
 
             val popupMenu = if (!flag) {
@@ -1521,9 +1549,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
     }
 
     override fun onNotificationRead(notification: Notification) {
-        notification.read = true
         FireUtility.checkIfNotificationExistsById(notification.receiverId, notification.id) { exists, error ->
-
             if (error != null) {
                 viewModel.setCurrentError(error)
                 return@checkIfNotificationExistsById
@@ -1532,7 +1558,17 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
             if (!exists) {
                 viewModel.deleteNotification(notification)
             } else {
-                viewModel.updateNotification(notification)
+                if (!notification.read) {
+                    FireUtility.updateNotification(notification) {
+                        if (it.isSuccessful) {
+                            notification.read = true
+                            viewModel.updateNotification(notification)
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                }
+
             }
         }
     }

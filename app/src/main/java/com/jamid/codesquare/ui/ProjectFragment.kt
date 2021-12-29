@@ -20,7 +20,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
@@ -69,7 +68,7 @@ class ProjectFragment: Fragment() {
         joinBtn = activity.findViewById(R.id.main_primary_action)
         joinBtn.show()
 
-        project = arguments?.getParcelable("project") ?: return
+        project = arguments?.getParcelable(PROJECT) ?: return
 
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         val imageAdapter = ImageAdapter { v, controllerListener ->
@@ -139,6 +138,9 @@ class ProjectFragment: Fragment() {
         setCommentLayout()
 
         when {
+            project.isBlocked -> {
+                joinBtn.hide()
+            }
             project.isMadeByMe -> {
                 binding.userLikeBtn.hide()
                 joinBtn.slideDown(convertDpToPx(100).toFloat())
@@ -209,12 +211,12 @@ class ProjectFragment: Fragment() {
     private fun setJoinButton() {
         val currentUserId = Firebase.auth.currentUser?.uid
         if (currentUserId != null) {
-            lr = Firebase.firestore.collection("projectRequests")
-                .whereEqualTo("projectId", project.id)
-                .whereEqualTo("senderId", currentUserId)
+            lr = Firebase.firestore.collection(PROJECT_REQUESTS)
+                .whereEqualTo(PROJECT_ID, project.id)
+                .whereEqualTo(SENDER_ID, currentUserId)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
-                        Log.e(TAG,  "236 " + error.localizedMessage.orEmpty())
+                        viewModel.setCurrentError(error)
                         return@addSnapshotListener
                     }
 

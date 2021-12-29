@@ -9,7 +9,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.data.Feedback

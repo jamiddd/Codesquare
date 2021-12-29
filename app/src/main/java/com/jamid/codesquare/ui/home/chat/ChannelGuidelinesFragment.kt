@@ -1,9 +1,7 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.*
-import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
@@ -11,16 +9,13 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GuidelinesAdapter
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
 
 @ExperimentalPagingApi
-class ChannelGuidelinesFragment: Fragment() {
+class ChannelGuidelinesFragment : Fragment() {
 
     private lateinit var binding: FragmentChannelGuidelinesBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -64,21 +59,21 @@ class ChannelGuidelinesFragment: Fragment() {
         return super.onOptionsItemSelected(item)
     }
 
- /*   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = super.onCreateDialog(savedInstanceState)
-        dialog.setCancelable(false)
+    /*   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+           val dialog = super.onCreateDialog(savedInstanceState)
+           dialog.setCancelable(false)
 
-        dialog.setOnShowListener {
-            val bottomSheet =
-                (it as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout?
-            val behavior = BottomSheetBehavior.from(bottomSheet!!)
+           dialog.setOnShowListener {
+               val bottomSheet =
+                   (it as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout?
+               val behavior = BottomSheetBehavior.from(bottomSheet!!)
 
-            behavior.isDraggable = false
-        }
+               behavior.isDraggable = false
+           }
 
-        return dialog
-    }
-*/
+           return dialog
+       }
+   */
     private fun getNewAdapter(): GuidelinesAdapter {
         return GuidelinesAdapter { _, p ->
             val existingList = currentGuidelines.value.orEmpty().toMutableList()
@@ -99,7 +94,12 @@ class ChannelGuidelinesFragment: Fragment() {
         binding.rulesRecycler.apply {
             adapter = rulesAdapter
             layoutManager = LinearLayoutManager(requireContext())
-            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+            addItemDecoration(
+                DividerItemDecoration(
+                    requireContext(),
+                    DividerItemDecoration.VERTICAL
+                )
+            )
         }
 
         currentGuidelines.observe(viewLifecycleOwner) {

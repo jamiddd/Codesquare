@@ -11,11 +11,10 @@ import com.jamid.codesquare.adapter.comparators.ProjectInviteComparator
 import com.jamid.codesquare.adapter.recyclerview.ProjectInviteAdapter.ProjectInviteViewHolder
 import com.jamid.codesquare.data.ProjectInvite
 import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectInviteListener
 
-class ProjectInviteAdapter(): PagingDataAdapter<ProjectInvite, ProjectInviteViewHolder>(ProjectInviteComparator()) {
+class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewHolder>(ProjectInviteComparator()) {
 
     inner class ProjectInviteViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 

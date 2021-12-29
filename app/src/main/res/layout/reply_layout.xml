@@ -24,7 +24,7 @@
             android:layout_height="wrap_content"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:text="Jamid Deka"
+            tools:text="Jamid Deka"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
 
         <TextView
@@ -35,7 +35,7 @@
             android:maxLines="2"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            android:text="Something is always something no matter what." />
+            tools:text="Something is always something no matter what." />
     </LinearLayout>
 
     <com.facebook.drawee.view.SimpleDraweeView

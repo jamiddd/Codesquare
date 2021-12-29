@@ -152,9 +152,10 @@
         android:name="com.jamid.codesquare.ui.profile.EditProfileFragment"
         android:label="Edit Profile"
         tools:layout="@layout/fragment_edit_profile" >
-        <action
-            android:id="@+id/action_editProfileFragment_to_imageCropperFragment"
-            app:destination="@id/imageCropperFragment" />
+
+        <action android:id="@+id/action_editProfileFragment_to_cropFragment2"
+            app:destination="@id/cropFragment2"/>
+
     </fragment>
     <fragment
         android:id="@+id/projectFragment"
@@ -430,11 +431,6 @@
             app:destination="@id/profileFragment" />
     </fragment>
     <fragment
-        android:id="@+id/imageCropperFragment"
-        android:name="com.jamid.codesquare.ui.ImageCropperFragment"
-        tools:layout="@layout/fragment_image_cropper"
-        android:label=" " />
-    <fragment
         android:id="@+id/preSearchFragment"
         android:name="com.jamid.codesquare.ui.PreSearchFragment"
         android:label=" "
@@ -457,8 +453,8 @@
             android:id="@+id/action_profileImageFragment_to_userInfoFragment"
             app:destination="@id/userInfoFragment" />
         <action
-            android:id="@+id/action_profileImageFragment_to_imageCropperFragment"
-            app:destination="@id/imageCropperFragment" />
+            android:id="@+id/action_profileImageFragment_to_cropFragment2"
+            app:destination="@id/cropFragment2" />
 
     </fragment>
     <fragment
@@ -485,4 +481,8 @@
         android:id="@+id/channelGuidelinesFragment"
         android:name="com.jamid.codesquare.ui.home.chat.ChannelGuidelinesFragment"
         android:label="Update guidelines" />
+    <fragment
+        android:id="@+id/cropFragment2"
+        android:name="com.jamid.codesquare.CropFragment2"
+        android:label=" " />
 </navigation>

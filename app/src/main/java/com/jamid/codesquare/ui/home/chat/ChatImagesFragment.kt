@@ -1,8 +1,6 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,10 +16,9 @@ import com.jamid.codesquare.databinding.FragmentChatImagesBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
 import kotlinx.coroutines.launch
-import java.io.File
 
 @ExperimentalPagingApi
-class ChatImagesFragment: Fragment() {
+class ChatImagesFragment : Fragment() {
 
     private lateinit var binding: FragmentChatImagesBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -43,24 +40,25 @@ class ChatImagesFragment: Fragment() {
 
     }
 
-    private fun setMediaRecyclerAndData(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch {
-        val gridAdapter = GridImageMessagesAdapter()
+    private fun setMediaRecyclerAndData(chatChannelId: String) =
+        viewLifecycleOwner.lifecycleScope.launch {
+            val gridAdapter = GridImageMessagesAdapter()
 
-        binding.chatImagesRecycler.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
-            adapter = gridAdapter
+            binding.chatImagesRecycler.apply {
+                layoutManager = GridLayoutManager(requireContext(), 3)
+                adapter = gridAdapter
+            }
+            val imageMessages = viewModel.getImageMessages(chatChannelId)
+
+            if (imageMessages.isNotEmpty()) {
+                binding.noImagesText.hide()
+                gridAdapter.submitList(imageMessages)
+            } else {
+                binding.noImagesText.show()
+            }
+
+
         }
-        val imageMessages = viewModel.getImageMessages(chatChannelId)
-
-        if (imageMessages.isNotEmpty()) {
-            binding.noImagesText.hide()
-            gridAdapter.submitList(imageMessages)
-        } else {
-            binding.noImagesText.show()
-        }
-
-
-    }
 
     /*private fun getImages(chatChannelId: String): List<String> {
         val images = mutableListOf<String>()

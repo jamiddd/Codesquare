@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -27,7 +26,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Email"
+                android:hint="@string/email"
                 android:imeOptions="actionNext"
                 android:inputType="textEmailAddress" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -44,7 +43,7 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Password"
+                android:hint="@string/password"
                 android:inputType="textPassword" />
         </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
@@ -57,7 +56,7 @@
         android:gravity="center"
         android:paddingStart="24dp"
         android:paddingEnd="24dp"
-        android:text="Sign in to get the latest projects people are working on, participate and learn."
+        android:text="@string/sign_in_info"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_constraintBottom_toTopOf="@+id/linearLayout"
         app:layout_constraintEnd_toEndOf="parent"
@@ -73,7 +72,7 @@
         android:layout_marginEnd="16dp"
         android:enabled="false"
         android:minHeight="56dp"
-        android:text="Sign in"
+        android:text="@string/sign_in"
         app:layout_constraintBottom_toTopOf="@id/google_sign_in_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -86,7 +85,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Don't have an account?\nCreate new account"
+        android:text="@string/create_account_link"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/google_sign_in_btn"
         app:layout_constraintStart_toStartOf="@+id/google_sign_in_btn"
@@ -99,7 +98,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:minHeight="58dp"
-        android:text="Sign in with Google"
+        android:text="@string/sign_in_with_google"
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         app:buttonSize="wide"
         app:layout_constraintBottom_toTopOf="@+id/sign_up_btn"
@@ -114,7 +113,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
-        android:text="Forgot password"
+        android:text="@string/forgot_password"
         android:textColor="@color/darker_grey"
         app:layout_constraintBottom_toTopOf="@+id/sign_in_btn"
         app:layout_constraintStart_toStartOf="parent"
@@ -127,6 +126,7 @@
         android:layout_height="100dp"
         android:layout_marginBottom="32dp"
         android:transitionName="logo_transition"
+        android:contentDescription="@string/large_text"
         app:layout_constraintBottom_toTopOf="@+id/textView8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

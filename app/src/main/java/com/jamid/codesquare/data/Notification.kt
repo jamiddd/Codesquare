@@ -5,7 +5,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
-import com.jamid.codesquare.BuildConfig
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
@@ -26,7 +25,6 @@ data class Notification(
     var commentId: String? = null,
     var userId: String? = null,
     var type: Int = 0,
-    @Exclude @set: Exclude @get: Exclude
     var read: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
     var isReceived: Boolean = true
