@@ -13,4 +13,6 @@ interface ProjectClickListener {
     fun onProjectCommentClick(project: Project)
     fun onProjectOptionClick(viewHolder: ProjectViewHolder, project: Project)
     fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest)
+    fun onProjectNotFound(project: Project)
+    fun onProjectLoad(project: Project)
 }

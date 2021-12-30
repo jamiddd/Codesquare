@@ -1123,9 +1123,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             val currentUserId = UserManager.currentUserId
             FireUtility.updateReadList(chatChannel, message) {
                 if (it.isSuccessful) {
-
                     val newList = message.readList.addItemToList(currentUserId)
                     message.readList = newList
+
+                    if (message.type == text) {
+                        message.isDownloaded = true
+                    }
 
                     insertMessages(imagesDir, documentsDir, listOf(message))
                 } else {
@@ -1327,7 +1330,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.undoVoteCast(user, projectId, currentUserId, onComplete)
     }
 
-    fun archiveProject(currentUserId: String, project: Project) = viewModelScope.launch (Dispatchers.IO) {
+    /*fun archiveProject(currentUserId: String, project: Project) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.archiveProject(currentUserId, project)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
@@ -1344,13 +1347,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                     updateLocalChatChannel(chatChannel)
                 }
 
-                /*
+                *//*
                 no need for comment channels as comment channels are not
                 saved in local database and they do not appear directly
-                */
+                *//*
             }
         }
-    }
+    }*/
 
     private fun updateLocalChatChannel(chatChannel: ChatChannel) = viewModelScope.launch (Dispatchers.IO) {
         repo.updateLocalChatChannel(chatChannel)
@@ -1418,6 +1421,19 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun lateInitChatController(currentUserId: String) {
         chatController.lateInitialize(currentUserId)
+    }
+
+    fun deleteLocalProject(project: Project) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteLocalProject(project)
+    }
+
+    fun getArchivedProjects(query: Query): Flow<PagingData<Project>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRemoteMediator(query, repo, true)
+        ) {
+            repo.projectDao.getArchivedProjects(UserManager.currentUserId)
+        }.flow.cachedIn(viewModelScope)
     }
 
     companion object {

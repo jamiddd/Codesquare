@@ -17,7 +17,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.LoadState
-import androidx.paging.PagingData
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -27,7 +26,6 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -49,7 +47,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
     protected abstract fun getAdapter(): PagingDataAdapter<T, VH>
 
-    open fun getItems(func: suspend () -> Flow<PagingData<T>>) {
+    open fun getItems(func: suspend () -> Unit) {
         job?.cancel()
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {

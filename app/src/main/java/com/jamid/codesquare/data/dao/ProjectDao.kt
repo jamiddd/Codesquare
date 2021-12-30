@@ -3,6 +3,7 @@ package com.jamid.codesquare.data.dao
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Query
 import com.jamid.codesquare.data.Project
 
@@ -53,5 +54,11 @@ abstract class ProjectDao: BaseDao<Project>() {
 
     @Query("SELECT * FROM projects WHERE isMadeByMe = 1 AND isArchived = 0")
     abstract fun getCurrentUserProjects(): LiveData<List<Project>>
+
+    @Delete
+    abstract suspend fun deleteProject(project: Project)
+
+    @Query("SELECT * FROM projects WHERE isArchived = 1 AND project_userId ORDER BY createdAt DESC")
+    abstract fun getArchivedProjects(currentUserId: String): PagingSource<Int, Project>
 
 }

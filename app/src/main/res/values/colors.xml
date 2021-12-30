@@ -17,6 +17,7 @@
     <color name="very_dark_grey">#555555</color>
     <color name="lightest_grey">#F5F5F5</color>
     <color name="error_color">#E80505</color>
+    <color name="error_color_background">#33E80505</color>
     <color name="normal_grey">#BABABA</color>
     <color name="darker_grey">#888888</color>
     <color name="lightest_blue">#E2EBF3</color>

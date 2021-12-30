@@ -145,6 +145,46 @@ exports.getChatChannelById = async (channelId) => {
         .get();
 }
 
+exports.onNewChannelNotification = functions.firestore.document("chatChannels/{chatChannelId}/notifications/{notificationId}")
+    .onCreate( async (snap, context) => {
+
+        var notification = new Notification(snap);
+
+        var notificationType = ""
+        if (notification.type > 0) {
+            notificationType = "request"
+        } else if(notification.type < 0) {
+            notificationType = "invite"
+        } else {
+            notificationType = "general"
+        }
+
+        var data = {
+            title: notification.title,
+            content: notification.content,
+            senderId: notification.senderId,
+            receiverId: notification.receiverId,
+            notificationId: notification.id,
+            type: notificationType
+        };
+
+        const chatChannelSnap = await this.getChatChannelById(context.params.chatChannelId);
+
+        if (!chatChannelSnap.exists) {
+            return {
+                response: `Document with id - ${chatChannelId} doesn\'t exist.`
+            };
+        } else {
+            const registrationTokens = chatChannelSnap.get("registrationTokens");
+            if (registrationTokens.length > 0) {
+                return await this.sendNotificationToTopic(context.params.chatChannelId, data);
+            } else {
+                return {
+                    response: `No registration tokens found for user: ${context.params.userId}`
+                }
+            }
+        }
+    });
 
 exports.onNewNotification = functions.firestore.document("users/{userId}/notifications/{notificationId}")
     .onCreate( async (snap, context) => {
@@ -306,42 +346,40 @@ exports.sendNotification = async (userRegistrationTokens, dataObject) => {
  * @param {string} topic The topic to which the notification should be sent to
  * @param {any} dataObject Data object that contains the tile, senderId, content, image and deepLink of the notification
  */
-// exports.sendNotificationToTopic = async (topic, dataObject) => {	
-// 	var payload = {};
+exports.sendNotificationToTopic = async (topic, dataObject) => {	
+	var payload = {};
 
-// 	if (dataObject.hasOwnProperty("img")) {
-// 		payload = {
-// 			notification: {
-// 			  title: dataObject.title,
-// 			  body: dataObject.content,
-// 			  image: dataObject.img,
-// 			  imageUrl: dataObject.img, 
-// 			  sound: 'default',
-//               click_action: dataObject.clickAction
-// 			},
-// 			data: dataObject
-// 		};
-// 	} else {
-// 		payload = {
-// 			notification: {
-// 			  title: dataObject.title,
-// 			  body: dataObject.content,
-// 			  sound: 'default',
-//               click_action: dataObject.clickAction
-// 			},
-//             data: dataObject
-// 		};
-// 	}
+	if (dataObject.hasOwnProperty("img")) {
+		payload = {
+			notification: {
+			  title: dataObject.title,
+			  body: dataObject.content,
+			  image: dataObject.img,
+			  imageUrl: dataObject.img, 
+			  sound: 'default',
+			},
+			data: dataObject
+		};
+	} else {
+		payload = {
+			notification: {
+			  title: dataObject.title,
+			  body: dataObject.content,
+			  sound: 'default',
+			},
+            data: dataObject
+		};
+	}
 
-// 	// Send a message to devices subscribed to the provided topic.
-// 	try {
-// 		return await admin.messaging().sendToTopic(topic, payload, { priority: 'high' });
-// 	} catch (error) {
-// 		return {
-//             response: `Error sending message:, ${error}`
-//         }
-// 	}
-// }
+	// Send a message to devices subscribed to the provided topic.
+	try {
+		return await admin.messaging().sendToTopic(topic, payload, { priority: 'high' });
+	} catch (error) {
+		return {
+            response: `Error sending message:, ${error}`
+        }
+	}
+}
 
 
 exports.onCommentDeleted = functions.firestore.document("commentChannels/{commentChannelId}/comments/{commentId}")

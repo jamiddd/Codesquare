@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
@@ -27,10 +28,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
-import com.jamid.codesquare.data.CommentChannel
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.ProjectRequest
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
@@ -38,7 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
-class ProjectFragment: Fragment() {
+class ProjectFragment : Fragment() {
 
     private lateinit var binding: FragmentProjectBinding
     private lateinit var project: Project
@@ -70,10 +68,33 @@ class ProjectFragment: Fragment() {
 
         project = arguments?.getParcelable(PROJECT) ?: return
 
+        /*Firebase.firestore.collection(PROJECTS).document(project.id)
+            .addSnapshotListener { docSnapshot, error ->
+                if (error != null) {
+                    viewModel.setCurrentError(error)
+                }
+
+                if (docSnapshot != null) {
+                    if (docSnapshot.exists()) {
+                        val updatedProject = docSnapshot.toObject(Project::class.java)
+                        if (updatedProject != null)
+                            updateMutableProperties(updatedProject)
+                    } else {
+                        findNavController().navigateUp()
+                    }
+                }
+            }*/
+
+
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         val imageAdapter = ImageAdapter { v, controllerListener ->
             val pos = manager.findFirstCompletelyVisibleItemPosition()
-            (activity as MainActivity).showImageViewFragment(v, project.images[pos].toUri(), ".jpg", controllerListener)
+            (activity as MainActivity).showImageViewFragment(
+                v,
+                project.images[pos].toUri(),
+                ".jpg",
+                controllerListener
+            )
         }
 
         val helper: SnapHelper = LinearSnapHelper()
@@ -91,7 +112,7 @@ class ProjectFragment: Fragment() {
         }
         imageAdapter.submitList(project.images)
 
-        binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+        binding.projectImagesRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 val pos = manager.findFirstCompletelyVisibleItemPosition()
@@ -144,6 +165,7 @@ class ProjectFragment: Fragment() {
             project.isMadeByMe -> {
                 binding.userLikeBtn.hide()
                 joinBtn.slideDown(convertDpToPx(100).toFloat())
+                binding.archieveProjectBtn.show()
             }
             project.isRequested -> {
                 joinBtn.show()
@@ -188,6 +210,40 @@ class ProjectFragment: Fragment() {
 
         setProjectObserver()
 
+        binding.archieveProjectBtn.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Archiving project ...")
+                .setMessage("Are you sure you want to archive this project?")
+                .setPositiveButton("Archive") { _, _ ->
+                    FireUtility.archiveProject(project) {
+                        if (it.isSuccessful) {
+                            // notify the other contributors that the project has been archived
+                            val content = "${project.name} has been archived."
+                            val notification = Notification.createNotification(
+                                content,
+                                currentUser.id,
+                                project.chatChannel
+                            )
+                            FireUtility.sendNotificationToChannel(notification) { it1 ->
+                                if (it1.isSuccessful) {
+                                    // updating project locally
+                                    project.isArchived = true
+                                    viewModel.updateLocalProject(project)
+                                } else {
+                                    viewModel.setCurrentError(it.exception)
+                                }
+                            }
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                }
+                .setNegativeButton("Cancel") { a, _ ->
+                    a.dismiss()
+                }
+                .show()
+        }
+
     }
 
     private fun setProjectObserver() = viewLifecycleOwner.lifecycleScope.launch {
@@ -203,6 +259,11 @@ class ProjectFragment: Fragment() {
                 if (project.isSaved != it.isSaved) {
                     project.isSaved = it.isSaved
                     setSaveButton()
+                }
+
+                if (project.isArchived) {
+                    toast("The project has been archived")
+                    findNavController().navigateUp()
                 }
             }
         }
@@ -222,14 +283,20 @@ class ProjectFragment: Fragment() {
 
                     if (value != null) {
                         if (value.isEmpty) {
-                            joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+                            joinBtn.icon = ContextCompat.getDrawable(
+                                requireContext(),
+                                R.drawable.ic_round_add_24
+                            )
                             // no requests have been made
                             joinBtn.text = requireContext().getString(R.string.join)
                             joinBtn.setOnClickListener {
                                 projectClickListener.onProjectJoinClick(project)
                             }
                         } else {
-                            joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_24)
+                            joinBtn.icon = ContextCompat.getDrawable(
+                                requireContext(),
+                                R.drawable.ic_round_undo_24
+                            )
                             val projectRequest = value.toObjects(ProjectRequest::class.java).first()
 
                             // already requested
@@ -290,9 +357,19 @@ class ProjectFragment: Fragment() {
         chip.isCloseIconVisible = false
 
         if (isNightMode()) {
-            chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_dark_night))
+            chip.chipBackgroundColor = ColorStateList.valueOf(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.green_dark_night
+                )
+            )
         } else {
-            chip.chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.green_light))
+            chip.chipBackgroundColor = ColorStateList.valueOf(
+                ContextCompat.getColor(
+                    requireContext(),
+                    R.color.green_light
+                )
+            )
         }
 
         chip.setTextColor(ContextCompat.getColor(requireContext(), R.color.green_dark))
@@ -326,7 +403,11 @@ class ProjectFragment: Fragment() {
 
         chip.setOnClickListener {
             val bundle = bundleOf("title" to "#$tag", "tag" to tag)
-            findNavController().navigate(R.id.action_projectFragment_to_tagFragment, bundle, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_projectFragment_to_tagFragment,
+                bundle,
+                slideRightNavOptions()
+            )
         }
 
     }
@@ -378,14 +459,20 @@ class ProjectFragment: Fragment() {
                 ProjectContributorsFragment.ARG_ADMINISTRATORS to arrayListOf(project.creator.userId)
             )
 
-            findNavController().navigate(R.id.action_projectFragment_to_projectContributorsFragment, bundle, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_projectFragment_to_projectContributorsFragment,
+                bundle,
+                slideRightNavOptions()
+            )
         }
 
-        val userAdapter2 = UserAdapter2(project.id, project.chatChannel, listOf(project.creator.userId))
+        val userAdapter2 =
+            UserAdapter2(project.id, project.chatChannel, listOf(project.creator.userId))
 
         binding.projectContributorsRecycler.apply {
             adapter = userAdapter2
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            layoutManager =
+                LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         }
 
         viewModel.getProjectContributors(7, project) {
@@ -440,7 +527,8 @@ class ProjectFragment: Fragment() {
 
                                 commentContent.text = comment.content
 
-                                val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
+                                val likeRepliesText =
+                                    "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
                                 commentLikesReplies.text = likeRepliesText
 
                                 root.setOnClickListener {

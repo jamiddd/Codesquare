@@ -14,10 +14,8 @@ import androidx.preference.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.*
 import com.jamid.codesquare.R
-import com.jamid.codesquare.UserManager
-import com.jamid.codesquare.slideRightNavOptions
 
 @ExperimentalPagingApi
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -52,8 +50,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setProjectSection() {
-        val expiryS = sharedPreference.getString("project_expiry", "0")
-        val projectExpiry = findPreference<EditTextPreference>("project_expiry")
+        val expiryS = sharedPreference.getString(PROJECT_EXPIRY, "0")
+        val projectExpiry = findPreference<EditTextPreference>(PROJECT_EXPIRY)
         if (expiryS != "0") {
             projectExpiry?.setDefaultValue(expiryS)
             projectExpiry?.summary = "$expiryS Days"
@@ -65,7 +63,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         projectExpiry?.setOnPreferenceChangeListener { _, newValue ->
             if (newValue is String) {
                 if (newValue.isDigitsOnly()) {
-                    editor.putString("project_expiry", newValue)
+                    editor.putString(PROJECT_EXPIRY, newValue)
                     editor.apply()
 
                     projectExpiry.summary = "$newValue Days"
@@ -78,8 +76,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setLocationSection() {
 
-        val radiusS = sharedPreference.getString("location_radius", "1")
-        val locationRadius = findPreference<EditTextPreference>("location_radius")
+        val radiusS = sharedPreference.getString(LOCATION_RADIUS, "1")
+        val locationRadius = findPreference<EditTextPreference>(LOCATION_RADIUS)
         if (radiusS != "1") {
             locationRadius?.setDefaultValue(radiusS)
             locationRadius?.summary = "$radiusS KM"
@@ -92,7 +90,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         locationRadius?.setOnPreferenceChangeListener { _, newValue ->
             if (newValue is String) {
                 if (newValue.isDigitsOnly()) {
-                    editor.putString("location_radius", newValue)
+                    editor.putString(LOCATION_RADIUS, newValue)
                     editor.apply()
 
                     locationRadius.summary = "$newValue KM"
@@ -105,15 +103,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun setProfileSection() {
 
-        val updateProfile = findPreference<Preference>("profile_update")
+        val updateProfile = findPreference<Preference>(PROFILE_UPDATE)
         updateProfile?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_editProfileFragment, null, slideRightNavOptions())
             true
         }
 
-        val savedProjects = findPreference<Preference>("profile_saved")
+        val savedProjects = findPreference<Preference>(PROFILE_SAVED)
         savedProjects?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_savedProjectsFragment, null, slideRightNavOptions())
+            true
+        }
+
+        val archivedProjects = findPreference<Preference>(PROFILE_ARCHIVED)
+        archivedProjects?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.action_settingsFragment_to_archiveFragment, null, slideRightNavOptions())
             true
         }
     }
@@ -121,13 +125,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
     @SuppressLint("InflateParams")
     private fun setAccountSection() {
 
-        val updatePasswordItem = findPreference<Preference>("account_update_password")
+        val updatePasswordItem = findPreference<Preference>(ACCOUNT_UPDATE_PASSWORD)
         updatePasswordItem?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_updatePasswordFragment, null, slideRightNavOptions())
             true
         }
 
-        val forgotPasswordItem = findPreference<Preference>("account_forgot_password")
+        val forgotPasswordItem = findPreference<Preference>(ACCOUNT_FORGOT_PASSWORD)
         forgotPasswordItem?.setOnPreferenceClickListener {
             findNavController().navigate(R.id.action_settingsFragment_to_forgotPasswordFragment, null, slideRightNavOptions())
             true

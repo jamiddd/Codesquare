@@ -34,6 +34,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
 import com.firebase.geofire.GeoFireUtils
@@ -760,6 +761,38 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
         }
     }
 
+    override fun onProjectLoad(project: Project) {
+        if (project.expiredAt > System.currentTimeMillis()) {
+            // delete project
+            FireUtility.deleteProject(project) {
+                if (it.isSuccessful) {
+                    // delete requests and let the users know
+                    FireUtility.getAllRequestsForProject(project) { result ->
+                        when (result) {
+                            is Result.Error -> viewModel.setCurrentError(result.exception)
+                            is Result.Success -> {
+                                val requests = result.data
+                                FireUtility.postDeleteProject(requests) { it1 ->
+                                    if (it1.isSuccessful) {
+                                        // TODO("Notify the users that the request has been deleted and the project is deleted.")
+                                        // TODO("Should also delete project invites if there's any but not important.")
+                                    } else {
+                                        viewModel.setCurrentError(it1.exception)
+                                    }
+                                }
+                            }
+                            null -> {
+                                Log.d(TAG, "Maybe there's none, but it\'s okay")
+                            }
+                        }
+                    }
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        }
+    }
+
     override fun onProjectRequestProjectDeleted(projectRequest: ProjectRequest) {
         deleteProjectRequest(projectRequest)
     }
@@ -799,7 +832,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
 
     override fun onProjectCommentClick(project: Project) {
-        val bundle = bundleOf("commentChannelId" to project.commentChannel, "parent" to project, "title" to project.name)
+        val bundle = bundleOf(COMMENT_CHANNEL_ID to project.commentChannel, PARENT to project, TITLE to project.name)
 
         when (navController.currentDestination?.id) {
             R.id.homeFragment -> {
@@ -839,13 +872,15 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
         val option2 = "Dislike $name"
         val option3 = "Save"
         val option4 = "Remove from saved"
-        val option5 = "Close project"
+        val option5 = "Archive project"
         val option6 = "Report"
+        val option7 = "Unarchive project"
 
         val isCreatorLiked = currentUser.likedUsers.contains(creatorId)
         val likeDislikeUserText = if (isCreatorLiked) { option2 } else { option1 }
         val saveUnSaveText = if (project.isSaved) { option4 } else { option3 }
-        val choices = if (isCurrentUser) { arrayOf(saveUnSaveText, option5) }
+        val archiveToggleText = if (project.isArchived) { option7 } else { option5 }
+        val choices = if (isCurrentUser) { arrayOf(saveUnSaveText, archiveToggleText) }
         else { arrayOf(likeDislikeUserText, saveUnSaveText, option6) }
 
         val alertDialog = MaterialAlertDialogBuilder(this)
@@ -870,19 +905,40 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                         viewHolder.onSaveProjectClick(project)
                     }
                     option5 -> {
-                        /*
-                        archiving project for 30 days. if no action is taken, project will
-                        be deleted
-                        */
-                        viewModel.archiveProject(currentUser.id, project)
+                        val sharedPreference = PreferenceManager.getDefaultSharedPreferences(this)
+                        if (sharedPreference.contains(PROJECT_EXPIRY)) {
+                            val durationS = sharedPreference.getString(PROJECT_EXPIRY, "30")
+                            if (durationS.isNullOrBlank()) {
+                                archive(project)
+                            } else {
+                                if (durationS.isDigitsOnly()) {
+                                    // durationS = number of days for expiry
+                                    val duration = durationS.toLong() * 24 * 60 * 60 * 1000
+                                    archive(project, duration)
+                                }
+                            }
+                        } else {
+                            archive(project)
+                        }
                     }
                     option6 -> {
-                        val bundle = bundleOf("contextObject" to project)
+                        val bundle = bundleOf(CONTEXT_OBJECT to project)
 
                         if (navController.currentDestination?.id == R.id.homeFragment) {
                             navController.navigate(R.id.action_homeFragment_to_reportFragment, bundle, slideRightNavOptions())
                         } else if (navController.currentDestination?.id == R.id.profileFragment) {
                             navController.navigate(R.id.action_profileFragment_to_reportFragment, bundle, slideRightNavOptions())
+                        }
+                    }
+                    option7 -> {
+                        FireUtility.unArchiveProject(project) {
+                            if (it.isSuccessful) {
+                                project.expiredAt = -1
+                                project.isArchived = false
+                                viewModel.updateLocalProject(project)
+                            } else {
+                                viewModel.setCurrentError(it.exception)
+                            }
                         }
                     }
                 }
@@ -891,6 +947,33 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
 
         alertDialog.window?.setGravity(Gravity.BOTTOM)
 
+    }
+
+    private fun archive(project: Project, duration: Long = 2592000000L) {
+        val currentUserId = UserManager.currentUserId
+        FireUtility.archiveProject(project, duration) {
+            if (it.isSuccessful) {
+                // notify the other contributors that the project has been archived
+                val content = "${project.name} has been archived."
+                val notification = Notification.createNotification(
+                    content,
+                    currentUserId,
+                    project.chatChannel
+                )
+                FireUtility.sendNotificationToChannel(notification) { it1 ->
+                    if (it1.isSuccessful) {
+                        // updating project locally
+                        project.expiredAt = System.currentTimeMillis() + duration
+                        project.isArchived = true
+                        viewModel.updateLocalProject(project)
+                    } else {
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
     }
 
     override fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest) {
@@ -904,6 +987,10 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 viewModel.setCurrentError(it.exception)
             }
         }
+    }
+
+    override fun onProjectNotFound(project: Project) {
+        viewModel.deleteLocalProject(project)
     }
 
     override fun onUserClick(user: User) {
@@ -965,22 +1052,35 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 .setItems(choices) { _, index ->
                     when (choices[index]) {
                         option7 -> {
+
+                            // Removing current user from project
                             FireUtility.removeUserFromProject(currentUser, projectId, chatChannelId) {
                                 if (it.isSuccessful) {
                                     viewModel.getLocalChatChannel(chatChannelId) { channel ->
                                         if (channel != null) {
+
+                                            // Removing the current user from chat channel
                                             FireUtility.removeUserFromChatChannel(currentUser, channel) { task ->
                                                 if (task.isSuccessful) {
 
-                                                    // TODO("Find a way to notify other people in the project that the user has left.")
+                                                    // notifying other users that the current user has left the project
+                                                    val content = "${currentUser.name} has left the project"
+                                                    val notification = Notification.createNotification(content, currentUserId, chatChannelId)
+                                                    FireUtility.sendNotificationToChannel(notification) { it1 ->
+                                                        if (it1.isSuccessful) {
 
-                                                    viewModel.getLocalProject(projectId) { project ->
-                                                        if (project != null) {
-                                                            val contributors = project.contributors.removeItemFromList(currentUserId)
-                                                            project.contributors = contributors
-                                                            viewModel.updateLocalProject(project)
+                                                            // if there is a project in local db, update it
+                                                            viewModel.getLocalProject(projectId) { project ->
+                                                                if (project != null) {
+                                                                    val contributors = project.contributors.removeItemFromList(currentUserId)
+                                                                    project.contributors = contributors
+                                                                    viewModel.updateLocalProject(project)
+                                                                } else {
+                                                                    Log.d(TAG, "Tried fetching local project with id: $projectId but received null.")
+                                                                }
+                                                            }
                                                         } else {
-                                                            Log.d(TAG, "Tried fetching local project with id: $projectId but received null.")
+                                                            viewModel.setCurrentError(it.exception)
                                                         }
                                                     }
                                                 } else {
@@ -1135,7 +1235,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
     }
 
     override fun onClick(comment: Comment) {
-        val bundle = bundleOf("parent" to comment, "title" to "Comments", COMMENT_CHANNEL_ID to comment.threadChannelId)
+        val bundle = bundleOf(PARENT to comment, TITLE to COMMENTS, COMMENT_CHANNEL_ID to comment.threadChannelId)
         when (navController.currentDestination?.id) {
             R.id.commentsFragment -> {
                 navController.navigate(R.id.action_commentsFragment_self, bundle, slideRightNavOptions())
@@ -1201,7 +1301,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
     }
 
     override fun onChannelClick(chatChannel: ChatChannel) {
-        val bundle = bundleOf("chatChannel" to chatChannel, "title" to chatChannel.projectTitle)
+        val bundle = bundleOf(CHAT_CHANNEL to chatChannel, TITLE to chatChannel.projectTitle)
         navController.navigate(R.id.action_homeFragment_to_chatFragment, bundle, slideRightNavOptions())
     }
 
@@ -1446,6 +1546,7 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
     }
 
     override fun onForwardClick(view: View, message: Message) {
+        // TODO("If there are no projects other than the current message project, don't show this fragment.")
         val forwardFragment = ForwardFragment.newInstance(arrayListOf(message))
         forwardFragment.show(supportFragmentManager, "ForwardFragment")
     }
@@ -1530,6 +1631,9 @@ class MainActivity: LauncherActivity(), LocationItemClickListener, ProjectInvite
                 when (it.itemId) {
                     R.id.popup_reply -> {
                         viewModel.setCurrentlySelectedMessage(currentlyFocusedMessage)
+                    }
+                    R.id.popup_forward -> {
+                        onForwardClick(currentMessageView!!, currentlyFocusedMessage!!)
                     }
                     R.id.popup_details -> {
                         val bundle = bundleOf("message" to currentlyFocusedMessage)

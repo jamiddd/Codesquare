@@ -12,10 +12,11 @@ import java.io.File
 
 class MainRepository(private val db: CodesquareDatabase) {
 
-    val projectDao = db.projectDao()
     private val userDao = db.userDao()
     private val interestDao = db.interestDao()
-    val chatChannelDao = db.chatChannelDao()
+    private val chatChannelDao = db.chatChannelDao()
+
+    val projectDao = db.projectDao()
     val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
     val commentDao = db.commentDao()
@@ -348,10 +349,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun getMessagesBefore(chatChannel: String, time: Long, limit: Int): List<Message> {
-        return messageDao.getMessagesBefore(chatChannel, time, limit)
-    }
-
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return messageDao.getMessages(chatChannelId).orEmpty()
     }
@@ -424,40 +421,10 @@ class MainRepository(private val db: CodesquareDatabase) {
         projectDao.clearTable()
     }
 
-    fun getCurrentChatChannel(chatChannelId: String): LiveData<ChatChannel> {
-        return chatChannelDao.getCurrentChatChannel(chatChannelId)
-    }
-
-    /*suspend fun onUndoProject(project: Project, projectRequest: ProjectRequest) {
-        val currentUser = currentUser.value
-        if (currentUser != null) {
-            when (val result = FireUtility.undoJoinProject(currentUser.id, project.id, projectRequest.requestId)) {
-                is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                is Result.Success -> {
-                    val userList = currentUser.projectRequests.removeItemFromList(projectRequest.requestId)
-                    currentUser.projectRequests = userList
-                    val projectList = project.requests.removeItemFromList(projectRequest.requestId)
-                    project.requests = projectList
-                    insertCurrentUser(currentUser)
-                    project.isRequested = false
-                    insertProjectsWithoutProcessing(arrayOf(project))
-                    projectRequestDao.deleteProjectRequest(projectRequest)
-                }
-            }
-        }
-    }*/
-
     suspend fun insertSearchQuery(searchQuery: SearchQuery) {
         searchQueryDao.insert(searchQuery)
     }
 
-    suspend fun deleteAllMessagesByUser(userId: String, chatChannelId: String? = null) {
-        if (chatChannelId != null) {
-            messageDao.deleteAllMessagesByUser(userId)
-        } else {
-            messageDao.deleteAllMessagesByUserInChannel(userId, chatChannelId)
-        }
-    }
 
     fun getCurrentUserProjects(): LiveData<List<Project>> {
         return projectDao.getCurrentUserProjects()
@@ -497,6 +464,10 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun getLocalProject(projectId: String): Project? {
         return projectDao.getProject(projectId)
+    }
+
+    suspend fun deleteLocalProject(project: Project) {
+        projectDao.deleteProject(project)
     }
 
     companion object {

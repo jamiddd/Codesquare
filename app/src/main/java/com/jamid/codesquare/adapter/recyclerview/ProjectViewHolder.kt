@@ -281,6 +281,22 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
             setJoinButton(project)
 
+            // check if the project is archived
+            Firebase.firestore.collection(PROJECTS).document(project.id)
+                .get()
+                .addOnCompleteListener {
+                    if (it.isSuccessful) {
+                        if (it.result.exists()) {
+                            // do something here
+                        } else {
+                            projectClickListener.onProjectNotFound(project)
+                        }
+                    } else {
+                        Log.e(TAG, it.exception?.localizedMessage.orEmpty())
+                    }
+                }
+
+
         }
     }
 

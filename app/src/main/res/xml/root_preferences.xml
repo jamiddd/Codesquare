@@ -10,6 +10,10 @@
             app:key="profile_saved"
             app:title="Saved projects" />
 
+        <Preference
+            app:key="profile_archived"
+            app:title="Archived projects" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Location">

@@ -361,6 +361,9 @@
         <action
             android:id="@+id/action_settingsFragment_to_forgotPasswordFragment"
             app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_settingsFragment_to_archiveFragment"
+            app:destination="@id/archiveFragment" />
 
     </fragment>
     <fragment
@@ -485,4 +488,16 @@
         android:id="@+id/cropFragment2"
         android:name="com.jamid.codesquare.CropFragment2"
         android:label=" " />
+    <fragment
+        android:id="@+id/archiveFragment"
+        android:name="com.jamid.codesquare.ui.ArchiveFragment"
+        android:label="Archived projects">
+        <action
+            android:id="@+id/action_archiveFragment_to_projectFragment"
+            app:destination="@id/projectFragment" />
+
+        <action
+            android:id="@+id/action_archiveFragment_to_profileFragment"
+            app:destination="@id/profileFragment" />
+    </fragment>
 </navigation>
