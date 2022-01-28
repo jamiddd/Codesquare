@@ -1,5 +1,6 @@
 package com.jamid.codesquare
 
+import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.app.Activity
@@ -17,7 +18,9 @@ import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
 import androidx.core.view.setMargins
@@ -25,6 +28,7 @@ import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
+import com.airbnb.lottie.LottieAnimationView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.IndexQuery
 import com.jamid.codesquare.data.*
@@ -748,4 +752,33 @@ fun <T: Any> List<T>.removeItemsFromList(items: List<T>): List<T> {
     return opList
 }
 
-const val TAG = "UtilityTAG"
+fun View.enable() {
+    this.isEnabled = true
+}
+
+fun View.disable() {
+    this.isEnabled = false
+}
+
+fun View.setBackgroundTint(@ColorInt color: Int) {
+    val drawable = this.background
+    val drawable1 = DrawableCompat.wrap(drawable)
+    DrawableCompat.setTint(drawable1, color)
+    this.background = drawable1
+}
+
+fun LottieAnimationView.doOnAnimationEnd(onAnimationEnd: (p: Animator?) -> Unit) {
+    this.addAnimatorListener(object: Animator.AnimatorListener {
+        override fun onAnimationStart(p0: Animator?) {}
+
+        override fun onAnimationEnd(p0: Animator?) {
+            onAnimationEnd(p0)
+        }
+
+        override fun onAnimationCancel(p0: Animator?) {}
+
+        override fun onAnimationRepeat(p0: Animator?) {}
+    })
+}
+
+const val TAG = "CodesquareLog"

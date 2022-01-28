@@ -9,6 +9,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
@@ -16,7 +17,7 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.PagerListFragment
 
 @ExperimentalPagingApi
-class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
+class CollaborationsFragment: PagerListFragment<Project, PostViewHolder>() {
 
     override fun onViewLaidOut() {
         super.onViewLaidOut()
@@ -26,9 +27,9 @@ class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
         setIsViewPagerFragment(true)
 
         var query: Query = Firebase.firestore.collection(PROJECTS)
+        val currentUser = UserManager.currentUser
 
         if (otherUser == null) {
-            val currentUser = UserManager.currentUser
             query = query.whereArrayContains(CONTRIBUTORS, currentUser.id)
 
             getItems {
@@ -44,25 +45,40 @@ class CollaborationsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
         isEmpty.observe(viewLifecycleOwner) {
             if (it != null && it) {
-                binding.pagerActionBtn.show()
+                if (otherUser == null) {
+                    binding.pagerActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_search_24)
+                    binding.pagerActionBtn.text = getString(R.string.search_for_projects)
+                    binding.pagerActionBtn.show()
 
-                binding.pagerActionBtn.text = getString(R.string.search_for_projects)
-                binding.pagerActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_search_24)
+                    binding.pagerActionBtn.setOnClickListener {
+                        findNavController().navigate(R.id.action_profileFragment_to_preSearchFragment, null, slideRightNavOptions())
+                    }
+                    binding.pagerNoItemsText.text = getString(R.string.empty_collaborations_greet)
+                } else {
+                    if (otherUser.id == currentUser.id) {
+                        binding.pagerActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_search_24)
+                        binding.pagerActionBtn.text = getString(R.string.search_for_projects)
+                        binding.pagerActionBtn.show()
 
-                binding.pagerActionBtn.setOnClickListener {
-                    findNavController().navigate(R.id.action_profileFragment_to_preSearchFragment, null, slideRightNavOptions())
+                        binding.pagerActionBtn.setOnClickListener {
+                            findNavController().navigate(R.id.action_profileFragment_to_preSearchFragment, null, slideRightNavOptions())
+                        }
+                        binding.pagerNoItemsText.text = getString(R.string.empty_collaborations_greet)
+                    } else {
+                        binding.pagerNoItemsText.text = "No collaborations."
+                    }
                 }
             } else {
                 binding.pagerActionBtn.hide()
             }
         }
 
-        binding.pagerNoItemsText.text = getString(R.string.empty_collaborations_greet)
+
         binding.noDataImage.setAnimation(R.raw.no_collaborations)
 
     }
 
-    override fun getAdapter(): PagingDataAdapter<Project, ProjectViewHolder> {
+    override fun getAdapter(): PagingDataAdapter<Project, PostViewHolder> {
         return ProjectAdapter()
     }
 

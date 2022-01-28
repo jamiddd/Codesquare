@@ -15,4 +15,6 @@ interface ProjectClickListener {
     fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest)
     fun onProjectNotFound(project: Project)
     fun onProjectLoad(project: Project)
+    fun onAdInfoClick()
+    fun onAdError(project: Project)
 }

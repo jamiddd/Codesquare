@@ -9,6 +9,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import java.io.File
+import kotlin.random.Random
 
 class MainRepository(private val db: CodesquareDatabase) {
 
@@ -39,13 +40,31 @@ class MainRepository(private val db: CodesquareDatabase) {
     val errors = MutableLiveData<Exception>()
 
     suspend fun insertProjects(projects: Array<out Project>, shouldProcess: Boolean = true) {
-        val currentUser = currentUser.value
-        if (currentUser != null) {
-            if (shouldProcess) {
-                projectDao.insert(processProjects(projects).toList())
-            } else {
-                projectDao.insert(projects.toList())
+
+        val currentUser = UserManager.currentUser
+        val newProjects = projects.toMutableList()
+
+        if (currentUser.premiumState.toInt() == -1) {
+            val numberOfAds = (projects.size / 3)
+
+            val indexes = mutableListOf<Int>()
+            for (i in 0 until numberOfAds) {
+                indexes.add(Random.nextInt(1, projects.size - 1))
             }
+
+            for (i in indexes) {
+                val newProject = Project()
+                newProject.isAd = true
+                newProject.createdAt = projects[i].createdAt
+                newProjects.add(i, newProject)
+            }
+        }
+
+
+        if (shouldProcess) {
+            projectDao.insert(processProjects(newProjects.toTypedArray()).toList())
+        } else {
+            projectDao.insert(newProjects.toList())
         }
     }
 
@@ -156,6 +175,10 @@ class MainRepository(private val db: CodesquareDatabase) {
                 val name = message.content + message.metadata?.ext.orEmpty()
                 val f = File(documentsDir, name)
                 message.isDownloaded = f.exists()
+            }
+
+            if (message.type == text) {
+                message.isDownloaded = true
             }
 
             if (message.replyTo != null) {
@@ -468,6 +491,14 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun deleteLocalProject(project: Project) {
         projectDao.deleteProject(project)
+    }
+
+    suspend fun deleteAdProjects() {
+        projectDao.deleteAdProjects()
+    }
+
+    fun getChannelContributorsLive(formattedChannelId: String): LiveData<List<User>> {
+        return userDao.getChannelContributorsLive(formattedChannelId)
     }
 
     companion object {

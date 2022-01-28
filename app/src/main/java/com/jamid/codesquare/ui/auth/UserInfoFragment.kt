@@ -29,6 +29,7 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
     private lateinit var client: Client
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var searchResultsAdapter: SearchResultsAdapter
+    private var currentList: List<SearchQuery> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -82,7 +83,7 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
 
             currentUser.interests = interests
 
-            FireUtility.updateUser2(currentUser, mapOf("interests" to interests, "about" to about)) {
+            FireUtility.updateUser2(mapOf("interests" to interests, "about" to about)) {
                 binding.setupCompleteProgress.hide()
                 if (it.isSuccessful) {
                     findNavController().navigate(R.id.action_userInfoFragment_to_homeFragment, null, slideRightNavOptions())
@@ -97,7 +98,10 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         viewModel.recentSearchList.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it.isNotEmpty()) {
-                    searchResultsAdapter.submitList(it)
+                    currentList = it.distinctBy { it1 ->
+                        it1.queryString
+                    }
+                    searchResultsAdapter.submitList(currentList)
                 } else {
                     searchResultsAdapter.submitList(emptyList())
                 }
@@ -138,7 +142,7 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
             }
         }
 
-        binding.userInfoScrollRoot.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+        binding.userInfoScrollRoot.setOnScrollChangeListener { _, _, scrollY, _, _ ->
             if (scrollY > 50) {
                 binding.backBtn.hideWithAnimation()
             } else {
@@ -164,7 +168,13 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         chip.isCheckedIconVisible = true
         chip.checkedIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_done_24)
         chip.isCloseIconVisible = false
-        this.addView(chip, 0)
+
+        if (currentList.find {
+                it.queryString == s
+            } == null) {
+            this.addView(chip, 0)
+        }
+
     }
 
     companion object {

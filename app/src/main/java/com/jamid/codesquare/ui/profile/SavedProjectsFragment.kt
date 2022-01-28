@@ -7,13 +7,14 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.R
 import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.ui.PagerListFragment
 
 @ExperimentalPagingApi
-class SavedProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
+class SavedProjectsFragment: PagerListFragment<Project, PostViewHolder>() {
 
     override fun onViewLaidOut() {
         super.onViewLaidOut()
@@ -32,7 +33,7 @@ class SavedProjectsFragment: PagerListFragment<Project, ProjectViewHolder>() {
 
     }
 
-    override fun getAdapter(): PagingDataAdapter<Project, ProjectViewHolder> {
+    override fun getAdapter(): PagingDataAdapter<Project, PostViewHolder> {
         return ProjectAdapter()
     }
 

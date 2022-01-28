@@ -18,6 +18,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
+import com.google.android.ads.nativetemplates.NativeTemplateStyle
+import com.google.android.ads.nativetemplates.TemplateView
+import com.google.android.gms.ads.*
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -26,7 +29,9 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
+import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProjectBinding
@@ -34,6 +39,7 @@ import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 @ExperimentalPagingApi
 class ProjectFragment : Fragment() {
@@ -123,7 +129,19 @@ class ProjectFragment : Fragment() {
             }
         })
 
-        binding.userImg.setImageURI(project.creator.photo)
+        if (project.creator.photo.isNullOrBlank()) {
+            val users = listOf(
+                R.drawable.a1,
+                R.drawable.a2,
+                R.drawable.a3,
+                R.drawable.a4,
+                R.drawable.a5,
+                R.drawable.a6
+            )
+            binding.userImg.setActualImageResource(users.random())
+        } else {
+            binding.userImg.setImageURI(project.creator.photo)
+        }
         binding.userName.text = project.creator.name
 
         binding.userImg.setOnClickListener {
@@ -244,6 +262,12 @@ class ProjectFragment : Fragment() {
                 .show()
         }
 
+        if (currentUser.premiumState.toInt() == -1) {
+            setAdView()
+        } else {
+            binding.adView.hide()
+        }
+
     }
 
     private fun setProjectObserver() = viewLifecycleOwner.lifecycleScope.launch {
@@ -267,6 +291,32 @@ class ProjectFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun setAdView() {
+//        val rand = Random.nextInt(1, 4)
+        val adView = requireActivity().findViewById<AdView>(R.id.adView)
+        adView.loadAd(AdRequest.Builder().build())
+        /*if (rand == 2) {
+
+            *//*
+            val adLoader = AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
+                .forNativeAd {
+                    val styles = NativeTemplateStyle.Builder().build()
+                    val template = requireActivity().findViewById<TemplateView>(R.id.my_template)
+                    template.setStyles(styles)
+                    template.setNativeAd(it)
+                }.withAdListener(object: AdListener() {
+                    override fun onAdFailedToLoad(p0: LoadAdError) {
+                        super.onAdFailedToLoad(p0)
+                        Log.e(TAG, p0.message)
+                    }
+                }).build()
+
+            adLoader.loadAd()*//*
+        } else {
+            adView?.hide()
+        }*/
     }
 
     private fun setJoinButton() {
@@ -482,6 +532,7 @@ class ProjectFragment : Fragment() {
                     val contributors = it.result.toObjects(User::class.java)
                     userAdapter2.submitList(contributors)
                 } else {
+                    binding.divider6.hide()
                     binding.contributorsHeaderLayout.hide()
                 }
             } else {

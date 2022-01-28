@@ -12,6 +12,7 @@ import androidx.core.os.bundleOf
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.google.android.gms.ads.AdRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -130,6 +131,12 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                     bottomBinding.commentInputLayout
                 )
             }
+        }
+
+        if (currentUser.premiumState.toInt() == -1) {
+            bottomBinding.adView.loadAd(AdRequest.Builder().build())
+        } else {
+            bottomBinding.adView.hide()
         }
 
     }

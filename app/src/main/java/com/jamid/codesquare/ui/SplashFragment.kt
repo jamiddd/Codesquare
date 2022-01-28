@@ -32,15 +32,23 @@ class SplashFragment: Fragment() {
             if (isSignedIn != null) {
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
+                        // just for testing
+//                        findNavController().navigate(R.id.action_splashFragment_to_profileImageFragment)
                         findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
                     } else {
                         findNavController().navigate(R.id.action_splashFragment_to_emailVerificationFragment)
                     }
+//                    bypassEmailVerification()
                 } else {
                     findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
                 }
             }
         }
     }
+
+    private fun bypassEmailVerification() {
+        findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+    }
+
 
 }

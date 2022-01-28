@@ -27,7 +27,7 @@ class ProfileFragment: Fragment() {
     private lateinit var binding: FragmentProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
     private var mUser: User? = null
-    private var likesCount: Long = 0
+    private var likesCount1: Long = 0
     private lateinit var currentUser: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -156,10 +156,10 @@ class ProfileFragment: Fragment() {
         val totalCollaborationText = user.collaborationsCount.toString() + " Collaborations"
         collaborationsCount.text = totalCollaborationText
 
-        likesCount = user.likesCount
+        likesCount1 = user.likesCount
 
-        val starsCountText = "$likesCount Likes"
-        starsCount.text = starsCountText
+        val starsCountText = "$likesCount1 Likes"
+        likesCount.text = starsCountText
 
         if (isCurrentUser) {
 
@@ -199,18 +199,18 @@ class ProfileFragment: Fragment() {
                 if (profilePrimaryBtn.isSelected) {
                     profilePrimaryBtn.isSelected = false
                     profilePrimaryBtn.text = getString(R.string.like)
-                    likesCount -= 1
-                    val starsCountText1 = "$likesCount Stars"
-                    starsCount.text = starsCountText1
+                    likesCount1 -= 1
+                    val likesCountText1 = "$likesCount1 Likes"
+                    likesCount.text = likesCountText1
 
                     viewModel.dislikeUser(user.id)
                 } else {
                     profilePrimaryBtn.isSelected = true
                     profilePrimaryBtn.text = getString(R.string.dislike)
 
-                    likesCount += 1
-                    val starsCountText1 = "$likesCount Stars"
-                    starsCount.text = starsCountText1
+                    likesCount1 += 1
+                    val likesCountText1 = "$likesCount1 Likes"
+                    likesCount.text = likesCountText1
 
                     viewModel.likeUser(user.id)
                 }

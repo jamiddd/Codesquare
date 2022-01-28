@@ -16,6 +16,7 @@ import com.algolia.search.model.multipleindex.IndexedQuery
 import com.algolia.search.model.response.ResponseMultiSearch
 import com.algolia.search.model.response.ResponseSearch
 import com.algolia.search.model.response.ResultMultiSearch
+import com.android.billingclient.api.SkuDetails
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.*
@@ -63,7 +64,28 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val _chatDocumentsUpload = MutableLiveData<List<Uri>>()
     val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
 
+    private val _subscriptionDetails = MutableLiveData<List<SkuDetails>>().apply { value = emptyList() }
+    val subscriptionDetails: LiveData<List<SkuDetails>> = _subscriptionDetails
+
+    private val _currentlySelectedSku = MutableLiveData<SkuDetails?>()
+
+    fun setCurrentlySelectedSku(skuDetails: SkuDetails?) {
+        _currentlySelectedSku.postValue(skuDetails)
+    }
+
     val chatScrollPositions = mutableMapOf<String, Int>()
+
+    fun setSubscriptionDetailsList(detailsList: List<SkuDetails> = emptyList()) {
+        _subscriptionDetails.postValue(detailsList)
+    }
+
+    private val _subscriptions = MutableLiveData<List<Subscription>>().apply { value = emptyList() }
+    val subscriptions: LiveData<List<Subscription>> = _subscriptions
+
+
+    fun setSubscriptions(list: List<Subscription> = emptyList()) {
+        _subscriptions.postValue(list)
+    }
 
     val selectedMessages = repo.onMessagesModeChanged
 
@@ -349,7 +371,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun updateUser(updatedUser: User, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
-        FireUtility.updateUser2(updatedUser, changes) {
+        FireUtility.updateUser2(changes) {
             onComplete(it)
             if (it.isSuccessful) {
                 insertCurrentUser(updatedUser)
@@ -1355,9 +1377,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }*/
 
-    private fun updateLocalChatChannel(chatChannel: ChatChannel) = viewModelScope.launch (Dispatchers.IO) {
-        repo.updateLocalChatChannel(chatChannel)
-    }
 
     fun deleteNotification(notification: Notification) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotification(notification)
@@ -1434,6 +1453,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         ) {
             repo.projectDao.getArchivedProjects(UserManager.currentUserId)
         }.flow.cachedIn(viewModelScope)
+    }
+
+    fun deleteAdProjects() = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteAdProjects()
+    }
+
+    fun getChannelContributorsLive(formattedChannelId: String): LiveData<List<User>> {
+        return repo.getChannelContributorsLive(formattedChannelId)
     }
 
     companion object {

@@ -19,6 +19,7 @@ import java.util.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import androidx.core.view.ViewCompat
+import androidx.preference.PreferenceManager
 import com.jamid.codesquare.*
 
 class MessageViewHolder2<T: Any>(
@@ -454,6 +455,22 @@ class MessageViewHolder2<T: Any>(
             binding.documentDownloadBtn.show()
             binding.documentDownloadProgress.hide()
 
+            val sharedPreference = PreferenceManager.getDefaultSharedPreferences(view.context)
+            val automaticDownload = sharedPreference?.getBoolean("chat_download", false)
+            if (automaticDownload != null && automaticDownload) {
+                binding.documentDownloadBtn.disappear()
+                binding.documentDownloadProgress.show()
+
+                messageListener.onStartDownload(message) { task, _ ->
+                    binding.documentDownloadProgress.hide()
+                    binding.documentDownloadBtn.hide()
+                    if (!task.isSuccessful) {
+                        Log.e(TAG, "Something went wrong while downloading document for message.")
+                    }
+                }
+            }
+
+
             binding.documentDownloadBtn.setOnClickListener {
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
@@ -529,6 +546,13 @@ class MessageViewHolder2<T: Any>(
     private fun setTimeForTextView(tv: TextView, time: Long) {
         val timeText = getTextForChatTime(time)
         tv.text = timeText
+
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)
+        val showChatTime = sharedPreferences.getBoolean("show_chat_time", true)
+        if (!showChatTime) {
+            tv.hide()
+        }
+
     }
 
     /*fun setDominantColorFromBitmap(uri: Uri, target: View) {

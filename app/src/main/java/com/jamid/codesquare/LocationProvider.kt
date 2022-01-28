@@ -6,8 +6,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.Address
-import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
@@ -21,10 +19,7 @@ import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.AutocompletePrediction
-import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.google.android.libraries.places.api.model.Place
-import com.google.android.libraries.places.api.model.TypeFilter
+import com.google.android.libraries.places.api.model.*
 import com.google.android.libraries.places.api.net.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.tasks.await
@@ -35,9 +30,9 @@ object LocationProvider {
     var isLocationEnabled = false
     var isLocationPermissionAvailable = false
     var currentLocation: Location? = null
-    private var nearbyAddresses: List<Address> = emptyList()
+    private var nearbyResults: List<PlaceLikelihood> = emptyList()
     private var errors: List<Exception> = emptyList()
-    private lateinit var geoCoder: Geocoder
+    /*private lateinit var geoCoder: Geocoder*/
 
     private fun error(exception: Exception) {
         val newList = errors.addItemToList(exception)
@@ -62,7 +57,7 @@ object LocationProvider {
         isLocationEnabled = isLocationEnabled(context)
         requestNewLocationData(fusedLocationProviderClient)
         getLastLocation(fusedLocationProviderClient)
-        geoCoder = Geocoder(context)
+/*        geoCoder = Geocoder(context)*/
     }
 
     // call this function only if network exists
@@ -73,19 +68,27 @@ object LocationProvider {
                 .addOnCompleteListener {
                     if (it.isSuccessful) {
                         currentLocation = it.result
-                        if (currentLocation != null) {
-                            val addresses = geoCoder.getFromLocation(currentLocation!!.latitude, currentLocation!!.longitude, 7)
-                            nearbyAddresses = addresses
+                        Log.d(TAG, currentLocation.toString())
+                        getNearbyPlaces { it1 ->
+                            if (it1.isSuccessful) {
+                                val response = it1.result
+                                nearbyResults = response.placeLikelihoods
+                            } else {
+                                Log.d(TAG, it1.exception?.localizedMessage.orEmpty())
+                            }
                         }
                     } else {
                         it.exception?.let { it1 -> error(it1) }
                     }
                 }
+        } else {
+            Log.d(TAG, "Something is not right $isLocationPermissionAvailable --- $isLocationEnabled")
         }
     }
 
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
+            Log.d(TAG, "Location Result -> ${locationResult.lastLocation}")
             currentLocation = locationResult.lastLocation
         }
     }
@@ -101,11 +104,14 @@ object LocationProvider {
     @SuppressLint("MissingPermission")
     private fun requestNewLocationData(fusedLocationProviderClient: FusedLocationProviderClient) {
         if (isLocationPermissionAvailable) {
+            Log.d(TAG, "Requesting new location data.")
             val request = createLocationRequest()
             fusedLocationProviderClient.requestLocationUpdates(
                 request, mLocationCallback,
                 Looper.getMainLooper()
             )
+        } else {
+            Log.d(TAG, "Location permission not available.")
         }
 
     }
@@ -222,6 +228,7 @@ object LocationProvider {
     }
 
     fun stopLocationUpdates(fusedLocationProviderClient: FusedLocationProviderClient) {
+        Log.d(TAG, "Stopping location updates")
         fusedLocationProviderClient.removeLocationUpdates(mLocationCallback)
     }
 

@@ -1,6 +1,7 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -76,8 +77,13 @@ class ChatDetailFragment: Fragment() {
                 layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
             }
 
-            val contributors = viewModel.getLocalChannelContributors("%${chatChannel.chatChannelId}%")
-            userAdapter.submitList(contributors)
+            viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
+                if (it.isNotEmpty()) {
+                    userAdapter.submitList(it)
+                } else {
+                    Log.d(TAG, "No contributors ...")
+                }
+            }
 
             val project = viewModel.getProjectByChatChannel(chatChannel.chatChannelId)
             if (project != null) {

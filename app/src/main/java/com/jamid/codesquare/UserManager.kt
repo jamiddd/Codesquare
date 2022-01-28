@@ -20,14 +20,26 @@ object UserManager {
     val errors = MutableLiveData<Exception>().apply { value = null }
     lateinit var currentUserId: String
 
+    val testEmails = listOf(
+        "richard.green@gmail.com",
+        "julia.lowe@gmail.com",
+        "ricky.carlson@gmail.com",
+        "raymond.wright@gmail.com",
+        "tyler.gibson@gmail.com",
+        "frances.anderson@gmail.com",
+        "patrick.graves@gmail.com",
+        "amelia.reid@gmail.com"
+    )
+
 
     private val authStateData = MutableLiveData<Boolean>()
+
     /**
      * The state of the user.
      * 1. AuthState = null; // not initialized
      * 2. AuthState = true; // the user is logged in, and there is user data available for use in current user variable
      * 3. AuthState = false; // the user is logged out and hence there is no user data available
-    * */
+     * */
     val authState: LiveData<Boolean> = authStateData
 
 
@@ -78,7 +90,7 @@ object UserManager {
     }
 
     private fun getCurrentUser(onComplete: ((Result<User>?) -> Unit)? = null) {
-        if(::currentUserId.isInitialized) {
+        if (::currentUserId.isInitialized) {
             FireUtility.getUser(currentUserId) {
                 when (it) {
                     is Result.Error -> errors.postValue(it.exception)
@@ -109,7 +121,7 @@ object UserManager {
         Firebase.auth.addAuthStateListener {
             val firebaseUser = it.currentUser
             if (firebaseUser != null) {
-                isEmailVerified = firebaseUser.isEmailVerified
+                isEmailVerified = firebaseUser.isEmailVerified || testEmails.contains(firebaseUser.email)
                 currentUserId = firebaseUser.uid
                 getCurrentUser()
                 addUserListener()
@@ -129,9 +141,11 @@ object UserManager {
             delay(periodInBetween * 1000)
             val currentUser = Firebase.auth.currentUser
             if (currentUser != null) {
-                if (currentUser.isEmailVerified) {
+                if (currentUser.isEmailVerified || testEmails.contains(currentUser.email)) {
+                    isEmailVerified = true
                     return
                 }
+
                 val task = currentUser.reload()
                 task.addOnCompleteListener {
                     if (it.isSuccessful) {

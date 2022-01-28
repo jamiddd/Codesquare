@@ -34,9 +34,11 @@ class UserViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     var shouldShowLikeButton = true
 
     fun bind(user: User) {
+
         val binding = UserItemAltBinding.bind(view)
         binding.userFullName.text = user.name
         binding.userTagDesc.text = user.tag
+
         binding.userImg.setImageURI(user.photo)
 
         binding.userLikeBtn.isSelected = user.isLiked
@@ -52,11 +54,5 @@ class UserViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         }
 
         binding.userLikeBtn.isVisible = shouldShowLikeButton
-
-        /*view.setOnLongClickListener {
-            userClickListener.onUserOptionClick()
-            true
-        }*/
-
     }
 }

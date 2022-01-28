@@ -58,6 +58,7 @@ class MessageDetailFragment: Fragment() {
                 if (value != null && value.exists()) {
                     val updatedMessage = value.toObject(Message::class.java)
                     if (updatedMessage != null) {
+                        updatedMessage.isDownloaded = true
                         onNewMessageReceived(updatedMessage)
                     }
                 }

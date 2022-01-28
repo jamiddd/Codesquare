@@ -19,9 +19,13 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     private val notificationBody = view.findViewById<TextView>(R.id.notification_body)
     private val notificationImg = view.findViewById<SimpleDraweeView>(R.id.notification_img)
 
+    var notificationCopy: Notification? = null
+
     fun bind(notification: Notification?) {
         if (notification == null)
             return
+
+        notificationCopy = notification
 
         notificationTitle.text = notification.title
         notificationBody.text = notification.content
@@ -39,9 +43,8 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             notificationItemClickListener.onNotificationClick(notification, user, null, null)
                         }
                     }
-                    null -> {
-                        // probably doesn't exist
-                    }
+                    null -> notificationItemClickListener.onNotificationError(notification)
+
                 }
             }
         }
@@ -57,9 +60,7 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             notificationItemClickListener.onNotificationClick(notification, null, project, null)
                         }
                     }
-                    null -> {
-                        // probably doesn't exist
-                    }
+                    null -> notificationItemClickListener.onNotificationError(notification)
                 }
             }
         }
@@ -75,9 +76,7 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                             notificationItemClickListener.onNotificationClick(notification, null, null, comment)
                         }
                     }
-                    null -> {
-                        // probably doesn't exist
-                    }
+                    null -> notificationItemClickListener.onNotificationError(notification)
                 }
             }
         }
@@ -85,7 +84,6 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         FireUtility.getUser(notification.senderId) {
             when (it) {
                 is Result.Error -> {
-                    Log.e(TAG, it.exception.localizedMessage.orEmpty())
                     notificationImg.hide()
                 }
                 is Result.Success -> {
@@ -93,12 +91,11 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                     notificationImg.setImageURI(it.data.photo)
                 }
                 null -> {
-                    notificationItemClickListener.onNotificationUserNotFound(notification)
+                    notificationItemClickListener.onNotificationError(notification)
                 }
             }
         }
 
-        notification.read = true
         notificationItemClickListener.onNotificationRead(notification)
 
     }

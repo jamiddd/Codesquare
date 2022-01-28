@@ -20,9 +20,7 @@
             android:id="@+id/user_image"
             android:layout_width="100dp"
             android:layout_height="100dp"
-            app:roundAsCircle="true"
-            app:roundingBorderColor="@color/black"
-            app:roundingBorderWidth="1dp" />
+            app:roundAsCircle="true" />
 
         <ProgressBar
             android:id="@+id/user_img_progress_bar"
@@ -86,7 +84,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:paddingStart="24dp"
-        android:paddingEnd="0dp"
+        android:paddingEnd="8dp"
         android:text="@string/next"
         app:icon="@drawable/ic_round_arrow_forward_24"
         app:iconGravity="end"

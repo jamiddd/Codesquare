@@ -443,6 +443,36 @@ exports.onUserUpdated = functions.firestore.document("users/{userId}")
 
     });
 
+exports.verifyPurchase = functions.https.onCall(async (data, context) => {
+    var purchaseInfo = {
+        purchaseToken: data.purchaseToken,
+        orderId: data.purchaseOrderId,
+        purchaseTime: data.purchaseTime,
+        productId: data.productId,
+        isValid: false
+    };
+
+    const userId = data.userId;
+
+    const docSnap = await admin.firestore()
+        .doc(`users/${userId}/purchases/${purchaseInfo.purchaseToken}`)
+        .get();
+        
+    if (docSnap.exists) {
+        return purchaseInfo;
+    } else {
+        purchaseInfo.isValid = true;
+
+        await admin.firestore()
+                .doc(`users/${userId}/purchases/${purchaseInfo.purchaseToken}`)
+                .set(purchaseInfo);
+            
+        return purchaseInfo;
+    }
+});
+
+
+
     // NOTIFICATIONS
     // ------------------
     // ---on request sent/undo--

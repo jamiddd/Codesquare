@@ -62,6 +62,9 @@ data class Project(
     @Exclude @set: Exclude @get: Exclude
     @Transient
     var isArchived: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    @Transient
+    var isAd: Boolean = false,
 ): Parcelable {
     constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
 

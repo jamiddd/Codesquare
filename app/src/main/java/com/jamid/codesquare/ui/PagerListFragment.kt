@@ -15,9 +15,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
-import androidx.paging.ExperimentalPagingApi
-import androidx.paging.LoadState
-import androidx.paging.PagingDataAdapter
+import androidx.paging.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -26,6 +24,7 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -47,7 +46,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
     protected abstract fun getAdapter(): PagingDataAdapter<T, VH>
 
-    open fun getItems(func: suspend () -> Unit) {
+    open fun getItems(func: suspend () -> Flow<PagingData<T>>) {
         job?.cancel()
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {
@@ -166,8 +165,9 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     is LoadState.Loading -> {
                         Log.d(TAG, "Refresh function - Loading")
 
+                        refresher?.isRefreshing = true
                         // when refresh has just started
-                        progressBar?.show()
+//                        progressBar?.show()
                         if (shouldHideRecyclerView) {
                             recyclerView.hide()
                         }
@@ -178,7 +178,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                         Log.d(TAG, "Refresh function - Error")
 
                         // when something went wrong while refreshing
-                        progressBar?.hide()
+                        refresher?.isRefreshing = false
+//                        progressBar?.hide()
                         if (shouldHideRecyclerView) {
                             recyclerView.hide()
                         }
@@ -190,8 +191,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     }
                     is LoadState.NotLoading -> {
                         viewLifecycleOwner.lifecycleScope.launch {
-                            delay(500)
-                            progressBar?.hide()
+                            delay(1500)
+//                            progressBar?.hide()
                             refresher?.isRefreshing = false
                         }
                     }
@@ -201,7 +202,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     is LoadState.Loading -> {
                         Log.d(TAG, "Append function - Loading")
                         // when append is loading
-                        progressBar?.show()
+                        refresher?.isRefreshing = true
+//                        progressBar?.show()
                         infoText?.hide()
                         image?.hide()
                     }
@@ -210,7 +212,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
                         // when append went wrong
                         // when something went wrong while refreshing
-                        progressBar?.hide()
+                        refresher?.isRefreshing = false
+//                        progressBar?.hide()
                         if (shouldHideRecyclerView) {
                             recyclerView.hide()
                         }
@@ -223,8 +226,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     }
                     is LoadState.NotLoading -> {
                         viewLifecycleOwner.lifecycleScope.launch {
-                            delay(500)
-                            progressBar?.hide()
+                            delay(1500)
+//                            progressBar?.hide()
                             refresher?.isRefreshing = false
                         }
                     }

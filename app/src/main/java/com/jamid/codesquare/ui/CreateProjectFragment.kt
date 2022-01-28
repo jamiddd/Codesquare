@@ -399,9 +399,9 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         return newImages
     }
 
-    private fun getTitle() = binding.projectTitleText.editText?.text.toString()
+    private fun getTitle() = binding.projectTitleText.editText?.text?.trim().toString()
 
-    private fun getContent() = binding.projectContentText.editText?.text.toString()
+    private fun getContent() = binding.projectContentText.editText?.text?.trim().toString()
 
     private fun getTags(): List<String> {
         val tags = mutableListOf<String>()
@@ -429,6 +429,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         val chip = Chip(requireContext())
         chip.text = tag
         chip.isCheckable = false
+        chip.isCloseIconVisible = true
         chip.setOnCloseIconClickListener {
             binding.projectTagsContainer.removeView(chip)
         }

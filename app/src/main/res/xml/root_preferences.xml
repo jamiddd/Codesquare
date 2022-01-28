@@ -1,4 +1,9 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <Preference
+        app:key="subscription_setting"
+        app:layout="@layout/subscription_setting_layout" />
 
     <PreferenceCategory app:title="Profile">
 
@@ -56,9 +61,9 @@
             app:defaultValue="false"
             app:persistent="true"
             app:key="chat_download"
-            app:summaryOff="Enable to download media automatically"
-            app:summaryOn="Disable to download media manually"
-            app:title="Automatically download media" />
+            app:summaryOff="Enable to download documents automatically"
+            app:summaryOn="Disable to download documents manually"
+            app:title="Automatically download documents" />
 
     </PreferenceCategory>
 
@@ -89,16 +94,6 @@
         <Preference
             app:key="logout"
             app:title="Log out" />
-
-    </PreferenceCategory>
-
-    <PreferenceCategory>
-
-        <Preference
-            app:key="donate"
-            app:title="Donate"
-            app:summary="You can buy me a coffee if this app helped you in any way."
-            app:icon="@drawable/ic_coffee"/>
 
     </PreferenceCategory>
 

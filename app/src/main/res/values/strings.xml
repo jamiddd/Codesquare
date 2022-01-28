@@ -128,5 +128,14 @@
     <string name="verify">Verify</string>
     <string name="cancel">Cancel</string>
     <string name="invite">Invite</string>
+    <string name="upgrade_plan">Upgrade plan</string>
+    <string name="remove_subscription">Remove subscription</string>
+    <string name="empty_subscriptions">No active subscription</string>
+    <string name="empty_subscripitons_desc">You have no active subscriptions. To remove ads and limitations subscribe to a premium plan.</string>
+    <string name="base_subscription">Base Subscription</string>
+    <string name="base_subscription_desc">(To upgrade to Premium Subscription, the previous subscription must be ended. Once started, it will finish after it\'s period completes regardless if you choose to end it now. Subscriptions can be cancelled in play store.)</string>
+    <string name="premium_subscriptions">Premium subscription</string>
+    <string name="premium_subscription_desc">(To downgrade to Base Subscription, the previous subscription must be ended. Once started, it will finish after it\'s period completes regardless if you choose to end it now. Subscriptions can be cancelled in play store.)</string>
+
 
 </resources>

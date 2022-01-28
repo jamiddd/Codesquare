@@ -141,11 +141,17 @@ class CreateAccountFragment : Fragment() {
             loadingDialog?.dismiss()
             binding.createBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
+                // Chang here
                 findNavController().navigate(
                     R.id.action_createAccountFragment_to_emailVerificationFragment,
                     null,
                     slideRightNavOptions()
                 )
+               /* findNavController().navigate(
+                    R.id.action_createAccountFragment_to_profileImageFragment,
+                    null,
+                    slideRightNavOptions()
+                )*/
             }
         }
 
@@ -200,6 +206,10 @@ class CreateAccountFragment : Fragment() {
                 val user = it.result.user
                 if (user != null) {
                     val localUser = User.newUser(user.uid, name, email)
+
+                    // setting a default image for the user
+                    val photo = userImages.random()
+                    localUser.photo = photo
 
                     FireUtility.uploadUser(localUser) { it1 ->
                         if (it1.isSuccessful) {

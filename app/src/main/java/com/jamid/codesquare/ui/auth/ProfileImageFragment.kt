@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.auth
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -11,15 +12,21 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentProfileImageBinding
-import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.DefaultProfileImageSheet
 
 @ExperimentalPagingApi
-class ProfileImageFragment: Fragment() {
+class ProfileImageFragment : Fragment() {
 
     private lateinit var binding: FragmentProfileImageBinding
     private val viewModel: MainViewModel by activityViewModels()
     private var profileImage: String? = null
-    private var firstTime: Boolean = true
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // just a precaution, need to remove later, because the fragment responsible
+        // for getting current image is also responsible for clearing it out.
+        viewModel.setCurrentImage(null)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -33,81 +40,154 @@ class ProfileImageFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // setting listeners
         binding.userImage.setOnClickListener(onImageUpdateClick)
         binding.updateImageBtn.setOnClickListener(onImageUpdateClick)
 
-        val currentUser = UserManager.currentUser
-
-        val users = listOf(R.drawable.user1, R.drawable.user2, R.drawable.user3, R.drawable.user4, R.drawable.user5, R.drawable.user6)
-
-        binding.userImage.setActualImageResource(users.random())
-
+        // skipping entirely
         binding.skipImageUpdateBtn.setOnClickListener {
-            findNavController().navigate(R.id.action_profileImageFragment_to_homeFragment, null, slideRightNavOptions())
+            findNavController().navigate(
+                R.id.action_profileImageFragment_to_homeFragment,
+                null,
+                slideRightNavOptions()
+            )
         }
 
+        val currentUser = UserManager.currentUser
+
         binding.imageUpdateNextBtn.setOnClickListener {
+
+            // updating UI on next btn click
             binding.profileImageCompleteProgress.show()
             binding.imageUpdateNextBtn.disappear()
-            binding.skipImageUpdateBtn.isEnabled = false
-            FireUtility.updateUser2(currentUser, mapOf("photo" to profileImage)) {
+            binding.skipImageUpdateBtn.disable()
+
+            // updating user with latest profile image
+            if (profileImage == null) {
+                profileImage = currentUser.photo
+            }
+
+            FireUtility.updateUser2(mapOf("photo" to profileImage)) {
+
                 binding.profileImageCompleteProgress.hide()
+
                 if (it.isSuccessful) {
-                    findNavController().navigate(R.id.action_profileImageFragment_to_userInfoFragment, null, slideRightNavOptions())
+                    // navigate to next fragment
+                    findNavController().navigate(
+                        R.id.action_profileImageFragment_to_userInfoFragment,
+                        null,
+                        slideRightNavOptions()
+                    )
                 } else {
-                    binding.skipImageUpdateBtn.isEnabled = true
+                    // updating UI on failed update
+                    binding.skipImageUpdateBtn.enable()
                     binding.imageUpdateNextBtn.show()
                     viewModel.setCurrentError(it.exception)
                 }
             }
         }
 
+        viewModel.currentImage.observe(viewLifecycleOwner) { image ->
+            // when new image or empty image is being fetched
+            onNewImageOrNullSet(image)
+
+            if (image != null) {
+                setProfileImage(image)
+                if (image.authority?.contains("googleapis.com") == true) {
+                    // already uploaded image, no need to upload
+                    onImageUploaded()
+                } else {
+                    uploadImage(image)
+                }
+            }
+        }
+
+
+        // setting ui for current fragment
         binding.userName.text = currentUser.name
 
-        viewModel.currentImage.observe(viewLifecycleOwner) { image ->
-            binding.userImgProgressBar.show()
-            binding.userImage.setColorFilter(ContextCompat.getColor(requireContext(), R.color.darkest_transparent))
-            binding.imageUpdateNextBtn.isEnabled = false
-            binding.skipImageUpdateBtn.isEnabled = false
-            if (image != null) {
-                binding.userImage.setImageURI(image.toString())
-                viewModel.uploadImage(currentUser.id, image) { downloadUri ->
-                    binding.userImgProgressBar.hide()
-                    binding.imageUpdateNextBtn.isEnabled = true
-                    binding.skipImageUpdateBtn.isEnabled = true
-                    binding.userImage.colorFilter = null
-                    if (downloadUri != null) {
-                        profileImage = downloadUri.toString()
-//                        binding.userImage.setImageURI(profileImage)
-                    } else {
-                        profileImage = null
-                        binding.userImage.setImageURI(profileImage)
-                        toast("Something went wrong while uploading the profile picture.")
-                    }
-                }
-            } else {
-                binding.userImgProgressBar.hide()
-                profileImage = null
-                binding.userImage.setImageURI(profileImage)
 
-                if (firstTime) {
-                    firstTime = false
-                    profileImage = currentUser.photo
-                    binding.userImage.setImageURI(profileImage)
-                }
+    }
+
+    private fun setProfileImage(image: Uri?) {
+        setProfileImage(image.toString())
+    }
+
+    private fun setProfileImage(image: String?) {
+        profileImage = image
+        binding.userImage.setImageURI(profileImage)
+    }
+
+    private fun onImageUploaded() {
+        binding.userImgProgressBar.hide()
+        binding.imageUpdateNextBtn.enable()
+        binding.skipImageUpdateBtn.enable()
+        binding.userImage.colorFilter = null
+    }
+
+    private fun onImageUploadFailed(e: Exception) {
+        removeImage()
+        toast(e.message.toString())
+    }
+
+    private fun removeImage() {
+        profileImage = null
+        setProfileImage(profileImage)
+    }
+
+    private fun uploadImage(image: Uri) {
+        viewModel.uploadImage(UserManager.currentUserId, image) { downloadUri ->
+            onImageUploaded()
+            if (downloadUri != null) {
+                setProfileImage(downloadUri.toString())
+            } else {
+                onImageUploadFailed(Exception("Image could not be uploaded"))
             }
         }
     }
 
-    private val onImageUpdateClick = View.OnClickListener {
-        (activity as MainActivity).selectImage1()
+    private fun onNewImageOrNullSet(image: Uri? = null) {
+        val currentUser = UserManager.currentUser
+
+        val colorFilter =  ContextCompat.getColor(
+            requireContext(),
+            R.color.darkest_transparent
+        )
+
+        // show that there is some progress
+        binding.userImgProgressBar.show()
+        binding.userImage.setColorFilter(colorFilter)
+
+        // disable actions because a work is in progress
+        binding.imageUpdateNextBtn.disable()
+        binding.skipImageUpdateBtn.disable()
+
+        // if there was no image
+        if (image == null) {
+            // update UI
+            binding.userImage.colorFilter = null
+            binding.userImgProgressBar.hide()
+            binding.imageUpdateNextBtn.enable()
+            binding.skipImageUpdateBtn.enable()
+
+            // setting the already existing image as profile image
+            setProfileImage(currentUser.photo)
+        }
+
     }
 
+    private val onImageUpdateClick = View.OnClickListener {
+        val fragment = DefaultProfileImageSheet()
+        fragment.show(requireActivity().supportFragmentManager, "DefaultProfileImage")
+    }
+
+    // resetting variable
     override fun onDestroy() {
         super.onDestroy()
         viewModel.setCurrentImage(null)
     }
 
+    // resetting variable
     override fun onDestroyView() {
         super.onDestroyView()
         viewModel.setCurrentImage(null)

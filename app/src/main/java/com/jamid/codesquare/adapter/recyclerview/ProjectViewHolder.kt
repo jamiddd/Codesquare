@@ -1,15 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.annotation.SuppressLint
-import android.widget.Button
-import android.widget.TextView
-import androidx.core.view.doOnLayout
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.LinearSnapHelper
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.SnapHelper
-import com.facebook.drawee.view.SimpleDraweeView
-import com.jamid.codesquare.data.Project
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextPaint
@@ -17,21 +8,38 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.*
+import android.widget.Button
+import android.widget.FrameLayout
+import android.widget.RatingBar
+import android.widget.TextView
+import androidx.core.view.doOnLayout
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.LinearSnapHelper
+import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.SnapHelper
 import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
+import com.google.android.gms.ads.*
+import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.google.android.gms.ads.nativead.NativeAdOptions.ADCHOICES_BOTTOM_RIGHT
+import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
+import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.ProjectRequest
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.ScrollTouchListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
-class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+class ProjectViewHolder(val v: View): PostViewHolder(v) {
 
     private val userImg: SimpleDraweeView = view.findViewById(R.id.project_user_img)
     private val userName: TextView = view.findViewById(R.id.project_user_name)
@@ -61,18 +69,19 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    fun bind(project: Project?) {
+    override fun bind(project: Project?) {
         if (project != null) {
-
-            Log.d(TAG, "${project.likes} -- ${project.isLiked}")
 
             val creator = project.creator
             val imagesCount = project.images.size
+
             totalImagesCount = imagesCount
+
             val ct = "1/$imagesCount"
             imagesCounter.text = ct
 
             userImg.setImageURI(creator.photo)
+
             userName.text = creator.name
 
             userImg.setOnClickListener {
@@ -137,15 +146,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                         content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
 
                         content.setOnClickListener {
-                            /*content.maxLines = Int.MAX_VALUE
-                            content.text = project.content
-
-                            view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
-                                delay(200)
-                                content.setOnClickListener {
-
-                                }
-                            }*/
                             projectClickListener.onProjectClick(project.copy())
                         }
 
@@ -297,9 +297,116 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
                 }
 
 
+           /* val currentUser = UserManager.currentUser
+            if (currentUser.premiumState.toInt() == -1) {
+                setAdView()
+            }*/
+
         }
     }
 
+
+   /* private fun setAdView() {
+        val rand = Random.nextInt(1, 6)
+        if (rand == Random.nextInt(1, 6)) {
+
+            val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
+            val adOptions = NativeAdOptions.Builder()
+                .setVideoOptions(videoOptions)
+                .setAdChoicesPlacement(ADCHOICES_BOTTOM_RIGHT)
+                .build()
+
+            val adView = LayoutInflater.from(view.context).inflate(R.layout.custom_post_ad, null, false)
+            val nativeAdView = adView as NativeAdView
+
+            val container = view.findViewById<FrameLayout>(R.id.project_ad_container)
+            container?.removeAllViews()
+            container?.addView(adView)
+
+            val infoIcon = view.findViewById<Button>(R.id.ad_info_icon)
+            infoIcon?.setOnClickListener {
+                projectClickListener.onAdInfoClick()
+            }
+
+            // TODO("Currently set for test ad. Need to change this to dynamically fetch the ad Id")
+            val adLoader = AdLoader.Builder(view.context, "ca-app-pub-3940256099942544/1044960115")
+                .forNativeAd { nativeAd ->
+
+                    nativeAdView.headlineView = adView.findViewById(R.id.ad_headline)
+                    nativeAdView.bodyView = adView.findViewById(R.id.ad_secondary_text)
+                    nativeAdView.mediaView = adView.findViewById(R.id.ad_media_view)
+                    nativeAdView.callToActionView = adView.findViewById(R.id.ad_primary_action)
+                    nativeAdView.iconView = adView.findViewById(R.id.ad_app_icon)
+                    nativeAdView.priceView = adView.findViewById(R.id.ad_price_text)
+                    nativeAdView.starRatingView = adView.findViewById(R.id.ad_rating)
+                    nativeAdView.advertiserView = adView.findViewById(R.id.ad_advertiser)
+
+                    val volumeBtn = adView.findViewById<Button>(R.id.ad_volume_btn)
+                    val replayBtn = adView.findViewById<Button>(R.id.ad_replay_btn)
+
+                    (nativeAdView.headlineView as TextView).text = nativeAd.headline
+                    nativeAd.mediaContent?.let {
+                        nativeAdView.mediaView?.setMediaContent(it)
+                    }
+
+                    if (nativeAd.icon != null) {
+                        (nativeAdView.iconView as SimpleDraweeView).setImageURI(nativeAd.icon?.uri.toString())
+                    }
+
+                    if (nativeAd.body == null) {
+                        nativeAdView.bodyView?.hide()
+                    } else {
+                        nativeAdView.bodyView?.show()
+                        (nativeAdView.bodyView as TextView).text = nativeAd.body
+                    }
+
+                    if (nativeAd.callToAction == null) {
+                        nativeAdView.callToActionView?.hide()
+                    } else {
+                        nativeAdView.callToActionView?.show()
+                        (nativeAdView.callToActionView as Button).text = nativeAd.callToAction
+                    }
+
+                    if (nativeAd.price == null) {
+                        nativeAdView.priceView?.hide()
+                    } else {
+                        nativeAdView.priceView?.show()
+                        (nativeAdView.priceView as TextView).text = nativeAd.price
+                    }
+
+                    if (nativeAd.starRating == null) {
+                        nativeAdView.starRatingView?.hide()
+                    } else {
+                        nativeAdView.starRatingView?.show()
+                        (nativeAdView.starRatingView as RatingBar).rating = nativeAd.starRating!!.toFloat()
+                    }
+
+                    if (nativeAd.advertiser == null) {
+                        nativeAdView.advertiserView?.hide()
+                    } else {
+                        (adView.advertiserView as TextView).text = nativeAd.advertiser
+                        nativeAdView.advertiserView?.show()
+                    }
+
+                    nativeAdView.setNativeAd(nativeAd)
+
+                }
+                .withAdListener(object: AdListener() {
+                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                        super.onAdFailedToLoad(loadAdError)
+
+                        val error =
+                            """domain: ${loadAdError.domain}, code: ${loadAdError.code}, message: ${loadAdError.message}""""
+
+                        Log.e(TAG, error)
+                    }
+                })
+                .withNativeAdOptions(adOptions)
+                .build()
+
+            adLoader.loadAd(AdRequest.Builder().build())
+        }
+    }*/
 
     private fun setLikeDislike(project: Project) {
         val likeCommentText = "${getLikesString(project.likes.toInt())} • ${getCommentsString(project.comments.toInt())} • ${getContributorsString(project.contributors.size)}"
@@ -330,7 +437,6 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         }
     }
 
-
     private fun setJoinButton(project: Project) {
         val currentUserId = UserManager.currentUserId
 
@@ -348,11 +454,27 @@ class ProjectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
                     if (value != null) {
                         if (value.isEmpty) {
-                            // no requests have been made
-                            joinBtn.text = view.context.getString(R.string.join)
-                            joinBtn.setOnClickListener {
-                                projectClickListener.onProjectJoinClick(project)
-                            }
+                            // getting the current user and checking if the project has been added to collaborations
+                            Firebase.firestore.collection(USERS).document(UserManager.currentUserId)
+                                .get()
+                                .addOnSuccessListener {
+                                    if (it != null && it.exists()) {
+                                        val currentUser = it.toObject(User::class.java)!!
+                                        if (currentUser.collaborations.contains(project.id)) {
+                                            joinBtn.hide()
+                                        } else {
+                                            joinBtn.text = view.context.getString(R.string.join)
+                                            joinBtn.setOnClickListener {
+                                                projectClickListener.onProjectJoinClick(project)
+                                            }
+                                        }
+                                    }
+                                }.addOnFailureListener {
+                                    joinBtn.text = view.context.getString(R.string.join)
+                                    joinBtn.setOnClickListener {
+                                        projectClickListener.onProjectJoinClick(project)
+                                    }
+                                }
                         } else {
                             val projectRequest = value.toObjects(ProjectRequest::class.java).first()
 

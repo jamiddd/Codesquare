@@ -31,6 +31,8 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
 
             if (project.contributors.contains(receiverIdForInvite)) {
                 // hide invite button
+                binding.inviteBtnProgress.hide()
+                binding.projectMiniInviteBtn.hide()
             } else {
                 FireUtility.getOldProjectRequest(project.id, receiverIdForInvite) {
                     when (it) {

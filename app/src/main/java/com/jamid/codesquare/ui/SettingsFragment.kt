@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -31,9 +30,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
-
         sharedPreference = PreferenceManager.getDefaultSharedPreferences(requireActivity())
         editor = sharedPreference.edit()
+
 
         setProfileSection()
 
@@ -47,6 +46,33 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         setOtherFunctions()
 
+//        setSubscriptionSetting()
+
+    }
+
+    private fun removePreference(preference: Preference) {
+        val parent = getParent(preferenceScreen, preference)
+            ?: throw RuntimeException("Couldn't find preference")
+        parent.removePreference(preference)
+    }
+
+    private fun getParent(
+        groupToSearchIn: PreferenceGroup,
+        preference: Preference
+    ): PreferenceGroup? {
+        for (i in 0 until groupToSearchIn.preferenceCount) {
+            val child = groupToSearchIn.getPreference(i)
+            if (child === preference) return groupToSearchIn
+            if (child is PreferenceGroup) {
+                val result = getParent(child, preference)
+                if (result != null) return result
+            }
+        }
+        return null
+    }
+
+    private fun setSubscriptionSetting() {
+        TODO("To handle preference related to subscription, may be added later")
     }
 
     private fun setProjectSection() {
@@ -75,10 +101,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setLocationSection() {
-
-        val radiusS = sharedPreference.getString(LOCATION_RADIUS, "1")
+        val radiusS = sharedPreference.getString(LOCATION_RADIUS, ONE)
         val locationRadius = findPreference<EditTextPreference>(LOCATION_RADIUS)
-        if (radiusS != "1") {
+        if (radiusS != ONE) {
             locationRadius?.setDefaultValue(radiusS)
             locationRadius?.summary = "$radiusS KM"
         }
@@ -137,7 +162,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-
         val providerData = Firebase.auth.currentUser?.providerData
         if (providerData != null) {
             if (providerData.size == 1 && providerData.first().providerId == "google.com") {
@@ -148,18 +172,33 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setChatSection() {
-        val showChatTime = findPreference<SwitchPreferenceCompat>("show_chat_time")
-        val sharedPreferences = activity?.getSharedPreferences("codesquare_shared", AppCompatActivity.MODE_PRIVATE)
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+
+        val showChatTime = findPreference<SwitchPreferenceCompat>("chat_time")
         showChatTime?.setOnPreferenceChangeListener { _, newValue ->
             val editor = sharedPreferences?.edit()
             if (newValue is Boolean) {
-                editor?.putBoolean("show_chat_time", newValue)
+                editor?.putBoolean("chat_time", newValue)
                 editor?.apply()
             }
             true
         }
 
-        showChatTime?.setDefaultValue(sharedPreferences?.getBoolean("show_chat_time", true))
+        showChatTime?.setDefaultValue(sharedPreferences?.getBoolean("chat_time", true))
+
+        /////////////////////////
+
+        val automaticDownload = findPreference<SwitchPreferenceCompat>("chat_download")
+        automaticDownload?.setOnPreferenceChangeListener { _, newValue ->
+            val editor = sharedPreferences?.edit()
+            if (newValue is Boolean) {
+                editor?.putBoolean("chat_download", newValue)
+                editor?.apply()
+            }
+            true
+        }
+
+        automaticDownload?.setDefaultValue(sharedPreferences?.getBoolean("chat_download", false))
 
     }
 

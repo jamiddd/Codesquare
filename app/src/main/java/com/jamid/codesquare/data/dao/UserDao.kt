@@ -29,4 +29,7 @@ abstract class UserDao: BaseDao<User>() {
     @Query("UPDATE users SET isLiked = 0 WHERE id = :userId")
     abstract suspend fun dislikeLocalUserById(userId: String)
 
+    @Query("SELECT * FROM users WHERE chatChannels LIKE :formattedChannelId ORDER BY name ASC")
+    abstract fun getChannelContributorsLive(formattedChannelId: String): LiveData<List<User>>
+
 }

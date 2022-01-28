@@ -53,6 +53,8 @@ class SearchUsersFragment: Fragment() {
 
                     vagueUserAdapter = VagueUserAdapter(ids, viewLifecycleOwner.lifecycleScope) { userId ->
                         viewModel.getLocalUser(userId)
+                    }.apply {
+                        shouldShowLikeBtn = false
                     }
 
                     binding.searchUsersRecycler.apply {

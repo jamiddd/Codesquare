@@ -1,6 +1,7 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,10 +11,16 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
+import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
+import kotlin.random.Random
 
 @ExperimentalPagingApi
 class ChatListFragment2: Fragment() {
@@ -61,6 +68,61 @@ class ChatListFragment2: Fragment() {
             findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment)
         }
 
+
+        if (currentUser.premiumState.toInt() == -1) {
+            binding.chatListAdContainer.show()
+            setAdView()
+        } else {
+            binding.chatListAdContainer.hide()
+        }
+
+
+        binding.chatChannelsRefresher.setOnRefreshListener {
+            Firebase.firestore.collection(CHAT_CHANNELS)
+                .whereArrayContains(CONTRIBUTORS, currentUser.id)
+                .get()
+                .addOnCompleteListener {
+                    binding.chatChannelsRefresher.isRefreshing = false
+                    Log.d(TAG, "Got some results")
+                    if (it.isSuccessful) {
+                        if (!it.result.isEmpty) {
+                            val chatChannels = it.result.toObjects(ChatChannel::class.java)
+                            viewModel.insertChatChannels(chatChannels)
+                        }
+                    } else {
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
+
+        }
+
+
+    }
+
+    private fun setAdView() {
+        binding.adView.loadAd(AdRequest.Builder().build())
+//        val adView = requireActivity().findViewById<AdView>(R.id.adView)
+        /*if (rand == 2) {
+
+            *//*
+            val adLoader = AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
+                .forNativeAd {
+                    val styles = NativeTemplateStyle.Builder().build()
+                    val template = requireActivity().findViewById<TemplateView>(R.id.my_template)
+                    template.setStyles(styles)
+                    template.setNativeAd(it)
+                }.withAdListener(object: AdListener() {
+                    override fun onAdFailedToLoad(p0: LoadAdError) {
+                        super.onAdFailedToLoad(p0)
+                        Log.e(TAG, p0.message)
+                    }
+                }).build()
+
+            adLoader.loadAd()*//*
+        } else {
+            adView?.hide()
+        }*/
+//        adView.loadAd(AdRequest.Builder().build())
     }
 
     private fun onChatChannelExists() {

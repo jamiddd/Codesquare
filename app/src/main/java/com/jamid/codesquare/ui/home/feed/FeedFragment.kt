@@ -2,33 +2,38 @@ package com.jamid.codesquare.ui.home.feed
 
 import android.annotation.SuppressLint
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.TagsContainerBinding
+import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.firebase.geofire.GeoLocation
-import com.google.firebase.firestore.QuerySnapshot
-import com.firebase.geofire.GeoFireUtils
-import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.android.gms.tasks.Tasks
+import java.util.*
+import kotlin.collections.ArrayList
 
 @ExperimentalPagingApi
-class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
+class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
     init {
         shouldHideRecyclerView = true
@@ -99,7 +104,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
                     if (tempLocation != null) {
                         searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
                     } else {
-                        toast("Temp location is null")
+                        LocationProvider.getLastLocation((activity as MainActivity).fusedLocationProviderClient)
                     }
                 }
             }
@@ -161,12 +166,16 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         toast("Showing projects near you...")
 
         val center = GeoLocation(geoLocation.latitude, geoLocation.longitude)
-        val radiusInM = (50 * 1000).toDouble()
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
-        val bounds = GeoFireUtils.getGeoHashQueryBounds(center, radiusInM)
+        val radius = sharedPreferences.getString(LOCATION_RADIUS, ONE)
+        val radiusInMeters = if (radius != null && radius != ONE && radius.isDigitsOnly()) {
+            radius.toInt() } else { 1 } * 1000
+
+        val bounds = GeoFireUtils.getGeoHashQueryBounds(center, radiusInMeters.toDouble())
         val tasks: MutableList<Task<QuerySnapshot>> = ArrayList()
         for (b in bounds) {
-            val q = Firebase.firestore.collection("projects")
+            val q = Firebase.firestore.collection(PROJECTS)
                 .orderBy("location.geoHash")
                 .startAt(b.startHash)
                 .endAt(b.endHash)
@@ -188,7 +197,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
                         // accuracy, but most will match
                         val docLocation = GeoLocation(lat, lng)
                         val distanceInM = GeoFireUtils.getDistanceBetween(docLocation, center)
-                        if (distanceInM <= radiusInM) {
+                        if (distanceInM <= radiusInMeters) {
                             matchingDocs.add(doc)
                         }
                     }
@@ -230,9 +239,13 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         chip.isCheckable = true
         chip.isCloseIconVisible = false
 
+        val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        val t2 = tag.uppercase()
+        val t3 = tag.lowercase()
+
         chip.setOnClickListener {
             val query = Firebase.firestore.collection("projects")
-                .whereArrayContains("tags", tag)
+                .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
 
             getItems {
                 viewModel.getFeedItems(query, tag)
@@ -248,7 +261,7 @@ class FeedFragment: PagerListFragment<Project, ProjectViewHolder>() {
         fun newInstance() = FeedFragment()
     }
 
-    override fun getAdapter(): PagingDataAdapter<Project, ProjectViewHolder> {
+    override fun getAdapter(): PagingDataAdapter<Project, PostViewHolder> {
         return ProjectAdapter()
     }
 

@@ -3,9 +3,9 @@ package com.jamid.codesquare.ui.home
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.activity.addCallback
+import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -21,7 +21,7 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
 import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
-import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.ktx.auth
@@ -29,7 +29,10 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
+import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.SubscriptionFragment
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
@@ -38,29 +41,31 @@ class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var toolbar: MaterialToolbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
     }
 
-    private fun setBitmapDrawable(bitmap: Bitmap?) {
-        val drawable = RoundedBitmapDrawableFactory.create(resources, bitmap)
-        drawable.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
-        var isMenuReady = false
-        while (!isMenuReady) {
-            val menu = toolbar?.menu
-            isMenuReady = menu != null && menu.size() > 3 && menu.findItem(R.id.profile) != null
-            if (menu == null) {
-                Log.d(TAG, "Menu is null")
-            } else {
-                Log.d(TAG, "Menu size is ${menu.size()} and profile item is ${menu.findItem(R.id.profile)}")
-            }
+    private fun setBitmapDrawable(bitmap: Bitmap) {
 
+        val drawable = RoundedBitmapDrawableFactory.create(resources, bitmap).also {
+            it.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
         }
+
+        val toolbar = requireActivity().findViewById<Toolbar>(R.id.main_toolbar)
         requireActivity().runOnUiThread {
-            toolbar?.menu?.getItem(3)?.icon = drawable
+            if (toolbar != null) {
+                val menu = toolbar.menu
+                if (menu != null) {
+                    if (menu.size() > 3) {
+                        val profileItem = menu.getItem(3)
+                        if (profileItem != null) {
+                            profileItem.icon = drawable
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -92,7 +97,9 @@ class HomeFragment: Fragment() {
         } else {
             downloadBitmapUsingFresco(photo) {
                 viewModel.currentUserBitmap = it
-                setBitmapDrawable(it)
+                if (it != null) {
+                    setBitmapDrawable(it)
+                }
             }
         }
     }
@@ -100,9 +107,7 @@ class HomeFragment: Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.home_menu, menu)
-        toolbar = requireActivity().findViewById(R.id.main_toolbar)
-
-        toolbar?.setOnClickListener {
+        requireActivity().findViewById<Toolbar>(R.id.main_toolbar)?.setOnClickListener {
             if (binding.homeViewPager.currentItem == 0) {
                 val recyclerView = activity?.findViewById<RecyclerView>(R.id.pager_items_recycler)
                 recyclerView?.smoothScrollToPosition(0)
@@ -111,6 +116,11 @@ class HomeFragment: Fragment() {
                 recyclerView?.smoothScrollToPosition(0)
             }
         }
+    }
+
+    private fun setImage() {
+        val currentUser = UserManager.currentUser
+        setCurrentUserPhotoAsDrawable(currentUser.photo)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -125,7 +135,24 @@ class HomeFragment: Fragment() {
                 true
             }
             R.id.create_project -> {
-                findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
+
+                val currentUser = UserManager.currentUser
+                if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
+                    findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
+                } else {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Collab")
+                        .setMessage("You have already created 2 projects. To create more, upgrade your subscription plan!")
+                        .setPositiveButton("Upgrade") { _, _ ->
+                            val act = activity as MainActivity
+                            act.subscriptionFragment = SubscriptionFragment()
+                            act.subscriptionFragment?.show(act.supportFragmentManager, "SubscriptionFragment")
+                        }.setNegativeButton("Cancel") { a, _ ->
+                            a.dismiss()
+                        }
+                        .show()
+                }
+
                 true
             }
             R.id.profile -> {
@@ -151,7 +178,14 @@ class HomeFragment: Fragment() {
 
         val activity = requireActivity()
 
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(300)
+            // for delayed toolbar
+            setImage()
+        }
+
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
+
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         TabLayoutMediator(tabLayout, binding.homeViewPager) { a, b ->
             when (b) {
@@ -167,27 +201,12 @@ class HomeFragment: Fragment() {
         (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
         val mAuth = Firebase.auth
-        if (mAuth.currentUser == null || mAuth.currentUser?.isEmailVerified == false) {
+        if (mAuth.currentUser == null) {
             findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
         }
 
-        val currentUser = UserManager.currentUser
-        val currentUserPhoto = currentUser.photo
-        if (currentUserPhoto != null) {
-            setCurrentUserPhotoAsDrawable(currentUserPhoto)
-        }
+        setImage()
 
-        /*UserManager.currentUserLive.observe(viewLifecycleOwner) {
-            if (it != null) {
-                val currentUserPhoto = it.photo
-                if (currentUserPhoto != null) {
-                    setCurrentUserPhotoAsDrawable(currentUserPhoto)
-                }
-            }
-        }*/
     }
 
-    companion object {
-        private const val TAG = "HomeFragment"
-    }
 }

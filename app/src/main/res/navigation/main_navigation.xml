@@ -12,11 +12,7 @@
         tools:layout="@layout/fragment_home">
         <action
             android:id="@+id/action_homeFragment_to_createProjectFragment"
-            app:destination="@id/createProjectFragment"
-            app:enterAnim="@anim/slide_in_right"
-            app:exitAnim="@anim/slide_out_left"
-            app:popEnterAnim="@anim/slide_in_left"
-            app:popExitAnim="@anim/slide_out_right" />
+            app:destination="@id/createProjectFragment" />
         <action
             android:id="@+id/action_homeFragment_to_preSearchFragment"
             app:destination="@id/preSearchFragment" />
@@ -56,6 +52,16 @@
         <action
             android:id="@+id/action_homeFragment_to_projectRequestFragment"
             app:destination="@id/projectRequestFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_subscriberFragment"
+            app:destination="@+id/subscriberFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/subscriberFragment"
+        android:name="com.jamid.codesquare.ui.SubscriberFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_subscriber">
+
     </fragment>
     <fragment
         android:id="@+id/createProjectFragment"
@@ -99,6 +105,9 @@
         <action
             android:id="@+id/action_createAccountFragment_to_emailVerificationFragment"
             app:destination="@id/emailVerificationFragment" />
+        <action
+            android:id="@+id/action_createAccountFragment_to_profileImageFragment"
+            app:destination="@id/profileImageFragment" />
     </fragment>
     <fragment
         android:id="@+id/locationFragment"
@@ -110,6 +119,9 @@
         android:name="com.jamid.codesquare.ui.profile.ProfileFragment"
         android:label="Profile"
         tools:layout="@layout/fragment_profile" >
+        <action
+            android:id="@+id/action_profileFragment_to_subscriberFragment"
+            app:destination="@+id/subscriberFragment" />
         <action
             android:id="@+id/action_profileFragment_to_preSearchFragment"
             app:destination="@id/preSearchFragment" />
@@ -166,6 +178,9 @@
             android:name="title"
             app:argType="string"
             android:defaultValue="Project" />
+        <action
+            android:id="@+id/action_projectFragment_to_subscriberFragment"
+            app:destination="@+id/subscriberFragment" />
         <action
             android:id="@+id/action_projectFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
@@ -342,6 +357,9 @@
         android:id="@+id/settingsFragment"
         android:name="com.jamid.codesquare.ui.SettingsFragment"
         android:label="Settings" >
+        <action
+            android:id="@+id/action_settingsFragment_to_subscriberFragment"
+            app:destination="@+id/subscriberFragment" />
         <action
             android:id="@+id/action_settingsFragment_to_loginFragment"
             app:destination="@id/loginFragment" />

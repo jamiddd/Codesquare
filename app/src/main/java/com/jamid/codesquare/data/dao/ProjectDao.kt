@@ -58,7 +58,10 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Delete
     abstract suspend fun deleteProject(project: Project)
 
-    @Query("SELECT * FROM projects WHERE isArchived = 1 AND project_userId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM projects WHERE isArchived = 1 AND project_userId = :currentUserId ORDER BY createdAt DESC")
     abstract fun getArchivedProjects(currentUserId: String): PagingSource<Int, Project>
+
+    @Query("DELETE FROM projects WHERE isAd = 1")
+    abstract suspend fun deleteAdProjects()
 
 }

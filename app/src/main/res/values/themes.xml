@@ -306,6 +306,17 @@
         <item name="android:background">#fafafa</item>
     </style>
 
+    <style name="AppTheme.ListItem" parent="TextAppearance.AppCompat.Body1">
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">16dp</item>
+        <item name="android:paddingBottom">16dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?selectableItemBackground</item>
+    </style>
+
     <style name="AppTheme.TagNextBtn" parent="AppTheme.Button.IconOnly">
         <item name="android:backgroundTint">@color/white</item>
     </style>

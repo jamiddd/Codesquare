@@ -92,7 +92,9 @@ class EditProfileFragment: Fragment() {
 
                 if (currentUser.photo != profileImage) {
                     changes["photo"] = profileImage
-                    updatedUser.photo = profileImage
+                    if (profileImage != null) {
+                        updatedUser.photo = profileImage!!
+                    }
                 }
 
                 if (currentUser.username != username) {

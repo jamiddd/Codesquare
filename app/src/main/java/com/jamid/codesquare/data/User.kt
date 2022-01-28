@@ -23,7 +23,7 @@ data class User(
     var tag: String,
     var email: String,
     var about: String,
-    var photo: String?,
+    var photo: String,
     var interests: List<String> = emptyList(),
     var likedUsers: List<String> = emptyList(),
     var likedProjects: List<String> = emptyList(),
@@ -47,7 +47,8 @@ data class User(
     @Transient
     var isCurrentUser: Boolean = false,
     @Embedded(prefix = "user_")
-    var location: Location? = null
+    var location: Location? = null,
+    var premiumState: Long = -1
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false)
 

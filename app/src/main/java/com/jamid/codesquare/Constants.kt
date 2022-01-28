@@ -5,8 +5,12 @@ const val CODESQUARE_DB = "codesquare-db"
 const val HOME_PAGE_COUNT = 2
 const val PROFILE_PAGE_COUNT = 2
 const val MAX_LINES = 4
+const val ONE = "1"
 
 const val CREATED_AT = "createdAt"
+
+const val FILE_PROV_AUTH = "com.jamid.codesquare.fileprovider"
+const val PURCHASES = "purchases"
 
 // Constraint layout
 const val START_TO_START = "START_TO_START"
@@ -81,3 +85,16 @@ const val PROFILE_ARCHIVED = "profile_archived"
 const val ACCOUNT_UPDATE_PASSWORD = "account_update_password"
 const val ACCOUNT_FORGOT_PASSWORD = "account_forgot_password"
 const val PROJECTS_COUNT = "projectsCount"
+const val CHANNEL_ID = "channelId"
+
+
+const val USER_IMG_1 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa1.jpg?alt=media&token=0c0d875f-e0a2-42a6-891f-716b7b47ba2a"
+const val USER_IMG_2 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa2.jpg?alt=media&token=3001b91d-9e1e-465d-8a08-caf9f9ed81fe"
+const val USER_IMG_3 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa3.jpg?alt=media&token=898dd6a1-664a-4154-a175-95bb8f1df2ef"
+const val USER_IMG_4 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa4.jpg?alt=media&token=409da6dd-197a-45cb-9709-b86a7a0d7fa3"
+const val USER_IMG_5 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa5.jpg?alt=media&token=827a0561-a4f6-4482-b589-5b84ea6e4eb9"
+const val USER_IMG_6 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa6.jpg?alt=media&token=c5a58dc9-8bb8-41ed-9f9d-c4a4b69238cd"
+const val USER_IMG_7 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa7.jpg?alt=media&token=54a70f7f-1d3b-4f56-a5c9-3f42c4f51dec"
+const val USER_IMG_8 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa8.jpg?alt=media&token=90013468-bc6c-4867-9dd8-4ecbeea480a0"
+
+val userImages = listOf(USER_IMG_1, USER_IMG_2, USER_IMG_3, USER_IMG_4, USER_IMG_5, USER_IMG_6, USER_IMG_7, USER_IMG_8)

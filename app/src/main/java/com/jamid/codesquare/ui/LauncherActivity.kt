@@ -13,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -86,14 +88,14 @@ abstract class LauncherActivity : AppCompatActivity(){
         if (it.resultCode == Activity.RESULT_OK) {
             it.data?.data?.let { it1 ->
                 viewModel.setCurrentImage(it1)
-//                val cropOption = CropImageOptions().apply {
-//                    fixAspectRatio = true
-//                    aspectRatioX = 1
-//                    aspectRatioY = 1
-//                    cropShape = CropImageView.CropShape.OVAL
-//                }
-//                findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_imageCropperFragment, bundleOf("image" to it1.toString(), "cropOptions" to cropOption))
-//                findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_cropFragment2, bundleOf("image" to it1.toString()))
+                val options = CropImageOptions()
+                options.fixAspectRatio = true
+                options.aspectRatioX = 1
+                options.aspectRatioY = 1
+                options.cropShape = CropImageView.CropShape.OVAL
+                options.outputRequestHeight = 100
+                options.outputRequestWidth = 100
+                findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_cropFragment2, bundleOf("image" to it1.toString(), "cropOptions" to options))
             }
         }
     }
@@ -102,13 +104,14 @@ abstract class LauncherActivity : AppCompatActivity(){
         if (it.resultCode == Activity.RESULT_OK) {
             it.data?.data?.let { it1 ->
                 viewModel.setCurrentImage(it1)
-                /*val cropOption = CropImageOptions().apply {
-                    fixAspectRatio = true
-                    aspectRatioX = 1
-                    aspectRatioY = 1
-                    cropShape = CropImageView.CropShape.OVAL
-                }*/
-//                findNavController(R.id.nav_host_fragment).navigate(R.id.action_profileImageFragment_to_cropFragment2, bundleOf("image" to it1.toString()))
+                val options = CropImageOptions()
+                options.fixAspectRatio = true
+                options.aspectRatioX = 1
+                options.aspectRatioY = 1
+                options.cropShape = CropImageView.CropShape.OVAL
+                options.outputRequestHeight = 100
+                options.outputRequestWidth = 100
+                findNavController(R.id.nav_host_fragment).navigate(R.id.action_profileImageFragment_to_cropFragment2, bundleOf("image" to it1.toString(), "cropOptions" to options))
             }
         }
     }

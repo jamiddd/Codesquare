@@ -16,7 +16,10 @@ import android.app.NotificationChannel
 import android.content.Context
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
+import androidx.core.os.bundleOf
 import androidx.navigation.NavDeepLinkBuilder
+import com.jamid.codesquare.data.Result
 
 class MyFirebaseMessagingService: FirebaseMessagingService() {
 
@@ -38,43 +41,43 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         super.onMessageReceived(remoteMessage)
 
-        /*val intent = Intent(NOTIFICATION_INTENT)
+        var destination: Int
+        val messageData = remoteMessage.data
+        var bundle: Bundle
+        if (messageData.isNotEmpty()) {
+            val content = messageData["content"]
+            val title = messageData["title"]
 
-        if (remoteMessage.data.isNotEmpty()) {
-            val senderId = remoteMessage.data["senderId"]
-            if (senderId != null) {
-                // don't do anything
-            } else {
-                intent.putExtra(ARG_NOTIFICATION_TITLE, remoteMessage.notification?.title)
-                intent.putExtra(ARG_NOTIFICATION_BODY, remoteMessage.notification?.body)
-
-                LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+            if (messageData.containsKey(CHANNEL_ID)) {
+                // chat notification
+                val channelId = messageData[CHANNEL_ID]!!
+                destination = R.id.chatFragment
+                FireUtility.getChatChannel(channelId) { result ->
+                    when (result) {
+                        is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
+                        is Result.Success -> {
+                            val chatChannel = result.data
+                            bundle = bundleOf(CHAT_CHANNEL to chatChannel, TITLE to chatChannel.projectTitle)
+                            sendNotification(this, destination, title, content, bundle)
+                        }
+                        null -> {
+                            // don't do anything
+                        }
+                    }
+                }
             }
-        } else {
-            intent.putExtra(ARG_NOTIFICATION_TITLE, remoteMessage.notification?.title)
-            intent.putExtra(ARG_NOTIFICATION_BODY, remoteMessage.notification?.body)
 
-            LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
-        }*/
+            if (messageData.containsKey("notificationId")) {
+                // general notification
+                destination = R.id.notificationCenterFragment
+                sendNotification(this, destination, title, content, null)
+            }
 
-        val currentUserId = Firebase.auth.currentUser?.uid
-
-        Log.d(TAG, remoteMessage.notification?.clickAction.orEmpty())
-
-        val data = remoteMessage.data
-
-        val title = data["title"]
-        val senderId = data["senderId"]
-        val content = data["content"]
-        val deepLink = data["deepLink"]
-
-        if (senderId != null && senderId != currentUserId) {
-            sendNotification(this, title, content, deepLink)
+            // TODO("Implement In-App notification in custom layout")
         }
-
     }
 
-    private fun sendNotification(context: Context, title: String?, content: String?, deepLink: String?) {
+    private fun sendNotification(context: Context, destination: Int, title: String?, content: String?, bundle: Bundle?) {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) {
             val notificationChannel = NotificationChannel(
@@ -96,30 +99,11 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
                     R.mipmap.ic_launcher_round
                 )
             )
-        val intent = Intent()
-        intent.action = Intent.ACTION_VIEW
-        val uri = Uri.parse(deepLink)
-        intent.data = Uri.parse(deepLink)
-
-        val dest = when {
-            uri.lastPathSegment.orEmpty().contains("chat") -> {
-                R.id.chatFragment
-            }
-            uri.lastPathSegment.orEmpty().contains("projectRequests") -> {
-                R.id.projectRequestFragment
-            }
-            else -> {
-                R.id.notificationCenterFragment
-            }
-        }
-
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
         val pendingIntent = NavDeepLinkBuilder(this)
             .setGraph(R.navigation.main_navigation)
             .addDestination(R.id.homeFragment)
-            .addDestination(dest)
+            .addDestination(destination)
             .setArguments(null)
             .createPendingIntent()
 
