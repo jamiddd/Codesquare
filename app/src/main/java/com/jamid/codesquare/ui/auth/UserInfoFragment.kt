@@ -37,7 +37,7 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentUserInfoBinding.inflate(inflater)
-        client = Client(getString(R.string.algolia_id), getString(R.string.algolia_secret))
+        client = Client(BuildConfig.ALGOLIA_ID, BuildConfig.ALGOLIA_SECRET)
         return binding.root
     }
 

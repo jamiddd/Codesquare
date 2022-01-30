@@ -310,6 +310,7 @@ class EditProfileFragment: Fragment() {
         val chip = Chip(requireContext())
         chip.text = interest
         chip.isCheckable = false
+        chip.isCloseIconVisible = true
         chip.setOnCloseIconClickListener {
             binding.interestsGroup.removeView(chip)
         }

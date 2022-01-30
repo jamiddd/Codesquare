@@ -18,7 +18,7 @@ android {
         applicationId "com.jamid.codesquare"
         minSdk 23
         targetSdk 31
-        versionCode 3
+        versionCode 6
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -43,6 +43,7 @@ android {
 
             buildConfigField("String", "ALGOLIA_ID", "\"" + localProperties['ALGOLIA_ID'] + "\"")
             buildConfigField("String", "ALGOLIA_SECRET", "\"" + localProperties['ALGOLIA_SECRET'] + "\"")
+            buildConfigField("String", "GOOGLE_MAPS_KEY", "\"" + localProperties['GOOGLE_MAPS_API_KEY'] + "\"")
         }
         debug {
             resValue("string", "google_maps_key", localProperties['GOOGLE_MAPS_API_KEY'])
@@ -51,6 +52,7 @@ android {
 
             buildConfigField("String", "ALGOLIA_ID", "\"" + localProperties['ALGOLIA_ID'] + "\"")
             buildConfigField("String", "ALGOLIA_SECRET", "\"" + localProperties['ALGOLIA_SECRET'] + "\"")
+            buildConfigField("String", "GOOGLE_MAPS_KEY", "\"" + localProperties['GOOGLE_MAPS_API_KEY'] + "\"")
         }
     }
 

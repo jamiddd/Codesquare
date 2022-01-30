@@ -657,6 +657,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         viewModel.currentError.observe(this) { exception ->
             if (exception != null) {
                 loadingDialog?.dismiss()
+                toast(exception.localizedMessage.orEmpty())
                 Log.e(TAG, exception.localizedMessage.orEmpty())
             }
         }

@@ -258,17 +258,19 @@ abstract class LauncherActivity : AppCompatActivity(){
             if (it.isSuccessful) {
                 val user = it.result.user
                 if (user != null) {
-                    val ref = Firebase.firestore.collection("users")
+                    val ref = Firebase.firestore.collection(USERS)
                         .document(user.uid)
 
                     FireUtility.getDocument(ref) { it1 ->
                         if (it1.isSuccessful && it1.result.exists()) {
                             val oldUser = it1.result.toObject(User::class.java)!!
+                            UserManager.updateUser(oldUser)
                             viewModel.insertCurrentUser(oldUser)
                         } else {
                             val localUser = User.newUser(user.uid, user.displayName!!, user.email!!)
                             FireUtility.uploadDocument(ref, localUser) { it2 ->
                                 if (it2.isSuccessful) {
+                                    UserManager.updateUser(localUser)
                                     viewModel.insertCurrentUser(localUser)
                                 } else {
                                     viewModel.setCurrentError(it.exception)
