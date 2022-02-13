@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/project_save_btn"
+        style="@style/AppTheme.ProjectItemStyledBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/save_selector"
+        app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
+        app:layout_constraintStart_toEndOf="@+id/project_comment_btn"
+        app:layout_constraintTop_toTopOf="@+id/project_comment_btn"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/project_user_img"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp"
+        android:background="@drawable/ic_round_account_circle_24"
+        app:layout_constraintBottom_toTopOf="@+id/divider5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:roundAsCircle="true" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout5"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="@+id/project_user_img"
+        app:layout_constraintEnd_toStartOf="@+id/project_option"
+        app:layout_constraintStart_toEndOf="@+id/project_user_img"
+        app:layout_constraintTop_toTopOf="@+id/project_user_img">
+
+        <TextView
+            android:id="@+id/project_user_name"
+            style="@style/TextAppearance.AppCompat.Body1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Jamid Deka"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/project_location"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            tools:text="@string/sample_location_text" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/project_option"
+        style="@style/AppTheme.ProjectItemStyledBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        app:icon="@drawable/ic_round_more_horiz_24"
+        app:layout_constraintBottom_toBottomOf="@+id/linearLayout5"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/linearLayout5"
+        tools:ignore="SpeakableTextPresentCheck" />
+
+    <View
+        android:id="@+id/divider5"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintBottom_toTopOf="@+id/project_images_recycler"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_user_img" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/project_images_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toTopOf="@+id/project_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/divider5"
+        tools:ignore="SpeakableTextPresentCheck"
+        tools:itemCount="1"
+        tools:listitem="@layout/imageview_layout" />
+
+    <TextView
+        android:id="@+id/project_content"
+        style="@style/TextAppearance.AppCompat.Body1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:text="@string/about_me"
+        android:textColorLink="@null"
+        app:layout_constraintBottom_toTopOf="@+id/project_like_comment_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_title" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/project_like_btn"
+        style="@style/AppTheme.LikeBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/project_time"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_like_comment_text" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/project_comment_btn"
+        style="@style/AppTheme.ProjectItemStyledBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_round_chat_bubble_outline_24"
+        app:layout_constraintBottom_toBottomOf="@+id/project_like_btn"
+        app:layout_constraintStart_toEndOf="@+id/project_like_btn"
+        app:layout_constraintTop_toTopOf="@+id/project_like_btn" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/project_join_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="Join"
+        app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/project_comment_btn" />
+
+    <TextView
+        android:id="@+id/project_like_comment_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        android:background="?selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        tools:text="@string/sample_likes_comment_text"
+        android:paddingStart="4dp"
+        android:paddingEnd="4dp"
+        app:layout_constraintBottom_toTopOf="@+id/project_like_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_content" />
+
+    <TextView
+        android:id="@+id/project_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-medium"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:text="Project Title"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@+id/project_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_images_recycler" />
+
+    <TextView
+        android:id="@+id/project_images_counter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/dark_translucent_round"
+        android:paddingStart="12dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="4dp"
+        android:text="1/5"
+        android:textColor="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/project_images_recycler"
+        app:layout_constraintEnd_toEndOf="@+id/project_images_recycler"
+        app:layout_constraintTop_toBottomOf="@+id/divider5"
+        app:layout_constraintVertical_bias="0.0" />
+
+    <TextView
+        android:id="@+id/project_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/project_like_btn"
+        tools:text="@string/sample_time_text" />
+
+    <Button
+        android:id="@+id/right_btn"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginEnd="8dp"
+        android:backgroundTint="@color/darkest_transparent"
+        android:paddingStart="4dp"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_keyboard_arrow_right_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/project_images_recycler"
+        app:layout_constraintEnd_toEndOf="@+id/project_images_recycler"
+        app:layout_constraintTop_toTopOf="@+id/project_images_recycler"
+        tools:visibility="visible" />
+
+    <Button
+        android:id="@+id/left_btn"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginStart="8dp"
+        android:backgroundTint="@color/darkest_transparent"
+        android:paddingLeft="3dp"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_keyboard_arrow_left_24"
+        app:iconTint="@color/white"
+        app:layout_constraintBottom_toBottomOf="@+id/right_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/right_btn"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

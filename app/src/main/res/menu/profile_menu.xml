@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/log_out" android:title="Log out"  app:showAsAction="never" />
+    <item android:id="@+id/saved_projects" android:title="Saved Projects" app:showAsAction="never" />
+    <item android:id="@+id/archived_projects" android:title="Archived projects" app:showAsAction="never" />
+    <item android:id="@+id/settings" android:title="Settings" app:showAsAction="never" />
+</menu>
