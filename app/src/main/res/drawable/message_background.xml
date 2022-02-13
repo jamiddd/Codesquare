@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/message_tail" android:gravity="bottom" android:height="20dp" android:width="20dp" />
-    <item android:drawable="@drawable/message_body" android:start="7dp"/>
-</layer-list>
