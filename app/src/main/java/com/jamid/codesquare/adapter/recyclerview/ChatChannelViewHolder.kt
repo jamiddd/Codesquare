@@ -23,29 +23,6 @@ class ChatChannelViewHolder(
 
     var isSelectAvailable = false
 
-    inner class MyImageListener: BaseControllerListener<ImageInfo>() {
-
-        var finalWidth = 0
-        var finalHeight = 0
-
-        override fun onFinalImageSet(id: String?, imageInfo: ImageInfo?, animatable: Animatable?) {
-            super.onFinalImageSet(id, imageInfo, animatable)
-
-            if (imageInfo != null) {
-                finalWidth = imageInfo.width
-                finalHeight = imageInfo.height
-            }
-
-        }
-
-        override fun onFailure(id: String?, throwable: Throwable?) {
-            super.onFailure(id, throwable)
-
-
-
-        }
-    }
-
     fun bind(chatChannel: ChatChannel?) {
         if (chatChannel != null) {
 

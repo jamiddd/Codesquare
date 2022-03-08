@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/chat_bottom_root"
@@ -20,13 +21,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
-            android:visibility="gone" />
+            android:visibility="gone"
+            tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/uploading_images_recycler"
             style="@style/AppTheme.GenericBackground2"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="116dp"
             android:clipToPadding="false"
             android:paddingStart="8dp"
             android:paddingTop="8dp"
@@ -64,7 +66,8 @@
             android:visibility="gone" />
 
         <LinearLayout
-            android:id="@+id/linearLayout9"
+            android:id="@+id/chat_input_container"
+            style="@style/AppTheme.ChatInputContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:elevation="4dp"

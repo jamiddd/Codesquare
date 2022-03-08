@@ -18,13 +18,16 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannel")
     abstract suspend fun getChatChannel(chatChannel: String): ChatChannel?
 
-    @Query("SELECT * FROM chat_channels WHERE chatChannelId != :chatChannelId")
-    abstract suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel>?
+    @Query("SELECT * FROM chat_channels WHERE contributors LIKE :userId AND archived = 0")
+    abstract fun getForwardChannels(userId: String): LiveData<List<ChatChannel>>
 
     @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannelId")
     abstract fun getCurrentChatChannel(chatChannelId: String): LiveData<ChatChannel>
 
     @Query("DELETE FROM chat_channels WHERE chatChannelId = :chatChannelId")
     abstract suspend fun deleteChatChannelById(chatChannelId: String)
+
+    @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannelId")
+    abstract fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel>
 
 }

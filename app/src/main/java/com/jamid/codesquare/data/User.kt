@@ -90,7 +90,7 @@ data class User(
     }
 
     @Exclude
-    fun isEmpty() = id.isBlank()
+    fun isEmpty() = name.isBlank()
 
     companion object {
         fun newUser(id: String, name: String, email: String) =

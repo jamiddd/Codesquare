@@ -6,16 +6,16 @@ import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.ProfilePagerAdapter
 import com.jamid.codesquare.data.Result
@@ -52,10 +52,10 @@ class ProfileFragment: Fragment() {
         val user = arguments?.getParcelable<User>("user")
         return when (item.itemId) {
             R.id.log_out -> {
-                Firebase.auth.signOut()
-                UserManager.setAuthStateForceful(false)
-                findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
-                viewModel.signOut {}
+                UserManager.logOut(requireContext()) {
+                    findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
+                    viewModel.signOut {}
+                }
                 true
             }
             R.id.saved_projects -> {
@@ -64,6 +64,10 @@ class ProfileFragment: Fragment() {
             }
             R.id.archived_projects -> {
                 findNavController().navigate(R.id.action_profileFragment_to_archiveFragment, null, slideRightNavOptions())
+                true
+            }
+            R.id.my_requests -> {
+                findNavController().navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
                 true
             }
             R.id.settings -> {
@@ -110,7 +114,11 @@ class ProfileFragment: Fragment() {
             val userStub = activity.findViewById<ViewStub>(R.id.user_profile_view_stub)
             val newView = userStub.inflate()
 
-            newView.updateLayout(marginTop = convertDpToPx(56))
+            val actionLength = resources.getDimension(R.dimen.action_height)
+            newView.updateLayoutParams<CollapsingToolbarLayout.LayoutParams> {
+                setMargins(0, actionLength.toInt(), 0, 0)
+            }
+
             onViewGenerated(newView, user)
         } else {
             onViewGenerated(userProfileView, user)
@@ -183,6 +191,10 @@ class ProfileFragment: Fragment() {
         val t1 = user.likesCount.toString() + " Likes"
         userInfoLayoutBinding.likesCount.text = t1
 
+        userInfoLayoutBinding.likesCount.setOnClickListener {
+            findNavController().navigate(R.id.userLikesFragment, bundleOf(USER_ID to user.id), slideRightNavOptions())
+        }
+
     }
 
     private fun setUpStaticContents(userInfoLayoutBinding: UserInfoLayoutBinding, u: User? = null) {
@@ -225,6 +237,7 @@ class ProfileFragment: Fragment() {
         if (!user.isCurrentUser) {
             // set primary btn for other user
             primaryBtn.icon = ContextCompat.getDrawable(primaryBtn.context, R.drawable.thumb_selector)
+            primaryBtn.iconGravity = MaterialButton.ICON_GRAVITY_START
 
             if (user.isLiked) {
                 onUserLiked(primaryBtn)
@@ -237,8 +250,11 @@ class ProfileFragment: Fragment() {
             }
         } else {
             // set primary btn for current user
-            primaryBtn.text = getString(R.string.edit)
-            primaryBtn.icon = null
+            primaryBtn.text = getString(R.string.edit_profile)
+            primaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_arrow_forward_ios_24)
+            primaryBtn.iconGravity = MaterialButton.ICON_GRAVITY_END
+            val size = resources.getDimension(R.dimen.large_len)
+            primaryBtn.iconSize = size.toInt()
 
             primaryBtn.setOnClickListener {
                 findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment, null, slideRightNavOptions())
@@ -250,34 +266,16 @@ class ProfileFragment: Fragment() {
     }
 
     private fun onUserLiked(primaryBtn: MaterialButton) {
-//        val redColor = ContextCompat.getColor(primaryBtn.context, R.color.error_color)
-        /*val redBackgroundColor = if (isNightMode()) {
-            ContextCompat.getColor(primaryBtn.context, R.color.lightest_red_night)
-        } else {
-            ContextCompat.getColor(primaryBtn.context, R.color.lightest_red)
-        }*/
         primaryBtn.apply {
             text = getString(R.string.dislike)
             isSelected = true
-//            setTextColor(redColor)
-//            setBackgroundTint(redBackgroundColor)
-//            iconTint = ColorStateList.valueOf(redColor)
         }
     }
 
     private fun onUserDisliked(primaryBtn: MaterialButton) {
-//        val accentColor = primaryBtn.context.accentColor()
-        /*val blueBackgroundColor = if (isNightMode()) {
-            ContextCompat.getColor(primaryBtn.context, R.color.lightest_blue_night)
-        } else {
-            ContextCompat.getColor(primaryBtn.context, R.color.lightest_blue)
-        }*/
-
         primaryBtn.apply {
             text = getString(R.string.like)
             isSelected = false
-//            setTextColor(accentColor)
-//            iconTint = ColorStateList.valueOf(accentColor)
         }
     }
 
@@ -308,7 +306,7 @@ class ProfileFragment: Fragment() {
     }
 
     companion object {
-        private const val TAG = "ProfileFragment"
+        const val TAG = "ProfileFragment"
     }
 
 }

@@ -13,41 +13,13 @@ const val UPDATED_AT = "updatedAt"
 const val FILE_PROV_AUTH = "com.jamid.codesquare.fileprovider"
 const val PURCHASES = "purchases"
 
-// Constraint layout
-const val START_TO_START = "START_TO_START"
-const val START_TO_END = "START_TO_END"
-const val END_TO_END = "END_TO_END"
-const val END_TO_START = "END_TO_START"
-const val TOP_TO_TOP = "TOP_TO_TOP"
-const val TOP_TO_BOTTOM = "TOP_TO_BOTTOM"
-const val BOTTOM_TO_BOTTOM = "BOTTOM_TO_BOTTOM"
-const val BOTTOM_TO_TOP = "BOTTOM_TO_TOP"
+const val PROJECT_TITLE = "projectTitle"
+const val PROJECT_IMAGE = "projectImage"
+const val SOURCES = "sources"
+const val TAGS = "tags"
+const val IMAGES = "images"
+const val NAME = "name"
 
-// Message
-const val msg_at_start = 101
-const val msg_at_start_image = 102
-const val msg_at_start_doc = 103
-const val msg_at_middle = 104
-const val msg_at_middle_image = 105
-const val msg_at_middle_doc = 106
-const val msg_at_end = 107
-const val msg_at_end_image = 108
-const val msg_at_end_doc = 109
-const val msg_at_start_alt = 110
-const val msg_at_start_alt_image = 111
-const val msg_at_start_alt_doc = 112
-const val msg_at_middle_alt = 113
-const val msg_at_middle_alt_image = 114
-const val msg_at_middle_alt_doc = 115
-const val msg_at_end_alt = 116
-const val msg_at_end_alt_image = 117
-const val msg_at_end_alt_doc = 118
-const val msg_single = 119
-const val msg_single_image = 120
-const val msg_single_doc = 121
-const val msg_single_alt = 122
-const val msg_single_alt_image = 123
-const val msg_single_alt_doc = 124
 const val image = "Image"
 const val text = "Text"
 const val document = "Document"
@@ -58,11 +30,13 @@ const val COMMENT_CHANNEL_ID = "commentChannelId"
 const val COMMENT_CHANNELS = "commentChannels"
 const val COMMENT_ID = "commentId"
 const val CHAT_CHANNELS = "chatChannels"
+const val MESSAGE = "message"
 const val MESSAGES = "messages"
 const val CHANNELS = "channels"
 const val COMMENTS = "comments"
 const val PARENT = "parent"
 const val PROJECT_ID = "projectId"
+const val LIKED_PROJECTS = "likedProjects"
 const val SENDER_ID = "senderId"
 const val PROJECT_REQUESTS = "projectRequests"
 const val REQUESTS = "requests"
@@ -95,7 +69,10 @@ const val PROJECTS_COUNT = "projectsCount"
 const val CHANNEL_ID = "channelId"
 const val PROJECT_INVITES = "projectInvites"
 const val INVITES = "invites"
-
+const val REPORTS = "reports"
+const val NOTIFICATION_ID = "notificationId"
+const val TYPE = "type"
+const val USER_ID = "userId"
 
 const val USER_IMG_1 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa1.jpg?alt=media&token=0c0d875f-e0a2-42a6-891f-716b7b47ba2a"
 const val USER_IMG_2 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa2.jpg?alt=media&token=3001b91d-9e1e-465d-8a08-caf9f9ed81fe"
@@ -115,3 +92,27 @@ const val USER_IMG_15 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.
 const val USER_IMG_16 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa16.jpg?alt=media&token=7d7a3291-56ef-4194-be3c-8aedc221bff9"
 
 val userImages = listOf(USER_IMG_1, USER_IMG_2, USER_IMG_3, USER_IMG_4, USER_IMG_5, USER_IMG_6, USER_IMG_7, USER_IMG_8, USER_IMG_9, USER_IMG_10, USER_IMG_11, USER_IMG_12, USER_IMG_13, USER_IMG_14, USER_IMG_15, USER_IMG_16)
+
+// options
+const val OPTION_1 = "Set as admin"
+const val OPTION_2 = "Remove from admin"
+const val OPTION_3 = "Like "
+const val OPTION_4 = "Dislike "
+const val OPTION_5 = "Report "
+const val OPTION_6 = "Remove from project"
+const val OPTION_7 = "Leave project"
+const val OPTION_8 = "Select images"
+const val OPTION_9 = "Select documents"
+const val OPTION_10 = "Save project"
+const val OPTION_11 = "Remove from saved"
+const val OPTION_12 = "Archive project"
+const val OPTION_13 = "Unarchive project"
+const val OPTION_14 = "Report"
+const val OPTION_15 = "Edit project"
+const val OPTION_16 = "View project"
+const val OPTION_17 = "Select image"
+const val OPTION_18 = "Remove photo"
+const val OPTION_19 = "Reply"
+const val OPTION_20 = "Forward"
+const val OPTION_21 = "Message details"
+const val OPTION_22 = "View sender profile"

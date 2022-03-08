@@ -9,23 +9,21 @@ import com.jamid.codesquare.FrescoImageControllerListener
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.User
 
-interface MessageListener: GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
+interface MessageClickListener: GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
 
     fun onStartDownload(message: Message, onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit)
     fun onDocumentClick(message: Message)
     fun onImageClick(view: View, message: Message, controllerListener: FrescoImageControllerListener)
     fun onMessageRead(message: Message)
     fun onUserClick(message: Message)
-    fun onForwardClick(view: View, message: Message)
+    fun onForwardClick(view: View, messages: ArrayList<Message>)
     fun onMessageLongClick(message: Message)
-    fun onMessageStateChanged(message: Message)
-    suspend fun onGetMessageReply(replyTo: String): Message?
     fun onGetReplyMessage(parentMessage: Message, onResult: (newMessage: Message) -> Unit)
-    suspend fun onGetMessageReplyUser(senderId: String): User?
+    fun onGetMessageReplyUser(senderId: String, onComplete: (user: User?) -> Unit)
+    fun onMessageStateChanged(message: Message)
 
     fun onMessageFocused(message: Message, parent: View)
 
-    fun onMessageDoubleClick(message: Message)
     fun onMessageLongPress(p0: MotionEvent?)
     fun onMessageClick(p0: MotionEvent?): Boolean
     fun onMessageDoubleTapped(p0: MotionEvent?): Boolean

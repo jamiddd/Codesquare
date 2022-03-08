@@ -67,6 +67,7 @@
 
     <string name="undo">Undo</string>
     <string name="join">Join</string>
+    <string name="join_project">Join project</string>
     <string name="email_verification_message">Verification email sent. Check your mail.</string>
     <string name="empty_chat_list_greet">No chats found. Collaborate on projects or create your own project to create a collaboration.</string>
     <string name="skip">Skip</string>
@@ -79,6 +80,7 @@
     <string name="empty_collaborations_greet">You haven\'t collaborated with anyone. Your collaborations appear here.</string>
     <string name="profile_upload_loading_text">Updating profile. Please wait …</string>
     <string name="edit">Edit</string>
+    <string name="edit_profile">Edit profile</string>
     <string name="dislike">Dislike</string>
     <string name="like">Like</string>
     <string name="empty_user_projects_greet">Create new project so that other people can see your work and collaborate</string>
@@ -141,11 +143,37 @@
     <string name="sample_time_text">12 hours ago</string>
     <string name="reply">Reply</string>
     <string name="forward">Forward</string>
-    <string name="add_images">Add images</string>
     <string name="add_more_images">Add more images</string>
     <string name="invite">Invite</string>
     <string name="archive">Archive</string>
     <string name="un_archive">Un-archive</string>
     <string name="archive_summary">This project has been archived. It can only be seen by you. To make it public, un-archive it again.</string>
     <string name="un_archive_summary">Archiving this project will remove the project from public directory. Other people won\'t be able to see this project. You can un-archive the project later.</string>
+    <string name="clear_images">Clear images</string>
+    <string name="add_images">Add images</string>
+    <string name="write_something_here">Write something here …</string>
+    <string name="comment_send_button_info">On pressing this button, the comment written on the left will be sent.</string>
+    <string name="links">Links</string>
+    <string name="tags">Tags</string>
+    <string name="contributors">Contributors</string>
+    <string name="see_all">See All</string>
+    <string name="comments">Comments</string>
+    <string name="archive_project">Archive Project</string>
+    <string name="remove_ad">Remove ad</string>
+    <string name="project_detail">Project Detail</string>
+    <string name="upgrade">Upgrade</string>
+    <string name="upgrade_plan_imsg">You have reached contributors limit for this project. To add more contributors, upgrade your subscription plan!</string>
+    <string name="user_like_btn_desc">To like the creator of the project.</string>
+    <string name="comment_btn_desc">To comment on the current project</string>
+    <string name="like_btn_desc">To like the project</string>
+    <string name="save_btn_desc">To save the current project</string>
+    <string name="sample_name">Jamid Deka</string>
+    <string name="sample_project_title">Project Title</string>
+    <string name="sample_counter_text">1/5</string>
+    <string name="sample_tag">Android Developer</string>
+    <string name="undo_request">Undo request</string>
+    <string name="monthly">monthly</string>
+    <string name="sample_subscription_price">$ 2.00/month</string>
+    <string name="sample_subscription_content">• Remove all ads\n• No limits on projects creation\n• No limits on collaboration\n• No limits for number of contributors in a project</string>
+    <string name="best_value">Best value</string>
 </resources>

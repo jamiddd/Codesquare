@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
+import androidx.paging.ExperimentalPagingApi
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
 import com.google.android.material.appbar.AppBarLayout
@@ -20,6 +21,7 @@ import com.jamid.codesquare.ui.zoomableView.TapListener
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalPagingApi::class)
 class ImageViewFragment: Fragment(), View.OnClickListener {
 
     private lateinit var binding: FragmentImageViewBinding
@@ -100,10 +102,13 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
         val appbar = activity?.findViewById<AppBarLayout>(R.id.main_appbar)!!
 
         if (appbar.translationY == 0f) {
-            appbar.slideUp(convertDpToPx(100).toFloat())
+            val height = resources.getDimension(R.dimen.appbar_slide_translation)
+            appbar.slideUp(height)
+
             binding.fullscreenImage.setBackgroundColor(Color.BLACK)
 
-            binding.bottomInfoView.slideDown(convertDpToPx(150).toFloat())
+            val height1 = resources.getDimension(R.dimen.image_info_translation)
+            binding.bottomInfoView.slideDown(height1)
 
             hideSystemUI()
 
@@ -120,20 +125,13 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
     }
 
     private fun hideSystemUI() {
-        val activity = requireActivity()
-        val view = activity.findViewById<View>(R.id.main_container_root)
-        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
-        WindowInsetsControllerCompat(activity.window, view).let { controller ->
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
+        val activity = activity as MainActivity
+        activity.hideSystemUI()
     }
 
     private fun showSystemUI() {
-        val activity = requireActivity()
-        val view = activity.findViewById<View>(R.id.main_container_root)
-        WindowCompat.setDecorFitsSystemWindows(activity.window, true)
-        WindowInsetsControllerCompat(activity.window, view).show(WindowInsetsCompat.Type.systemBars())
+        val activity = activity as MainActivity
+        activity.showSystemUI()
     }
 
     override fun onDestroy() {

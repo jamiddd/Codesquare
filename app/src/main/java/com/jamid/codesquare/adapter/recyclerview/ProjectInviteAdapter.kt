@@ -26,9 +26,9 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
                 return
 
             binding = RequestItemBinding.bind(view)
-            binding.requestAcceptProgress.show()
-            binding.requestAccept.disappear()
-            binding.requestCancel.disappear()
+            binding.requestProgress.show()
+            binding.requestPrimaryAction.disappear()
+            binding.requestSecondaryAction.disappear()
 
             binding.requestTime.text = getTextForTime(projectInvite.createdAt)
 
@@ -37,18 +37,17 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
 
         private fun onProjectRequestUpdated(projectInvite: ProjectInvite) {
             if (projectInvite.sender != null && projectInvite.project != null) {
-                binding.requestAcceptProgress.hide()
-                binding.requestAccept.show()
-                binding.requestCancel.show()
+                binding.requestProgress.hide()
+                binding.requestPrimaryAction.show()
+                binding.requestSecondaryAction.show()
 
-                binding.requestAccept.setOnClickListener {
-                    binding.requestAcceptProgress.show()
-                    binding.requestAccept.disappear()
+                binding.requestPrimaryAction.setOnClickListener {
+                    binding.requestProgress.show()
+                    binding.requestPrimaryAction.disappear()
                     projectInviteListener.onProjectInviteAccept(projectInvite)
                 }
 
-
-                binding.requestCancel.setOnClickListener {
+                binding.requestSecondaryAction.setOnClickListener {
                     projectInviteListener.onProjectInviteCancel(projectInvite)
                 }
 
@@ -61,7 +60,7 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
                         is Result.Success -> {
                             val project = processProjects(arrayOf(it.data)).first()
                             projectInvite.project = project
-                            binding.projectName.text = project.name
+                            binding.requestProjectName.text = project.name
                             onProjectRequestUpdated(projectInvite)
                         }
                         null -> projectInviteListener.onProjectInviteProjectDeleted(projectInvite)

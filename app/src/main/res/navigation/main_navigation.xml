@@ -22,15 +22,18 @@
         <action
             android:id="@+id/action_homeFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
-        <action
+        <!--<action
             android:id="@+id/action_homeFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />
+            app:destination="@id/projectFragment" />-->
         <action
             android:id="@+id/action_homeFragment_to_commentsFragment"
             app:destination="@id/commentsFragment" />
         <action
             android:id="@+id/action_homeFragment_to_chatFragment"
             app:destination="@id/chatFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_chatContainerSample"
+            app:destination="@+id/chatContainerSample" />
         <action
             android:id="@+id/action_homeFragment_to_editProfileFragment"
             app:destination="@id/editProfileFragment" />
@@ -58,7 +61,21 @@
         <action
             android:id="@+id/action_homeFragment_to_updateProjectFragment"
             app:destination="@+id/updateProjectFragment" />
+        <action
+            android:id="@+id/action_homeFragment_to_projectLikesFragment"
+            app:destination="@+id/projectLikesFragment" />
     </fragment>
+
+    <fragment
+        android:id="@+id/chatContainerSample"
+        android:name="com.jamid.codesquare.ui.ChatContainerSample"
+        android:label=" "
+        tools:layout="@layout/chat_container_sample_layout">
+
+        <argument android:name="title" app:argType="string" android:defaultValue="Title" />
+
+    </fragment>
+
     <fragment
         android:id="@+id/subscriberFragment"
         android:name="com.jamid.codesquare.ui.SubscriberFragment"
@@ -134,9 +151,9 @@
         <action
             android:id="@+id/action_profileFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
-        <action
+        <!--<action
             android:id="@+id/action_profileFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />
+            app:destination="@id/projectFragment" />-->
         <action
             android:id="@+id/action_profileFragment_to_projectRequestFragment"
             app:destination="@id/projectRequestFragment" />
@@ -167,6 +184,9 @@
         <action
             android:id="@+id/action_profileFragment_to_updateProjectFragment"
             app:destination="@+id/updateProjectFragment" />
+        <action
+            android:id="@+id/action_profileFragment_to_projectLikesFragment"
+            app:destination="@+id/projectLikesFragment" />
     </fragment>
     <fragment
         android:id="@+id/editProfileFragment"
@@ -211,6 +231,9 @@
         <action
             android:id="@+id/action_projectFragment_to_reportFragment"
             app:destination="@id/reportFragment" />
+        <action
+            android:id="@+id/action_projectFragment_to_projectLikesFragment"
+            app:destination="@+id/projectLikesFragment" />
     </fragment>
     <fragment
         android:id="@+id/projectRequestFragment"
@@ -223,9 +246,9 @@
         tools:layout="@layout/fragment_pager"
         android:label="Saved projects">
 
-        <action
+       <!-- <action
             android:id="@+id/action_savedProjectsFragment_to_projectFragment"
-            app:destination="@+id/projectFragment" />
+            app:destination="@+id/projectFragment" />-->
 
         <action
             android:id="@+id/action_savedProjectsFragment_to_updateProjectFragment"
@@ -234,6 +257,10 @@
         <action
             android:id="@+id/action_savedProjectsFragment_to_profileFragment"
             app:destination="@+id/profileFragment" />
+
+        <action
+            android:id="@+id/action_savedProjectsFragment_to_projectLikesFragment"
+            app:destination="@+id/projectLikesFragment" />
 
     </fragment>
     <fragment
@@ -351,9 +378,9 @@
         android:name="com.jamid.codesquare.ui.SearchFragment"
         android:label="Search for projects, accounts .."
         tools:layout="@layout/fragment_search" >
-        <action
+       <!-- <action
             android:id="@+id/action_searchFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />
+            app:destination="@id/projectFragment" />-->
         <action
             android:id="@+id/action_searchFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
@@ -445,9 +472,9 @@
         <action
             android:id="@+id/action_notificationCenterFragment_to_commentsFragment"
             app:destination="@id/commentsFragment" />
-        <action
+      <!--  <action
             android:id="@+id/action_notificationCenterFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />
+            app:destination="@id/projectFragment" />-->
         <action
             android:id="@+id/action_notificationCenterFragment_to_profileFragment"
             app:destination="@id/profileFragment" />
@@ -543,9 +570,9 @@
         android:id="@+id/archiveFragment"
         android:name="com.jamid.codesquare.ui.ArchiveFragment"
         android:label="Archived projects">
-        <action
+      <!--  <action
             android:id="@+id/action_archiveFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />
+            app:destination="@id/projectFragment" />-->
 
         <action
             android:id="@+id/action_archiveFragment_to_profileFragment"
@@ -555,10 +582,42 @@
             android:id="@+id/action_archiveFragment_to_updateProjectFragment"
             app:destination="@+id/updateProjectFragment" />
 
+        <action
+            android:id="@+id/action_archiveFragment_to_projectLikesFragment"
+            app:destination="@+id/projectLikesFragment" />
+
     </fragment>
     <fragment
         android:id="@+id/updateProjectFragment"
         android:name="com.jamid.codesquare.ui.UpdateProjectFragment"
         tools:layout="@layout/fragment_update_project"
         android:label="Update project" />
+    <fragment
+        android:id="@+id/projectLikesFragment"
+        android:name="com.jamid.codesquare.ProjectLikesFragment"
+        android:label="Liked by" />
+
+    <fragment
+        android:id="@+id/userLikesFragment"
+        android:name="com.jamid.codesquare.ui.UserLikesFragment"
+        android:label="Liked by" />
+
+    <fragment
+        android:id="@+id/myRequestsFragment"
+        android:name="com.jamid.codesquare.ui.profile.MyRequestsFragment"
+        android:label="My requests"/>
+
+    <fragment
+        android:id="@+id/projectFragmentContainer"
+        android:name="com.jamid.codesquare.ui.ProjectFragmentContainer"
+        android:label="{title}"
+        tools:layout="@layout/project_fragment_container">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Project" />
+
+    </fragment>
+
 </navigation>

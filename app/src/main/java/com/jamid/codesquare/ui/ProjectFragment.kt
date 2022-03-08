@@ -10,9 +10,8 @@ import android.util.Log
 import android.view.*
 import android.widget.Button
 import android.widget.EditText
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import android.widget.TextView
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -23,23 +22,25 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.ads.*
+import com.facebook.drawee.view.SimpleDraweeView
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
-import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
+import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
-import com.jamid.codesquare.databinding.CommentBottomLayoutBinding
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.CommentListener
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.ui.home.chat.ChatDetailFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -49,43 +50,11 @@ class ProjectFragment : Fragment() {
     private lateinit var binding: FragmentProjectBinding
     private lateinit var project: Project
     private var lr: ListenerRegistration? = null
-
-    private var commentInputLayout: View? = null
-    private var mainRoot: CoordinatorLayout? = null
-
     private val projectClickListener: ProjectClickListener by lazy { requireActivity() as ProjectClickListener }
     private val userClickListener: UserClickListener by lazy { requireActivity() as UserClickListener }
     private val commentClickListener: CommentListener by lazy { requireActivity() as CommentListener }
-    private val joinBtn: MaterialButton by lazy { requireActivity().findViewById(R.id.main_primary_action) }
     private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        val project = arguments?.getParcelable<Project>(PROJECT)
-        if (project?.isMadeByMe == true) {
-            inflater.inflate(R.menu.project_menu, menu)
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.edit_project -> {
-                val project = arguments?.getParcelable<Project>(PROJECT)
-                findNavController().navigate(
-                    R.id.action_projectFragment_to_updateProjectFragment,
-                    bundleOf("project" to project),
-                    slideRightNavOptions()
-                )
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
+    private lateinit var userAdapter: UserAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -199,30 +168,14 @@ class ProjectFragment : Fragment() {
 
                 setMutableProperties(currentProject)
 
-                // setting listener for join button
-                listenForContributorChanges(project)
-
                 // setting archive related properties
                 setArchiveProperties(project)
-
-                if (!currentProject.isMadeByMe) {
-                    if (!currentProject.isCollaboration) {
-                        if (currentProject.isRequested) {
-                            updateJoinButtonUi(currentProject, REQUESTED_UNKNOWN)
-                        }
-                    } else {
-                        updateJoinButtonUi(project, REQUESTED_ACCEPTED)
-                    }
-                } else {
-                    updateJoinButtonUi(project, REQUESTED_ACCEPTED)
-                }
 
             } else {
                 Log.i(TAG, "Not possible for a project to be absent in local database " +
                         "because it was taken from local database.")
             }
         }
-
     }
 
     private fun setAdView() {
@@ -232,9 +185,35 @@ class ProjectFragment : Fragment() {
         adView.adListener = object: AdListener() {
             override fun onAdFailedToLoad(p0: LoadAdError) {
                 super.onAdFailedToLoad(p0)
+                Log.e(TAG, p0.message)
                 adView.hide()
+                binding.removeAdBtn.hide()
             }
+
+            override fun onAdLoaded() {
+                super.onAdLoaded()
+                adView.show()
+                binding.removeAdBtn.show()
+            }
+
+            override fun onAdOpened() {
+                super.onAdOpened()
+                adView.show()
+                binding.removeAdBtn.show()
+            }
+
+            override fun onAdClosed() {
+                super.onAdClosed()
+                adView.hide()
+                binding.removeAdBtn.hide()
+            }
+
         }
+
+        binding.removeAdBtn.setOnClickListener {
+            projectClickListener.onAdInfoClick()
+        }
+
     }
 
     private fun addLinks(links: List<String>) {
@@ -258,7 +237,7 @@ class ProjectFragment : Fragment() {
             text = link
             chipIconTint = ColorStateList.valueOf(darkGreenColor)
             chipIcon = ContextCompat.getDrawable(lContext, R.drawable.forward_icon)
-            chipIconSize = convertDpToPx(18).toFloat()
+            chipIconSize = resources.getDimension(R.dimen.large_len)
             isCheckable = false
             isCloseIconVisible = false
             chipBackgroundColor = ColorStateList.valueOf(textColor)
@@ -303,104 +282,173 @@ class ProjectFragment : Fragment() {
 
         chip.apply {
             text = tag
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
             isCheckable = false
             isCloseIconVisible = false
             binding.projectTags.addView(this)
+            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
 
             setTextColor(textColor)
 
             setOnClickListener {
-                val bundle = bundleOf("title" to "#$tag", "tag" to tag)
-                findNavController().navigate(
-                    R.id.action_projectFragment_to_tagFragment,
-                    bundle,
-                    slideRightNavOptions()
-                )
+                (parentFragment as ProjectFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag))
             }
         }
 
     }
 
     private fun setContributors() {
-        binding.projectContributorsRecycler.show()
-
         binding.seeAllContributorsBtn.setOnClickListener {
-
-            val bundle = bundleOf(
-                ProjectContributorsFragment.ARG_PROJECT to project,
-                ProjectContributorsFragment.ARG_ADMINISTRATORS to arrayListOf(project.creator.userId)
-            )
-
-            findNavController().navigate(
-                R.id.action_projectFragment_to_projectContributorsFragment,
-                bundle,
-                slideRightNavOptions()
-            )
+            (parentFragment as ProjectFragmentContainer).navigate(ProjectContributorsFragment.TAG, bundleOf(
+                PROJECT to project))
         }
 
-        val userAdapter2 =
-            UserAdapter2(project.id, project.chatChannel, listOf(project.creator.userId))
+        getChatChannel()
+
+    }
+
+    private fun getChatChannel() {
+        val contHeader = "Contributors (${project.contributors.size})"
+        binding.contributorsHeader.text = contHeader
+
+        val cachedChannel = viewModel.getCachedChatChannel(project.chatChannel)
+        if (cachedChannel != null) {
+            onReceiveChatChannel(cachedChannel)
+        } else {
+            FireUtility.getChatChannel(project.chatChannel) {
+                when (it) {
+                    is Result.Error -> viewModel.setCurrentError(it.exception)
+                    is Result.Success -> {
+                        viewModel.putChatChannelToCache(it.data)
+                        onReceiveChatChannel(it.data)
+                    }
+                    null -> Log.w(TAG, "Something went wrong while fetching chat channel with id: ${project.chatChannel}")
+                }
+            }
+        }
+    }
+
+    private fun onContributorsFetched(contributors: List<User>) {
+        showContributorsSection()
+
+        viewModel.getLocalUser(project.creator.userId) { creator ->
+            requireActivity().runOnUiThread {
+                if (creator != null) {
+                    val x = mutableListOf<User>()
+                    x.addAll(contributors)
+                    userAdapter.submitList(x)
+                }
+            }
+        }
+    }
+
+    private fun getProjectContributors() {
+        viewModel.getChannelContributorsLive("%${project.chatChannel}%").observe(viewLifecycleOwner) { contributors ->
+            if (contributors.isNotEmpty()) {
+                onContributorsFetched(contributors)
+            } else {
+                FireUtility.getProjectContributors(project, 4) {
+                    if (it.isSuccessful) {
+                        if (!it.result.isEmpty) {
+                            val contributors1 = it.result.toObjects(User::class.java)
+                            viewModel.insertUsers(contributors1)
+                        } else {
+                            hideContributorsSection()
+                        }
+                    } else {
+                        hideContributorsSection()
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onReceiveChatChannel(chatChannel: ChatChannel) {
+        userAdapter = UserAdapter(small = true, associatedChatChannel = chatChannel)
 
         binding.projectContributorsRecycler.apply {
-            adapter = userAdapter2
+            adapter = userAdapter
             layoutManager =
                 LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         }
 
-        viewModel.getProjectContributors(project, 7) {
-            if (it.isSuccessful) {
-                if (!it.result.isEmpty) {
-                    binding.contributorsHeaderLayout.show()
-                    val contributors = it.result.toObjects(User::class.java)
-                    userAdapter2.submitList(contributors)
-                } else {
-                    binding.contributorsHeaderLayout.hide()
-                }
-            } else {
-                binding.contributorsHeaderLayout.hide()
-                viewModel.setCurrentError(it.exception)
-            }
-        }
+        getProjectContributors()
+    }
 
+    private fun showContributorsSection() {
+        binding.projectContributorsRecycler.show()
+        binding.contributorsHeader.show()
+        binding.seeAllContributorsBtn.show()
+    }
+
+    private fun hideContributorsSection() {
+        binding.projectContributorsRecycler.hide()
+        binding.contributorsHeader.hide()
+        binding.seeAllContributorsBtn.hide()
+    }
+
+    private fun onCommentReceived(comment: Comment) {
+        viewModel.insertCommentToCache(comment)
+        viewModel.insertComment(comment)
+
+        setReactiveComment(project, comment)
+
+        binding.seeAllComments.setOnClickListener {
+            projectClickListener.onProjectCommentClick(project)
+        }
+    }
+
+    private fun onCommentChannelReceived(commentChannel: CommentChannel) {
+        val lastComment = commentChannel.lastComment
+        if (lastComment != null) {
+
+            val updatedLastComment = viewModel.getCachedComment(lastComment.commentId)
+
+            if (updatedLastComment != null) {
+                onCommentReceived(updatedLastComment)
+            } else {
+                FireUtility.getComment(lastComment.commentId) { commentResult ->
+                    when (commentResult) {
+                        is Result.Error -> viewModel.setCurrentError(commentResult.exception)
+                        is Result.Success -> {
+                            val comment = commentResult.data
+                            onCommentReceived(comment)
+                        }
+                        null -> {
+                            updateCommentUi(NO_COMMENT, project)
+                            Log.w(TAG, "Something went wrong while trying to fetch comment " +
+                                    "with id: ${lastComment.commentId} and commentChannelId: ${lastComment.commentChannelId}")
+                        }
+                    }
+                }
+            }
+
+        } else {
+            updateCommentUi(NO_COMMENT, project)
+        }
     }
 
     private fun setCommentRelatedUi(project: Project) {
-        FireUtility.getCommentChannel(project.commentChannel) {
-            when (it) {
-                is Result.Error -> viewModel.setCurrentError(it.exception)
-                is Result.Success -> {
-                    val commentChannel = it.data
-                    val lastComment = commentChannel.lastComment
-                    if (lastComment != null) {
-                        FireUtility.getComment(lastComment.commentId) { commentResult ->
-                            when (commentResult) {
-                                is Result.Error -> viewModel.setCurrentError(commentResult.exception)
-                                is Result.Success -> {
-                                    val comment = commentResult.data
-                                    viewModel.insertComment(comment)
-                                    setReactiveComment(project, comment)
-
-                                    binding.seeAllComments.setOnClickListener {
-                                        projectClickListener.onProjectCommentClick(project)
-                                    }
-
-                                }
-                                null -> {
-                                    updateCommentUi(NO_COMMENT, project)
-                                    Log.w(TAG, "Something went wrong while trying to fetch comment " +
-                                            "with id: ${lastComment.commentId} and commentChannelId: ${lastComment.commentChannelId}")
-                                }
-                            }
-                        }
-                    } else {
+        val cachedCommentChannel = viewModel.getCachedCommentChannel(project.commentChannel)
+        if (cachedCommentChannel != null) {
+            onCommentChannelReceived(cachedCommentChannel)
+        } else {
+            FireUtility.getCommentChannel(project.commentChannel) {
+                when (it) {
+                    is Result.Error -> {
+                        viewModel.setCurrentError(it.exception)
                         updateCommentUi(NO_COMMENT, project)
                     }
-                }
-                null -> {
-                    updateCommentUi(NO_COMMENT, project)
-                    Log.w(TAG, "Something went wrong while trying to fetch comment " +
-                            "channel with id: ${project.commentChannel} and projectId: ${project.id}")
+                    is Result.Success -> {
+                        val commentChannel = it.data
+                        viewModel.putCommentChannelToCache(commentChannel)
+                        onCommentChannelReceived(commentChannel)
+                    }
+                    null -> {
+                        updateCommentUi(NO_COMMENT, project)
+                        Log.w(TAG, "Something went wrong while trying to fetch comment " +
+                                "channel with id: ${project.commentChannel} and projectId: ${project.id}")
+                    }
                 }
             }
         }
@@ -414,13 +462,16 @@ class ProjectFragment : Fragment() {
         when (state) {
             NO_COMMENT -> {
                 binding.projectsLastComment.root.hide()
-                binding.commentsHeaderLayout.hide()
+                 binding.commentsHeader.hide()
+                 binding.seeAllComments.hide()
             }
             COMMENT_EXISTS -> {
                 val c = comment!!
 
                 binding.projectsLastComment.root.show()
-                binding.commentsHeaderLayout.show()
+
+                 binding.commentsHeader.show()
+                 binding.seeAllComments.show()
 
                 binding.projectsLastComment.apply {
 
@@ -452,110 +503,116 @@ class ProjectFragment : Fragment() {
                     }
                 }
 
-                setCommentInputLayout(c)
+                setCommentInputLayout()
 
             }
             COMMENT_NO_SENDER_ERROR -> {
                 binding.projectsLastComment.root.hide()
-                binding.commentsHeaderLayout.hide()
+
+                binding.commentsHeader.hide()
+                binding.seeAllComments.hide()
             }
         }
     }
 
-    private fun setCommentInputUI(mBinding: CommentBottomLayoutBinding) {
+    private fun setCommentInputUI(senderImg: SimpleDraweeView, commentInputLayout: EditText) {
         val currentUser = UserManager.currentUser
-        mBinding.senderImg.setImageURI(currentUser.photo)
-        mBinding.commentInputLayout.requestFocus()
+        senderImg.setImageURI(currentUser.photo)
+        commentInputLayout.requestFocus()
     }
 
     @SuppressLint("InflateParams")
-    private fun setCommentInputLayout(c: Comment) {
-        val commentBottomLayout = layoutInflater.inflate(R.layout.comment_bottom_layout, null, false)
-        val commentBottomBinding = CommentBottomLayoutBinding.bind(commentBottomLayout)
+    private fun setCommentInputLayout() {
 
-        // removing any existing views
-        mainRoot?.removeView(commentInputLayout)
+        val commentBottomRoot = requireActivity().findViewById<MaterialCardView>(R.id.comment_bottom_root)
+        val sendBtn = commentBottomRoot.findViewById<MaterialButton>(R.id.comment_send_btn)!!
+        val commentInputLayout = commentBottomRoot.findViewById<EditText>(R.id.comment_input_layout)!!
+        val replyToText = commentBottomRoot.findViewById<TextView>(R.id.replying_to_text)!!
+        val senderImg = commentBottomRoot.findViewById<SimpleDraweeView>(R.id.sender_img)!!
 
-        // adding option to comment on project or reply to a comment
-        mainRoot = requireActivity().findViewById(R.id.main_container_root)
-        mainRoot?.addView(commentBottomBinding.root)
+        setSendButton(sendBtn, commentInputLayout)
 
-        // saving the whole bottom layout to be removed later in [onDestroy]
-        commentInputLayout = commentBottomBinding.root
-
-        val params = commentBottomBinding.root.layoutParams as CoordinatorLayout.LayoutParams
-        params.gravity = Gravity.BOTTOM
-        commentBottomBinding.root.layoutParams = params
-
-        setSendButton(commentBottomBinding.commentSendBtn, commentBottomBinding.commentInputLayout)
-
-        commentBottomBinding.replyingToText.setOnClickListener {
+        replyToText.setOnClickListener {
             viewModel.replyToContent.postValue(null)
         }
 
-        setCommentInputUI(commentBottomBinding)
+        setCommentInputUI(senderImg, commentInputLayout)
 
         viewModel.replyToContent.observe(viewLifecycleOwner) {
             if (it != null) {
 
-                val sender = it.sender
-                commentBottomBinding.replyingToText.show()
+                commentBottomRoot.slideReset()
 
-                // setting styles to reply view
-                val name = sender.name
-                val replyToText = "Replying to $name"
-                val sp = SpannableString(replyToText)
-                sp.setSpan(
-                    StyleSpan(Typeface.BOLD),
-                    replyToText.length - name.length,
-                    replyToText.length,
-                    SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-                commentBottomBinding.replyingToText.text = sp
+                val sender = it.sender
+                replyToText.show()
+
+                val rt = if (sender.id == UserManager.currentUserId) {
+                    "Replying to your comment"
+                } else {
+                    // setting styles to reply view
+                    val s = "Replying to ${sender.name}"
+                    val sp = SpannableString(s)
+                    sp.setSpan(
+                        StyleSpan(Typeface.BOLD),
+                        s.length - sender.name.length,
+                        s.length,
+                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    sp
+                }
+
+                replyToText.text = rt
 
                 // updating send button function to include this comment as a reply comment
                 setSendButton(
-                    commentBottomBinding.commentSendBtn,
-                    commentBottomBinding.commentInputLayout,
+                    sendBtn,
+                    commentInputLayout,
                     it
                 )
 
-                // hiding the join button as it comes over the bottom input
-                joinBtn.slideDown(convertDpToPx(100f))
             } else {
-                // if reply comment is removed there's no point showing comment input
-                commentInputLayout?.slideDown(convertDpToPx(300f))
 
-                joinBtn.slideReset()
+                hideKeyboard()
+
+                // if reply comment is removed there's no point showing comment input
+                val dy = resources.getDimension(R.dimen.comment_layout_translation)
+                commentBottomRoot.slideDown(dy)
+
             }
         }
 
-        commentBottomBinding.adView.hide()
-        commentInputLayout?.slideDown(convertDpToPx(300f))
+    }
+
+    private fun onCommentWithSenderReceived(user: User, project: Project, comment: Comment) {
+        comment.sender = user
+        updateCommentUi(COMMENT_EXISTS, project, comment)
     }
 
     private fun setReactiveComment(project: Project, comment: Comment) {
         viewModel.getReactiveComment(comment.commentId).observe(viewLifecycleOwner) {
             if (it != null) {
-                FireUtility.getUser(comment.senderId) { commentSenderResult ->
-                    when (commentSenderResult) {
-                        is Result.Error -> viewModel.setCurrentError(commentSenderResult.exception)
-                        is Result.Success -> {
-                            val sender = commentSenderResult.data
-                            comment.sender = sender
 
-                            updateCommentUi(COMMENT_EXISTS, project, comment)
+                viewModel.insertCommentToCache(it)
+
+                val commentSender = viewModel.getCachedUser(comment.senderId)
+                if (commentSender != null) {
+                    onCommentWithSenderReceived(commentSender, project, comment)
+                } else {
+                    FireUtility.getUser(comment.senderId) { commentSenderResult ->
+                        when (commentSenderResult) {
+                            is Result.Error -> viewModel.setCurrentError(commentSenderResult.exception)
+                            is Result.Success -> {
+                                onCommentWithSenderReceived(commentSenderResult.data, project, comment)
+                            }
+                            null -> updateCommentUi(COMMENT_NO_SENDER_ERROR, project)
                         }
-                        null -> updateCommentUi(COMMENT_NO_SENDER_ERROR, project)
                     }
                 }
-
             }
         }
     }
 
     private fun onReplyButtonClicked() {
-        commentInputLayout?.slideReset()
 
         showKeyboard()
 
@@ -563,10 +620,6 @@ class ProjectFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             delay(1000)
             binding.projectFragmentScroll.fullScroll(View.FOCUS_DOWN)
-
-            delay(100)
-            commentInputLayout?.findViewById<EditText>(R.id.comment_input_layout)?.requestFocus()
-
         }
 
     }
@@ -669,92 +722,6 @@ class ProjectFragment : Fragment() {
         }
     }
 
-    /**
-     * To solve the issue of knowing, when the creator of the project will accept project request
-     * from the current user, we are setting this listener on the chat channel because if the
-     * listener was set on project document, it can reflect lot of changes that might not be
-     * important. If the current has not sent any request this function will not listen for changes.
-     * If the current user has created the project, then there's no point in calling the function
-     *
-     * @param project The project to listen changes for
-     * */
-    private fun listenForContributorChanges(project: Project) {
-        if (project.isMadeByMe) {
-            updateJoinButtonUi(project, REQUESTED_ACCEPTED)
-            return
-        }
-
-        if (project.isBlocked) {
-            updateJoinButtonUi(project, REQUEST_BLOCKED)
-            return
-        }
-
-        // check if the current user has requested to join the current project
-        if (project.isRequested) {
-            Firebase.firestore.collection(CHAT_CHANNELS).document(project.chatChannel)
-                .addSnapshotListener { documentSnapshot, error ->
-                    if (error != null) {
-                        viewModel.setCurrentError(error)
-                        return@addSnapshotListener
-                    }
-
-                    if (documentSnapshot != null && documentSnapshot.exists()) {
-                        val chatChannel = documentSnapshot.toObject(ChatChannel::class.java)!!
-                        val currentUserId = UserManager.currentUserId
-                        if (chatChannel.contributors.contains(currentUserId)) {
-                            // that means the user has been accepted to this project
-                            updateJoinButtonUi(project, REQUESTED_ACCEPTED)
-                        } else {
-                            // the user is not yet accepted to this project
-                            updateJoinButtonUi(project, REQUESTED_UNKNOWN)
-                        }
-                    }
-                }
-        } else {
-            updateJoinButtonUi(project, NOT_REQUESTED)
-            Log.i(TAG, "Not listening to project document, as the current user has not requested to join the project.")
-        }
-    }
-
-    /**
-     * Update the join button on every changes related to it
-     *
-     * @param project The current project in reference to the join button
-     * @param state The state of the join button. Possible states [NOT_REQUESTED], [REQUESTED_ACCEPTED], [REQUESTED_UNKNOWN]
-     * (-1: The current user has requested to join the project but not yet accepted.
-     * 0: The current user has not requested to join this project.
-     * 1: The current user has requested and he's been accepted)
-     *
-    * */
-    private fun updateJoinButtonUi(project: Project, state: Int) {
-        when (state) {
-            NOT_REQUESTED -> {
-                joinBtn.text = getString(R.string.join)
-                joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
-                joinBtn.slideReset()
-            }
-            REQUESTED_UNKNOWN -> {
-                joinBtn.text = getString(R.string.undo)
-                joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_20)
-                joinBtn.slideReset()
-            }
-            REQUESTED_ACCEPTED -> {
-                joinBtn.slideDown(convertDpToPx(100f))
-            }
-            REQUEST_BLOCKED -> {
-                joinBtn.text = getString(R.string.join)
-                joinBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
-                joinBtn.slideReset()
-                joinBtn.disable()
-            }
-        }
-
-        joinBtn.setOnClickListener {
-            projectClickListener.onProjectJoinClick(project.copy())
-        }
-
-    }
-
 
     /**
      * All immutable UI changes
@@ -805,15 +772,7 @@ class ProjectFragment : Fragment() {
      * */
     private fun setProjectImages() {
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
-        val imageAdapter = ImageAdapter { v, controllerListener ->
-            val pos = manager.findFirstCompletelyVisibleItemPosition()
-            (activity as MainActivity).showImageViewFragment(
-                v,
-                project.images[pos].toUri(),
-                ".jpg",
-                controllerListener
-            )
-        }
+        val imageAdapter = ImageAdapter(requireActivity() as MainActivity)
 
         val helper = LinearSnapHelper()
 
@@ -827,7 +786,11 @@ class ProjectFragment : Fragment() {
         val totalImageCount = project.images.size
         if (totalImageCount == 1) {
             binding.imagesCounter.hide()
+        } else {
+            val imageCount = "1/$totalImageCount"
+            binding.imagesCounter.text = imageCount
         }
+
         imageAdapter.submitList(project.images)
 
         binding.projectImagesRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -948,19 +911,19 @@ class ProjectFragment : Fragment() {
         super.onDestroy()
         lr?.remove()
         viewModel.replyToContent.postValue(null)
-        mainRoot?.removeView(commentInputLayout)
     }
 
     companion object {
-        private const val TAG = "ProjectFragment"
-        private const val REQUESTED_UNKNOWN = -1
-        private const val REQUESTED_ACCEPTED = 1
-        private const val NOT_REQUESTED = 0
-        private const val REQUEST_BLOCKED = -2
+        const val TAG = "ProjectFragment"
 
         private const val COMMENT_EXISTS = 1
         private const val NO_COMMENT = 0
         private const val COMMENT_NO_SENDER_ERROR = -1
+
+        fun newInstance(bundle: Bundle) = ProjectFragment().apply {
+            arguments = bundle
+        }
+
     }
 
 }

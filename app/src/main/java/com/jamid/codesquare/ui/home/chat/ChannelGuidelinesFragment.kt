@@ -9,10 +9,12 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GuidelinesAdapter
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
+import com.jamid.codesquare.ui.ChatContainerSample
 
 @ExperimentalPagingApi
 class ChannelGuidelinesFragment : Fragment() {
@@ -32,6 +34,12 @@ class ChannelGuidelinesFragment : Fragment() {
         return binding.root
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.update_guidelines_menu, menu)
     }
@@ -49,7 +57,7 @@ class ChannelGuidelinesFragment : Fragment() {
                         project.rules = currentGuidelines.value.orEmpty()
                         viewModel.updateLocalProject(project)
                         toast("Project guidelines updated")
-                        findNavController().navigateUp()
+                        (parentFragment as ChatContainerSample).navigateUp()
                     } else {
                         toast("Something went wrong!")
                     }
@@ -85,7 +93,7 @@ class ChannelGuidelinesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        project = arguments?.getParcelable("project") ?: return
+        project = arguments?.getParcelable(PROJECT) ?: return
 
         currentGuidelines.postValue(project.rules)
 
@@ -130,10 +138,10 @@ class ChannelGuidelinesFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance(project: Project) = ChannelGuidelinesFragment().apply {
-            arguments = Bundle().apply {
-                putParcelable("project", project)
-            }
+        const val TAG = "GuidelinesFragment"
+
+        fun newInstance(bundle: Bundle) = ChannelGuidelinesFragment().apply {
+            arguments = bundle
         }
     }
 

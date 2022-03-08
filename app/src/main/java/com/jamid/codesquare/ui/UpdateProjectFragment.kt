@@ -9,6 +9,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
+import androidx.core.view.setMargins
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
@@ -117,9 +119,9 @@ class UpdateProjectFragment: Fragment() {
                     currentProject.sources = getLinks()
 
                     viewLifecycleOwner.lifecycleScope.launch {
-                        FireUtility.updateProject(currentProject) {
+                        FireUtility.updateProject(currentProject) { newProject, task ->
                             dialog.dismiss()
-                            if (it.isSuccessful) {
+                            if (task.isSuccessful) {
                                 val activity = requireActivity()
                                 activity.runOnUiThread {
                                     val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
@@ -128,13 +130,13 @@ class UpdateProjectFragment: Fragment() {
                                     viewModel.multipleImagesContainer.postValue(emptyList())
 
                                     // updating local project
-                                    viewModel.insertProjectsWithoutProcessing(currentProject)
+                                    viewModel.insertProjectsWithoutProcessing(newProject)
 
                                     findNavController().navigateUp()
                                 }
 
                             } else {
-                                viewModel.setCurrentError(it.exception)
+                                viewModel.setCurrentError(task.exception)
                             }
                         }
                     }
@@ -142,8 +144,6 @@ class UpdateProjectFragment: Fragment() {
                 } else {
                     Log.i(TAG, "Attempted to update project when current project was not initialized.")
                 }
-
-
 
 
                 true
@@ -166,7 +166,7 @@ class UpdateProjectFragment: Fragment() {
 
         val project = arguments?.getParcelable<Project>(PROJECT) ?: return
 
-        imageAdapter = ImageAdapter { _, _ -> }
+        imageAdapter = ImageAdapter()
         val helper = LinearSnapHelper()
         val imagesManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
 
@@ -330,10 +330,12 @@ class UpdateProjectFragment: Fragment() {
                     binding.imageCounter.hide()
                     binding.clearAllImagesBtn.hide()
                     binding.removeCurrentImgBtn.hide()
-                    val params = binding.imagesEditorLayout.layoutParams as ConstraintLayout.LayoutParams
-                    params.horizontalBias = 0.5f
-                    params.setMargins(0, convertDpToPx(120), 0, 0)
-                    binding.imagesEditorLayout.layoutParams = params
+
+                    val len = resources.getDimension(R.dimen.unit_len) * 30
+                    binding.imagesEditorLayout.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                        horizontalBias = 0.5f
+                        setMargins(0, len.toInt(), 0, 0)
+                    }
                 } else {
 
                     setCounterText()
@@ -342,10 +344,11 @@ class UpdateProjectFragment: Fragment() {
                     binding.imageCounter.show()
                     binding.clearAllImagesBtn.show()
                     binding.removeCurrentImgBtn.show()
-                    val params = binding.imagesEditorLayout.layoutParams as ConstraintLayout.LayoutParams
-                    params.horizontalBias = 1f
-                    params.setMargins(0, 0, 0, 0)
-                    binding.imagesEditorLayout.layoutParams = params
+
+                    binding.imagesEditorLayout.updateLayoutParams<ConstraintLayout.LayoutParams>{
+                        horizontalBias = 1f
+                        setMargins(0)
+                    }
                 }
 
                 imageAdapter.submitList(project.images)
@@ -388,7 +391,7 @@ class UpdateProjectFragment: Fragment() {
     }
 
     companion object {
-        private const val TAG = "UpdateProjectFragment"
+        const val TAG = "UpdateProjectFragment"
     }
 
 }

@@ -39,7 +39,18 @@
                 android:layout_height="?actionBarSize"
                 android:elevation="0dp"
                 app:layout_collapseMode="pin"
-                app:logo="@drawable/ic_collab_logo_small" />
+                app:logo="@drawable/ic_collab_logo_small"
+                app:menu="@menu/generic_menu" />
+
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/secondary_toolbar"
+                style="@style/AppTheme.Toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:elevation="0dp"
+                android:translationY="-100dp"
+                app:layout_collapseMode="pin"
+                app:navigationIcon="@drawable/ic_round_close_24" />
 
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>
@@ -69,8 +80,8 @@
         android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:defaultNavHost="true"
         app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior"
+        app:defaultNavHost="true"
         app:navGraph="@navigation/main_navigation"
         tools:layout="@layout/fragment_home" />
 
@@ -86,15 +97,114 @@
         app:layout_anchorGravity="bottom"
         tools:visibility="visible" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/main_primary_action"
-        android:layout_width="wrap_content"
-        android:layout_height="54dp"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="8dp"
-        android:backgroundTint="@color/pink"
-        android:text="Join project"
-        android:translationY="100dp"
-        app:icon="@drawable/ic_round_add_24" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/comment_bottom_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:translationY="200dp">
+
+        <LinearLayout
+            android:id="@+id/comment_bottom_linear_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/divider18"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
+
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:adSize="BANNER"
+                app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/replying_to_text"
+                style="@style/AppTheme.GenericBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/lightest_grey"
+                android:drawablePadding="16dp"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="@string/replying_to"
+                android:visibility="gone"
+                app:drawableEndCompat="@drawable/ic_round_close_24"
+                app:drawableStartCompat="@drawable/ic_reply"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/linearLayout9"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.facebook.drawee.view.SimpleDraweeView
+                    android:id="@+id/sender_img"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/ic_round_account_circle_24"
+                    app:roundAsCircle="true" />
+
+                <EditText
+                    android:id="@+id/comment_input_layout"
+                    style="@style/AppTheme.ChatBottomText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/chat_edittext_background"
+                    android:ems="10"
+                    android:hint="@string/write_something_here"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine"
+                    android:minHeight="48dp"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp"
+                    android:textColorHint="#546E7A" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/comment_send_btn"
+                    style="@style/AppTheme.Button.IconOnly"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="?colorAccent"
+                    android:contentDescription="@string/comment_send_button_info"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="0dp"
+                    app:icon="@drawable/ic_round_arrow_forward_24"
+                    app:iconTint="@color/white"
+                    tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

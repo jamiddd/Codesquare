@@ -4,54 +4,70 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="?selectableItemBackground"
+    android:background="?selectableItemBackgroundBorderless"
     android:clickable="true"
     android:focusable="true"
     android:minWidth="150dp">
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/user_img_small"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:background="@drawable/ic_round_account_circle_24"
-        app:layout_constraintBottom_toTopOf="@+id/usr_name_small"
+        app:layout_constraintBottom_toTopOf="@+id/user_name_small"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:placeholderImage="@color/normal_grey"
         app:roundAsCircle="true" />
 
     <TextView
-        android:id="@+id/usr_name_small"
+        android:id="@+id/user_name_small"
+        style="@style/AppTheme.Header1"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="16dp"
-        android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        tools:text="Jamid Deka"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@+id/user_tag"
+        app:layout_constraintBottom_toTopOf="@+id/user_tag_small"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/user_img_small" />
+        app:layout_constraintTop_toBottomOf="@+id/user_img_small"
+        tools:text="Jamid Deka" />
 
     <TextView
-        android:id="@+id/user_tag"
+        android:id="@+id/user_tag_small"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
+        android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        tools:text="Android Developer"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/user_about_small"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/user_name_small"
+        tools:text="Android Developer" />
+
+    <TextView
+        android:id="@+id/user_about_small"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:maxLines="6"
+        android:text="@string/about_me"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/usr_name_small" />
+        app:layout_constraintTop_toBottomOf="@+id/user_tag_small" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

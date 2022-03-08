@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.text.Spannable
 import android.text.SpannableString
+import android.text.SpannableStringBuilder
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
@@ -16,7 +17,9 @@ import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.RatingBar
 import android.widget.TextView
+import androidx.core.text.set
 import androidx.core.view.doOnLayout
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -174,22 +177,21 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
 
                     view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
                         delay(200)
-                        content.updateLayout(ViewGroup.LayoutParams.WRAP_CONTENT)
+                        content.updateLayoutParams<ViewGroup.LayoutParams> {
+                            height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        }
                     }
                 }
             }
 
-            val likeCommentText = "${project.likes} Likes • ${project.comments} Comments • ${project.contributors.size} Contributors"
-            likeComment.text = likeCommentText
+            setLikeDislike(project)
 
-            val imageAdapter = ImageAdapter { _, _ ->
-                projectClickListener.onProjectClick(project.copy())
-            }
+            val imageAdapter = ImageAdapter()
             val helper: SnapHelper = LinearSnapHelper()
 
-            likeComment.setOnClickListener {
+            /*likeComment.setOnClickListener {
                 projectClickListener.onProjectCommentClick(project.copy())
-            }
+            }*/
 
             val manager = LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
 
@@ -302,141 +304,109 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
             }
 
             optionBtn.setOnClickListener {
-                projectClickListener.onProjectOptionClick(this, project)
+                projectClickListener.onProjectOptionClick(project, absoluteAdapterPosition)
             }
 
             setJoinButton(project)
 
-            // check if the project is archived
-            /*Firebase.firestore.collection(PROJECTS).document(project.id)
-                .get()
-                .addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        if (it.result.exists()) {
-                            // do something here
-                        } else {
-                            projectClickListener.onProjectNotFound(project)
-                        }
-                    } else {
-                        Log.e(TAG, it.exception?.localizedMessage.orEmpty())
-                    }
-                }*/
-
-
-           /* val currentUser = UserManager.currentUser
-            if (currentUser.premiumState.toInt() == -1) {
-                setAdView()
-            }*/
-
         }
     }
 
+    private fun s() {
+        /*
 
-   /* private fun setAdView() {
-        val rand = Random.nextInt(1, 6)
-        if (rand == Random.nextInt(1, 6)) {
+            val a1 = project.likes.toString().length
+            val a2 = project.comments.toString().length
+            val a3 = project.contributors.size.toString().length
 
-            val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
-            val adOptions = NativeAdOptions.Builder()
-                .setVideoOptions(videoOptions)
-                .setAdChoicesPlacement(ADCHOICES_BOTTOM_RIGHT)
-                .build()
+            val s1 = a1 + 1
+            val e1 = s1 + 1
 
-            val adView = LayoutInflater.from(view.context).inflate(R.layout.custom_post_ad, null, false)
-            val nativeAdView = adView as NativeAdView
+            val s2 = e1 + a2 + 4
+            val e2 = s2 + 1
 
-            val container = view.findViewById<FrameLayout>(R.id.project_ad_container)
-            container?.removeAllViews()
-            container?.addView(adView)
+            val s3 = e2 + a3 + 4
+            val e3 = s3 + 1
 
-            val infoIcon = view.findViewById<Button>(R.id.ad_info_icon)
-            infoIcon?.setOnClickListener {
-                projectClickListener.onAdInfoClick()
-            }
-
-            // TODO("Currently set for test ad. Need to change this to dynamically fetch the ad Id")
-            val adLoader = AdLoader.Builder(view.context, "ca-app-pub-3940256099942544/1044960115")
-                .forNativeAd { nativeAd ->
-
-                    nativeAdView.headlineView = adView.findViewById(R.id.ad_headline)
-                    nativeAdView.bodyView = adView.findViewById(R.id.ad_secondary_text)
-                    nativeAdView.mediaView = adView.findViewById(R.id.ad_media_view)
-                    nativeAdView.callToActionView = adView.findViewById(R.id.ad_primary_action)
-                    nativeAdView.iconView = adView.findViewById(R.id.ad_app_icon)
-                    nativeAdView.priceView = adView.findViewById(R.id.ad_price_text)
-                    nativeAdView.starRatingView = adView.findViewById(R.id.ad_rating)
-                    nativeAdView.advertiserView = adView.findViewById(R.id.ad_advertiser)
-
-                    val volumeBtn = adView.findViewById<Button>(R.id.ad_volume_btn)
-                    val replayBtn = adView.findViewById<Button>(R.id.ad_replay_btn)
-
-                    (nativeAdView.headlineView as TextView).text = nativeAd.headline
-                    nativeAd.mediaContent?.let {
-                        nativeAdView.mediaView?.setMediaContent(it)
-                    }
-
-                    if (nativeAd.icon != null) {
-                        (nativeAdView.iconView as SimpleDraweeView).setImageURI(nativeAd.icon?.uri.toString())
-                    }
-
-                    if (nativeAd.body == null) {
-                        nativeAdView.bodyView?.hide()
-                    } else {
-                        nativeAdView.bodyView?.show()
-                        (nativeAdView.bodyView as TextView).text = nativeAd.body
-                    }
-
-                    if (nativeAd.callToAction == null) {
-                        nativeAdView.callToActionView?.hide()
-                    } else {
-                        nativeAdView.callToActionView?.show()
-                        (nativeAdView.callToActionView as Button).text = nativeAd.callToAction
-                    }
-
-                    if (nativeAd.price == null) {
-                        nativeAdView.priceView?.hide()
-                    } else {
-                        nativeAdView.priceView?.show()
-                        (nativeAdView.priceView as TextView).text = nativeAd.price
-                    }
-
-                    if (nativeAd.starRating == null) {
-                        nativeAdView.starRatingView?.hide()
-                    } else {
-                        nativeAdView.starRatingView?.show()
-                        (nativeAdView.starRatingView as RatingBar).rating = nativeAd.starRating!!.toFloat()
-                    }
-
-                    if (nativeAd.advertiser == null) {
-                        nativeAdView.advertiserView?.hide()
-                    } else {
-                        (adView.advertiserView as TextView).text = nativeAd.advertiser
-                        nativeAdView.advertiserView?.show()
-                    }
-
-                    nativeAdView.setNativeAd(nativeAd)
-
-                }
-                .withAdListener(object: AdListener() {
-                    override fun onAdFailedToLoad(loadAdError: LoadAdError) {
-                        super.onAdFailedToLoad(loadAdError)
-
-                        val error =
-                            """domain: ${loadAdError.domain}, code: ${loadAdError.code}, message: ${loadAdError.message}""""
-
-                        Log.e(TAG, error)
-                    }
-                })
-                .withNativeAdOptions(adOptions)
-                .build()
-
-            adLoader.loadAd(AdRequest.Builder().build())
-        }
-    }*/
+            st.setSpan(MyDynamicDrawableSpan(view.context, R.drawable.ic_round_favorite_16), s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+            st.setSpan(MyDynamicDrawableSpan(view.context, R.drawable.ic_comment), s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+*/
+    }
 
     private fun setLikeDislike(project: Project) {
-        val likeCommentText = "${getLikesString(project.likes.toInt())} • ${getCommentsString(project.comments.toInt())} • ${getContributorsString(project.contributors.size)}"
-        likeComment.text = likeCommentText
+        val likesString = getLikesString(project.likes.toInt())
+        val commentsString = getCommentsString(project.comments.toInt())
+        val contributorsString = getContributorsString(project.contributors.size)
+        val likeCommentText = "$likesString • $commentsString • $contributorsString"
+
+        val cs1 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                projectClickListener.onProjectSupportersClick(project)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val cs2 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                projectClickListener.onProjectCommentClick(project)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val cs3 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                projectClickListener.onProjectContributorsClick(project)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val s1 = 0
+        val e1 = likesString.length
+
+        val s2 = e1 + 3
+        val e2 = s2 + commentsString.length
+
+        val s3 = e2 + 3
+        val e3 = s3 + contributorsString.length
+
+        val formattedString = SpannableString(likeCommentText)
+        formattedString.setSpan(cs1, s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        formattedString.setSpan(cs2, s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        formattedString.setSpan(cs3, s3, e3, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        likeComment.movementMethod = LinkMovementMethod.getInstance()
+
+        likeComment.text = formattedString
     }
 
     private fun getCommentsString(size: Int): String {

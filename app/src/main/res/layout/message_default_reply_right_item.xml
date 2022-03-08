@@ -23,7 +23,7 @@
 
         <include
             android:id="@+id/reply_component"
-            layout="@layout/reply_layout"
+            layout="@layout/reply_layout_right"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
@@ -32,7 +32,6 @@
 
         <TextView
             android:id="@+id/message_content"
-            style="@style/AppTheme.ChatBalloonRight"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingStart="20dp"
@@ -40,6 +39,7 @@
             android:paddingEnd="20dp"
             android:paddingBottom="12dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textColor="@color/white"
             android:textSize="16sp"
             tools:text="This is a random message that needs no description" />
     </LinearLayout>
@@ -50,6 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="4dp"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/message_with_reply_container"
         app:layout_constraintHorizontal_bias="1.0"

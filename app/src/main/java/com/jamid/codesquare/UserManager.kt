@@ -1,9 +1,12 @@
 package com.jamid.codesquare
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.navigation.fragment.findNavController
 import com.google.android.gms.tasks.OnCompleteListener
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -46,6 +49,20 @@ object UserManager {
     private var isSignedIn = false
     var isEmailVerified = false
 
+    fun logOut(context: Context, onPositive: () -> Unit) {
+        MaterialAlertDialogBuilder(context)
+            .setTitle("Logging out")
+            .setMessage("Are you sure you want to log out?")
+            .setPositiveButton("Log out") { _, _ ->
+                Firebase.auth.signOut()
+                setAuthStateForceful(false)
+                onPositive()
+            }.setNegativeButton("Cancel") { d, _ ->
+                d.dismiss()
+            }
+            .show()
+    }
+
     fun updateUser(newUser: User) {
         isInitialized = true
         currentUserId = newUser.id
@@ -65,7 +82,20 @@ object UserManager {
 
                 // Get new FCM registration token
                 val token = task.result
-                FireUtility.sendRegistrationTokenToServer(token)
+                FireUtility.sendRegistrationTokenToServer(token) {
+                    if (it.isSuccessful) {
+                        if (token != null)
+                            FireUtility.sendRegistrationTokenToChatChannels(token) { it1 ->
+                                if (!it1.isSuccessful) {
+                                    errors.postValue(it1.exception)
+                                } else {
+                                    Log.d(TAG, "Updated all channels with registration token")
+                                }
+                            }
+                    } else {
+                        errors.postValue(it.exception)
+                    }
+                }
             })
     }
 

@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
@@ -40,5 +41,11 @@ abstract class UserDao: BaseDao<User>() {
 
     @Query("SELECT * FROM users WHERE id = :userId")
     abstract fun getReactiveUser(userId: String): LiveData<User>
+
+    @Query("SELECT * FROM users WHERE likedProjects LIKE :projectId ORDER BY name ASC")
+    abstract fun getProjectSupporters(projectId: String): PagingSource<Int, User>
+
+    @Query("SELECT * FROM users WHERE likedUsers LIKE :userId ORDER BY name ASC")
+    abstract fun getUserSupporters(userId: String): PagingSource<Int, User>
 
 }

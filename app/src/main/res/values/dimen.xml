@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="smallest_padding">4dp</dimen>
+    <dimen name="small_margin">8dp</dimen>
+    <dimen name="small_padding">8dp</dimen>
+    <dimen name="large_padding">64dp</dimen>
+    <dimen name="medium_padding">48dp</dimen>
+    <dimen name="extra_large_margin">64dp</dimen>
+
+
+    <dimen name="unit_len">4dp</dimen>
+    <dimen name="generic_len">8dp</dimen>
+    <dimen name="generic_len_2">12dp</dimen>
+    <dimen name="large_len">16dp</dimen>
+    <dimen name="touch_len">48dp</dimen>
+    <dimen name="action_height">56dp</dimen>
+    <dimen name="free_len">64dp</dimen>
+    <dimen name="space_len">72dp</dimen>
+    <dimen name="extra_comfort_len">100dp</dimen>
+
+    <dimen name="appbar_slide_translation">100dp</dimen>
+    <dimen name="image_info_translation">150dp</dimen>
+    <dimen name="join_btn_translation">100dp</dimen>
+    <dimen name="comment_layout_translation">250dp</dimen>
+</resources>

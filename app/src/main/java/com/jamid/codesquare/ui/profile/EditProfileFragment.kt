@@ -1,10 +1,12 @@
 package com.jamid.codesquare.ui.profile
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.*
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -18,6 +20,7 @@ import com.jamid.codesquare.databinding.FragmentEditProfileBinding
 import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.OptionsFragment
 
 @ExperimentalPagingApi
 class EditProfileFragment: Fragment() {
@@ -205,30 +208,19 @@ class EditProfileFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val activity = requireActivity()
+        val activity = requireActivity() as MainActivity
 
         currentUser = UserManager.currentUser
 
         val mainProgress = activity.findViewById<ProgressBar>(R.id.main_progress_bar)
 
         binding.userImg.setOnClickListener {
-            val popupMenu = PopupMenu(activity, it)
 
-            popupMenu.inflate(R.menu.image_menu)
+            val options = arrayListOf(OPTION_17, OPTION_18)
+            val icons = arrayListOf(R.drawable.ic_image_coloured, R.drawable.ic_remove)
 
-            popupMenu.setOnMenuItemClickListener { it1 ->
-                when (it1.itemId) {
-                    R.id.select_image -> {
-                        (activity as MainActivity).selectImage()
-                    }
-                    R.id.remove_image -> {
-                        viewModel.setCurrentImage(null)
-                    }
-                }
-                true
-            }
-
-            popupMenu.show()
+            activity.optionsFragment = OptionsFragment.newInstance(options = options, icons = icons)
+            activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)
         }
 
         // setting views on load
@@ -308,9 +300,26 @@ class EditProfileFragment: Fragment() {
     private fun addInterest(interest: String) {
         interest.trim()
         val chip = Chip(requireContext())
-        chip.text = interest
-        chip.isCheckable = false
-        chip.isCloseIconVisible = true
+        val lContext = requireContext()
+
+       /* val (backgroundColor, textColor) = if (isNightMode()) {
+            val colorPair = colorPalettesNight.random()
+            ContextCompat.getColor(lContext, colorPair.first) to
+                    ContextCompat.getColor(lContext, colorPair.second)
+        } else {
+            val colorPair = colorPalettesDay.random()
+            ContextCompat.getColor(lContext, colorPair.first) to
+                    ContextCompat.getColor(lContext, colorPair.second)
+        }*/
+
+        chip.apply {
+            text = interest
+            isCheckable = false
+            isCloseIconVisible = true
+           /* chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
+            setTextColor(textColor)*/
+        }
+
         chip.setOnCloseIconClickListener {
             binding.interestsGroup.removeView(chip)
         }
@@ -320,6 +329,10 @@ class EditProfileFragment: Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         viewModel.setCurrentImage(null)
+    }
+
+    companion object {
+        const val TAG = "EditProfileFragment"
     }
 
 }

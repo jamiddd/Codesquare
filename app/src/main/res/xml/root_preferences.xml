@@ -2,6 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <Preference
+        android:id="@+id/subscription"
         app:key="subscription_setting"
         app:layout="@layout/subscription_setting_layout" />
 
@@ -18,6 +19,10 @@
         <Preference
             app:key="profile_archived"
             app:title="Archived projects" />
+
+        <Preference
+            app:key="my_requests"
+            app:title="My requests" />
 
     </PreferenceCategory>
 

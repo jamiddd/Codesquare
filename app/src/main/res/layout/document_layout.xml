@@ -21,7 +21,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/download_document_btn"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/textView9"
+        app:layout_constraintStart_toEndOf="@+id/document_img"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
@@ -36,12 +36,12 @@
         app:layout_constraintTop_toBottomOf="@+id/document_name_text" />
 
     <TextView
-        android:id="@+id/textView9"
+        android:id="@+id/document_img"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        tools:drawableStart="@drawable/ic_round_attach_file_24"
+        app:drawableStartCompat="@drawable/ic_round_attach_file_24"
         app:layout_constraintBottom_toBottomOf="@+id/document_info_text"
         app:layout_constraintEnd_toStartOf="@+id/document_name_text"
         app:layout_constraintHorizontal_bias="0.5"

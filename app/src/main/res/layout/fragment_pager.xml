@@ -6,7 +6,6 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:animateLayoutChanges="true"
     android:isScrollContainer="true">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

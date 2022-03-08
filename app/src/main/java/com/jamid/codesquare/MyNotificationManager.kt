@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.os.Build
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -25,7 +26,19 @@ object MyNotificationManager {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val token = intent?.extras?.getString(MyFirebaseMessagingService.ARG_TOKEN)
                 if (token != null) {
-                    FireUtility.sendRegistrationTokenToServer(token)
+                    FireUtility.sendRegistrationTokenToServer(token) {
+                        if (it.isSuccessful) {
+                            FireUtility.sendRegistrationTokenToChatChannels(token) { it1 ->
+                                if (!it1.isSuccessful) {
+                                    Log.e(TAG, it1.exception.toString())
+                                } else {
+                                    Log.d(TAG, "Successfully sent registration token to chat channels")
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, it.exception.toString())
+                        }
+                    }
                 }
             }
         }

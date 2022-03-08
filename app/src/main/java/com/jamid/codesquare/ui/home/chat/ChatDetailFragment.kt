@@ -9,24 +9,47 @@ import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
-import com.jamid.codesquare.adapter.recyclerview.UserAdapter2
+import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
-import kotlinx.coroutines.launch
-
+import com.jamid.codesquare.listeners.CommonImageListener
+import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.OptionsFragment
 
 @ExperimentalPagingApi
 class ChatDetailFragment: Fragment() {
 
     private lateinit var binding: FragmentChatDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private lateinit var userAdapter: UserAdapter2
+    private lateinit var userAdapter: UserAdapter
+    private lateinit var chatChannel: ChatChannel
+    private lateinit var project: Project
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
+
+    companion object {
+        const val TAG = "ChatDetailFragment"
+
+        fun newInstance(bundle: Bundle) =
+            ChatDetailFragment().apply {
+                arguments = bundle
+            }
+
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -40,67 +63,61 @@ class ChatDetailFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val chatChannel = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL) ?: return
+        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
+        project = arguments?.getParcelable(PROJECT) ?: return
 
         val currentUser = UserManager.currentUser
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            val channel = viewModel.getLocalChatChannel(chatChannel.chatChannelId)
-            if (channel != null) {
-                if (channel.administrators.contains(currentUser.id)) {
+        viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
+            if (reactiveChatChannel != null) {
+                if (reactiveChatChannel.administrators.contains(currentUser.id)) {
                     binding.updateGuidelinesBtn.show()
                 } else {
                     binding.updateGuidelinesBtn.hide()
                 }
             }
+        }
 
-            val messages = viewModel.getLimitedMediaMessages(chatChannel.chatChannelId, 3)
-            if (messages.isEmpty()) {
-                val documentMessages = viewModel.getLimitedMediaMessages(chatChannel.chatChannelId, 3, document)
-                if (documentMessages.isEmpty()) {
-                    onMediaMessagesNotFound()
-                } else {
-                    onMediaMessagesExists()
-                    binding.chatMediaRecycler.hide()
-                }
+        setMediaRecyclerAndData(chatChannel.chatChannelId)
+
+        userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel)
+
+        binding.chatContributorsRecycler.apply {
+            adapter = userAdapter
+            layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
+        }
+
+        viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
+            if (it.isNotEmpty()) {
+                userAdapter.submitList(it)
             } else {
-                onMediaMessagesExists()
+                Log.d(TAG, "No contributors ...")
             }
+        }
 
-            setMediaRecyclerAndData(chatChannel.chatChannelId)
+        val listener = CommonImageListener()
 
-            userAdapter = UserAdapter2(chatChannel.projectId, chatChannel.chatChannelId, channel?.administrators.orEmpty())
-            userAdapter.isGrid = true
+        val builder = Fresco.newDraweeControllerBuilder()
+            .setUri(project.images.first())
+            .setControllerListener(listener)
 
-            binding.chatContributorsRecycler.apply {
-                adapter = userAdapter
-                layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
-            }
+        binding.chatProjectImage.controller = builder.build()
 
-            viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
-                if (it.isNotEmpty()) {
-                    userAdapter.submitList(it)
-                } else {
-                    Log.d(TAG, "No contributors ...")
-                }
-            }
+        binding.updateGuidelinesBtn.setOnClickListener {
+            (parentFragment as ChatContainerSample).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
+                PROJECT to project))
+        }
 
-            val project = viewModel.getProjectByChatChannel(chatChannel.chatChannelId)
-            if (project != null) {
-                binding.chatProjectImage.setImageURI(project.images.first())
-
-                binding.updateGuidelinesBtn.setOnClickListener {
-                    findNavController().navigate(R.id.action_chatDetailFragment_to_channelGuidelinesFragment, bundleOf("project" to project), slideRightNavOptions())
-                }
-            }
+        binding.chatProjectImage.setOnClickListener {
+            (activity as MainActivity).showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
         }
 
         binding.chatMediaHeader.setOnClickListener {
-            val bundle = bundleOf(ChatMediaFragment.ARG_CHAT_CHANNEL to chatChannel)
-            findNavController().navigate(R.id.action_chatDetailFragment_to_chatMediaFragment, bundle, slideRightNavOptions())
+            (parentFragment as ChatContainerSample).navigate(ChatMediaFragment.TAG, bundleOf(
+                CHAT_CHANNEL to chatChannel))
         }
 
-        viewModel.getLiveProjectByChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) {
+        viewModel.getReactiveProject(chatChannel.projectId).observe(viewLifecycleOwner) {
             if (it != null) {
                 val guidelines = getFormattedGuidelinesText(it.rules)
                 if (it.rules.isEmpty()) {
@@ -114,63 +131,99 @@ class ChatDetailFragment: Fragment() {
 
     }
 
-    private fun onMediaMessagesExists() {
+    private fun onMediaMessagesExists() = requireActivity().runOnUiThread {
         binding.divider13.show()
         binding.chatMediaRecycler.show()
         binding.chatMediaHeader.show()
     }
 
-    private fun onMediaMessagesNotFound() {
+    private fun onMediaMessagesNotFound()  = requireActivity().runOnUiThread {
         binding.divider13.hide()
         binding.chatMediaRecycler.hide()
         binding.chatMediaHeader.hide()
     }
 
-    private fun setMediaRecyclerAndData(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch {
+    private fun setMediaRecyclerAndData(chatChannelId: String) {
         val gridAdapter = GridImageMessagesAdapter()
 
         binding.chatMediaRecycler.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)
             adapter = gridAdapter
         }
-        val imageMessages = viewModel.getImageMessages(chatChannelId, 6)
 
-        gridAdapter.submitList(imageMessages)
-
-    }
-
-   /* private fun adjustImages(messages: List<Message>): List<String> {
-        val diff = messages.size % 3
-        return if (diff == 0) {
-            messages.map { it.content }
-        } else {
-            val newList = messages.map { it.content }.toMutableList()
-            for (i in 0..diff) {
-                newList.add("null_image")
-            }
-            newList
-        }
-    }*/
-
-    /*
-    * @Deprecated
-    * */
-    /*private fun getImages(chatChannelId: String): List<String> {
-        val images = mutableListOf<String>()
-        val externalImagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val file = File(externalImagesDir, chatChannelId)
-        if (externalImagesDir != null) {
-            val files = file.listFiles()
-            if (files != null) {
-                for (i in files.indices) {
-                    if (i > 5) break
-                    val uri = Uri.fromFile(files[i])
-                    images.add(uri.toString())
+        viewModel.getLimitedMediaMessages(chatChannelId, 6) {
+            if (it.isNotEmpty()) {
+                requireActivity().runOnUiThread {
+                    gridAdapter.submitList(it)
+                }
+                onMediaMessagesExists()
+            } else {
+                viewModel.getLimitedMediaMessages(chatChannelId, 3, document) { mediaMessages2 ->
+                    if (mediaMessages2.isEmpty()) {
+                        onMediaMessagesNotFound()
+                    } else {
+                        onMediaMessagesExists()
+                    }
                 }
             }
         }
-        return images
-    }*/
+
+        viewModel.currentFocusedUser.observe(viewLifecycleOwner) { currentFocusedUser ->
+            if (currentFocusedUser != null) {
+                val optionsListPair = getFilteredOptionsList(currentFocusedUser)
+                if (optionsListPair.first.isNotEmpty()) {
+                    OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second).show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+                }
+            }
+        }
+
+    }
+
+    private fun getFilteredOptionsList(focusedUser: User): Pair<ArrayList<String>, ArrayList<Int>> {
+
+        val option1 = "Set as admin"
+        val option2 = "Remove from admin"
+        val option3 = "Like ${focusedUser.name}"
+        val option4 = "Dislike ${focusedUser.name}"
+        val option5 = "Report ${focusedUser.name}"
+        val option6 = "Remove from project"
+        val option7 = "Leave project"
+
+        val currentUser = UserManager.currentUser
+        val currentUserId = currentUser.id
+        val isCurrentUserAdministrator = chatChannel.administrators.contains(currentUserId)
+
+        if (currentUser.id == focusedUser.id) {
+
+            // the user has created the project, hence cannot leave project
+            if (currentUser.projects.contains(chatChannel.projectId))
+                return arrayListOf<String>() to arrayListOf()
+
+            return arrayListOf(option7) to arrayListOf(R.drawable.ic_leave)
+        } else {
+            val isOtherUserLiked = currentUser.likedUsers.contains(focusedUser.id)
+
+            val likeText = if (isOtherUserLiked) {
+                option4
+            } else {
+                option3
+            }
+
+            return if (chatChannel.administrators.contains(focusedUser.id)) {
+                if (isCurrentUserAdministrator) {
+                    arrayListOf(option2, likeText, option5, option6) to arrayListOf(R.drawable.ic_remove_admin, R.drawable.ic_like_user, R.drawable.ic_report, R.drawable.ic_remove_user)
+                } else {
+                    arrayListOf(likeText, option5) to arrayListOf(R.drawable.ic_like_user, R.drawable.ic_report)
+                }
+            } else {
+                if (isCurrentUserAdministrator) {
+                    arrayListOf(option1, likeText, option5, option6) to arrayListOf(R.drawable.ic_leader, R.drawable.ic_like_user, R.drawable.ic_report, R.drawable.ic_remove_user)
+                } else {
+                    arrayListOf(likeText, option5) to arrayListOf(R.drawable.ic_like_user, R.drawable.ic_report)
+                }
+            }
+        }
+    }
 
     private fun getFormattedGuidelinesText(rules: List<String>): String {
 

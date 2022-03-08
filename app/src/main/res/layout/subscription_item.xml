@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
-        android:text="monthly"
+        android:text="@string/monthly"
         android:textAllCaps="true"
         app:layout_constraintBottom_toTopOf="@+id/price_text"
         app:layout_constraintStart_toStartOf="parent"
@@ -28,9 +28,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/title_semi"
-        android:text="$ 2.00/month"
+        android:text="@string/sample_subscription_price"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textColor="?colorPrimary"
         app:layout_constraintBottom_toTopOf="@+id/features_text"
         app:layout_constraintStart_toStartOf="@+id/duration_header_text"
         app:layout_constraintTop_toBottomOf="@+id/duration_header_text" />
@@ -40,9 +39,9 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="16dp"
-        android:text="• Remove all ads\n• No limits on projects creation\n• No limits on collaboration\n• No limits for number of contributors in a project"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="8dp"
+        android:text="@string/sample_subscription_content"
+        app:layout_constraintBottom_toTopOf="@+id/best_value_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/price_text"
         app:layout_constraintTop_toBottomOf="@+id/price_text" />
@@ -55,4 +54,21 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/duration_header_text"
         tools:text=" " />
+
+    <Button
+        android:id="@+id/best_value_btn"
+        style="@style/AppTheme.BestValueBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:text="@string/best_value"
+        android:visibility="gone"
+        app:cornerRadius="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/features_text"
+        app:layout_constraintTop_toBottomOf="@+id/features_text"
+        tools:visibility="visible" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

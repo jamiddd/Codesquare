@@ -5,12 +5,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
@@ -19,8 +18,6 @@ import androidx.paging.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.airbnb.lottie.LottieAnimationView
-import com.google.android.material.button.MaterialButton
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentPagerBinding
 import kotlinx.coroutines.Job
@@ -36,12 +33,10 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     lateinit var pagingAdapter: PagingDataAdapter<T, VH>
     protected val viewModel: MainViewModel by activityViewModels()
     lateinit var binding: FragmentPagerBinding
-    protected var recyclerView: RecyclerView? = null
-    protected var noItemsText: TextView? = null
-    private var swipeRefresher: SwipeRefreshLayout? = null
+
     var shouldHideRecyclerView = false
     var shouldShowImage = true
-    var shouldScrollToBottomOnNewData = false
+    var shouldShowProgress = true
 
     val isEmpty = MutableLiveData<Boolean>()
 
@@ -51,11 +46,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
         job?.cancel()
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {
+                Log.d(TAG, "New data")
                 pagingAdapter.submitData(it)
-                if (!shouldScrollToBottomOnNewData) {
-                    delay(500)
-                    binding.pagerItemsRecycler.scrollToPosition(0)
-                }
             }
         }
     }
@@ -71,37 +63,32 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     }
 
     fun setIsViewPagerFragment(isViewPagerFragment: Boolean) {
+        val smallMargin = resources.getDimension(R.dimen.small_margin).toInt()
         if (isViewPagerFragment) {
-            val eightDp = convertDpToPx(8)
-            val params = binding.noDataImage.layoutParams as ConstraintLayout.LayoutParams
-            params.topToTop = binding.pagerRoot.id
-            params.bottomToTop = binding.pagerNoItemsText.id
-            params.startToStart = binding.pagerRoot.id
-            params.endToEnd = binding.pagerRoot.id
-            params.verticalBias = 0.25f
-            params.horizontalBias = 0.5f
-            params.setMargins(eightDp)
-            binding.noDataImage.layoutParams = params
+            binding.noDataImage.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.pagerRoot.id
+                bottomToTop = binding.pagerNoItemsText.id
+                startToStart = binding.pagerRoot.id
+                endToEnd = binding.pagerRoot.id
+                verticalBias = 0.25f
+                horizontalBias = 0.5f
+                setMargins(smallMargin)
+            }
         } else {
-            val eightDp = convertDpToPx(8)
-            val params = binding.pagerNoItemsText.layoutParams as ConstraintLayout.LayoutParams
-            params.topToTop = binding.pagerRoot.id
-            params.bottomToTop = binding.pagerNoItemsText.id
-            params.startToStart = binding.pagerRoot.id
-            params.endToEnd = binding.pagerRoot.id
-            params.verticalBias = 0.5f
-            params.horizontalBias = 0.5f
-            params.setMargins(eightDp)
-            binding.pagerNoItemsText.layoutParams = params
+            binding.pagerNoItemsText.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                topToTop = binding.pagerRoot.id
+                bottomToTop = binding.pagerNoItemsText.id
+                startToStart = binding.pagerRoot.id
+                endToEnd = binding.pagerRoot.id
+                verticalBias = 0.5f
+                horizontalBias = 0.5f
+                setMargins(smallMargin)
+            }
         }
     }
 
     open fun onViewLaidOut() {
-        val progressBar = activity?.findViewById<ProgressBar>(R.id.main_progress_bar)
-        recyclerView = binding.pagerItemsRecycler
-        noItemsText = binding.pagerNoItemsText
-        swipeRefresher = binding.pagerRefresher
-        initLayout(binding.pagerItemsRecycler, binding.pagerActionBtn, binding.pagerNoItemsText, progressBar = progressBar, image = binding.noDataImage, refresher = binding.pagerRefresher)
+        initLayout()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -109,15 +96,15 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
         onViewLaidOut()
     }
 
-    open fun initLayout(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, image: LottieAnimationView? = null, refresher: SwipeRefreshLayout? = null) {
-        recyclerView.apply {
+    open fun initLayout() {
+        binding.pagerItemsRecycler.apply {
             adapter = pagingAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
 
-        addLoadListener(recyclerView, actionBtn, infoText, progressBar, image, refresher = refresher)
+        addLoadListener()
 
-        refresher?.let {
+        binding.pagerRefresher.let {
             it.setOnRefreshListener {
                 pagingAdapter.refresh()
             }
@@ -130,12 +117,15 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                 it.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(requireContext(), R.color.white))
             }
 
-            it.setProgressViewOffset(false, convertDpToPx(0), convertDpToPx(56))
+            val zero = resources.getDimension(R.dimen.zero).toInt()
+            val actionBarOffset = resources.getDimension(R.dimen.action_bar_height).toInt()
+
+            it.setProgressViewOffset(false, zero, actionBarOffset)
         }
 
     }
 
-    open fun addLoadListener(recyclerView: RecyclerView, actionBtn: MaterialButton? = null, infoText: TextView? = null, progressBar: ProgressBar? = null, image: ImageView? = null, refresher: SwipeRefreshLayout? = null) {
+    open fun addLoadListener() {
         pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
                 super.onItemRangeChanged(positionStart, itemCount, payload)
@@ -143,19 +133,19 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     // hide info and show recyclerview
                     isEmpty.postValue(false)
 
-                    recyclerView.show()
-                    infoText?.hide()
-                    image?.hide()
+                    binding.pagerItemsRecycler.show()
+                    binding.pagerNoItemsText.hide()
+                    binding.noDataImage.hide()
                 } else {
                     isEmpty.postValue(true)
                     if (shouldHideRecyclerView) {
-                        recyclerView.hide()
+                        binding.pagerItemsRecycler.hide()
                     }
                     // hide recyclerview and show info
                     if (shouldShowImage) {
-                        image?.show()
+                        binding.noDataImage.show()
                     }
-                    infoText?.show()
+                    binding.pagerNoItemsText.show()
                 }
             }
         })
@@ -164,37 +154,33 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
             pagingAdapter.loadStateFlow.collectLatest {
                 when (it.refresh) {
                     is LoadState.Loading -> {
-                        Log.d(TAG, "Refresh function - Loading")
-
-                        refresher?.isRefreshing = true
-                        // when refresh has just started
-//                        progressBar?.show()
-                        if (shouldHideRecyclerView) {
-                            recyclerView.hide()
+                        if (shouldShowProgress) {
+                            binding.pagerRefresher.isRefreshing = true
                         }
-                        infoText?.hide()
-                        image?.hide()
+
+                        if (shouldHideRecyclerView) {
+                            binding.pagerItemsRecycler.hide()
+                        }
+                        binding.pagerNoItemsText.hide()
+                        binding.noDataImage.hide()
                     }
                     is LoadState.Error -> {
-                        Log.d(TAG, "Refresh function - Error")
-
                         // when something went wrong while refreshing
-                        refresher?.isRefreshing = false
-//                        progressBar?.hide()
+                        binding.pagerRefresher.isRefreshing = false
+
                         if (shouldHideRecyclerView) {
-                            recyclerView.hide()
+                            binding.pagerItemsRecycler.hide()
                         }
-                        infoText?.text = getString(R.string.common_error_text)
+                        binding.pagerNoItemsText.text = getString(R.string.common_error_text)
                         if (shouldShowImage) {
-                            image?.show()
+                            binding.noDataImage.show()
                         }
-                        image?.show()
+                        binding.noDataImage.show()
                     }
                     is LoadState.NotLoading -> {
                         viewLifecycleOwner.lifecycleScope.launch {
                             delay(1500)
-//                            progressBar?.hide()
-                            refresher?.isRefreshing = false
+                            binding.pagerRefresher.isRefreshing = false
                         }
                     }
                 }
@@ -203,52 +189,51 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
                     is LoadState.Loading -> {
                         Log.d(TAG, "Append function - Loading")
                         // when append is loading
-                        refresher?.isRefreshing = true
-//                        progressBar?.show()
-                        infoText?.hide()
-                        image?.hide()
+                        if (shouldShowProgress) {
+                            binding.pagerRefresher.isRefreshing = true
+                        }
+                        binding.pagerNoItemsText.hide()
+                        binding.noDataImage.hide()
                     }
                     is LoadState.Error -> {
                         Log.d(TAG, "Append function - Error")
 
                         // when append went wrong
                         // when something went wrong while refreshing
-                        refresher?.isRefreshing = false
-//                        progressBar?.hide()
+                        binding.pagerRefresher.isRefreshing = false
                         if (shouldHideRecyclerView) {
-                            recyclerView.hide()
+                            binding.pagerItemsRecycler.hide()
                         }
 
-                        infoText?.text = getString(R.string.common_error_text)
-                        infoText?.show()
+                        binding.pagerNoItemsText.text = getString(R.string.common_error_text)
+                        binding.pagerNoItemsText.show()
                         if (shouldShowImage) {
-                            image?.show()
+                            binding.noDataImage.show()
                         }
                     }
                     is LoadState.NotLoading -> {
                         viewLifecycleOwner.lifecycleScope.launch {
                             delay(1500)
-//                            progressBar?.hide()
-                            refresher?.isRefreshing = false
+                            binding.pagerRefresher.isRefreshing = false
                         }
                     }
                 }
 
                 if (pagingAdapter.itemCount != 0) {
                     // non empty
-                    recyclerView.show()
-                    infoText?.hide()
-                    image?.hide()
+                    binding.pagerItemsRecycler.show()
+                    binding.pagerNoItemsText.hide()
+                    binding.noDataImage.hide()
                     isEmpty.postValue(false)
                 } else {
                     // empty
                     isEmpty.postValue(true)
                     if (shouldHideRecyclerView) {
-                        recyclerView.hide()
+                        binding.pagerItemsRecycler.hide()
                     }
-                    infoText?.show()
+                    binding.pagerNoItemsText.show()
                     if (shouldShowImage) {
-                        image?.show()
+                        binding.noDataImage.show()
                     }
                 }
             }

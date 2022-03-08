@@ -1571,82 +1571,31 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    /*
-    * Messages related functions
-    * */
-
-    /* fun getMessageRef(chatChannelId: String, messageId: String = randomId()): DocumentReference {
-         return Firebase.firestore.collection("chatChannels").document(chatChannelId)
-             .collection("messages")
-             .document(messageId)
-     }*/
-
-    /*private fun getMessagesRef(chatChannelId: String): CollectionReference {
-        return Firebase.firestore.collection("chatChannels").document(chatChannelId).collection("messages")
-    }
-*/
-
-
-    /* fun getMessageDocumentSnapshot(chatChannelId: String, messageId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
-         val ref = getMessageRef(chatChannelId, messageId)
-         getDocument(ref, onComplete)
-     }*/
-
-    /* fun getMessagesQuerySnapshot(chatChannelId: String, lastSnapshot: DocumentSnapshot? = null, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-         val query = if (lastSnapshot == null) {
-             getMessagesRef(chatChannelId)
-                 .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-         } else {
-             getMessagesRef(chatChannelId)
-                 .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                 .startAfter(lastSnapshot)
-         }
-
-         query.get()
-             .addOnCompleteListener(onComplete)
-
-     }
- */
-    /*fun callFunction(data: MutableMap<String, Any>, onComplete: ((task: Task<HttpsCallableResult>) -> Unit)? = null) {
-        Firebase.functions.getHttpsCallable("onProjectLiked")
-            .call(data)
-            .addOnCompleteListener {
-                if (onComplete != null) {
-                    onComplete(it)
-                }
-                if (it.isSuccessful) {
-                    Log.d(TAG, "Project like notification sent")
-                } else {
-                    Log.e(TAG, it.exception?.localizedMessage.orEmpty())
-                }
-            }
-
-    }*/
-
-    fun sendRegistrationTokenToServer(token: String) {
+    fun sendRegistrationTokenToServer(token: String, onComplete: (task: Task<Void>) -> Unit) {
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null) {
             Firebase.firestore.collection("users")
                 .document(currentUser.uid)
                 .update("registrationTokens", FieldValue.arrayUnion(token))
-                .addOnCompleteListener {
-                    /*if (it.isSuccessful) {
-
-                    } else {
-
-                    }*/
-                }
+                .addOnCompleteListener(onComplete)
 
         }
     }
 
-    fun sendReport(report: Report, onComplete: (task: Task<Void>) -> Unit) {
-        Firebase.firestore.collection("reports")
+    suspend fun sendReport(report: Report, onComplete: (task: Task<Void>) -> Unit) {
+        val names = mutableListOf<String>()
+        for (i in report.snapshots) {
+            names.add(randomId())
+        }
+
+        val toBeUploadedImages = uploadItems("${report.id}/images", names, report.snapshots.map { it.toUri() })
+        report.snapshots = toBeUploadedImages.map { it.toString() }
+
+        Firebase.firestore.collection(REPORTS)
             .document(report.id)
             .set(report)
             .addOnCompleteListener(onComplete)
+
     }
 
     fun sendFeedback(feedback: Feedback, onComplete: (task: Task<Void>) -> Unit) {
@@ -1655,31 +1604,6 @@ object FireUtility {
             .set(feedback)
             .addOnCompleteListener(onComplete)
     }
-
-    /*suspend fun getNotifications(currentUserId: String, lastSnapshot: DocumentSnapshot? = null): Result<QuerySnapshot> {
-        return try {
-            val task = if (lastSnapshot != null) {
-                Firebase.firestore.collection("users")
-                    .document(currentUserId)
-                    .collection("notifications")
-                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                    .startAfter(lastSnapshot)
-                    .limit(50)
-                    .get()
-            } else {
-                Firebase.firestore.collection("users")
-                    .document(currentUserId)
-                    .collection("notifications")
-                    .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-                    .limit(50)
-                    .get()
-            }
-            val result = task.await()
-            Result.Success(result)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
 
     // the changes to the chat channel will be reflected in the local database because there is listener
     // attached to the channels
@@ -2719,7 +2643,7 @@ object FireUtility {
 
     suspend fun updateProject(
         project: Project,
-        onComplete: (task: Task<Void>) -> Unit
+        onComplete: (newProject: Project, task: Task<Void>) -> Unit
     ) {
         val names = mutableListOf<String>()
         for (img in project.images) {
@@ -2741,17 +2665,36 @@ object FireUtility {
         val downloadedUris = uploadItems("${project.id}/images", names, toBeUploadedImages.map { it.toUri() })
         newListOfImages.addAll(downloadedUris.map { it.toString() })
 
-        val changes = mutableMapOf(
-            "name" to project.name,
-            "content" to project.content,
-            "images" to newListOfImages,
-            "tags" to project.tags,
-            "sources" to project.sources
+        project.images = newListOfImages
+
+        val projectChanges = mutableMapOf(
+            NAME to project.name,
+            CONTENT to project.content,
+            IMAGES to newListOfImages,
+            TAGS to project.tags,
+            SOURCES to project.sources,
+            UPDATED_AT to System.currentTimeMillis()
         )
 
-        Firebase.firestore.collection(PROJECTS).document(project.id)
-            .update(changes)
-            .addOnCompleteListener(onComplete)
+        val primeThumbnail = newListOfImages.first()
+        val channelChanges = mapOf(
+            PROJECT_TITLE to project.name,
+            PROJECT_IMAGE to primeThumbnail,
+            UPDATED_AT to System.currentTimeMillis()
+        )
+
+        val db = Firebase.firestore
+        val batch = db.batch()
+
+        val chatChannelRef = db.collection(CHAT_CHANNELS).document(project.chatChannel)
+        val projectRef = db.collection(PROJECTS).document(project.id)
+
+        batch.update(chatChannelRef, channelChanges)
+            .update(projectRef, projectChanges)
+            .commit()
+            .addOnCompleteListener {
+                onComplete(project, it)
+            }
     }
 
     fun getCommentChannel(commentChannelId: String, onComplete: (Result<CommentChannel>?) -> Unit) {
@@ -2770,6 +2713,61 @@ object FireUtility {
                 }
                 onComplete(result)
             }
+    }
+
+    fun sendRegistrationTokenToChatChannels(token: String, onComplete: (task: Task<Void>) -> Unit) {
+        val currentUser = UserManager.currentUser
+
+        val batch = Firebase.firestore.batch()
+
+        for (channel in currentUser.chatChannels) {
+            val ref = Firebase.firestore.collection(CHAT_CHANNELS).document(channel)
+            val changes = mapOf(
+                REGISTRATION_TOKENS to FieldValue.arrayUnion(token)
+            )
+            batch.update(ref, changes)
+        }
+
+        batch.commit()
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun getProjectRequestsOfCurrentUser(onComplete: (result: Result<List<ProjectRequest>>) -> Unit) {
+        Firebase.firestore.collection(PROJECT_REQUESTS)
+            .whereEqualTo(SENDER_ID, UserManager.currentUserId)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    val projectRequests = it.result.toObjects(ProjectRequest::class.java)
+                    onComplete(Result.Success(projectRequests))
+                } else {
+                    it.exception?.let { it1 -> Result.Error(it1) }?.let { it2 -> onComplete(it2) }
+                }
+            }
+
+    }
+
+    fun getMessage(chatChannelId: String, messageId: String, onComplete: (Result<Message>?) -> Unit) {
+        val ref = Firebase.firestore.collection(CHAT_CHANNELS)
+            .document(chatChannelId)
+            .collection(MESSAGES)
+            .document(messageId)
+
+        ref.get()
+            .addOnCompleteListener {
+                val res = if (it.isSuccessful) {
+                    if (it.result.exists()) {
+                        Result.Success(it.result.toObject(Message::class.java)!!)
+                    } else {
+                        null
+                    }
+                } else {
+                    it.exception?.let { it1 -> Result.Error(it1) }
+                }
+                onComplete(res)
+
+            }
+
     }
 
 }

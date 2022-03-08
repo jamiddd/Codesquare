@@ -156,9 +156,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             viewModel.setCurrentProject(newProject)
         }
 
-        imageAdapter = ImageAdapter { _, _ ->
-            //
-        }
+        imageAdapter = ImageAdapter()
 
         val helper: SnapHelper = LinearSnapHelper()
         val imagesManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)

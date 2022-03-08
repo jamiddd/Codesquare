@@ -5,13 +5,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.nativead.NativeAdOptions
-import com.jamid.codesquare.accentColor
-import com.jamid.codesquare.convertDpToPx
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.CustomPostAdBinding
 import com.jamid.codesquare.hide
@@ -111,6 +107,12 @@ class AdViewHolder(v: View): PostViewHolder(v) {
                     if (project != null) {
                         projectClickListener.onAdError(project)
                     }
+                }
+
+                override fun onAdLoaded() {
+                    super.onAdLoaded()
+                    binding.loadingAdText.hide()
+                    binding.adPrimaryAction.show()
                 }
             })
             .withNativeAdOptions(adOptions)

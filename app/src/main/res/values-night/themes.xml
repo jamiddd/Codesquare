@@ -14,7 +14,7 @@
         <!-- Customize your theme here. -->
         <item name="textInputStyle">@style/AppTheme.TextInputLayout</item>
         <item name="materialButtonStyle">@style/AppTheme.Button</item>
-        <item name="chipStyle">@style/AppTheme.Chip</item>
+        <item name="chipStyle">@style/AppTheme.YoutubeChip</item>
         <item name="searchViewStyle">@style/AppTheme.SearchView</item>
         <item name="snackbarStyle">@style/AppTheme.Snackbar</item>
         <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>
@@ -23,6 +23,12 @@
     </style>
 
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
+
+    <style name="AppTheme.ReplyLayout">
+        <item name="background">@drawable/message_body</item>
+        <item name="android:background">@drawable/message_body</item>
+        <item name="android:backgroundTint">#0D000000</item>
+    </style>
 
     <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <!-- <item name="colorPrimary">@color/shrine_pink_100</item>
@@ -48,15 +54,31 @@
         <item name="android:backgroundTint">@color/chip_back_blue_night</item>
     </style>
 
-    <style name="AppTheme.AdInstallButton" parent="AppTheme.Button">
-        <item name="materialThemeOverlay">@style/AppTheme.InstallOverlay</item>
-        <item name="android:textColor">@color/install_front_teal_night</item>
-        <!-- <item name="backgroundTint">@color/chip_back_teal_day</item>
-        <item name="android:backgroundTint">@color/chip_back_teal_day</item>
+    <style name="AppTheme.CheckoutButtonOverlay">
+
+    </style>
+
+    <style name="AppTheme.ReplyRightLayout">
+        <item name="android:background">@drawable/message_body</item>
+        <item name="android:backgroundTint">#313757</item>
+    </style>
+
+    <style name="AppTheme.CheckoutButton" parent="AppTheme.Button">
+        <item name="materialThemeOverlay">@style/AppTheme.CheckoutButtonOverlay</item>
+        <item name="android:backgroundTint">@color/primary_button</item>
+        <item name="android:textColor">@color/primary_button_text_color</item>
+        <item name="iconTint">@color/primary_button_text_color</item>
+    </style>
 
 
-        <item name="android:strokeColor">@color/chip_front_teal_day</item>
-        -->
+    <style name="AppTheme.DraweeViewBackground">
+        <item name="placeholderImage">@drawable/drawee_view_background_night</item>
+    </style>
+
+    <style name="AppTheme.AdInstallButton" parent="AppTheme.ButtonOutlined">
+        <item name="strokeColor">@color/normal_grey</item>
+        <item name="rippleColor">@color/lightest_grey</item>
+        <item name="android:textColor">@color/white</item>
     </style>
 
     <style name="AppTheme.ChatAddMediaBtn" parent="Widget.MaterialComponents.Button.OutlinedButton">
@@ -141,17 +163,25 @@
         <item name="srcCompat">@drawable/ic_empty_2</item>
     </style>
 
-    <style name="AppTheme.ProjectItemStyledBtn" parent="AppTheme.Button.IconOnly">
+    <style name="AppTheme.ProjectItemStyledBtn" parent="AppTheme.SmallIconBtn">
         <item name="iconTint">@color/white</item>
         <!--<item name="backgroundTint">@color/darkest_grey_2</item>
         <item name="android:backgroundTint">@color/darkest_grey_2</item>-->
     </style>
 
+    <style name="AppTheme.ChatBalloonRightDocument">
+        <item name="android:background">@drawable/message_document_background_night</item>
+    </style>
+
     <style name="AppTheme.ChatBalloonRight">
-        <item name="backgroundTint">@color/night_primary_background</item>
-        <item name="android:backgroundTint">@color/night_primary_background</item>
-        <item name="android:textColor">@color/faded_white</item>
-        <item name="color">@color/faded_white</item>
+        <item name="android:background">@drawable/message_background_alt</item>
+        <item name="android:backgroundTint">@color/darkest_blue</item>
+<!--        <item name="android:textColor">@color/ios_grey</item>-->
+    </style>
+
+    <style name="AppTheme.ChatBalloonRightImage">
+        <item name="android:background">@drawable/message_body</item>
+        <item name="android:backgroundTint">@color/darkest_grey_2</item>
     </style>
 
     <style name="AppTheme.ChatBalloonRightIcon">
@@ -170,10 +200,12 @@
     </style>
 
     <style name="AppTheme.ChatBalloonLeft">
-        <item name="backgroundTint">@color/darkest_grey_2</item>
+        <item name="android:background">@drawable/message_background</item>
         <item name="android:backgroundTint">@color/darkest_grey_2</item>
-        <item name="android:textColor">@color/faded_white</item>
-        <item name="color">@color/faded_white</item>
+    </style>
+
+    <style name="AppTheme.ChatBalloonLeftDocument">
+        <item name="android:background">@drawable/message_document_background_night</item>
     </style>
 
     <style name="AppTheme.ChatBalloonLeftIcon">
@@ -224,7 +256,14 @@
         <item name="android:backgroundTint">@color/darkest_grey</item>
     </style>
 
-    <style name="AppTheme.LikeBtn" parent="AppTheme.Button.IconOnly">
+    <style name="AppTheme.SmallIconBtn" parent="AppTheme.Button.IconOnly">
+        <item name="android:minHeight">40dp</item>
+        <item name="android:minWidth">40dp</item>
+        <item name="android:paddingEnd">4dp</item>
+        <item name="android:paddingStart">8dp</item>
+    </style>
+
+    <style name="AppTheme.LikeBtn" parent="AppTheme.SmallIconBtn">
         <item name="materialThemeOverlay">@style/AppTheme.LikeBtnOverlay</item>
         <item name="iconTint">@null</item>
         <item name="icon">@drawable/like_selector_night</item>
@@ -316,13 +355,6 @@
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.Button</item>
         <item name="android:textAppearance">@style/AppTheme.TextAppearance.Button.TextButton</item>
         <item name="shapeAppearance">@style/AppTheme.SmallComponent</item>
-    </style>
-
-    <style name="AppTheme.ReplyLayout">
-        <item name="background">@drawable/message_body</item>
-        <item name="android:background">@drawable/message_body</item>
-        <item name="backgroundTint">@color/darker_grey</item>
-        <item name="android:backgroundTint">@color/darker_grey</item>
     </style>
 
     <style name="AppTheme.ChatSendButton" parent="Widget.MaterialComponents.Button">
@@ -420,8 +452,27 @@
     </style>
 
     <style name="Chip.Text" parent="TextAppearance.MaterialComponents.Body2">
-        <item name="fontFamily">@font/title_semi</item>
-        <item name="android:fontFamily">@font/title_semi</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="ThemeOverlay.App.YoutubeChip" parent="">
+        <item name="colorOnSurface">@color/darkest_grey_2</item>
+        <item name="chipIconTint">@color/darker_grey</item>
+    </style>
+
+    <style name="AppTheme.YoutubeChip" parent="Widget.MaterialComponents.Chip.Entry">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.YoutubeChip</item>
+        <item name="android:textAppearance">@style/Chip.Text</item>
+        <item name="checkedIconTint">?colorPrimary</item>
+        <item name="checkedIconEnabled">false</item>
+        <item name="closeIconEnabled">false</item>
+        <item name="closeIconVisible">false</item>
+        <item name="android:textColor">#E4E4E4</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="closeIcon">@drawable/ic_round_close_24</item>
+        <item name="closeIconTint">#C6C6C6</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipStrokeColor">#878686</item>
     </style>
 
     <style name="AppTheme.PrimaryText" parent="TextAppearance.AppCompat.Small">
@@ -446,4 +497,46 @@
         <item name="colorSurface">?colorSurface</item>
         <item name="colorOnSurface">?colorOnSurface</item>
     </style>
+
+
+    <style name="AppTheme.CloseBtn" parent="AppTheme.Button.IconOnly">
+        <item name="icon">@drawable/ic_round_close_24</item>
+        <item name="iconSize">@dimen/small_icon</item>
+        <item name="android:backgroundTint">@color/darkest_transparent</item>
+        <item name="iconTint">@color/white</item>
+        <item name="android:minHeight">@dimen/close_icon_height</item>
+        <item name="android:minWidth">@dimen/close_icon_width</item>
+        <item name="android:paddingStart">@dimen/close_icon_padding</item>
+        <item name="android:paddingEnd">@dimen/zero</item>
+    </style>
+
+    <style name="AppTheme.ChatInputContainer">
+        <item name="android:background">@color/darkest_grey</item>
+    </style>
+
+   <!-- <style name="AppTheme.LikesCommentText" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColorHint">?colorAccent</item>
+    </style>-->
+
+    <style name="AppTheme.Header1" parent="TextAppearance.AppCompat.Body2">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="AppTheme.BestValueBtn" parent="AppTheme.Button">
+        <item name="android:backgroundTint">@color/amber_night</item>
+        <item name="android:textColor">@color/ios_grey</item>
+        <item name="rippleColor">@color/transparent</item>
+    </style>
+
+    <style name="AppTheme.CloseIconBtn" parent="AppTheme.Button.IconOnly">
+        <item name="iconTint">@color/white</item>
+        <item name="rippleColor">@color/lightest_grey</item>
+    </style>
+
+    <style name="AppTheme.InfoIcon" parent="AppTheme.Button.IconOnly">
+        <item name="iconTint">@color/white</item>
+        <item name="rippleColor">@color/lightest_grey</item>
+    </style>
+
 </resources>

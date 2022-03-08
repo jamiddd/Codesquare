@@ -37,4 +37,8 @@ class SavedProjectsFragment: PagerListFragment<Project, PostViewHolder>() {
         return ProjectAdapter()
     }
 
+    companion object {
+        const val TAG = "SavedProjectsFragment"
+    }
+
 }

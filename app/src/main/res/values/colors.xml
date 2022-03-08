@@ -36,7 +36,10 @@
     <color name="night_primary_background">#2D3668</color>
     <color name="faded_white">#C6C6C6</color>
     <color name="translucent_light_grey">#4BECEBEB</color>
-
+    <color name="disabled_primary_button">#A8A8A8</color>
+    <color name="light_grey">#F1F1F1</color>
+    <color name="amber">#FF5722</color>
+    <color name="amber_night">#833218</color>
 
 
 
@@ -60,9 +63,11 @@
     <color name="chip_back_teal_night">#33045E55</color>
     <color name="chip_front_teal_night">#0A423C</color>
 
-    <color name="install_back_teal_day">#CDDFED</color>
+    <color name="install_back_teal_day">#EBF0F4</color>
     <color name="install_front_teal_day">#0B3C63</color>
     <color name="install_back_teal_night">#11212C</color>
     <color name="install_front_teal_night">#0C538C</color>
+
+    <color name="ios_grey">#E9E8E8</color>
 
 </resources>

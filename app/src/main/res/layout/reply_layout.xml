@@ -24,8 +24,9 @@
             android:layout_height="wrap_content"
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
-            tools:text="Jamid Deka"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body2" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textColor="?colorAccent"
+            tools:text="Jamid Deka" />
 
         <TextView
             android:id="@+id/reply_text"

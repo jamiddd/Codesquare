@@ -1,10 +1,13 @@
 package com.jamid.codesquare.ui.home.feed
 
+import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.content.res.ColorStateList
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -17,6 +20,7 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
@@ -46,8 +50,9 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         super.onViewLaidOut()
 
         val query = Firebase.firestore.collection(PROJECTS)
-        val currentUser = UserManager.currentUser
         getItems { viewModel.getFeedItems(query) }
+
+        binding.root.layoutTransition = LayoutTransition()
 
         binding.pagerItemsRecycler.itemAnimator = null
 
@@ -77,40 +82,22 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         }
 
         binding.pagerRoot.addView(tagsContainerBinding.root)
-        val params = tagsContainerBinding.root.layoutParams as ConstraintLayout.LayoutParams
-        params.startToStart = binding.pagerRoot.id
-        params.topToTop = binding.pagerRoot.id
-        params.endToEnd = binding.pagerRoot.id
-        tagsContainerBinding.root.layoutParams = params
 
-        tagsContainerView.updateLayout(
-            ConstraintLayout.LayoutParams.WRAP_CONTENT,
-            ConstraintLayout.LayoutParams.MATCH_PARENT
-        )
-
-        recyclerView?.setPadding(0, convertDpToPx(48), 0, convertDpToPx(8))
-
-        tagsContainerBinding.random.setOnClickListener {
-            getItems {
-                viewModel.getFeedItems(query)
-            }
+        tagsContainerView.updateLayoutParams<ConstraintLayout.LayoutParams> {
+            startToStart = binding.pagerRoot.id
+            topToTop = binding.pagerRoot.id
+            endToEnd = binding.pagerRoot.id
+            height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+            width = ConstraintLayout.LayoutParams.MATCH_PARENT
         }
 
-        tagsContainerBinding.tagsHolder.setOnCheckedChangeListener { _, checkedId ->
-            if (checkedId == R.id.near_me) {
-                val currentUserLocation = currentUser.location
-                if (currentUserLocation != null) {
-                    searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
-                } else {
-                    val tempLocation = LocationProvider.currentLocation
-                    if (tempLocation != null) {
-                        searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
-                    } else {
-                        LocationProvider.getLastLocation((activity as MainActivity).fusedLocationProviderClient)
-                    }
-                }
-            }
-        }
+        val touchLength = resources.getDimension(R.dimen.touch_len).toInt()
+        val genericLength = resources.getDimension(R.dimen.generic_len).toInt()
+        binding.pagerItemsRecycler.setPadding(0, touchLength, 0, genericLength)
+
+        setRandomButton(query, tagsContainerBinding.random)
+
+        setLocationButton(tagsContainerBinding.nearMe)
 
         var oldPosition = 0
 
@@ -138,8 +125,6 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
                         }
                     }
                 }
-
-
 
                 oldPosition = newPosition
             }
@@ -171,9 +156,72 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
     }
 
-    private fun searchBasedOnLocation(geoLocation: GeoLocation) {
-        toast("Showing projects near you...")
+    private fun setLocationButton(locationBtn: Chip) {
+        /*val (backgroundColor, textColor) = if (isNightMode()) {
+            val colorPair = Pair(R.color.chip_back_pink_night, R.color.chip_front_pink_night)
+            ContextCompat.getColor(requireContext(), colorPair.first) to
+                    ContextCompat.getColor(requireContext(), colorPair.second)
+        } else {
+            val colorPair = Pair(R.color.chip_back_pink_day, R.color.chip_front_pink_day)
+            ContextCompat.getColor(requireContext(), colorPair.first) to
+                    ContextCompat.getColor(requireContext(), colorPair.second)
+        }*/
 
+        locationBtn.apply {
+         /*   val length = resources.getDimension(R.dimen.unit_len) / 4
+            chipStrokeWidth = length
+            chipIconTint = ColorStateList.valueOf(textColor)
+            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)*/
+            isCheckable = false
+            isCloseIconVisible = false
+//            setTextColor(textColor)
+        }
+
+        locationBtn.setOnClickListener {
+            val currentUser = UserManager.currentUser
+            val currentUserLocation = currentUser.location
+            if (currentUserLocation != null) {
+                searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
+            } else {
+                val tempLocation = LocationProvider.currentLocation
+                if (tempLocation != null) {
+                    searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
+                } else {
+                    LocationProvider.getLastLocation((activity as MainActivity).fusedLocationProviderClient)
+                }
+            }
+        }
+    }
+
+    private fun setRandomButton(query: CollectionReference, random: Chip) {
+
+        random.setOnClickListener {
+            getItems {
+                viewModel.getFeedItems(query)
+            }
+        }
+
+       /* val (backgroundColor, textColor) = if (isNightMode()) {
+            val colorPair = colorPalettesNight.random()
+            ContextCompat.getColor(requireContext(), colorPair.first) to
+                    ContextCompat.getColor(requireContext(), colorPair.second)
+        } else {
+            val colorPair = colorPalettesDay.random()
+            ContextCompat.getColor(requireContext(), colorPair.first) to
+                    ContextCompat.getColor(requireContext(), colorPair.second)
+        }
+*/
+        random.apply {
+           /* chipIconTint = ColorStateList.valueOf(textColor)
+            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)*/
+            isCheckable = false
+            isCloseIconVisible = false
+//            setTextColor(textColor)
+        }
+
+    }
+
+    private fun searchBasedOnLocation(geoLocation: GeoLocation) {
         val center = GeoLocation(geoLocation.latitude, geoLocation.longitude)
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
@@ -243,30 +291,45 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
     }
 
     private fun ChipGroup.addTag(tag: String) {
+
         tag.trim()
-        val chip = Chip(requireContext())
-        chip.text = tag
-        chip.isCheckable = true
-        chip.isCloseIconVisible = false
+        val lContext = requireContext()
+        val chip = Chip(lContext)
+
+      /*  val (backgroundColor, textColor) = if (isNightMode()) {
+            val colorPair = colorPalettesNight.random()
+            ContextCompat.getColor(lContext, colorPair.first) to
+                    ContextCompat.getColor(lContext, colorPair.second)
+        } else {
+            val colorPair = colorPalettesDay.random()
+            ContextCompat.getColor(lContext, colorPair.first) to
+                    ContextCompat.getColor(lContext, colorPair.second)
+        }*/
 
         val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
         val t2 = tag.uppercase()
         val t3 = tag.lowercase()
 
-        chip.chipStrokeColor = ColorStateList.valueOf(requireContext().accentColor())
-        chip.chipStrokeWidth = convertDpToPx(1, requireContext()).toFloat()
+        chip.apply {
+         /*   val length = resources.getDimension(R.dimen.unit_len) / 4
+            chipStrokeWidth = length*/
+            isCheckable = true
+            text = tag
+//            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
+            isCloseIconVisible = false
+            addView(this)
 
-        chip.setOnClickListener {
-            val query = Firebase.firestore.collection("projects")
-                .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
+//            setTextColor(textColor)
 
-            getItems {
-                viewModel.getFeedItems(query, tag)
+            setOnClickListener {
+                val query = Firebase.firestore.collection("projects")
+                    .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
+
+                getItems {
+                    viewModel.getFeedItems(query, tag)
+                }
             }
         }
-
-        addView(chip)
-
     }
 
     companion object {

@@ -15,6 +15,7 @@
 
         <com.facebook.drawee.view.SimpleDraweeView
             android:id="@+id/chat_project_image"
+            style="@style/AppTheme.DraweeViewBackground"
             android:layout_width="match_parent"
             android:layout_height="250dp"
             app:layout_constraintBottom_toTopOf="@+id/linearLayout10"
@@ -22,8 +23,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
-            app:layout_constraintVertical_chainStyle="packed"
-            app:placeholderImage="@color/lightest_grey" />
+            app:layout_constraintVertical_chainStyle="packed" />
 
         <LinearLayout
             android:id="@+id/linearLayout10"
@@ -72,12 +72,13 @@
 
             <Button
                 android:id="@+id/update_guidelines_btn"
+                style="@style/AppTheme.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
                 android:text="Set guidelines"
-                android:visibility="gone" />
+                android:textAllCaps="true" />
 
             <TextView
                 android:id="@+id/chat_media_header"
@@ -145,7 +146,7 @@
                 android:overScrollMode="never"
                 android:paddingBottom="8dp"
                 tools:itemCount="1"
-                tools:listitem="@layout/user_item" />
+                tools:listitem="@layout/user_grid_item" />
 
         </LinearLayout>
 

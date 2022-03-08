@@ -201,27 +201,24 @@ abstract class LauncherActivity : AppCompatActivity(){
     val selectChatImagesUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
 
+            val images = mutableListOf<Uri>()
+
             val clipData = it.data?.clipData
 
             if (clipData != null) {
                 val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
                 for (i in 0 until count) {
                     val uri = clipData.getItemAt(i)?.uri
                     uri?.let { image ->
                         images.add(image)
                     }
                 }
-
-                viewModel.setChatUploadImages(images)
-
             } else {
                 it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadImages(listOf(it1))
+                    images.add(it1)
                 }
             }
+            viewModel.multipleImagesContainer.postValue(images)
         }
     }
 

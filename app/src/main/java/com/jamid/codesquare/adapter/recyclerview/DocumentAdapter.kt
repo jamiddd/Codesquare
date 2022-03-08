@@ -3,19 +3,20 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.DocumentLayoutBinding
-import com.jamid.codesquare.listeners.MessageListener
+import com.jamid.codesquare.listeners.MessageClickListener
 
 class DocumentAdapter: ListAdapter<Message, DocumentAdapter.DocumentViewHolder>(MessageComparator()) {
 
     inner class DocumentViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
-        private val messageListener = view.context as MessageListener
+        private val messageListener = view.context as MessageClickListener
 
         fun bind(message: Message) {
 
@@ -28,6 +29,15 @@ class DocumentAdapter: ListAdapter<Message, DocumentAdapter.DocumentViewHolder>(
             view.setOnClickListener {
                 messageListener.onDocumentClick(message)
             }
+
+            val icon = when (message.metadata?.ext) {
+                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+            }
+
+            binding.documentImg.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
 
             if (!message.isDownloaded) {
 

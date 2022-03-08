@@ -11,7 +11,6 @@
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:layout_marginStart="8dp"
-        android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toBottomOf="@+id/message_content"
         app:layout_constraintEnd_toStartOf="@+id/message_content"
         app:layout_constraintHorizontal_bias="0.0"
@@ -19,6 +18,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/message_content"
         app:layout_constraintVertical_bias="1.0"
+        app:placeholderImage="@color/darkest_grey_2"
         app:roundAsCircle="true" />
 
     <TextView
@@ -49,6 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginBottom="4dp"
+        android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="@+id/message_content"
         app:layout_constraintTop_toBottomOf="@+id/message_content"

@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
@@ -13,5 +14,5 @@ data class Report(
     var reason: String,
     var createdAt: Long
 ): Parcelable {
-    constructor(): this(randomId(), "", "", emptyList(), "", System.currentTimeMillis())
+    constructor(): this(randomId(), UserManager.currentUserId, "", emptyList(), "", System.currentTimeMillis())
 }

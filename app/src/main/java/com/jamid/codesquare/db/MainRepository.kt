@@ -13,11 +13,11 @@ import kotlin.random.Random
 
 class MainRepository(private val db: CodesquareDatabase) {
 
-    private val userDao = db.userDao()
     private val interestDao = db.interestDao()
     private val chatChannelDao = db.chatChannelDao()
-
     val projectDao = db.projectDao()
+
+    val userDao = db.userDao()
     val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
     val commentDao = db.commentDao()
@@ -59,7 +59,6 @@ class MainRepository(private val db: CodesquareDatabase) {
                 newProjects.add(i, newProject)
             }
         }
-
 
         if (shouldProcess) {
             projectDao.insert(processProjects(newProjects.toTypedArray()).toList())
@@ -247,11 +246,16 @@ class MainRepository(private val db: CodesquareDatabase) {
         insertProjects(projects, false)
     }
 
-    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>) {
+    suspend fun insertProjectRequests(requests: List<ProjectRequest>) {
+        val newList = processProjectRequests(requests)
+        projectRequestDao.insert(newList)
+    }
+
+    private suspend fun processProjectRequests(requests: List<ProjectRequest>): List<ProjectRequest> {
 
         val finalProjectRequestList = mutableListOf<ProjectRequest>()
 
-        for (request in projectRequests) {
+        for (request in requests) {
             when (val res1 = FireUtility.getProject(request.projectId)) {
                 is Result.Error -> {
                     Log.e(TAG, res1.exception.localizedMessage.orEmpty())
@@ -272,15 +276,23 @@ class MainRepository(private val db: CodesquareDatabase) {
                 is Result.Success -> {
                     val user = res2.data
                     request.sender = user
-                    finalProjectRequestList.add(request)
                 }
                 null -> {
                     Log.d(TAG, "Probably user doesn't exist with user id: ${request.senderId}")
                 }
             }
+
+            finalProjectRequestList.add(request)
+
         }
 
-        projectRequestDao.insert(finalProjectRequestList)
+        return finalProjectRequestList
+
+    }
+
+    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>) {
+        val newList = processProjectRequests(projectRequests.toList())
+        projectRequestDao.insert(newList)
     }
 
     suspend fun getProject(projectId: String): Project? {
@@ -327,6 +339,11 @@ class MainRepository(private val db: CodesquareDatabase) {
             }
         }
         commentDao.insert(comments)
+    }
+
+    suspend fun insertUsers(users: List<User>) {
+        val newUsers = processUsers(*users.toTypedArray())
+        userDao.insert(newUsers.toList())
     }
 
     suspend fun insertUsers(users: Array<out User>) {
@@ -391,8 +408,8 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel> {
-        return chatChannelDao.getForwardChannels(chatChannelId).orEmpty()
+    fun getForwardChannels(userId: String): LiveData<List<ChatChannel>> {
+        return chatChannelDao.getForwardChannels(userId)
     }
 
     suspend fun updateLocalProjects(updatedUser: User, projects: List<String>) {
@@ -539,6 +556,26 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun clearProjectInvites() {
         projectInviteDao.clearTable()
+    }
+
+    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
+        return chatChannelDao.getReactiveChatChannel(chatChannelId)
+    }
+
+    suspend fun getCurrentlySelectedMessages(chatChannelId: String): List<Message> {
+        return messageDao.getCurrentlySelectedMessages(chatChannelId)
+    }
+
+    suspend fun updateMessages(chatChannelId: String, state: Int) {
+        messageDao.updateMessages(chatChannelId, state)
+    }
+
+    fun selectedMessages(channelId: String): LiveData<List<Message>> {
+        return messageDao.selectedMessages(channelId)
+    }
+
+    suspend fun getRequestByProject(project: Project): ProjectRequest? {
+        return projectRequestDao.getProjectRequestByProject(project.id)
     }
 
     companion object {

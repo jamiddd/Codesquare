@@ -97,7 +97,7 @@
 
         <Button
             android:id="@+id/ad_info_icon"
-            style="@style/AppTheme.Button.IconOnly"
+            style="@style/AppTheme.InfoIcon"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -128,10 +128,12 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="12dp"
-            android:elevation="0dp"
+            android:fontFamily="sans-serif-medium"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:text="Install"
+            android:textSize="16sp"
+            android:visibility="gone"
             app:cornerRadius="4dp"
             app:layout_constraintBottom_toTopOf="@+id/ad_secondary_text"
             app:layout_constraintEnd_toEndOf="parent"
@@ -210,6 +212,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/loading_ad_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading ad"
+            app:layout_constraintBottom_toBottomOf="@+id/ad_media_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/ad_title_container" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

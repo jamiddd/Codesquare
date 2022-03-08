@@ -33,4 +33,8 @@ class ArchiveFragment: PagerListFragment<Project, PostViewHolder>() {
         return ProjectAdapter()
     }
 
+    companion object {
+        const val TAG = "ArchiveFragment"
+    }
+
 }

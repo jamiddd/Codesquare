@@ -74,8 +74,7 @@ class ChatListFragment2: Fragment() {
                     .setMessage("You have already created 2 projects. To create more, upgrade your subscription plan!")
                     .setPositiveButton("Upgrade") { _, _ ->
                         val act = activity as MainActivity
-                        act.subscriptionFragment = SubscriptionFragment()
-                        act.subscriptionFragment?.show(act.supportFragmentManager, "SubscriptionFragment")
+                        act.showSubscriptionFragment()
                     }.setNegativeButton("Cancel") { a, _ ->
                         a.dismiss()
                     }
@@ -110,6 +109,10 @@ class ChatListFragment2: Fragment() {
                     }
                 }
 
+        }
+
+        binding.removeAdBtn.setOnClickListener {
+            (activity as MainActivity).onAdInfoClick()
         }
 
 

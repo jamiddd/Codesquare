@@ -8,4 +8,6 @@ interface ProjectRequestListener {
     fun onProjectRequestProjectDeleted(projectRequest: ProjectRequest)
     fun onProjectRequestSenderDeleted(projectRequest: ProjectRequest)
     fun updateProjectRequest(newProjectRequest: ProjectRequest)
+    fun onProjectRequestUndo(projectRequest: ProjectRequest)
+    fun onProjectRequestClick(projectRequest: ProjectRequest)
 }

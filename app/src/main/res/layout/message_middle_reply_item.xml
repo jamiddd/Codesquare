@@ -32,7 +32,6 @@
 
         <TextView
             android:id="@+id/message_content"
-            style="@style/AppTheme.ChatBalloonLeft"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingStart="20dp"

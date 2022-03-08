@@ -3,6 +3,7 @@ package com.jamid.codesquare.ui.home.chat
 import android.content.Context
 import android.os.Environment
 import android.util.Log
+import androidx.lifecycle.ViewModel
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.ktx.auth
@@ -14,9 +15,10 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.User
+import com.jamid.codesquare.ui.ChatViewModel
 
 @ExperimentalPagingApi
-class ChatController(private val viewModel: MainViewModel, private val mContext: Context) {
+class ChatController(private val viewModel: ViewModel, private val mContext: Context) {
 
     private var isInitialized = false
 
@@ -27,7 +29,14 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
                 return@OnCompleteListener
             } else {
                 val chatChannels = querySnapshot.toObjects(ChatChannel::class.java)
-                viewModel.insertChatChannels(chatChannels)
+                if (viewModel is ChatViewModel) {
+                    viewModel.insertChatChannels(chatChannels)
+
+                }
+                if (viewModel is MainViewModel) {
+                    viewModel.insertChatChannels(chatChannels)
+                }
+
                 for (chatChannel in chatChannels) {
                     getChannelContributors(chatChannel)
                     setChannelMessagesListener(chatChannel)
@@ -61,36 +70,52 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
         }
     }
 
-    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message) {
-        Firebase.firestore.collection(CHAT_CHANNELS)
+    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message, onComplete: () -> Unit) {
+
+        val ref = Firebase.firestore.collection(CHAT_CHANNELS)
             .document(chatChannel.chatChannelId)
             .collection(MESSAGES)
             .document(lastMessage.messageId)
-            .get()
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Firebase.firestore.collection(CHAT_CHANNELS).document(chatChannel.chatChannelId)
-                        .collection(MESSAGES)
-                        .startAfter(it.result)
-                        .get()
-                        .addOnCompleteListener { it1 ->
-                            if (it1.isSuccessful) {
-                                val querySnapshot = it1.result
-                                val imagesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-                                val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-                                val messages = querySnapshot.toObjects(Message::class.java)
-                                if (imagesDir != null && documentsDir != null) {
+
+        FireUtility.getDocument(ref) {
+            if (it.isSuccessful) {
+                Firebase.firestore.collection(CHAT_CHANNELS)
+                    .document(chatChannel.chatChannelId)
+                    .collection(MESSAGES)
+                    .startAfter(it.result)
+                    .get()
+                    .addOnCompleteListener { it1 ->
+                        if (it1.isSuccessful) {
+                            val querySnapshot = it1.result
+                            val imagesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+                            val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+                            val messages = querySnapshot.toObjects(Message::class.java)
+                            if (imagesDir != null && documentsDir != null) {
+                                if (viewModel is ChatViewModel) {
                                     viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
                                 }
-                            } else {
-                                it1.exception?.let { it2 -> Log.e(TAG, it2.localizedMessage!!) }
-                            }
-                        }
-                } else {
-                    it.exception?.let { it1 -> Log.e(TAG, it1.localizedMessage!!) }
-                }
-            }
 
+                                if (viewModel is MainViewModel) {
+                                    viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                                }
+
+                                onComplete()
+                            }
+                        } else {
+                            it1.exception?.let { it2 -> Log.e(TAG, it2.localizedMessage!!) }
+                        }
+                    }
+            } else {
+                if (viewModel is ChatViewModel) {
+                    viewModel.setCurrentError(it.exception)
+                }
+
+                if (viewModel is MainViewModel) {
+                    viewModel.setCurrentError(it.exception)
+                }
+
+            }
+        }
     }
 
     private fun addChannelsListener(currentUserId: String) {
@@ -105,7 +130,13 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
 
                 if (value != null && !value.isEmpty) {
                     val chatChannels = value.toObjects(ChatChannel::class.java)
-                    viewModel.insertChatChannels(chatChannels)
+                    if (viewModel is ChatViewModel) {
+                        viewModel.insertChatChannels(chatChannels)
+                    }
+
+                    if (viewModel is MainViewModel) {
+                        viewModel.insertChatChannels(chatChannels)
+                    }
                 }
             }
     }
@@ -130,7 +161,14 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
                     val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
                     if (imagesDir != null && documentsDir != null) {
-                        viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                        if (viewModel is ChatViewModel) {
+                            viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                        }
+
+                        if (viewModel is MainViewModel) {
+                            viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                        }
+
                     }
                 }
             }
@@ -145,7 +183,14 @@ class ChatController(private val viewModel: MainViewModel, private val mContext:
                     val querySnapshot = it.result
                     if (!querySnapshot.isEmpty) {
                         val contributors = querySnapshot.toObjects(User::class.java)
-                        viewModel.insertUsers(*contributors.toTypedArray())
+                        if (viewModel is ChatViewModel) {
+                            viewModel.insertUsers(*contributors.toTypedArray())
+                        }
+
+                        if (viewModel is MainViewModel) {
+                            viewModel.insertUsers(*contributors.toTypedArray())
+                        }
+
                     }
                 } else {
                     it.exception?.let { it1 -> Log.e(TAG, it1.localizedMessage!!) }

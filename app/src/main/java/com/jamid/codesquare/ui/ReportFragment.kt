@@ -1,34 +1,37 @@
 package com.jamid.codesquare.ui
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.UserManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
+import com.jamid.codesquare.*
+import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.Report
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentReportBinding
-import com.jamid.codesquare.toast
-import java.text.SimpleDateFormat
-import java.util.*
+import com.jamid.codesquare.databinding.LoadingLayoutBinding
 
 @ExperimentalPagingApi
 class ReportFragment: Fragment() {
 
     private lateinit var binding: FragmentReportBinding
     private val viewModel: MainViewModel by activityViewModels()
-
-    private val report = Report()
+    private val reportViewModel: ReportViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,79 +42,126 @@ class ReportFragment: Fragment() {
         return binding.root
     }
 
+    private fun setContextUi(image: String, name: String) {
+        binding.contextImg.setImageURI(image)
+        binding.contextName.text = name
+    }
+
+    @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val contextObject = arguments?.get("contextObject") ?: return
-        val now = SimpleDateFormat("hh:mm a, EEEE", Locale.UK).format(System.currentTimeMillis())
-        binding.reportTimeText.text = now
+        binding.reportTimeText.text = getTextForChatTime(System.currentTimeMillis())
 
         when (contextObject) {
             is Project -> {
-                report.contextId = contextObject.id
-                val firstImage = contextObject.images.firstOrNull()
-                binding.contextImg.setImageURI(firstImage)
-                binding.contextName.text = contextObject.name
+                reportViewModel.setReportContext(contextObject.id)
+                setContextUi(contextObject.images.first(), contextObject.name)
             }
             is User -> {
-                report.contextId = contextObject.id
-                val image = contextObject.photo
-                binding.contextImg.setImageURI(image)
-                binding.contextName.text = contextObject.name
+                reportViewModel.setReportContext(contextObject.id)
+                setContextUi(contextObject.photo, contextObject.name)
             }
             is Comment -> {
-
-                report.contextId = contextObject.commentId
-
-                Firebase.firestore.collection("projects").document(contextObject.projectId)
-                    .get()
-                    .addOnCompleteListener {
-                        if (it.isSuccessful && it.result.exists()) {
-                            val project = it.result.toObject(Project::class.java)!!
-                            val firstImage = project.images.firstOrNull()
-                            binding.contextImg.setImageURI(firstImage)
+                reportViewModel.setReportContext(contextObject.commentId)
+                FireUtility.getProject(contextObject.projectId) {
+                    when (it) {
+                        is Result.Error -> viewModel.setCurrentError(it.exception)
+                        is Result.Success -> {
+                            val project = it.data
                             val commentByText = "Comment by " + project.creator.name
-                            binding.contextName.text = commentByText
-
-                        } else {
-                            Log.e(TAG, it.exception?.localizedMessage.orEmpty())
+                            setContextUi(project.images.first(), commentByText)
                         }
+                        null -> Log.w(TAG, "Something went wrong while trying to fetch project with id: ${contextObject.projectId}")
                     }
+                }
             }
         }
 
-        viewModel.reportUploadImages.observe(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
-                viewModel.uploadImages("${report.id}/images", it) { it1 ->
-                    report.snapshots = it1.map {it2 -> it2.toString() }
-                }
+        viewModel.reportUploadImages.observe(viewLifecycleOwner) { reportImages ->
+            if (!reportImages.isNullOrEmpty()) {
+                reportViewModel.addImagesToReport(reportImages.map { it.toString() })
             }
         }
 
         binding.reportBtn.setOnClickListener {
-            if (binding.reportReasonText.editText?.text?.isBlank() == true) {
-                return@setOnClickListener
-            } else {
-                val reason = binding.reportReasonText.editText?.text.toString()
-                report.reason = reason
-                report.senderId = UserManager.currentUserId
 
-                viewModel.sendReport(report) {
-                    if (it.isSuccessful) {
-                        toast("Report sent successfully. We will look into the matter asap!")
+            val reason = binding.reportReasonText.editText?.text.toString()
+            reportViewModel.setReportContent(reason)
+
+            val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
+            val loadingBinding = LoadingLayoutBinding.bind(loadingLayout)
+            loadingBinding.loadingText.text = "Sending report. Please wait for a while ... "
+
+            val dialog = MaterialAlertDialogBuilder(requireContext())
+                .setView(loadingBinding.root)
+                .setCancelable(false)
+                .show()
+
+            reportViewModel.sendReportToFirebase {
+
+                dialog.dismiss()
+
+                if (it.isSuccessful) {
+                    requireActivity().runOnUiThread {
+                        val mainRoot = requireActivity().findViewById<CoordinatorLayout>(R.id.main_container_root)
+                        Snackbar.make(mainRoot, "Report sent successfully. We will look into the matter asap!", Snackbar.LENGTH_LONG).show()
                         findNavController().navigateUp()
-                    } else {
-                        Log.e(TAG, it.exception?.localizedMessage.orEmpty())
                     }
+                } else {
+                    binding.reportReasonText.isErrorEnabled = true
+                    binding.reportReasonText.error = it.exception?.localizedMessage.orEmpty()
                 }
 
             }
         }
 
-        binding.reportAddScreenshots.setOnClickListener {
-            (activity as MainActivity).selectReportUploadImages()
+        binding.reportReasonText.editText?.doAfterTextChanged {
+            binding.reportBtn.isEnabled = !it.isNullOrBlank()
+            binding.reportReasonText.error = null
         }
 
+        init()
+
+    }
+
+    private fun init() {
+
+        binding.reportBtn.isEnabled = false
+
+        val smallImagesAdapter = SmallImagesAdapter(requireActivity() as MainActivity)
+        binding.reportImagesRecycler.apply {
+            adapter = smallImagesAdapter
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        }
+
+        reportViewModel.currentReport.observe(viewLifecycleOwner) { currentReport ->
+            if (currentReport != null) {
+                if (currentReport.snapshots.isEmpty()) {
+                    binding.reportImagesRecycler.hide()
+                } else {
+                    binding.reportImagesRecycler.show()
+                    smallImagesAdapter.submitList(currentReport.snapshots)
+                }
+
+                setSecondaryButton(currentReport)
+            }
+        }
+    }
+
+    private fun setSecondaryButton(currentReport: Report) {
+        if (currentReport.snapshots.isNotEmpty()) {
+            binding.reportAddScreenshots.text = getString(R.string.clear_images)
+            binding.reportAddScreenshots.setOnClickListener {
+                reportViewModel.clearAllImagesFromReport()
+            }
+        } else {
+            binding.reportAddScreenshots.text = getString(R.string.add_images)
+            binding.reportAddScreenshots.setOnClickListener {
+                (activity as MainActivity).selectReportUploadImages()
+            }
+        }
     }
 
     override fun onDestroy() {

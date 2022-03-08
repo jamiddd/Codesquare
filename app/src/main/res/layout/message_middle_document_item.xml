@@ -7,12 +7,11 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/message_document_container"
-        style="@style/AppTheme.ChatBalloonLeft"
+        style="@style/AppTheme.ChatBalloonRightDocument"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="45dp"
         android:layout_marginTop="2dp"
-        android:background="@drawable/message_body"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -34,14 +33,12 @@
 
         <TextView
             android:id="@+id/document_name"
-            style="@style/AppTheme.ChatBalloonLeftTextPrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="32dp"
             android:layout_marginEnd="24dp"
             android:gravity="center"
             android:text="Document Name"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="16sp"
             app:layout_constraintBottom_toTopOf="@+id/document_size"
             app:layout_constraintEnd_toEndOf="parent"

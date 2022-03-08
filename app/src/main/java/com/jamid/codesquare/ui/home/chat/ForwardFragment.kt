@@ -3,16 +3,14 @@ package com.jamid.codesquare.ui.home.chat
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.os.bundleOf
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.Fragment
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.data.ChatChannel
@@ -20,49 +18,51 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentForwardBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.ChatViewModel
 import java.io.File
 
 @ExperimentalPagingApi
-class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
+class ForwardFragment: Fragment(), ChatChannelClickListener {
 
     private lateinit var binding: FragmentForwardBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    private lateinit var chatViewModel: ChatViewModel
+    private lateinit var chatChannelId: String
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = FragmentForwardBinding.inflate(layoutInflater)
+        binding = FragmentForwardBinding.inflate(inflater)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val messages = arguments?.getParcelableArrayList<Message>("messages") ?: return
-
+        val messages = arguments?.getParcelableArrayList<Message>(MESSAGES) ?: return
         if (messages.isEmpty()) {
             return
         }
 
+        chatViewModel = (parentFragment as ChatContainerSample).chatViewModel
+
         val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
 
-        val chatChannelId = messages.first().chatChannelId
+        chatChannelId = messages.first().chatChannelId
 
-        setForwardChannels(chatChannelId)
+        setForwardChannels()
 
         for (message in messages.filter {it.type != text}) {
             val name = message.content + message.metadata!!.ext
             val destination = when (message.type) {
                 document -> {
-                    File(documentsDir, message.chatChannelId)
+                    File(documentsDir, chatChannelId)
                 }
                 image -> {
-                    File(imagesDir, message.chatChannelId)
+                    File(imagesDir, chatChannelId)
                 }
                 else -> {
                     throw IllegalStateException("Something went wrong")
@@ -75,59 +75,49 @@ class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
             message.content = uri.toString()
         }
 
-
-        binding.forwardToolbar.setNavigationOnClickListener {
-            dismiss()
-        }
-
-        binding.forwardToolbar.setNavigationOnClickListener {
-            dismiss()
-        }
-
-        viewModel.forwardList.observe(viewLifecycleOwner) {
+        chatViewModel.forwardList.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it.isNotEmpty()) {
+                    binding.forwardBtn.isEnabled = true
                     if (it.size > 1) {
-                        binding.forwardToolbar.subtitle = "${it.first().projectTitle} and ${it.size - 1} more"
+                        binding.forwardInfo.text = "${it.first().projectTitle} and ${it.size - 1} more"
                     } else {
-                        binding.forwardToolbar.subtitle = it.first().projectTitle
+                        binding.forwardInfo.text = it.first().projectTitle
                     }
                 } else {
-                    binding.forwardToolbar.subtitle = null
+                    binding.forwardBtn.isEnabled = false
+                    binding.forwardInfo.text = null
                 }
             } else {
-                binding.forwardToolbar.subtitle = null
+                binding.forwardBtn.isEnabled = false
+                binding.forwardInfo.text = null
             }
         }
 
-        binding.forwardToolbar.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.forward -> {
-                    val listOfChannels = viewModel.forwardList.value
-                    if (listOfChannels != null && listOfChannels.isNotEmpty()) {
-                        binding.forwardProgress.show()
-                        if (imagesDir != null && documentsDir != null) {
-                            viewModel.sendForwardsToChatChannels(imagesDir, documentsDir, messages, listOfChannels) { result ->
-                                when (result) {
-                                    is Result.Error -> {}
-                                    is Result.Success -> {
-                                        viewModel.updateRestOfTheMessages(chatChannelId, -1)
-                                        dismiss()
-                                    }
-                                }
+        binding.forwardBtn.setOnClickListener {
+            val listOfChannels = chatViewModel.forwardList.value
+            if (listOfChannels != null && listOfChannels.isNotEmpty()) {
+                binding.forwardBtn.hide()
+                binding.forwardProgressBar.show()
+                if (imagesDir != null && documentsDir != null) {
+                    chatViewModel.sendForwardsToChatChannels(imagesDir, documentsDir, messages, listOfChannels) { result ->
+                        when (result) {
+                            is Result.Error -> {}
+                            is Result.Success -> {
+                                chatViewModel.disableSelectMode(chatChannelId)
+                                (parentFragment as ChatContainerSample).navigateUp()
                             }
                         }
-                    } else {
-                        toast("Select channel to forward message")
                     }
                 }
+            } else {
+                toast("Select channel to forward message")
             }
-            true
         }
 
     }
 
-    private fun setForwardChannels(chatChannelId: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+    private fun setForwardChannels() {
         val currentUser = UserManager.currentUser
 
         val channelAdapter = ChatChannelAdapter2(currentUser.id, this@ForwardFragment).apply {
@@ -140,15 +130,25 @@ class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
 
-        val channels = viewModel.getForwardChannels(chatChannelId)
+        chatViewModel.getForwardChannels(UserManager.currentUserId).observe(viewLifecycleOwner) {
+            if (!it.isNullOrEmpty()) {
+                channelAdapter.submitList(it.filter { it1 ->
+                    it1.chatChannelId != chatChannelId
+                })
+            } else {
+                Log.d(TAG, "setForwardChannels: Show that there is no chat channels")
+            }
+        }
 
-        channelAdapter.submitList(channels)
     }
 
     companion object {
-        fun newInstance(messages: ArrayList<Message>) =
+
+        const val TAG = "ForwardFragment"
+
+        fun newInstance(bundle: Bundle) =
             ForwardFragment().apply {
-                arguments = bundleOf("messages" to messages)
+                arguments = bundle
             }
     }
 
@@ -157,16 +157,17 @@ class ForwardFragment: BottomSheetDialogFragment(), ChatChannelClickListener {
     }
 
     override fun onChatChannelSelected(chatChannel: ChatChannel) {
-        viewModel.addChannelToForwardList(chatChannel)
+        chatViewModel.addChannelToForwardList(chatChannel)
     }
 
     override fun onChatChannelDeSelected(chatChannel: ChatChannel) {
-        viewModel.removeChannelFromForwardList(chatChannel)
+        chatViewModel.removeChannelFromForwardList(chatChannel)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        viewModel.clearForwardList()
+        chatViewModel.clearForwardList()
+        chatViewModel.disableSelectMode(chatChannelId)
     }
 
 }

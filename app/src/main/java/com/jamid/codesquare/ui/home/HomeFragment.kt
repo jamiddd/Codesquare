@@ -21,6 +21,7 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
 import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -49,8 +50,10 @@ class HomeFragment: Fragment() {
 
     private fun setBitmapDrawable(bitmap: Bitmap) {
 
+        val length = resources.getDimension(R.dimen.unit_len) * 6
+
         val drawable = RoundedBitmapDrawableFactory.create(resources, bitmap).also {
-            it.cornerRadius = convertDpToPx(24, requireContext()).toFloat()
+            it.cornerRadius = length
         }
 
         val toolbar = requireActivity().findViewById<Toolbar>(R.id.main_toolbar)
@@ -69,33 +72,12 @@ class HomeFragment: Fragment() {
         }
     }
 
-    private fun downloadBitmapUsingFresco(photo: String, onComplete: (bitmap: Bitmap?) -> Unit) {
-
-        val imagePipeline = Fresco.getImagePipeline()
-        val imageRequest = ImageRequestBuilder.newBuilderWithSource(photo.toUri())
-            .build()
-
-        val dataSource = imagePipeline.fetchDecodedImage(imageRequest, this)
-
-        dataSource.subscribe(object: BaseBitmapDataSubscriber() {
-            override fun onNewResultImpl(bitmap: Bitmap?) {
-                onComplete(bitmap)
-            }
-
-            override fun onFailureImpl(dataSource: DataSource<CloseableReference<CloseableImage>>) {
-                onComplete(null)
-            }
-
-        }, Executors.newSingleThreadExecutor())
-
-    }
-
     private fun setCurrentUserPhotoAsDrawable(photo: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
         val currentSavedBitmap = viewModel.currentUserBitmap
         if (currentSavedBitmap != null) {
             setBitmapDrawable(currentSavedBitmap)
         } else {
-            downloadBitmapUsingFresco(photo) {
+            downloadBitmapUsingFresco(requireContext(), photo) {
                 viewModel.currentUserBitmap = it
                 if (it != null) {
                     setBitmapDrawable(it)
@@ -169,6 +151,7 @@ class HomeFragment: Fragment() {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentHomeBinding.inflate(inflater)
+        requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar).inflateMenu(R.menu.generic_menu)
         return binding.root
     }
 
@@ -184,6 +167,8 @@ class HomeFragment: Fragment() {
             setImage()
         }
 
+        binding.homeViewPager.offscreenPageLimit = 2
+
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
 
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
@@ -195,7 +180,11 @@ class HomeFragment: Fragment() {
         }.attach()
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            requireActivity().finish()
+            if (binding.homeViewPager.currentItem == 0) {
+                requireActivity().finish()
+            } else {
+                binding.homeViewPager.setCurrentItem(0, true)
+            }
         }
 
         (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER

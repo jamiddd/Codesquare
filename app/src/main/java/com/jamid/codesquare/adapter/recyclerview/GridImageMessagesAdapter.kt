@@ -15,7 +15,7 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.listeners.MessageListener
+import com.jamid.codesquare.listeners.MessageClickListener
 import java.io.File
 
 class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
@@ -36,7 +36,7 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
 
         private val imageHolder = view.findViewById<SimpleDraweeView>(R.id.grid_image)
         private val progress = view.findViewById<ProgressBar>(R.id.small_message_image_progress)
-        private val messageListener = view.context as MessageListener
+        private val messageListener = view.context as MessageClickListener
         private val controllerListener = FrescoImageControllerListener()
 
         fun bind(message: Message) {

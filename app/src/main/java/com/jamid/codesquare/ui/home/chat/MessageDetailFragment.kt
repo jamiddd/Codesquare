@@ -5,30 +5,32 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.transition.Transition
+import androidx.transition.TransitionInflater
+import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentMessageDetailBinding
-import com.jamid.codesquare.getTextForChatTime
-import com.jamid.codesquare.toast
+import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.ChatViewModel
 import kotlinx.coroutines.launch
-import java.util.*
 
 @ExperimentalPagingApi
 class MessageDetailFragment: Fragment() {
 
     private lateinit var binding: FragmentMessageDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private val readListAdapter = UserAdapter().apply { shouldShowLikeButton = false }
-    private val deliveryListAdapter = UserAdapter().apply { shouldShowLikeButton = false }
+    private val readListAdapter = UserAdapter(min = true)
+    private val deliveryListAdapter = UserAdapter(min = true)
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,18 +41,23 @@ class MessageDetailFragment: Fragment() {
         return binding.root
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val message = arguments?.getParcelable<Message>("message") ?: return
+        val message = arguments?.getParcelable<Message>(MESSAGE) ?: return
 
-        Firebase.firestore.collection("chatChannels")
+        Firebase.firestore.collection(CHAT_CHANNELS)
             .document(message.chatChannelId)
-            .collection("messages")
+            .collection(MESSAGES)
             .document(message.messageId)
             .addSnapshotListener { value, error ->
                 if (error != null) {
-                    toast(error.localizedMessage.orEmpty())
                     Log.e(TAG, error.localizedMessage.orEmpty())
                     return@addSnapshotListener
                 }
@@ -85,25 +92,15 @@ class MessageDetailFragment: Fragment() {
 
         viewModel.updateMessage(newMessage)
 
-        Log.d(TAG, newMessage.toString())
-
         if (allContributors.isNotEmpty()) {
-
-            Log.d(TAG, allContributors.toString())
-
             val readList = allContributors.filter {
                 newMessage.readList.contains(it.id) && it.id != currentUser.id
             }
 
-            Log.d(TAG, readList.size.toString())
-
             readListAdapter.submitList(readList)
-
             val deliveryList = allContributors.filter {
                 newMessage.deliveryList.contains(it.id) && it.id != currentUser.id
             }
-
-            Log.d(TAG, deliveryList.size.toString())
 
             deliveryListAdapter.submitList(deliveryList)
         }
@@ -111,7 +108,13 @@ class MessageDetailFragment: Fragment() {
 
 
     companion object {
-        private const val TAG = "MessageDetailFragment"
+        const val TAG = "MessageDetailFragment"
+
+        fun newInstance(bundle: Bundle) =
+            MessageDetailFragment().apply {
+                arguments = bundle
+            }
+
     }
 
 }

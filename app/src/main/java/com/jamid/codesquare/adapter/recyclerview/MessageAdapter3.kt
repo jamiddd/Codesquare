@@ -5,11 +5,15 @@ import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
+import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.listeners.MessageClickListener
+import com.jamid.codesquare.listeners.MyMessageListener
 
-class MessageAdapter3: PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
+class MessageAdapter3(private val mClickListener: MyMessageListener? = null): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
 
     private val currentUserId = UserManager.currentUser.id
+    var chatChannel: ChatChannel? = null
 
     override fun onBindViewHolder(holder: MessageViewHolder2<Message>, position: Int) {
         getItem(position)?.let { holder.bind(it) }
@@ -68,7 +72,11 @@ class MessageAdapter3: PagingDataAdapter<Message, MessageViewHolder2<Message>>(M
             else -> throw IllegalStateException("View type is illegal")
         }
 
-        return MessageViewHolder2(view, viewType)
+        return MessageViewHolder2<Message>(view, viewType).apply {
+            if (mClickListener != null) {
+                myMessageListener = mClickListener
+            }
+        }
 
     }
 

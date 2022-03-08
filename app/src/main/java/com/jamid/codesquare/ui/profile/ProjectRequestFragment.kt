@@ -19,8 +19,8 @@ class ProjectRequestFragment: PagerListFragment<ProjectRequest, ProjectRequestVi
             viewModel.getPagedProjectRequests()
         }
 
-        recyclerView?.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        noItemsText?.text = getString(R.string.empty_project_requests_greet)
+        binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+        binding.pagerNoItemsText.text = getString(R.string.empty_project_requests_greet)
         binding.noDataImage.setAnimation(R.raw.empty_notification)
     }
 

@@ -2,18 +2,25 @@ package com.jamid.codesquare.ui
 
 import android.annotation.SuppressLint
 import android.graphics.Typeface
+import android.os.Bundle
 import android.os.Parcelable
 import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.util.Log
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
+import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -29,8 +36,13 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
 
     private var project: Project? = null
     private var comment: Comment? = null
-    private lateinit var bottomBinding: CommentBottomLayoutBinding
     private val currentUser = UserManager.currentUser
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
 
     override fun onViewLaidOut() {
         super.onViewLaidOut()
@@ -40,6 +52,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
         Log.d(TAG, commentChannelId)
 
         shouldShowImage = false
+
         val query = Firebase.firestore.collection(COMMENT_CHANNELS)
             .document(commentChannelId)
             .collection(COMMENTS)
@@ -58,15 +71,24 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
         binding.pagerNoItemsText.text = getString(R.string.empty_comments_greet)
 
         showKeyboard()
-        initBottomLayout()
+        initAlt()
     }
 
-    @SuppressLint("InflateParams")
-    private fun initBottomLayout() {
+    private fun setCommentInputUI(senderImg: SimpleDraweeView, commentInputLayout: EditText) {
+        val currentUser = UserManager.currentUser
+        senderImg.setImageURI(currentUser.photo)
+        commentInputLayout.requestFocus()
+    }
 
-        val bottomView = layoutInflater.inflate(R.layout.comment_bottom_layout, null, false)
+    private fun initAlt() {
+        val commentBottomRoot = requireActivity().findViewById<MaterialCardView>(R.id.comment_bottom_root)
+        val sendBtn = commentBottomRoot.findViewById<MaterialButton>(R.id.comment_send_btn)!!
+        val commentInputLayout = commentBottomRoot.findViewById<EditText>(R.id.comment_input_layout)!!
+        val replyToText = commentBottomRoot.findViewById<TextView>(R.id.replying_to_text)!!
+        val senderImg = commentBottomRoot.findViewById<SimpleDraweeView>(R.id.sender_img)!!
+        val adView = commentBottomRoot.findViewById<AdView>(R.id.adView)!!
 
-        binding.pagerRoot.addView(bottomView)
+        commentBottomRoot.slideReset()
 
         val parent = arguments?.getParcelable<Parcelable>(PARENT) ?: return
 
@@ -76,71 +98,63 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
             comment = parent
         }
 
-        val params = bottomView.layoutParams as ConstraintLayout.LayoutParams
-        params.startToStart = binding.pagerRoot.id
-        params.endToEnd = binding.pagerRoot.id
-        params.bottomToBottom = binding.pagerRoot.id
-        bottomView.layoutParams = params
+        setCommentInputUI(senderImg, commentInputLayout)
 
-        bottomView.updateLayout(
-            ConstraintLayout.LayoutParams.WRAP_CONTENT,
-            ConstraintLayout.LayoutParams.MATCH_PARENT
-        )
+        setSendButton(sendBtn, commentInputLayout)
 
-        bottomBinding = CommentBottomLayoutBinding.bind(bottomView)
-
-        bottomBinding.senderImg.setImageURI(currentUser.photo)
-
-        setSendButton(bottomBinding.commentSendBtn, bottomBinding.commentInputLayout)
-
-        bottomBinding.replyingToText.setOnClickListener {
+        replyToText.setOnClickListener {
             viewModel.replyToContent.postValue(null)
         }
 
-        binding.pagerItemsRecycler.setPadding(0, 0, 0, convertDpToPx(56))
-
-        bottomBinding.commentInputLayout.requestFocus()
+        val actionLength = resources.getDimension(R.dimen.action_height)
+        binding.pagerItemsRecycler.setPadding(0, 0, 0, actionLength.toInt())
+        commentInputLayout.requestFocus()
 
         viewModel.replyToContent.observe(viewLifecycleOwner) {
             if (it != null) {
+                replyToText.show()
                 val sender = it.sender
-                bottomBinding.replyingToText.show()
-                val name = sender.name
-                val replyToText = "Replying to $name"
-                val sp = SpannableString(replyToText)
-                sp.setSpan(
-                    StyleSpan(Typeface.BOLD),
-                    replyToText.length - name.length,
-                    replyToText.length,
-                    SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-                bottomBinding.replyingToText.text = sp
+
+                val rt = if (sender.id == UserManager.currentUserId) {
+                    "Replying to your comment"
+                } else {
+                    // setting styles to reply view
+                    val s = "Replying to ${sender.name}"
+                    val sp = SpannableString(s)
+                    sp.setSpan(
+                        StyleSpan(Typeface.BOLD),
+                        s.length - sender.name.length,
+                        s.length,
+                        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                    sp
+                }
+
+                replyToText.text = rt
 
                 setSendButton(
-                    bottomBinding.commentSendBtn,
-                    bottomBinding.commentInputLayout,
+                    sendBtn,
+                    commentInputLayout,
                     it
                 )
 
                 showKeyboard()
-
             } else {
-                bottomBinding.replyingToText.hide()
-                bottomBinding.replyingToText.text = getString(R.string.replying_to)
-
-                hideKeyboard()
+                replyToText.hide()
+                replyToText.text = getString(R.string.replying_to)
 
                 setSendButton(
-                    bottomBinding.commentSendBtn,
-                    bottomBinding.commentInputLayout
+                    sendBtn,
+                    commentInputLayout
                 )
             }
         }
 
         if (currentUser.premiumState.toInt() == -1) {
-            bottomBinding.adView.loadAd(AdRequest.Builder().build())
+            adView.loadAd(AdRequest.Builder().build())
+            adView.show()
         } else {
-            bottomBinding.adView.hide()
+            adView.hide()
         }
 
     }
@@ -248,13 +262,11 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
 
     companion object {
 
-        fun newInstance(commentChannelId: String, title: String, obj: Parcelable? = null) =
+        const val TAG = "CommentsFragment"
+
+        fun newInstance(bundle: Bundle) =
             CommentsFragment().apply {
-                arguments = bundleOf(
-                    TITLE to title,
-                    COMMENT_CHANNEL_ID to commentChannelId,
-                    PARENT to obj
-                )
+                arguments = bundle
             }
 
     }

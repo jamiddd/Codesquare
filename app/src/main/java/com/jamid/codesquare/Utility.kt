@@ -7,57 +7,61 @@ import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.graphics.*
+import android.graphics.Bitmap
 import android.os.Build
+import android.os.Bundle
+import android.os.Parcelable
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.Patterns
 import android.util.TypedValue
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.drawable.DrawableCompat
+import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
-import androidx.core.view.setMargins
-import androidx.core.view.setPadding
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
+import androidx.paging.ExperimentalPagingApi
+import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import com.airbnb.lottie.LottieAnimationView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.IndexQuery
+import com.facebook.common.references.CloseableReference
+import com.facebook.datasource.DataSource
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
+import com.facebook.imagepipeline.image.CloseableImage
+import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.ui.*
+import com.jamid.codesquare.ui.home.chat.*
+import com.jamid.codesquare.ui.profile.EditProfileFragment
+import com.jamid.codesquare.ui.profile.ProfileFragment
+import com.jamid.codesquare.ui.profile.SavedProjectsFragment
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import kotlin.math.abs
 
-//fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
 
-/*fun Activity.getFullScreenHeight(): Int {
-    return if (Build.VERSION.SDK_INT > 29) {
-        val rect = windowManager.maximumWindowMetrics.bounds
-        rect.bottom - rect.top
-    } else {
-        getWindowHeight()
-    }
-}*/
-
-val colorPalettesDay = mutableListOf<Pair<Int, Int>>(
+val colorPalettesDay = mutableListOf(
     Pair(R.color.chip_back_blue_day, R.color.chip_front_blue_day),
     Pair(R.color.chip_back_pink_day, R.color.chip_front_pink_day),
     Pair(R.color.chip_back_purple_day, R.color.chip_front_purple_day),
     Pair(R.color.chip_back_teal_day, R.color.chip_front_teal_day)
 )
 
-val colorPalettesNight = mutableListOf<Pair<Int, Int>>(
+val colorPalettesNight = mutableListOf(
     Pair(R.color.chip_back_blue_night, R.color.chip_front_blue_night),
     Pair(R.color.chip_back_pink_night, R.color.chip_front_pink_night),
     Pair(R.color.chip_back_purple_night, R.color.chip_front_purple_night),
@@ -136,17 +140,6 @@ fun slideRightNavOptions(): NavOptions {
     }
 }
 
-/*fun Fragment.showError(exception: Exception) {
-    requireContext().showError(exception)
-}*/
-
-/*fun Context.showError(exception: Exception) {
-    exception.localizedMessage?.let {
-        toast(it)
-        Log.e(TAG, it)
-    }
-}*/
-
 fun randomId(): String {
     return UUID.randomUUID().toString().replace("-", "")
 }
@@ -157,129 +150,6 @@ fun CharSequence?.isValidEmail() =
 fun CharSequence?.isValidPassword() =
     !isNullOrEmpty() && Pattern.compile("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z]).{4,}\$")
         .matcher(this).matches()
-
-/*fun showSnack(rootLayout: ViewGroup, msg: String, duration: Int = Snackbar.LENGTH_LONG, anchor: View? = null, actionText: String? = null, onAction: (() -> Unit)? = null) {
-    val snackBar = if (anchor != null) {
-        Snackbar.make(rootLayout, msg, duration)
-            .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-            .setAnchorView(anchor)
-    } else {
-        Snackbar.make(rootLayout, msg, duration)
-            .setAnimationMode(Snackbar.ANIMATION_MODE_SLIDE)
-    }
-
-    if (actionText != null) {
-        snackBar.setAction(actionText) {
-            onAction!!()
-        }
-    }
-
-    snackBar.show()
-}*/
-
-fun View.updateLayout(
-    height: Int? = null,
-    width: Int? = null,
-    margin: Int? = null,
-    marginLeft: Int? = null,
-    marginTop: Int? = null,
-    marginRight: Int? = null,
-    marginBottom: Int? = null,
-    padding: Int? = null,
-    paddingLeft: Int? = null,
-    paddingTop: Int? = null,
-    paddingRight: Int? = null,
-    paddingBottom: Int? = null,
-    ignoreParams: Boolean? = true,
-    ignoreMargin: Boolean? = true,
-    ignorePadding: Boolean? = true,
-    extras: Map<String, Int>? = null) {
-
-    var ilp = ignoreParams
-    var im = ignoreMargin
-    var ip = ignorePadding
-
-    if (width != null || height != null) {
-        ilp = false
-    }
-
-    if (margin != null || marginLeft != null || marginTop != null || marginRight != null || marginBottom != null) {
-        im = false
-    }
-
-    if (padding != null || paddingLeft != null || paddingTop != null || paddingRight != null || paddingBottom != null) {
-        ip = false
-    }
-
-    if (ilp != null && !ilp) {
-        val params = if (extras != null) {
-            val p1 = this.layoutParams as ConstraintLayout.LayoutParams
-            p1.height = height ?: ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-            p1.width = width ?: ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-            val defaultId = (this.parent as ConstraintLayout).id
-            p1.apply {
-                startToStart = extras[START_TO_START] ?: defaultId
-                endToEnd = extras[END_TO_END] ?: defaultId
-                topToTop = extras[TOP_TO_TOP] ?: defaultId
-                bottomToBottom = extras[BOTTOM_TO_BOTTOM] ?: defaultId
-                if (extras.containsKey(START_TO_END)) {
-                    startToEnd = extras[START_TO_END]!!
-                }
-                if (extras.containsKey(END_TO_START)) {
-                    endToStart = extras[END_TO_START]!!
-                }
-                if (extras.containsKey(TOP_TO_BOTTOM)) {
-                    topToBottom = extras[TOP_TO_BOTTOM]!!
-                }
-                if (extras.containsKey(BOTTOM_TO_TOP)) {
-                    bottomToTop = extras[BOTTOM_TO_TOP]!!
-                }
-            }
-            p1
-        } else {
-            val p1 = this.layoutParams as ViewGroup.LayoutParams
-            p1.height = height ?: ViewGroup.LayoutParams.WRAP_CONTENT
-            p1.width = width ?: ViewGroup.LayoutParams.MATCH_PARENT
-            p1
-        }
-
-        this.layoutParams = params
-    }
-
-    if (im != null && !im) {
-        val marginParams = this.layoutParams as ViewGroup.MarginLayoutParams
-        if (margin != null) {
-            marginParams.setMargins(margin)
-        } else {
-            marginParams.setMargins(marginLeft ?: 0, marginTop ?: 0, marginRight ?: 0, marginBottom ?: 0)
-        }
-        this.requestLayout()
-    }
-
-    if (ip != null && !ip) {
-        if (padding != null) {
-            this.setPadding(padding)
-        } else {
-            this.setPadding(paddingLeft ?: 0, paddingTop ?: 0, paddingRight ?: 0, paddingBottom ?: 0)
-        }
-    }
-}
-
-fun Context.convertDpToPx(dp: Int) = TypedValue.applyDimension(
-    TypedValue.COMPLEX_UNIT_DIP,
-    dp.toFloat(),
-    resources.displayMetrics
-).toInt()
-
-fun convertDpToPx(dp: Int, context: Context) = TypedValue.applyDimension(
-    TypedValue.COMPLEX_UNIT_DIP,
-    dp.toFloat(),
-    context.resources.displayMetrics
-).toInt()
-
-fun Fragment.convertDpToPx(dp: Int) = requireContext().convertDpToPx(dp)
-
-fun Fragment.convertDpToPx(dp: Float) = requireContext().convertDpToPx(dp.toInt()).toFloat()
 
 fun getTextForTime(time: Long): String {
     return DateUtils.getRelativeTimeSpanString(time, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS).toString()
@@ -329,17 +199,6 @@ fun <T: Any> List<T>.removeItemFromList(item: T): List<T> {
     }
 }
 
-/*fun <T: Any> List<T>.removeItemFromList(pos: Int): List<T> {
-    return if (this.isEmpty()) {
-        emptyList()
-    } else {
-        val newList = this.toMutableList()
-        newList.removeAt(pos)
-        newList
-    }
-}*/
-
-
 fun View.slideReset() {
     val animator = ObjectAnimator.ofFloat(this, View.TRANSLATION_Y, 0f)
     animator.duration = 300
@@ -387,22 +246,6 @@ fun Context.hideKeyboard(view: View) {
     val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
 }
-
-/*fun RecyclerView.addOnIdleListener(onIdle: (layoutManager: LinearLayoutManager) -> Unit) {
-    val linearLayoutManager = this.layoutManager
-    if (linearLayoutManager is LinearLayoutManager && linearLayoutManager.orientation == LinearLayoutManager.VERTICAL) {
-        this.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    onIdle(linearLayoutManager)
-                }
-            }
-        })
-    } else {
-        throw IllegalStateException("Recyclerview must be vertical and linear.")
-    }
-}*/
 
 fun Fragment.isNightMode(): Boolean {
     return requireContext().isNightMode()
@@ -827,6 +670,94 @@ fun Context.showDialog(msg: String, title: String = "Collab", cancelable: Boolea
             a.dismiss()
         }.show()
 
+}
+
+fun cropToSquare(bitmap: Bitmap): Bitmap? {
+    val width = bitmap.width
+    val height = bitmap.height
+    val newWidth = if (height > width) width else height
+    val newHeight = if (height > width) height - (height - width) else height
+    var cropW = (width - height) / 2
+    cropW = if (cropW < 0) 0 else cropW
+    var cropH = (height - width) / 2
+    cropH = if (cropH < 0) 0 else cropH
+    return Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight)
+}
+
+fun downloadBitmapUsingFresco(context: Context, photo: String, onComplete: (bitmap: Bitmap?) -> Unit) {
+    val imagePipeline = Fresco.getImagePipeline()
+    val imageRequest = ImageRequestBuilder.newBuilderWithSource(photo.toUri())
+        .build()
+
+    val dataSource = imagePipeline.fetchDecodedImage(imageRequest, context)
+
+    dataSource.subscribe(object: BaseBitmapDataSubscriber() {
+        override fun onNewResultImpl(bitmap: Bitmap?) {
+            onComplete(bitmap)
+        }
+
+        override fun onFailureImpl(dataSource: DataSource<CloseableReference<CloseableImage>>) {
+            onComplete(null)
+        }
+
+    }, Executors.newSingleThreadExecutor())
+}
+
+@OptIn(ExperimentalPagingApi::class)
+fun getFragmentByTag(tag: String, bundle: Bundle): Fragment {
+    return when (tag) {
+        ChatFragment.TAG -> ChatFragment.newInstance(bundle)
+        ChatDetailFragment.TAG -> ChatDetailFragment.newInstance(bundle)
+        ChatMediaFragment.TAG -> ChatMediaFragment.newInstance(bundle)
+        ChannelGuidelinesFragment.TAG -> ChannelGuidelinesFragment.newInstance(bundle)
+        ProjectContributorsFragment.TAG -> ProjectContributorsFragment.newInstance(bundle)
+        MessageDetailFragment.TAG -> MessageDetailFragment.newInstance(bundle)
+        ProjectFragment.TAG -> ProjectFragment.newInstance(bundle)
+        CommentsFragment.TAG -> CommentsFragment.newInstance(bundle)
+        TagFragment.TAG -> TagFragment.newInstance(bundle)
+        ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
+        else -> ChatFragment.newInstance(bundle)
+    }
+}
+
+private const val MIN_SCALE = 0.9f
+
+class DepthPageTransformer : ViewPager2.PageTransformer {
+
+    override fun transformPage(view: View, position: Float) {
+        view.apply {
+            val pageWidth = width
+            when {
+                position < -1 -> { // [-Infinity,-1)
+                    // This page is way off-screen to the left.
+                    alpha = 0f
+                }
+                position <= 0 -> { // [-1,0]
+                    // Use the default slide transition when moving to the left page
+                    alpha = 1f
+                    translationX = 0f
+                    scaleX = 1f
+                    scaleY = 1f
+                }
+                position <= 1 -> { // (0,1]
+                    // Fade the page out.
+                    alpha = 1 - position
+
+                    // Counteract the default slide transition
+                    translationX = pageWidth * -position
+
+                    // Scale the page down (between MIN_SCALE and 1)
+                    val scaleFactor = (MIN_SCALE + (1 - MIN_SCALE) * (1 - abs(position)))
+                    scaleX = scaleFactor
+                    scaleY = scaleFactor
+                }
+                else -> { // (1,+Infinity]
+                    // This page is way off-screen to the right.
+                    alpha = 0f
+                }
+            }
+        }
+    }
 }
 
 const val TAG = "CodesquareLog"

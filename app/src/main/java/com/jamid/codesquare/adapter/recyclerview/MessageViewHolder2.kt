@@ -1,43 +1,58 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import android.view.View
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
+import com.jamid.codesquare.*
+import com.jamid.codesquare.data.Image
 import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.*
-import com.jamid.codesquare.listeners.MessageListener
+import com.jamid.codesquare.listeners.MyMessageListener
 import java.io.File
-import java.util.*
-import androidx.core.content.ContextCompat
-import androidx.core.view.GestureDetectorCompat
-import androidx.core.view.ViewCompat
-import androidx.preference.PreferenceManager
-import com.jamid.codesquare.*
+import kotlin.math.abs
 
 class MessageViewHolder2<T: Any>(
     val view: View,
-    private val itemType: Int
+    private val itemType: Int,
 ): RecyclerView.ViewHolder(view) {
 
-    private val messageListener = view.context as MessageListener
     private val controllerListener = FrescoImageControllerListener()
-    private lateinit var mDetector: GestureDetectorCompat
-    private lateinit var mMessage: Message
     private val currentUserId = UserManager.currentUser.id
+    lateinit var myMessageListener: MyMessageListener
+
+    fun updateMessageUi(state: Int) {
+        when (state) {
+            MESSAGE_IDLE -> {
+                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
+            }
+            MESSAGE_READY -> {
+                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
+            }
+            MESSAGE_SELECTED -> {
+                if (view.context.isNightMode()) {
+                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_black))
+                } else {
+                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_blue))
+                }
+            }
+        }
+    }
 
     fun bind(item: T) {
         when (item::class.java) {
             Message::class.java -> {
                 val message = item as Message
-                mMessage = message
                 bind(message)
             }
             ListSeparator::class.java -> {
@@ -99,41 +114,35 @@ class MessageViewHolder2<T: Any>(
             }
         }
 
-        mDetector = GestureDetectorCompat(view.context, messageListener)
-        mDetector.setOnDoubleTapListener(messageListener)
-        mDetector.setIsLongpressEnabled(true)
+        updateMessageUi(message.state)
 
-        view.setOnTouchListener(touchListener)
+        view.setOnClickListener {
+            myMessageListener.onMessageClick(message.copy())
 
-
-
-        when (message.state) {
-            -1, 0 -> {
-                view.isSelected = false
-                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
+            // updating ui changes to cover database delay
+            if (message.state != MESSAGE_IDLE) {
+                message.state = 1 - message.state
             }
-            1 -> {
-                if (view.context.isNightMode()) {
-                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_black))
-                } else {
-                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_blue))
-                }
-                view.isSelected = true
-            }
+            updateMessageUi(message.state)
         }
 
-        messageListener.onMessageRead(message)
+        view.setOnLongClickListener {
+            myMessageListener.onMessageContextClick(message.copy())
+
+            // updating ui changes to cover database delay
+            message.state = 1 - abs(message.state)
+            updateMessageUi(message.state)
+            true
+        }
+
+        myMessageListener.onMessageRead(message)
 
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    private val touchListener = View.OnTouchListener { _, p1 ->
-        messageListener.onMessageFocused(mMessage, view)
-        return@OnTouchListener mDetector.onTouchEvent(p1)
-    }
 
     private fun setMessageMiddleReplyRightItem(message: Message) {
         val binding = MessageMiddleReplyRightItemBinding.bind(view)
+        
         // setting original message
         binding.messageContent.text = message.content
 
@@ -149,12 +158,28 @@ class MessageViewHolder2<T: Any>(
             binding.replyComponent.replyText.text = replyMessage.content
         } else {
             binding.replyComponent.root.hide()
-
-            messageListener.onGetReplyMessage(message) { newMessage ->
-                // this function won't execute if there's any error during the parent function.
-                setMessageMiddleReplyItem(newMessage)
+            getReplyMessage(message) {
+                setMessageMiddleReplyRightItem(it)
             }
+        }
+    }
 
+    private fun getReplyMessage(message: Message, onMessageFetched: (newMessage: Message) -> Unit) {
+        val replyMessageId = message.replyTo
+        if (replyMessageId != null) {
+            FireUtility.getMessage(message.chatChannelId, replyMessageId) {
+                val result = it ?: return@getMessage
+                when (result) {
+                    is Result.Error -> {
+                        result.exception.localizedMessage?.toString()
+                            ?.let { it1 -> Log.e(TAG, it1) }
+                        view.hide()
+                    }
+                    is Result.Success -> {
+                        onMessageFetched(result.data)
+                    }
+                }
+            }
         }
     }
 
@@ -164,7 +189,13 @@ class MessageViewHolder2<T: Any>(
         val metadata = message.metadata
         if (metadata != null) {
             binding.documentName.text = metadata.name
-            binding.documentSize.text = getTextForSizeInBytes(metadata.size)
+            val icon = when (message.metadata?.ext) {
+                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+            }
+            binding.documentIcon.background = icon
         }
 
         // set download button and progress
@@ -179,12 +210,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, _ ->
-                    binding.documentDownloadProgress.hide()
-                    binding.documentDownloadBtn.hide()
-                    if (!task.isSuccessful) {
-                        Log.e(TAG, "Something went wrong while downloading document for message.")
-                    }
+                myMessageListener.onMessageNotDownloaded(message) {
+                    bind(it)
                 }
             }
         }
@@ -201,15 +228,11 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            messageListener.onStartDownload(message) { task, newMessage ->
-                binding.messageImgProgress.hide()
-                if (task.isSuccessful) {
-                    val imageUri = getImageUriFromMessage(newMessage, binding.root.context)
-                    setMessageImageBasedOnExtension(binding.messageImage, imageUri, newMessage)
-                } else {
-                    Log.e(TAG, "Something went wrong while trying to download image from message.")
-                }
+
+            myMessageListener.onMessageNotDownloaded(message) {
+                bind(it)
             }
+
         }
     }
 
@@ -235,12 +258,9 @@ class MessageViewHolder2<T: Any>(
             binding.replyComponent.replyText.text = replyMessage.content
         } else {
             binding.replyComponent.root.hide()
-
-            messageListener.onGetReplyMessage(message) { newMessage ->
-                // this function won't execute if there's any error during the parent function.
-                setMessageMiddleReplyItem(newMessage)
+            getReplyMessage(message) {
+                setMessageMiddleReplyItem(it)
             }
-
         }
 
         // setting time
@@ -255,6 +275,13 @@ class MessageViewHolder2<T: Any>(
         if (metadata != null) {
             binding.documentName.text = metadata.name
             binding.documentSize.text = getTextForSizeInBytes(metadata.size)
+            val icon = when (message.metadata?.ext) {
+                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+            }
+            binding.documentIcon.background = icon
         }
 
         // set download button and progress
@@ -269,12 +296,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, _ ->
-                    binding.documentDownloadProgress.hide()
-                    binding.documentDownloadBtn.hide()
-                    if (!task.isSuccessful) {
-                        Log.e(TAG, "Something went wrong while downloading document for message.")
-                    }
+                myMessageListener.onMessageNotDownloaded(message) {
+                    bind(it)
                 }
             }
         }
@@ -295,14 +318,8 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            messageListener.onStartDownload(message) { task, newMessage ->
-                binding.messageImgProgress.hide()
-                if (task.isSuccessful) {
-                    val imageUri = getImageUriFromMessage(newMessage, binding.root.context)
-                    setMessageImageBasedOnExtension(binding.messageImage, imageUri, newMessage)
-                } else {
-                    Log.e(TAG, "Something went wrong while trying to download image from message.")
-                }
+            myMessageListener.onMessageNotDownloaded(message) {
+                bind(it)
             }
         }
 
@@ -332,12 +349,9 @@ class MessageViewHolder2<T: Any>(
             }
             binding.replyComponent.replyText.text = replyMessage.content
         } else {
-            Log.d(TAG, "Reply Message is null")
             binding.replyComponent.root.hide()
-
-            messageListener.onGetReplyMessage(message) { newMessage ->
-                // this function won't execute if there's any error during the parent function.
-                setMessageMiddleReplyItem(newMessage)
+            getReplyMessage(message) {
+                setMessageMiddleReplyItem(it)
             }
         }
     }
@@ -352,6 +366,13 @@ class MessageViewHolder2<T: Any>(
         if (metadata != null) {
             binding.documentName.text = metadata.name
             binding.documentSize.text = getTextForSizeInBytes(metadata.size)
+            val icon = when (message.metadata?.ext) {
+                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+            }
+            binding.documentIcon.background = icon
         }
 
         // set download button and progress
@@ -366,12 +387,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, _ ->
-                    binding.documentDownloadProgress.hide()
-                    binding.documentDownloadBtn.hide()
-                    if (!task.isSuccessful) {
-                        Log.e(TAG, "Something went wrong while downloading document for message.")
-                    }
+                myMessageListener.onMessageNotDownloaded(message) {
+                    bind(it)
                 }
             }
         }
@@ -388,14 +405,8 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            messageListener.onStartDownload(message) { task, newMessage ->
-                binding.messageImgProgress.hide()
-                if (task.isSuccessful) {
-                    val imageUri = getImageUriFromMessage(newMessage, binding.root.context)
-                    setMessageImageBasedOnExtension(binding.messageImage, imageUri, newMessage)
-                } else {
-                    Log.e(TAG, "Something went wrong while trying to download image from message.")
-                }
+            myMessageListener.onMessageNotDownloaded(message) {
+                bind(it)
             }
         }
     }
@@ -425,19 +436,16 @@ class MessageViewHolder2<T: Any>(
             binding.replyComponent.replyText.text = replyMessage.content
         } else {
             binding.replyComponent.root.hide()
-
-            messageListener.onGetReplyMessage(message) { newMessage ->
-                // this function won't execute if there's any error during the parent function.
-                setMessageMiddleReplyItem(newMessage)
+            getReplyMessage(message) {
+                setMessageMiddleReplyItem(it)
             }
-
         }
 
         // setting sender image
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            messageListener.onUserClick(message)
+            myMessageListener.onMessageSenderClick(message)
         }
 
         // setting time
@@ -451,6 +459,13 @@ class MessageViewHolder2<T: Any>(
         if (metadata != null) {
             binding.documentName.text = metadata.name
             binding.documentSize.text = getTextForSizeInBytes(metadata.size)
+            val icon = when (message.metadata?.ext) {
+                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+            }
+            binding.documentIcon.background = icon
         }
 
         // set download button and progress
@@ -467,12 +482,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, _ ->
-                    binding.documentDownloadProgress.hide()
-                    binding.documentDownloadBtn.hide()
-                    if (!task.isSuccessful) {
-                        Log.e(TAG, "Something went wrong while downloading document for message.")
-                    }
+                myMessageListener.onMessageNotDownloaded(message) {
+                    bind(it)
                 }
             }
 
@@ -481,12 +492,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                messageListener.onStartDownload(message) { task, _ ->
-                    binding.documentDownloadProgress.hide()
-                    binding.documentDownloadBtn.hide()
-                    if (!task.isSuccessful) {
-                        Log.e(TAG, "Something went wrong while downloading document for message.")
-                    }
+                myMessageListener.onMessageNotDownloaded(message) {
+                    bind(it)
                 }
             }
         }
@@ -498,7 +505,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            messageListener.onUserClick(message)
+            myMessageListener.onMessageSenderClick(message)
         }
 
         //
@@ -506,16 +513,22 @@ class MessageViewHolder2<T: Any>(
     }
 
     private fun setDocumentListener(documentContainer: View, message: Message) {
-        when (message.state) {
-            -1 -> {
-                documentContainer.setOnClickListener(onDocumentClick)
-                documentContainer.setOnLongClickListener(onDocumentLongClickListener)
+
+        if (message.state == MESSAGE_IDLE) {
+            documentContainer.setOnClickListener {
+                myMessageListener.onMessageDocumentClick(message)
             }
-            0, 1 -> {
-                documentContainer.setOnClickListener(onDocumentClickAlt)
-                documentContainer.setOnLongClickListener(onDocumentLongClickListenerAlt)
+        } else {
+            documentContainer.setOnClickListener {
+                view.performClick()
             }
+
+            documentContainer.setOnLongClickListener {
+                view.performLongClick()
+            }
+
         }
+
     }
 
     private fun setMessageDefaultImageItem(message: Message) {
@@ -528,14 +541,8 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            messageListener.onStartDownload(message) { task, newMessage ->
-                binding.messageImgProgress.hide()
-                if (task.isSuccessful) {
-                    val imageUri = getImageUriFromMessage(newMessage, binding.root.context)
-                    setMessageImageBasedOnExtension(binding.messageImage, imageUri, newMessage)
-                } else {
-                    Log.e(TAG, "Something went wrong while trying to download image from message.")
-                }
+            myMessageListener.onMessageNotDownloaded(message) {
+                bind(it)
             }
         }
 
@@ -543,7 +550,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            messageListener.onUserClick(message)
+            myMessageListener.onMessageSenderClick(message)
         }
 
         // setting time
@@ -557,7 +564,7 @@ class MessageViewHolder2<T: Any>(
         setTimeForTextView(binding.messageCreatedAt, message.createdAt)
 
         binding.messageSenderImg.setOnClickListener {
-            messageListener.onUserClick(message)
+            myMessageListener.onMessageSenderClick(message)
         }
     }
 
@@ -572,40 +579,6 @@ class MessageViewHolder2<T: Any>(
         }
 
     }
-
-    /*fun setDominantColorFromBitmap(uri: Uri, target: View) {
-        val imagePipeline = Fresco.getImagePipeline()
-
-        val imageRequest = ImageRequestBuilder.newBuilderWithSource(uri)
-            .build()
-
-        val dataSource: DataSource<CloseableReference<CloseableImage>> =
-            imagePipeline.fetchDecodedImage(imageRequest, view.context)
-
-        dataSource.subscribe(object : BaseBitmapDataSubscriber() {
-                override fun onNewResultImpl(bitmap: Bitmap?) {
-                    if (bitmap != null) {
-                        val palette = createPaletteSync(bitmap)
-                        val defaultColor = if (view.context.isNightMode()) {
-                            R.color.black
-                        } else {
-                            R.color.white
-                        }
-                        val dominantColor = palette.getDominantColor(defaultColor)
-                        val drawable = DrawableCompat.wrap(target.background)
-                        DrawableCompat.setTint(drawable, dominantColor)
-                    } else {
-                        Log.d(TAG, "Bitmap was returned null.")
-                    }
-                }
-
-            override fun onFailureImpl(dataSource: DataSource<CloseableReference<CloseableImage>>) {
-                Log.d(TAG, "Something went wrong while fetching bitmap.")
-            } },
-            executor()
-        )
-
-    }*/
 
     private fun setMessageImageBasedOnExtension(
         imageHolder: SimpleDraweeView,
@@ -625,85 +598,35 @@ class MessageViewHolder2<T: Any>(
 
             imageHolder.controller = builder.build()
 
-            when (message.state) {
-                -1 -> {
-                    imageHolder.setOnClickListener(onImageClick)
-                    imageHolder.setOnLongClickListener(onImageLongClickListener)
+            if (message.state == MESSAGE_IDLE) {
+                imageHolder.setOnClickListener {
+                    message.metadata!!.height = controllerListener.finalHeight.toLong()
+                    message.metadata!!.width = controllerListener.finalWidth.toLong()
+                    myMessageListener.onMessageImageClick(imageHolder, message)
                 }
-                0, 1 -> {
-                    imageHolder.setOnClickListener(onImageClickAlt)
-                    imageHolder.setOnLongClickListener(onImageLongClickListenerAlt)
+            } else {
+                imageHolder.setOnClickListener {
+                    view.performClick()
                 }
+            }
+
+            imageHolder.setOnLongClickListener {
+                view.performLongClick()
             }
 
         }
     }
-
-    /*private fun getBitmapFromView(v: View, width: Int = v.layoutParams.width, height: Int = v.layoutParams.height): Bitmap? {
-        val b = Bitmap.createBitmap(
-            width,
-            height,
-            Bitmap.Config.ARGB_8888
-        )
-        val c = Canvas(b)
-        v.layout(v.left, v.top, v.right, v.bottom)
-        v.draw(c)
-        return b
-    }*/
 
     private fun bind(listSeparator: ListSeparator) {
         val binding = MessageTimeSeparatorBinding.bind(view)
         setTimeForTextView(binding.timeSeparatorText, listSeparator.time)
     }
 
-    private val onImageLongClickListener = View.OnLongClickListener {
-        messageListener.onMessageLongClick(mMessage)
-        true
-    }
-
-    private val onImageLongClickListenerAlt = View.OnLongClickListener {
-        true
-    }
-
-    private val onDocumentLongClickListener = View.OnLongClickListener {
-        messageListener.onMessageLongClick(mMessage)
-        true
-    }
-
-    private val onDocumentLongClickListenerAlt = View.OnLongClickListener {
-        true
-    }
-
-    private val onImageClick = View.OnClickListener {
-        if (mMessage.state == 0) {
-            mMessage.state = 1
-            messageListener.onMessageStateChanged(mMessage)
-        } else {
-            messageListener.onImageClick(it, mMessage, controllerListener)
-        }
-    }
-
-    private val onImageClickAlt = View.OnClickListener {
-        mMessage.state = 0
-        messageListener.onMessageStateChanged(mMessage)
-    }
-
-    private val onDocumentClick = View.OnClickListener {
-        if (mMessage.state == 0) {
-            mMessage.state = 1
-            messageListener.onMessageStateChanged(mMessage)
-        } else {
-            messageListener.onDocumentClick(mMessage)
-        }
-    }
-
-    private val onDocumentClickAlt = View.OnClickListener {
-        mMessage.state = 0
-        messageListener.onMessageStateChanged(mMessage)
-    }
-
     companion object {
         private const val TAG = "MessageViewHolder2"
+        const val MESSAGE_IDLE = -1
+        const val MESSAGE_READY = 0
+        const val MESSAGE_SELECTED = 1
     }
 
 }

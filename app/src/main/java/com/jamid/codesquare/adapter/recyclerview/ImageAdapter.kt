@@ -7,8 +7,9 @@ import androidx.recyclerview.widget.ListAdapter
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
 import com.jamid.codesquare.FrescoImageControllerListener
+import com.jamid.codesquare.listeners.ImageClickListener
 
-class ImageAdapter(private val onClick: (v: View, controllerListener: BaseControllerListener<ImageInfo>) -> Unit): ListAdapter<String, ImageViewHolder>(comparator){
+class ImageAdapter(private val imageClickListener: ImageClickListener? = null): ListAdapter<String, ImageViewHolder>(comparator){
 
     companion object {
         val comparator = object : DiffUtil.ItemCallback<String>() {
@@ -23,7 +24,7 @@ class ImageAdapter(private val onClick: (v: View, controllerListener: BaseContro
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ImageViewHolder {
-        return ImageViewHolder.newInstance(parent, onClick)
+        return ImageViewHolder.newInstance(parent, imageClickListener)
     }
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {

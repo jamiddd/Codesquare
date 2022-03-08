@@ -23,13 +23,13 @@
         android:layout_height="70dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toTopOf="@+id/user_name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/divider16"
         app:layout_constraintVertical_bias="0.100000024"
         app:layout_constraintVertical_chainStyle="packed"
+        app:placeholderImage="@color/darker_grey"
         app:roundAsCircle="true" />
 
     <TextView
@@ -85,11 +85,9 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/projects_count"
-        style="@style/Widget.MaterialComponents.Chip.Action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="35 Projects"
-        app:closeIconEnabled="false"
         app:layout_constraintBottom_toBottomOf="@+id/collaborations_count"
         app:layout_constraintEnd_toStartOf="@+id/collaborations_count"
         app:layout_constraintHorizontal_bias="0.5"
@@ -99,7 +97,6 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/collaborations_count"
-        style="@style/Widget.MaterialComponents.Chip.Action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -116,7 +113,6 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/likes_count"
-        style="@style/Widget.MaterialComponents.Chip.Action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="563 Stars"
@@ -132,6 +128,8 @@
         style="@style/AppTheme.ProfilePrimaryAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:textAllCaps="false"
         app:icon="@drawable/thumb_selector"
         app:iconPadding="8dp"
@@ -150,6 +148,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:text="@string/invite"
         android:textAllCaps="false"
         android:visibility="gone"

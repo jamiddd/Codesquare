@@ -125,6 +125,16 @@ class SubscriptionFragment : BottomSheetDialogFragment(), SubscriptionListener {
             R.id.subscription_select_btn)
     }
 
+    override fun onPause() {
+        super.onPause()
+        Log.d(TAG, "Paused subscription fragment")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.d(TAG, "Resumed subscription fragment")
+    }
+
     companion object {
         private const val TAG = "SubscriptionFragment"
     }

@@ -1,0 +1,30 @@
+<vector android:height="32dp" android:viewportHeight="48"
+    android:viewportWidth="48" android:width="32dp"
+    xmlns:aapt="http://schemas.android.com/aapt" xmlns:android="http://schemas.android.com/apk/res/android">
+    <path android:fillColor="#eb6773" android:pathData="M37,6c0,-1.105 -0.895,-2 -2,-2H13c-1.105,0 -2,0.895 -2,2v4h26V6z"/>
+    <path android:fillColor="#b31523" android:pathData="M11,41.72c0,0.996 1.092,1.606 1.94,1.084L24,35.998l11.06,6.806C35.908,43.326 37,42.716 37,41.72V30H11V41.72z"/>
+    <path android:fillColor="#cf1928" android:pathData="M11,18h26v12h-26z"/>
+    <path android:fillColor="#d9414f" android:pathData="M11,10h26v8h-26z"/>
+    <path android:fillAlpha="0.3"
+        android:pathData="M37,12.051C30.851,12.562 26,17.72 26,24s4.851,11.438 11,11.949V12.051z" android:strokeAlpha="0.3">
+        <aapt:attr name="android:fillColor">
+            <gradient android:centerX="37.181" android:centerY="24.128"
+                android:gradientRadius="11.585" android:type="radial">
+                <item android:color="#FF000000" android:offset="0.348"/>
+                <item android:color="#18000000" android:offset="0.936"/>
+                <item android:color="#00000000" android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:pathData="M38,24m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0">
+        <aapt:attr name="android:fillColor">
+            <gradient android:endX="48" android:endY="24"
+                android:startX="28" android:startY="24" android:type="linear">
+                <item android:color="#FF21AD64" android:offset="0"/>
+                <item android:color="#FF088242" android:offset="1"/>
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#fff" android:pathData="M38.5,29h-1c-0.276,0 -0.5,-0.224 -0.5,-0.5v-9c0,-0.276 0.224,-0.5 0.5,-0.5h1c0.276,0 0.5,0.224 0.5,0.5v9C39,28.776 38.776,29 38.5,29z"/>
+    <path android:fillColor="#fff" android:pathData="M33,24.5v-1c0,-0.276 0.224,-0.5 0.5,-0.5h9c0.276,0 0.5,0.224 0.5,0.5v1c0,0.276 -0.224,0.5 -0.5,0.5h-9C33.224,25 33,24.776 33,24.5z"/>
+</vector>

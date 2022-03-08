@@ -29,6 +29,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.io.File
 import com.jamid.codesquare.ui.home.chat.ChatController
+import com.jamid.codesquare.ui.home.chat.ChatFragment
+import java.util.*
 
 @ExperimentalPagingApi
 class MainViewModel(application: Application): AndroidViewModel(application) {
@@ -47,25 +49,99 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     val currentUser: LiveData<User> = repo.currentUser
 
+    /**
+     * A placeholder project to be used while creating new project.
+    * */
     private val _currentProject = MutableLiveData<Project>().apply { value = null }
     val currentProject: LiveData<Project> = _currentProject
 
     private val _currentImage = MutableLiveData<Uri?>()
     val currentImage: LiveData<Uri?> = _currentImage
 
+    /**
+     * A placeholder for currently selected message for reply
+     * */
+    private val _currentReplyMessage = MutableLiveData<Message>().apply { value = null }
+    val currentReplyMessage: LiveData<Message> = _currentReplyMessage
+
+
+    fun setCurrentReplyMessage(replyMessage: Message? = null) {
+        _currentReplyMessage.postValue(replyMessage)
+    }
+
+    private val userCache = mutableMapOf<String, User>()
+    private val projectCache = mutableMapOf<String, Project>()
+    private val chatChannelCache = mutableMapOf<String, ChatChannel>()
+    private val commentChannelCache = mutableMapOf<String, CommentChannel>()
+    private val commentCache = mutableMapOf<String, Comment>()
+
+//    val chatFragmentStack = Stack<String>().apply { push(ChatFragment.TAG) }
+
+    /**
+     * A flag to check whether the messages in chat are currently in select mode or not
+     *
+     * True: At least one message is currently being selected
+     * False: No messages are selected at the moment
+     * */
+    private val _isSelectMode = MutableLiveData<Boolean>().apply { value = false }
+    val isSelectMode: LiveData<Boolean> = _isSelectMode
+
+    fun setSelectMode(state: Boolean) {
+        _isSelectMode.postValue(state)
+    }
+
     var currentChatChannel: String? = null
 
     val multipleImagesContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
 
+    val multipleDocumentsContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
+
+    private val _currentFocusedUser = MutableLiveData<User>().apply { value = null }
+    val currentFocusedUser: LiveData<User> = _currentFocusedUser
+
+    private val _currentFocusedChatChannel = MutableLiveData<ChatChannel>().apply { value = null }
+    val currentFocusedChatChannel: LiveData<ChatChannel> = _currentFocusedChatChannel
+
+    private val _currentFocusedProject = MutableLiveData<Project>().apply { value = null }
+    val currentFocusedProject: LiveData<Project> = _currentFocusedProject
+
+    private val _currentFocusedMessage = MutableLiveData<Message>().apply { value = null }
+    val currentFocusedMessage: LiveData<Message> = _currentFocusedMessage
+
+    fun setCurrentFocusedChatChannel(chatChannel: ChatChannel?) {
+        _currentFocusedChatChannel.postValue(chatChannel)
+    }
+
+    fun setCurrentFocusedUser(user: User?) {
+        _currentFocusedUser.postValue(user)
+    }
+
+    fun setCurrentFocusedProject(project: Project?) {
+        _currentFocusedProject.postValue(project)
+    }
+
+    fun setCurrentFocusedMessage(message: Message?) {
+        _currentFocusedMessage.postValue(message)
+    }
+
+    /**
+     * Flag to check whether sound network is available or not
+     * */
     private val _isNetworkAvailable = MutableLiveData<Boolean>()
     val isNetworkAvailable: LiveData<Boolean> = _isNetworkAvailable
 
+    /**
+     * Placeholder to hold chat images for upload
+     * */
     private val _chatImagesUpload = MutableLiveData<List<Uri>>()
     val chatImagesUpload: LiveData<List<Uri>> = _chatImagesUpload
 
     private val _chatDocumentsUpload = MutableLiveData<List<Uri>>()
     val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
 
+    /**
+     * List of all the products fetched from play store
+     * */
     private val _subscriptionDetails = MutableLiveData<List<SkuDetails>>().apply { value = emptyList() }
     val subscriptionDetails: LiveData<List<SkuDetails>> = _subscriptionDetails
 
@@ -81,16 +157,25 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         _subscriptionDetails.postValue(detailsList)
     }
 
+    /**
+     * List of all the available subscriptions for the user
+     * */
     private val _subscriptions = MutableLiveData<List<Subscription>>().apply { value = emptyList() }
     val subscriptions: LiveData<List<Subscription>> = _subscriptions
-
 
     fun setSubscriptions(list: List<Subscription> = emptyList()) {
         _subscriptions.postValue(list)
     }
 
+    /**
+     * All the messages that are currently selected where the state of the message is [MESSAGE_SELECTED]
+     *
+     * */
     val selectedMessages = repo.onMessagesModeChanged
 
+    /**
+     * Placeholder for a message when only one message is selected
+     * */
     private val _singleSelectedMessage = MutableLiveData<Message?>()
     val singleSelectedMessage: LiveData<Message?> = _singleSelectedMessage
 
@@ -202,6 +287,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun insertUsers(vararg users: User) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertUsers(users)
+    }
+
+    fun insertUsers(users: List<User>) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertUsers(users)
     }
 
@@ -776,7 +865,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun getProjectContributors(project: Project, limit: Long = 0, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        FireUtility.getProjectContributors(project, limit, onComplete)
+
     }
 
     fun getCommentChannel(project: Project, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
@@ -807,6 +896,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
         FireUtility.sendComment(comment, parentChannelId) {
             if (it.isSuccessful) {
+
+                onCommentSend(comment)
+
                 if (notification.senderId != notification.receiverId) {
                     FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
                         if (error != null) {
@@ -814,17 +906,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                         } else {
                             if (!exists) {
                                 FireUtility.sendNotification(notification) { it1 ->
-                                    if (it1.isSuccessful) {
-                                        onCommentSend(comment, notification)
-                                    } else {
+                                    if (!it1.isSuccessful) {
                                         setCurrentError(it1.exception)
                                     }
                                 }
                             }
                         }
                     }
-                } else {
-                    onCommentSend(comment, notification)
                 }
             } else {
                 setCurrentError(it.exception)
@@ -832,14 +920,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun onCommentSend(comment: Comment, notification: Notification) = viewModelScope.launch (Dispatchers.IO) {
+    private fun onCommentSend(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
         val project = getLocalProject(comment.projectId)
         if (project != null) {
             project.comments += 1
             insertProjects(project)
         }
-
-        insertNotifications(notification)
 
         if (comment.commentLevel >= 1) {
             val parentComment1 = repo.getComment(comment.parentId)
@@ -890,15 +976,16 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
 
     fun sendMessagesSimultaneously(imagesDir: File, documentsDir: File, chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
-        setChatUploadImages(emptyList())
-        setChatUploadDocuments(emptyList())
-
         when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
 
+
                 val messages = result.data
                 repo.insertMessages(imagesDir, documentsDir, messages)
+
+                setChatUploadImages(emptyList())
+                setChatUploadDocuments(emptyList())
 
                 val chatChannel = repo.getLocalChatChannel(chatChannelId)
 
@@ -966,6 +1053,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getLimitedMediaMessages(chatChannel, limit, type)
     }
 
+    fun getLimitedMediaMessages(chatChannelId: String, limit: Int, type: String = image, onComplete: (List<Message>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        onComplete(repo.getLimitedMediaMessages(chatChannelId, limit, type))
+    }
+
     fun deleteChatUploadDocumentAtPosition(delPos: Int) {
         val chatDocuments = chatDocumentsUpload.value
         if (chatDocuments != null) {
@@ -1017,8 +1108,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertChatChannelsWithoutProcessing(channels)
     }
 
-    suspend fun getLocalUser(userId: String): User? {
-        return repo.getUser(userId)
+    fun getLocalUser(userId: String, onComplete: (User?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        onComplete(repo.getUser(userId))
     }
 
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
@@ -1061,10 +1152,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     suspend fun getImageMessages(chatChannelId: String, limit: Int = 0): List<Message> {
         return repo.getImageMessages(chatChannelId, limit)
-    }
-
-    suspend fun getForwardChannels(chatChannelId: String): List<ChatChannel> {
-        return repo.getForwardChannels(chatChannelId)
     }
 
     fun sendForwardsToChatChannels(imagesDir: File, documentsDir: File, messages: List<Message>, channels: List<ChatChannel>, onComplete: (result: Result<List<Message>>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
@@ -1168,8 +1255,22 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getLastMessageForChannel(chatChannelId)
     }
 
-    fun updateRestOfTheMessages(chatChannelId: String, isSelected: Int) = viewModelScope.launch (Dispatchers.IO) {
-        repo.updateRestOfTheMessages(chatChannelId, isSelected)
+    /**
+     * When selecting one or more messages, to make adjustment to other messages.
+     * States [MESSAGE_IDLE], [MESSAGE_READY], [MESSAGE_SELECTED].
+     *
+     * [MESSAGE_IDLE] : When the message is not selected and also not ready to be selected
+     *
+     * [MESSAGE_READY] : When the message is ready to be selected
+     *
+     * [MESSAGE_SELECTED] : When the message is selected
+     *
+     * @param chatChannelId The channel id for the messages
+     * @param state The state to update rest of the messages
+     *
+    * */
+    fun updateRestOfTheMessages(chatChannelId: String, state: Int) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateRestOfTheMessages(chatChannelId, state)
     }
 
     suspend fun getLocalMessage(messageId: String): Message? {
@@ -1208,10 +1309,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
         val downloadedImages = FireUtility.uploadItems(path, names, images)
         onComplete(downloadedImages)
-    }
-
-    fun sendReport(report: Report, onComplete: (task: Task<Void>) -> Unit) {
-        FireUtility.sendReport(report, onComplete)
     }
 
     fun sendFeedback(feedback: Feedback, onComplete: (task: Task<Void>) -> Unit) {
@@ -1279,6 +1376,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun insertProjectRequests(vararg projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertProjectRequests(projectRequest)
+    }
+
+    fun insertProjectRequests(requests: List<ProjectRequest>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertProjectRequests(requests)
     }
 
     fun insertSearchQuery(searchQuery: SearchQuery) = viewModelScope.launch (Dispatchers.IO) {
@@ -1387,8 +1488,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertProjectsWithoutProcessing(projects)
     }
 
-    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message) {
-        chatController.getLatestMessages(chatChannel, lastMessage)
+    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message, onComplete: () -> Unit) {
+        chatController.getLatestMessages(chatChannel, lastMessage, onComplete)
     }
 
     fun deleteNotificationById(id: String) = viewModelScope.launch (Dispatchers.IO) {
@@ -1453,8 +1554,84 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getReactiveComment(commentId)
     }
 
+    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
+        return repo.getReactiveChatChannel(chatChannelId)
+    }
+
+    fun getProjectSupporters(query: Query, projectId: String): Flow<PagingData<User>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = UserRemoteMediator(query, repo)
+        ) {
+            repo.userDao.getProjectSupporters("%$projectId%")
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    fun getUserSupporters(query: Query, userId: String): Flow<PagingData<User>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = UserRemoteMediator(query, repo)
+        ) {
+            repo.userDao.getUserSupporters("%$userId%")
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    fun getMyProjectRequests(query: Query): Flow<PagingData<ProjectRequest>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ProjectRequestRemoteMediator(query, repo)
+        ) {
+            repo.projectRequestDao.getMyProjectRequests(UserManager.currentUserId)
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    /**
+     * Remember to use the result in main thread
+     * */
+    fun getRequestByProject(project: Project, onComplete: (ProjectRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        onComplete(repo.getRequestByProject(project))
+    }
+
+    fun getCachedChatChannel(chatChannelId: String): ChatChannel? {
+        return chatChannelCache[chatChannelId]
+    }
+
+    fun putChatChannelToCache(channel: ChatChannel) {
+        chatChannelCache[channel.chatChannelId] = channel
+    }
+
+    fun getCachedCommentChannel(channelId: String): CommentChannel? {
+        return commentChannelCache[channelId]
+    }
+
+    fun putCommentChannelToCache(commentChannel: CommentChannel) {
+        commentChannelCache[commentChannel.commentChannelId] = commentChannel
+    }
+
+    fun getCachedComment(commentId: String): Comment? {
+        return commentCache[commentId]
+    }
+
+    fun insertCommentToCache(comment: Comment) {
+        commentCache[comment.commentId] = comment
+    }
+
+    fun getCachedUser(senderId: String): User? {
+        return userCache[senderId]
+    }
+
+    private val _currentForwardMessages = MutableLiveData<List<Message>>().apply { value = emptyList() }
+    val currentForwardMessages: LiveData<List<Message>> = _currentForwardMessages
+
+    fun setCurrentForwardMessages(messages: List<Message> = emptyList()) {
+        _currentForwardMessages.postValue(messages)
+    }
+
     companion object {
         private const val TAG = "MainViewModel"
+        const val MESSAGE_IDLE = -1
+        const val MESSAGE_SELECTED = 1
+        const val MESSAGE_READY = 0
     }
 
 }

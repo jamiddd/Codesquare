@@ -32,7 +32,6 @@
                 android:layout_height="wrap_content"
                 android:text="Random"
                 app:chipIcon="@drawable/ic_round_shuffle_24"
-                app:chipStrokeColor="?colorAccent"
                 app:chipStrokeWidth="1dp" />
 
             <com.google.android.material.chip.Chip
@@ -41,7 +40,6 @@
                 android:layout_height="wrap_content"
                 android:text="Near me"
                 app:chipIcon="@drawable/ic_round_location_on_18"
-                app:chipStrokeColor="?colorAccent"
                 app:chipStrokeWidth="1dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>

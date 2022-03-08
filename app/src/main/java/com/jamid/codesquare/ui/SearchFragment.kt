@@ -61,9 +61,6 @@ class SearchFragment: Fragment() {
         toolbar?.setOnClickListener {
             findNavController().navigateUp()
         }
-
-        Log.d(TAG, "SearchFragment")
-
     }
 
     companion object {

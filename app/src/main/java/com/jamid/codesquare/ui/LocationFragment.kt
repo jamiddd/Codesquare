@@ -57,7 +57,7 @@ class LocationFragment: Fragment() {
             if (isNetworkAvailable == true) {
                 progressBar?.show()
 
-                val cm = context!!.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                 //should check null because in airplane mode it will be null
                 val nc = cm.getNetworkCapabilities(cm.activeNetwork)
                 if (nc != null) {

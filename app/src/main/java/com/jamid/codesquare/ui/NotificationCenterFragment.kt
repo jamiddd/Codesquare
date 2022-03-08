@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.R
+import com.jamid.codesquare.TYPE
 import com.jamid.codesquare.adapter.viewpager.NotificationPagerAdapter
 import com.jamid.codesquare.databinding.FragmentNotificationCenterBinding
 import kotlinx.coroutines.delay
@@ -44,7 +45,7 @@ class NotificationCenterFragment: Fragment() {
 
         tabLayout.addTab(newTab)
 
-        val type = arguments?.getInt("type") ?: 0
+        val type = arguments?.getInt(TYPE) ?: 0
 
         TabLayoutMediator(tabLayout, binding.notificationPager) { t, pos ->
             when (pos) {
@@ -55,7 +56,7 @@ class NotificationCenterFragment: Fragment() {
         }.attach()
 
         viewLifecycleOwner.lifecycleScope.launch {
-            delay(300)
+            delay(500)
             binding.notificationPager.setCurrentItem(type, true)
         }
 

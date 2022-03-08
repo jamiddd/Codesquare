@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.jamid.codesquare.CHAT_CHANNEL
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
@@ -34,7 +35,7 @@ class ChatMediaFragment : Fragment() {
 
         val activity = requireActivity()
 
-        val chatChannel = arguments?.getParcelable<ChatChannel>(ARG_CHAT_CHANNEL) ?: return
+        val chatChannel = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL) ?: return
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
 
         binding.chatMediaPager.adapter = ChatMediaAdapter(chatChannel.chatChannelId, activity)
@@ -67,7 +68,13 @@ class ChatMediaFragment : Fragment() {
 
 
     companion object {
-        const val ARG_CHAT_CHANNEL = "ARG_CHAT_CHANNEL"
+        const val TAG = "ChatMediaFragment"
+
+        fun newInstance(bundle: Bundle)
+            = ChatMediaFragment().apply {
+                arguments = bundle
+        }
+
     }
 
 }

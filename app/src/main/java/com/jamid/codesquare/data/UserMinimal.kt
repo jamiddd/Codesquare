@@ -17,6 +17,13 @@ data class UserMinimal(
 ): Parcelable {
     constructor() : this("", "", "", "")
 
+    fun toUser(): User {
+        return User.newUser(userId, name, email = "").also {
+            it.photo = photo ?: ""
+            it.username = username
+        }
+    }
+
     @Exclude
     fun isEmpty() = userId.isBlank()
 }

@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/comment_bottom_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
     <LinearLayout
+        android:id="@+id/comment_bottom_linear_vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -17,15 +20,15 @@
             android:background="?android:attr/listDivider" />
 
         <com.google.android.gms.ads.AdView
-            xmlns:ads="http://schemas.android.com/apk/res-auto"
             android:id="@+id/adView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            ads:layout_constraintStart_toStartOf="parent"
-            ads:layout_constraintEnd_toEndOf="parent"
-            ads:layout_constraintBottom_toBottomOf="parent"
-            ads:adSize="BANNER"
-            ads:adUnitId="ca-app-pub-3940256099942544/6300978111"/>
+            android:visibility="gone"
+            app:adSize="BANNER"
+            app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
 
         <TextView
             android:id="@+id/replying_to_text"
@@ -33,13 +36,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/lightest_grey"
+            android:drawablePadding="16dp"
+            android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingTop="8dp"
             android:paddingEnd="16dp"
             android:paddingBottom="8dp"
-            android:text="Replying to"
+            android:text="@string/replying_to"
             android:visibility="gone"
             app:drawableEndCompat="@drawable/ic_round_close_24"
+            app:drawableStartCompat="@drawable/ic_reply"
             tools:visibility="visible" />
 
         <LinearLayout
@@ -71,15 +77,17 @@
                 android:layout_weight="1"
                 android:background="@drawable/chat_edittext_background"
                 android:ems="10"
-                android:hint="Write something here ..."
+                android:hint="@string/write_something_here"
+                android:importantForAutofill="no"
                 android:inputType="textMultiLine"
                 android:minHeight="48dp"
                 android:paddingStart="12dp"
                 android:paddingTop="8dp"
                 android:paddingEnd="12dp"
-                android:paddingBottom="8dp" />
+                android:paddingBottom="8dp"
+                android:textColorHint="#546E7A" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/comment_send_btn"
                 style="@style/AppTheme.Button.IconOnly"
                 android:layout_width="40dp"
@@ -88,9 +96,12 @@
                 android:layout_marginEnd="8dp"
                 android:layout_marginBottom="4dp"
                 android:backgroundTint="?colorAccent"
-                android:paddingLeft="8dp"
+                android:contentDescription="@string/comment_send_button_info"
+                android:paddingStart="8dp"
+                android:paddingEnd="0dp"
                 app:icon="@drawable/ic_round_arrow_forward_24"
-                app:iconTint="@color/white" />
+                app:iconTint="@color/white"
+                tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
         </LinearLayout>
 
     </LinearLayout>
