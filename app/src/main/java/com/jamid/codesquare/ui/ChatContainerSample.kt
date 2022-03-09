@@ -29,10 +29,11 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.tabs.TabLayout
 import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.DocumentAdapterSmall
+import com.jamid.codesquare.adapter.recyclerview.SmallDocumentsAdapter
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ChatContainerSampleLayoutBinding
+import com.jamid.codesquare.listeners.DocumentClickListener
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.MyMessageListener
 import com.jamid.codesquare.listeners.OptionClickListener
@@ -57,7 +58,7 @@ import kotlin.math.abs
  *
  * */
 @ExperimentalPagingApi
-class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener, MyMessageListener {
+class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener, MyMessageListener, DocumentClickListener {
 
     private lateinit var binding: ChatContainerSampleLayoutBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -84,7 +85,7 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
             ?: throw NullPointerException("Couldn't get documents directory.")
     }
     private val errorsList = MutableLiveData<List<Uri>>().apply { value = emptyList() }
-    private lateinit var documentAdapter: DocumentAdapterSmall
+    private lateinit var documentsAdapter: SmallDocumentsAdapter
     private lateinit var smallImagesAdapter: SmallImagesAdapter
     private var isChatFragment = true
 
@@ -214,9 +215,7 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
             }
         }
 
-        documentAdapter = DocumentAdapterSmall { _, p ->
-            viewModel.deleteChatUploadDocumentAtPosition(p)
-        }
+        documentsAdapter = SmallDocumentsAdapter(this)
 
         smallImagesAdapter = SmallImagesAdapter(this).apply {
             shouldShowCloseBtn = true
@@ -538,13 +537,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
     private fun setDocumentsRecycler(documents: List<Uri>) {
         if (documents.isNotEmpty()) {
+            binding.uploadingDocumentsRecycler.show()
             binding.uploadingDocumentsRecycler.apply {
-                adapter = documentAdapter
+                adapter = documentsAdapter
                 layoutManager =
                     LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             }
 
-            documentAdapter.submitList(getMetadataForFiles(documents))
+            documentsAdapter.submitList(getMetadataForFiles(documents))
         } else {
             binding.uploadingDocumentsRecycler.hide()
             binding.chatUploadHelperText.hide()
@@ -600,7 +600,6 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
     private fun setImagesRecycler(images: List<Uri>) {
         if (images.isNotEmpty()) {
             binding.uploadingImagesRecycler.show()
-            binding.chatUploadHelperText.show()
             binding.uploadingImagesRecycler.apply {
                 adapter = smallImagesAdapter
                 layoutManager =
@@ -1055,6 +1054,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
     private fun forward(messages: ArrayList<Message>) {
         navigate(ForwardFragment.TAG, bundleOf(MESSAGES to messages))
+    }
+
+    override fun onDocumentClick(view: View, metadata: Metadata) {
+
+    }
+
+    override fun onCloseBtnClick(view: View, metadata: Metadata, position: Int) {
+        chatViewModel.removeDocumentAtPosition(position)
     }
 
 }

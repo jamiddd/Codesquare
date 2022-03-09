@@ -38,7 +38,7 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Project">
+ <!--   <PreferenceCategory app:title="Project">
 
         <EditTextPreference
             app:key="project_expiry"
@@ -70,7 +70,7 @@
             app:summaryOn="Disable to download documents manually"
             app:title="Automatically download documents" />
 
-    </PreferenceCategory>
+    </PreferenceCategory>-->
 
     <PreferenceCategory app:title="Account">
 

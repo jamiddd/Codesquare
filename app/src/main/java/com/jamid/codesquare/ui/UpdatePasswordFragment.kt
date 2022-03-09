@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.google.firebase.auth.EmailAuthProvider
@@ -28,6 +29,12 @@ class UpdatePasswordFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        binding.primaryAction.disable()
+
+        binding.oldPasswordText.editText?.doAfterTextChanged {
+            binding.primaryAction.isEnabled = !it.isNullOrBlank() && it.toString().isValidPassword()
+        }
 
         binding.primaryAction.setOnClickListener {
 
@@ -71,6 +78,8 @@ class UpdatePasswordFragment: Fragment() {
                         }
                     } else {
                         toast("Enter a valid password")
+                        binding.primaryAction.show()
+                        binding.updatePasswordProgress.hide()
                     }
                 } else {
                     toast("Enter your old password")

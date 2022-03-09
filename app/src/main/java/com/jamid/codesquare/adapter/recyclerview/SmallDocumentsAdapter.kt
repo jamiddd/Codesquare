@@ -5,8 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.data.Metadata
+import com.jamid.codesquare.listeners.DocumentClickListener
 
-class DocumentAdapterSmall(private val onRemoveClick: (v: View, position: Int) -> Unit): ListAdapter<Metadata, DocumentViewHolderSmall>(comparator) {
+class SmallDocumentsAdapter(private val documentClickListener: DocumentClickListener): ListAdapter<Metadata, DocumentViewHolderSmall>(comparator) {
 
     companion object {
         val comparator = object : DiffUtil.ItemCallback<Metadata>() {
@@ -21,7 +22,7 @@ class DocumentAdapterSmall(private val onRemoveClick: (v: View, position: Int) -
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DocumentViewHolderSmall {
-        return DocumentViewHolderSmall.newInstance(parent, onRemoveClick)
+        return DocumentViewHolderSmall.newInstance(parent, documentClickListener)
     }
 
     override fun onBindViewHolder(holder: DocumentViewHolderSmall, position: Int) {

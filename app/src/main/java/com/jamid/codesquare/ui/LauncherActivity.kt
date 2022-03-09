@@ -147,27 +147,26 @@ abstract class LauncherActivity : AppCompatActivity(){
         ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
 
+            val documents = mutableListOf<Uri>()
+
             val clipData = it.data?.clipData
 
             if (clipData != null) {
                 val count = clipData.itemCount
-
-                val documents = mutableListOf<Uri>()
-
                 for (i in 0 until count) {
                     val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { doc ->
-                        documents.add(doc)
+                    uri?.let { image ->
+                        documents.add(image)
                     }
                 }
-
-                viewModel.setChatUploadDocuments(documents)
-
             } else {
                 it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadDocuments(listOf(it1))
+                    documents.add(it1)
                 }
             }
+
+            viewModel.multipleDocumentsContainer.postValue(documents)
+
         }
     }
 

@@ -187,7 +187,6 @@
                 android:paddingTop="4dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="4dp"
-                android:text="One or more of the files to be uploaded is too big. Try uploading files of smaller size."
                 android:visibility="gone" />
 
             <LinearLayout

@@ -12,8 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Metadata
 import com.jamid.codesquare.getTextForSizeInBytes
+import com.jamid.codesquare.listeners.DocumentClickListener
 
-class DocumentViewHolderSmall(val view: View, val onClick: (view: View, position: Int) -> Unit): RecyclerView.ViewHolder(view) {
+class DocumentViewHolderSmall(val view: View, private val documentClickListener: DocumentClickListener): RecyclerView.ViewHolder(view) {
 
     private val name: TextView = view.findViewById(R.id.small_document_name)
     private val size: TextView = view.findViewById(R.id.small_document_size)
@@ -31,13 +32,17 @@ class DocumentViewHolderSmall(val view: View, val onClick: (view: View, position
         size.text = getTextForSizeInBytes(metadata.size)
 
         removeBtn.setOnClickListener {
-            onClick(it, layoutPosition)
+            documentClickListener.onCloseBtnClick(it, metadata, absoluteAdapterPosition)
+        }
+
+        view.setOnClickListener {
+            documentClickListener.onDocumentClick(it, metadata)
         }
     }
 
     companion object {
-        fun newInstance(parent: ViewGroup, onClick: (view: View, position: Int) -> Unit): DocumentViewHolderSmall {
-            return DocumentViewHolderSmall(LayoutInflater.from(parent.context).inflate(R.layout.document_layout_small, parent, false), onClick)
+        fun newInstance(parent: ViewGroup, documentClickListener: DocumentClickListener): DocumentViewHolderSmall {
+            return DocumentViewHolderSmall(LayoutInflater.from(parent.context).inflate(R.layout.document_layout_small, parent, false), documentClickListener)
         }
     }
 

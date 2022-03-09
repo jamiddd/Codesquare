@@ -28,6 +28,7 @@ import androidx.core.view.*
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
@@ -2873,6 +2874,41 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
             OPTION_18 -> {
                 viewModel.setCurrentImage(null)
+            }
+            OPTION_19 -> {
+
+            }
+            OPTION_20 -> {
+
+            }
+            OPTION_21 -> {
+
+            }
+            OPTION_22 -> {
+
+            }
+            OPTION_23 -> {
+                // log out
+                UserManager.logOut(this) {
+                    navController.navigate(R.id.loginFragment, null, slideRightNavOptions())
+                    viewModel.signOut {}
+                }
+            }
+            OPTION_24 -> {
+                // saved pr
+                navController.navigate(R.id.savedProjectsFragment, null, slideRightNavOptions())
+            }
+            OPTION_25 -> {
+                // archive
+                navController.navigate(R.id.archiveFragment, null, slideRightNavOptions())
+            }
+            OPTION_26 -> {
+                // requests
+                navController.navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
+            }
+            OPTION_27 -> {
+                // settings
+                navController.navigate(R.id.settingsFragment, null, slideRightNavOptions())
             }
         }
     }

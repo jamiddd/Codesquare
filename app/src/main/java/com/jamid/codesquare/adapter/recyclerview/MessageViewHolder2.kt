@@ -473,10 +473,17 @@ class MessageViewHolder2<T: Any>(
             binding.documentDownloadBtn.hide()
             binding.documentDownloadProgress.hide()
         } else {
-            binding.documentDownloadBtn.show()
-            binding.documentDownloadProgress.hide()
+            /*binding.documentDownloadBtn.show()
+            binding.documentDownloadProgress.hide()*/
 
-            val sharedPreference = PreferenceManager.getDefaultSharedPreferences(view.context)
+            binding.documentDownloadBtn.disappear()
+            binding.documentDownloadProgress.show()
+
+            myMessageListener.onMessageNotDownloaded(message) {
+                bind(it)
+            }
+
+            /*val sharedPreference = PreferenceManager.getDefaultSharedPreferences(view.context)
             val automaticDownload = sharedPreference?.getBoolean("chat_download", false)
             if (automaticDownload != null && automaticDownload) {
                 binding.documentDownloadBtn.disappear()
@@ -485,7 +492,7 @@ class MessageViewHolder2<T: Any>(
                 myMessageListener.onMessageNotDownloaded(message) {
                     bind(it)
                 }
-            }
+            }*/
 
 
             binding.documentDownloadBtn.setOnClickListener {
@@ -572,11 +579,11 @@ class MessageViewHolder2<T: Any>(
         val timeText = getTextForChatTime(time)
         tv.text = timeText
 
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)
+       /* val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)
         val showChatTime = sharedPreferences.getBoolean("show_chat_time", true)
         if (!showChatTime) {
             tv.hide()
-        }
+        }*/
 
     }
 

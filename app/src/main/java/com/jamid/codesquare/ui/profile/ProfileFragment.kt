@@ -18,15 +18,19 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.ProfilePagerAdapter
+import com.jamid.codesquare.data.Option
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.databinding.UserInfoLayoutBinding
+import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.OptionsFragment
 import com.jamid.codesquare.ui.ProjectListFragment
 
 @ExperimentalPagingApi
-class ProfileFragment: Fragment() {
+class ProfileFragment: Fragment(), OptionClickListener {
 
     private lateinit var binding: FragmentProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -39,43 +43,26 @@ class ProfileFragment: Fragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        val user = arguments?.getParcelable<User>("user")
-        if (user == null) {
-            inflater.inflate(R.menu.profile_menu, menu)
-        } else {
-            inflater.inflate(R.menu.other_profile_menu, menu)
-        }
+        inflater.inflate(R.menu.profile_menu, menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         val user = arguments?.getParcelable<User>("user")
+
         return when (item.itemId) {
-            R.id.log_out -> {
-                UserManager.logOut(requireContext()) {
-                    findNavController().navigate(R.id.action_profileFragment_to_loginFragment, null, slideRightNavOptions())
-                    viewModel.signOut {}
+            R.id.profile_option -> {
+                val (choices, icons) = if (user == null || user.id == UserManager.currentUserId) {
+                    arrayListOf(OPTION_24, OPTION_25, OPTION_26, OPTION_27, OPTION_23) to arrayListOf(R.drawable.ic_saved_projects, R.drawable.ic_archives, R.drawable.ic_request, R.drawable.ic_setting, R.drawable.ic_signout)
+                } else {
+                    arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_report)
                 }
-                true
-            }
-            R.id.saved_projects -> {
-                findNavController().navigate(R.id.action_profileFragment_to_savedProjectsFragment, null, slideRightNavOptions())
-                true
-            }
-            R.id.archived_projects -> {
-                findNavController().navigate(R.id.action_profileFragment_to_archiveFragment, null, slideRightNavOptions())
-                true
-            }
-            R.id.my_requests -> {
-                findNavController().navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
-                true
-            }
-            R.id.settings -> {
-                findNavController().navigate(R.id.action_profileFragment_to_settingsFragment, null, slideRightNavOptions())
-                true
-            }
-            R.id.report_user -> {
-                findNavController().navigate(R.id.action_profileFragment_to_reportFragment, bundleOf("contextObject" to user), slideRightNavOptions())
+
+                viewModel.setCurrentFocusedUser(user)
+
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, choices, icons, this)
+                (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+
                 true
             }
             else -> true
@@ -307,6 +294,39 @@ class ProfileFragment: Fragment() {
 
     companion object {
         const val TAG = "ProfileFragment"
+    }
+
+    override fun onOptionClick(option: Option) {
+        val user = arguments?.getParcelable<User>("user")
+        (activity as MainActivity).optionsFragment?.dismiss()
+        when (option.item) {
+            OPTION_14 -> {
+                findNavController().navigate(R.id.reportFragment, bundleOf(CONTEXT_OBJECT to user), slideRightNavOptions())
+            }
+            OPTION_23 -> {
+                // log out
+                UserManager.logOut(requireContext()) {
+                    findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
+                    viewModel.signOut {}
+                }
+            }
+            OPTION_24 -> {
+                // saved pr
+                findNavController().navigate(R.id.savedProjectsFragment, null, slideRightNavOptions())
+            }
+            OPTION_25 -> {
+                // archive
+                findNavController().navigate(R.id.archiveFragment, null, slideRightNavOptions())
+            }
+            OPTION_26 -> {
+                // requests
+                findNavController().navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
+            }
+            OPTION_27 -> {
+                // settings
+                findNavController().navigate(R.id.settingsFragment, null, slideRightNavOptions())
+            }
+        }
     }
 
 }

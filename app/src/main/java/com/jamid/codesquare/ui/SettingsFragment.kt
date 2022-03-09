@@ -176,7 +176,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setProjectSection() {
-        val expiryS = sharedPreference.getString(PROJECT_EXPIRY, "0")
+        /*val expiryS = sharedPreference.getString(PROJECT_EXPIRY, "0")
         val projectExpiry = findPreference<EditTextPreference>(PROJECT_EXPIRY)
         if (expiryS != "0") {
             projectExpiry?.setDefaultValue(expiryS)
@@ -196,8 +196,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
             }
             true
-        }
-
+        }*/
     }
 
     private fun setLocationSection() {
@@ -279,7 +278,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setChatSection() {
-        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
+       /* val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
 
         val showChatTime = findPreference<SwitchPreferenceCompat>("chat_time")
         showChatTime?.setOnPreferenceChangeListener { _, newValue ->
@@ -305,7 +304,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        automaticDownload?.setDefaultValue(sharedPreferences?.getBoolean("chat_download", false))
+        automaticDownload?.setDefaultValue(sharedPreferences?.getBoolean("chat_download", false))*/
 
     }
 
