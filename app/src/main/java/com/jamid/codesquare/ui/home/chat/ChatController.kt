@@ -156,6 +156,9 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
                 }
 
                 if (querySnapshot != null && !querySnapshot.isEmpty) {
+
+                    Log.d(TAG, "setChannelMessagesListener: NEW messages received")
+
                     val messages = querySnapshot.toObjects(Message::class.java)
                     val imagesDir = mContext.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
                     val documentsDir =  mContext.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -168,7 +171,6 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
                         if (viewModel is MainViewModel) {
                             viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
                         }
-
                     }
                 }
             }
@@ -182,6 +184,7 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
                 if (it.isSuccessful) {
                     val querySnapshot = it.result
                     if (!querySnapshot.isEmpty) {
+
                         val contributors = querySnapshot.toObjects(User::class.java)
                         if (viewModel is ChatViewModel) {
                             viewModel.insertUsers(*contributors.toTypedArray())

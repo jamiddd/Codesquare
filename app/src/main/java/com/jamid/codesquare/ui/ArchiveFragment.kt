@@ -26,6 +26,12 @@ class ArchiveFragment: PagerListFragment<Project, PostViewHolder>() {
             viewModel.getArchivedProjects(query)
         }
 
+        binding.pagerRefresher.setOnRefreshListener {
+            getItems{
+                viewModel.getArchivedProjects(query)
+            }
+        }
+
     }
 
 

@@ -172,7 +172,8 @@ class ChatDetailFragment: Fragment() {
             if (currentFocusedUser != null) {
                 val optionsListPair = getFilteredOptionsList(currentFocusedUser)
                 if (optionsListPair.first.isNotEmpty()) {
-                    OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second).show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+                    (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second)
+                    (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
                 }
             }
         }

@@ -27,6 +27,8 @@ import com.facebook.drawee.generic.RoundingParams
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.snackbar.BaseTransientBottomBar
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallDocumentsAdapter
@@ -69,6 +71,7 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
     private lateinit var toolbar: MaterialToolbar
     private var isSingleSelectedMessage = false
     private var currentMessage: Message? = null
+    private var isInProgressMode = false
 
     private val chatViewModelFactory: ChatViewModelFactory by lazy {
         ChatViewModelFactory(
@@ -397,9 +400,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                     chatViewModel.disableSelectMode(chatChannel.chatChannelId)
                 }
             } else {
-                setNavigation {
-                    cleanUp()
-                    findNavController().navigateUp()
+
+                if (!isInProgressMode) {
+                    setNavigation {
+                        cleanUp()
+                        findNavController().navigateUp()
+                    }
+                } else {
+                    toast("Upload in progress, please wait for a while")
                 }
             }
         } else {
@@ -452,9 +460,8 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
         val options = arrayListOf(OPTION_8, OPTION_9)
         val icons = arrayListOf(R.drawable.ic_image_coloured, R.drawable.ic_file)
 
-        (activity as MainActivity).optionsFragment = OptionsFragment.newInstance("Upload", options, icons)
-
         binding.addMediaBtn.setOnClickListener {
+            (activity as MainActivity).optionsFragment = OptionsFragment.newInstance("Upload", options, icons)
             (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
         }
 
@@ -546,13 +553,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
             documentsAdapter.submitList(getMetadataForFiles(documents))
         } else {
+            isInProgressMode = false
             binding.uploadingDocumentsRecycler.hide()
             binding.chatUploadHelperText.hide()
+            showChatInput()
         }
     }
 
     private fun getMetadataForFiles(objects: List<Uri>, isImages: Boolean = false): List<Metadata> {
-        // there are documents
         val items = mutableListOf<Metadata>()
         for (item in objects) {
             val cursor = requireActivity().contentResolver.query(item, null, null, null, null)
@@ -562,10 +570,10 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                 val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
 
-                val name = cursor?.getString(nameIndex ?: 0)
+                val name = cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $item is null")
 
-                val size = (cursor?.getLong(sizeIndex ?: 0) ?: 0)
-                cursor?.close()
+                val size = (cursor.getLong(sizeIndex ?: 0))
+                cursor.close()
 
                 if (isImages) {
                     // if image size is greater than 2 mb
@@ -583,10 +591,8 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                     }
                 }
 
-                val file = File(documentsDir, randomId())
-                val ext = file.extension
-
-                val metadata = Metadata(size, name.orEmpty(), "", ext, 0, 0)
+                val ext = "." + name.split('.').last()
+                val metadata = Metadata(size, name, item.toString(), ext, 0, 0)
 
                 items.add(metadata)
             } catch (e: Exception) {
@@ -608,8 +614,10 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
             smallImagesAdapter.submitList(images.map { it.toString() })
         } else {
+            isInProgressMode = false
             binding.uploadingImagesRecycler.hide()
             binding.chatUploadHelperText.hide()
+            showChatInput()
         }
     }
 
@@ -678,19 +686,20 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
             var helperText = ""
 
             if (images.isNotEmpty()) {
+                binding.chatUploadHelperText.show()
                 helperText = "Uploading images ..."
                 listOfMessages.addAll(getListOfMediaMessages(images, true))
             }
 
             if (documents.isNotEmpty()) {
+                binding.chatUploadHelperText.show()
                 helperText = "Uploading documents ..."
-                listOfMessages.addAll(getListOfMediaMessages(images, false))
+                listOfMessages.addAll(getListOfMediaMessages(documents, false))
             }
 
             if (listOfMessages.isNotEmpty()) {
                 binding.uploadProgress.show()
                 binding.chatUploadHelperText.text = helperText
-                binding.chatUploadHelperText.show()
 
                 // check if there is any text present
                 if (!binding.chatInputLayout.text.isNullOrBlank()) {
@@ -712,6 +721,10 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                     )
                     listOfMessages.add(message)
                 }
+
+                hideChatInput()
+
+                isInProgressMode = true
 
                 chatViewModel.sendMessagesSimultaneously(
                     imagesDir,
@@ -743,6 +756,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
             chatViewModel.setReplyMessage(null)
         }
 
+    }
+
+    private fun hideChatInput() {
+        binding.chatInputContainer.hide()
+    }
+
+    private fun showChatInput() {
+        binding.chatInputContainer.show()
     }
 
     /**
@@ -914,6 +935,21 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
         // if the message is not downloaded, it cannot be selected
         if (!message.isDownloaded) {
+            Snackbar.make(binding.root, "To select this message, please download first.", Snackbar.LENGTH_LONG)
+                .addCallback(object: BaseTransientBottomBar.BaseCallback<Snackbar>() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    super.onDismissed(transientBottomBar, event)
+                    if (chatViewModel.isSelectModeOn) {
+                        if (binding.chatOptionRoot.translationY != 0f) {
+                            binding.chatOptionRoot.slideReset()
+                        }
+                    } else {
+                        if (binding.chatBottomRoot.translationY != 0f) {
+                            binding.chatBottomRoot.slideReset()
+                        }
+                    }
+                }
+            }).show()
             return
         }
 
@@ -991,6 +1027,7 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
     }
 
     fun navigate(tag: String, bundle: Bundle) {
+        isInProgressMode = false
         val fragment = getFragmentByTag(tag, bundle)
         hideKeyboard()
         childFragmentManager.beginTransaction()

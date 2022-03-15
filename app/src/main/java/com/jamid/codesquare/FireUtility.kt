@@ -282,37 +282,12 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
-    /*suspend fun updateUser(userId: String, changes: Map<String, Any?>): Result<Map<String, Any?>> {
-        val ref = Firebase.firestore.collection("users").document(userId)
-        return try {
-            val task = ref.update(changes)
-            task.await()
-            Result.Success(changes)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
-
     fun checkIfUserNameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
         val query = Firebase.firestore.collection("users")
             .whereEqualTo("username", username)
 
         getQuerySnapshot(query, onComplete)
     }
-
-    /*fun getLatestUserData(onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
-        val uid = Firebase.auth.currentUser?.uid
-        if (uid != null) {
-            val ref = Firebase.firestore.collection("users").document(uid)
-            getDocument(ref, onComplete)
-        } else {
-            Log.d(TAG, "No user id found")
-        }
-    }
-
-    fun signOut() {
-        Firebase.auth.signOut()
-    }*/
 
     fun likeProject(project: Project, onComplete: (task: Task<Void>) -> Unit) {
         val currentUser = UserManager.currentUser
@@ -1127,7 +1102,7 @@ object FireUtility {
         val lastMessage = listOfMessages.last()
         val isLastMessageTextMsg = lastMessage.type == text
 
-        val chatChannelRef = db.collection("chatChannels").document(chatChannelId)
+        val chatChannelRef = db.collection(CHAT_CHANNELS).document(chatChannelId)
 
         val sample = listOfMessages.first()
         val updatedList = if (isLastMessageTextMsg && listOfMessages.size > 1) {
@@ -2083,6 +2058,13 @@ object FireUtility {
         batch.update(commentChannelRef, changes)
         batch.update(chatChannelRef, changes)
 
+        val currentUserChanges = mapOf(
+            "archivedProjects" to FieldValue.arrayUnion(project.id),
+            "projects" to FieldValue.arrayRemove(project.id)
+        )
+
+        batch.update(currentUserRef, currentUserChanges)
+
         // committing the changes
         batch.commit().addOnCompleteListener(onComplete)
     }
@@ -2096,9 +2078,10 @@ object FireUtility {
         val currentUserId = UserManager.currentUserId
         val db = Firebase.firestore
 
+        val currentUserRef = db.collection(USERS).document(currentUserId)
+
         val projectRef = db.collection(PROJECTS).document(project.id)
-        val archivedProjectRef =
-            db.collection(USERS).document(currentUserId).collection(ARCHIVE).document(project.id)
+        val archivedProjectRef = currentUserRef.collection(ARCHIVE).document(project.id)
         val commentChannelRef = db.collection(COMMENT_CHANNELS).document(project.commentChannel)
         val chatChannelRef = db.collection(CHAT_CHANNELS).document(project.chatChannel)
 
@@ -2112,6 +2095,13 @@ object FireUtility {
         val changes = mapOf(ARCHIVED to false)
         batch.update(commentChannelRef, changes)
         batch.update(chatChannelRef, changes)
+
+        val currentUserChanges = mapOf(
+            "archivedProjects" to FieldValue.arrayRemove(project.id),
+            "projects" to FieldValue.arrayUnion(project.id)
+        )
+
+        batch.update(currentUserRef, currentUserChanges)
 
         batch.commit().addOnCompleteListener(onComplete)
 

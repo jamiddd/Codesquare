@@ -74,7 +74,7 @@ object LocationProvider {
 
     }
 
-    private fun isLocationEnabled(context: Context): Boolean {
+    fun isLocationEnabled(context: Context): Boolean {
         val locationManager: LocationManager =
             context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager.isProviderEnabled(
@@ -321,6 +321,10 @@ object LocationProvider {
                 it.exception?.localizedMessage?.toString()?.let { it1 -> Log.e(TAG, it1) }
             }
         }
+    }
+
+    fun requestToEnableLocation() {
+
     }
 
 

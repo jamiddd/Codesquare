@@ -1,11 +1,9 @@
 package com.jamid.codesquare.ui.profile
 
-import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
-import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
@@ -19,17 +17,15 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
 import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
-import com.jamid.codesquare.ui.MainActivity
-import com.jamid.codesquare.ui.OptionsFragment
+import com.jamid.codesquare.ui.DefaultProfileImageSheet
 
 @ExperimentalPagingApi
 class EditProfileFragment: Fragment() {
 
     private lateinit var binding: FragmentEditProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var profileImage: String? = null
+    private var profileImage: String = userImages.random()
     private var loadingDialog: AlertDialog? = null
-    private var firstTime: Boolean = true
     private lateinit var currentUser: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,42 +59,19 @@ class EditProfileFragment: Fragment() {
                     .setCancelable(false)
                     .show()
 
-                val changes = mutableMapOf<String, Any?>()
+                val changes = mutableMapOf(
+                    "name" to binding.nameText.editText?.text.toString(),
+                    "about" to binding.aboutText.editText?.text.toString(),
+                    "tag" to binding.tagText.editText?.text.toString(),
+                    "interests" to getInterests(),
+                    "photo" to  profileImage
+                )
 
-                val name = binding.nameText.editText?.text.toString()
-
-                if (currentUser.name != name) {
-                    changes["name"] = name
-                    updatedUser.name = name
-                }
-
-                val about = binding.aboutText.editText?.text.toString()
-
-                if (currentUser.about != about) {
-                    changes["about"] = about
-                    updatedUser.about = about
-                }
-
-                val tag = binding.tagText.editText?.text.toString()
-
-                if (currentUser.tag != tag) {
-                    changes["tag"] = tag
-                    updatedUser.tag = tag
-                }
-
-                val interests = getInterests()
-
-                if (currentUser.interests != interests) {
-                    changes["interests"] = interests
-                    updatedUser.interests = interests
-                }
-
-                if (currentUser.photo != profileImage) {
-                    changes["photo"] = profileImage
-                    if (profileImage != null) {
-                        updatedUser.photo = profileImage!!
-                    }
-                }
+                updatedUser.name = changes["name"] as String
+                updatedUser.about = changes["about"] as String
+                updatedUser.tag = changes["tag"] as String
+                updatedUser.interests = getInterests()
+                updatedUser.photo = profileImage
 
                 if (currentUser.username != username) {
                     viewModel.checkIfUsernameTaken(username) {
@@ -208,20 +181,9 @@ class EditProfileFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val activity = requireActivity() as MainActivity
-
         currentUser = UserManager.currentUser
 
-        val mainProgress = activity.findViewById<ProgressBar>(R.id.main_progress_bar)
-
-        binding.userImg.setOnClickListener {
-
-            val options = arrayListOf(OPTION_17, OPTION_18)
-            val icons = arrayListOf(R.drawable.ic_image_coloured, R.drawable.ic_remove)
-
-            activity.optionsFragment = OptionsFragment.newInstance(options = options, icons = icons)
-            activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)
-        }
+        binding.userImg.setOnClickListener(onImageUpdateClick)
 
         // setting views on load
         profileImage = currentUser.photo
@@ -232,29 +194,18 @@ class EditProfileFragment: Fragment() {
         binding.aboutText.editText?.setText(currentUser.about)
         addInterests(currentUser.interests)
 
-        viewModel.currentImage.observe(viewLifecycleOwner) {
-            mainProgress.show()
-            if (it != null) {
-                viewModel.uploadImage(currentUser.id, it) { downloadUri ->
-                    mainProgress.hide()
-                    if (downloadUri != null) {
-                        profileImage = downloadUri.toString()
-                        binding.userImg.setImageURI(profileImage)
-                    } else {
-                        profileImage = null
-                        binding.userImg.setImageURI(profileImage)
-                        toast("Something went wrong while uploading the profile picture.")
-                    }
-                }
-            } else {
-                mainProgress.hide()
-                profileImage = null
-                binding.userImg.setImageURI(profileImage)
+        viewModel.currentImage.observe(viewLifecycleOwner) { image ->
+            onNewImageOrNullSet(image)
 
-                if (firstTime) {
-                    firstTime = false
-                    profileImage = currentUser.photo
-                    binding.userImg.setImageURI(profileImage)
+            if (image != null) {
+
+                setProfileImage(image)
+
+                if (image.authority?.contains("googleapis.com") == true) {
+                    // already uploaded image, no need to upload
+                    onImageUploaded()
+                } else {
+                    uploadImage(image)
                 }
             }
         }
@@ -288,6 +239,74 @@ class EditProfileFragment: Fragment() {
 
     }
 
+    private fun uploadImage(image: Uri) {
+        viewModel.uploadImage(UserManager.currentUserId, image) { downloadUri ->
+            onImageUploaded()
+            if (downloadUri != null) {
+                setProfileImage(downloadUri.toString())
+            } else {
+                onImageUploadFailed(Exception("Image could not be uploaded"))
+            }
+        }
+    }
+
+    private fun removeImage() {
+        profileImage = userImages.random()
+        setProfileImage(profileImage)
+    }
+
+    private fun onImageUploadFailed(e: Exception) {
+        removeImage()
+        toast(e.message.toString())
+    }
+
+
+    private fun onImageUploaded() {
+        binding.userImageProgress.hide()
+//        binding.imageUpdateNextBtn.enable()
+//        binding.skipImageUpdateBtn.enable()
+        binding.userImg.colorFilter = null
+    }
+
+    private fun onNewImageOrNullSet(image: Uri? = null) {
+        val currentUser = UserManager.currentUser
+
+        val colorFilter =  ContextCompat.getColor(
+            requireContext(),
+            R.color.darkest_transparent
+        )
+
+        // show that there is some progress
+        binding.userImageProgress.show()
+        binding.userImg.setColorFilter(colorFilter)
+
+        // disable actions because a work is in progress
+//        binding.imageUpdateNextBtn.disable()
+//        binding.skipImageUpdateBtn.disable()
+
+        // if there was no image
+        if (image == null) {
+            // update UI
+            binding.userImg.colorFilter = null
+            binding.userImageProgress.hide()
+//            binding.imageUpdateNextBtn.enable()
+//            binding.skipImageUpdateBtn.enable()
+
+            // setting the already existing image as profile image
+            setProfileImage(currentUser.photo)
+        }
+
+    }
+
+    private fun setProfileImage(image: Uri) {
+        setProfileImage(image.toString())
+    }
+
+    private fun setProfileImage(image: String) {
+        profileImage = image
+        binding.userImg.setImageURI(profileImage)
+    }
+
     private fun addInterests(interests: List<String>) {
         if (binding.interestsGroup.childCount != 1) {
             binding.interestsGroup.removeViews(0, binding.interestsGroup.childCount - 1)
@@ -295,6 +314,11 @@ class EditProfileFragment: Fragment() {
         for (interest in interests) {
             addInterest(interest)
         }
+    }
+
+    private val onImageUpdateClick = View.OnClickListener {
+        val fragment = DefaultProfileImageSheet()
+        fragment.show(requireActivity().supportFragmentManager, "DefaultProfileImage")
     }
 
     private fun addInterest(interest: String) {

@@ -130,8 +130,10 @@ class MessageViewHolder2<T: Any>(
             myMessageListener.onMessageContextClick(message.copy())
 
             // updating ui changes to cover database delay
-            message.state = 1 - abs(message.state)
-            updateMessageUi(message.state)
+            if (message.isDownloaded) {
+                message.state = 1 - abs(message.state)
+                updateMessageUi(message.state)
+            }
             true
         }
 
@@ -529,11 +531,10 @@ class MessageViewHolder2<T: Any>(
             documentContainer.setOnClickListener {
                 view.performClick()
             }
+        }
 
-            documentContainer.setOnLongClickListener {
-                view.performLongClick()
-            }
-
+        documentContainer.setOnLongClickListener {
+            view.performLongClick()
         }
 
     }

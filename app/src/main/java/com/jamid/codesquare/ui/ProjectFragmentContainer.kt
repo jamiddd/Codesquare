@@ -13,6 +13,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.ToolbarAdjustment
 import com.jamid.codesquare.databinding.ProjectFragmentContainerBinding
 
 @ExperimentalPagingApi
@@ -34,18 +35,27 @@ class ProjectFragmentContainer: Fragment() {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         if (project.isMadeByMe) {
-            inflater.inflate(R.menu.project_menu, menu)
+            inflater.inflate(R.menu.project_frag_menu, menu)
         }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.edit_project -> {
-                findNavController().navigate(
-                    R.id.action_projectFragment_to_updateProjectFragment,
-                    bundleOf(PROJECT to project),
-                    slideRightNavOptions()
-                )
+            R.id.project_menu_option -> {
+                viewModel.setCurrentFocusedProject(project)
+
+                val option = if (project.isArchived) {
+                    OPTION_13
+                } else {
+                    OPTION_12
+                }
+
+                val options = arrayListOf(OPTION_15, option)
+                val icons = arrayListOf(R.drawable.ic_edit, R.drawable.ic_round_archive_24)
+
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons)
+                (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -71,8 +81,10 @@ class ProjectFragmentContainer: Fragment() {
             toolbar.title = project.name
         }
 
+        val initialImagePos = arguments?.getInt("image_pos") ?: 0
+
         if (childFragmentManager.backStackEntryCount == 0) {
-            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project))
+            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project, TITLE to project.name, "image_pos" to initialImagePos))
             childFragmentManager.beginTransaction()
                 .add(binding.projectFragContainer.id, frag, ProjectFragment.TAG)
                 .addToBackStack(ProjectFragment.TAG)
@@ -92,8 +104,13 @@ class ProjectFragmentContainer: Fragment() {
             isPrimaryFragment = childFragmentManager.backStackEntryCount == 1
             setJoinBtn()
 
+
             val topFragment = childFragmentManager.fragments.lastOrNull()
             if (topFragment != null) {
+                setToolbarForFragment(topFragment)
+            }
+
+            /*if (topFragment != null) {
                 when (topFragment) {
                     is ProjectContributorsFragment -> {
                         toolbar.title = "Contributors"
@@ -110,7 +127,7 @@ class ProjectFragmentContainer: Fragment() {
                         }
                     }
                 }
-            }
+            }*/
 
             updateNavigation()
 
@@ -176,7 +193,10 @@ class ProjectFragmentContainer: Fragment() {
                     viewModel.getRequestByProject(project) { projectRequest ->
                         if (projectRequest != null) {
                             setOnClickListener {
-                                activity.onProjectUndoClick(project, projectRequest)
+                                activity.onProjectUndoClick(project, projectRequest) {
+                                    project = it
+                                    setJoinBtn()
+                                }
                             }
                         }
                     }
@@ -188,13 +208,64 @@ class ProjectFragmentContainer: Fragment() {
 
                     setOnClickListener {
                         flagForSnackbar = true
-                        activity.onProjectJoinClick(project)
+                        activity.onProjectJoinClick(project) {
+                            project = it
+                            setJoinBtn()
+                        }
                     }
                 }
             }
         }
     }
 
+
+    /**
+     * This function assumes that a title is provided in the fragment arguments for all child fragments
+     * for a unified design structure
+     * */
+    private fun setToolbarForFragment(fragment: Fragment) {
+
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)!!
+        val args = fragment.arguments
+
+        if (args != null) {
+            val title = args.getString(TITLE)
+            val subtitle = args.getString(SUB_TITLE)
+
+            toolbar.title = title
+            toolbar.subtitle = subtitle
+        }
+
+       /* when (fragment) {
+            is ProjectFragment -> {
+
+            }
+            is ProjectContributorsFragment -> {
+
+            }
+            is TagFragment -> {
+
+            }
+        }*/
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * This function assumes that title and/or subtitle will be provided in the bundle for any particular
+     * child fragment of this current fragment
+     * */
     fun navigate(tag: String, bundle: Bundle = bundleOf()) {
         val fragment = getFragmentByTag(tag, bundle)
         hideKeyboard()

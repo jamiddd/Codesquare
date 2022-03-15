@@ -85,9 +85,10 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/report_images_recycler"
         android:layout_width="0dp"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:clipToPadding="false"
+        android:minHeight="100dp"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
         android:visibility="gone"
@@ -96,5 +97,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/report_reason_text"
         tools:itemCount="1"
-        tools:listitem="@layout/small_image_item" />
+        tools:listitem="@layout/small_image_item"
+        tools:visibility="visible" />
 </androidx.constraintlayout.widget.ConstraintLayout>

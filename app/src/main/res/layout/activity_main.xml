@@ -10,7 +10,9 @@
         android:id="@+id/main_appbar"
         style="@style/AppTheme.AppBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        tools:visibility="visible">
 
         <com.google.android.material.appbar.CollapsingToolbarLayout
             android:id="@+id/main_collapse"
@@ -40,7 +42,9 @@
                 android:elevation="0dp"
                 app:layout_collapseMode="pin"
                 app:logo="@drawable/ic_collab_logo_small"
-                app:menu="@menu/generic_menu" />
+                app:menu="@menu/generic_menu"
+                app:subtitleCentered="true"
+                app:titleCentered="true" />
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/secondary_toolbar"
@@ -143,7 +147,7 @@
                 android:text="@string/replying_to"
                 android:visibility="gone"
                 app:drawableEndCompat="@drawable/ic_round_close_24"
-                app:drawableStartCompat="@drawable/ic_reply"
+                app:drawableStartCompat="@drawable/ic_round_reply_24"
                 tools:visibility="visible" />
 
             <LinearLayout

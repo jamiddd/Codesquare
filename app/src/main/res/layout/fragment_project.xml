@@ -375,7 +375,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@+id/archive_project_btn"
+                app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/comments_header"
                 tools:visibility="gone" />
 
@@ -394,45 +394,6 @@
                 app:lottie_loop="true"
                 tools:layout_editor_absoluteX="96dp"
                 tools:layout_editor_absoluteY="243dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/archive_project_btn"
-                style="@style/AppTheme.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/archive_project"
-                android:textColor="@color/error_color"
-                android:visibility="gone"
-                app:cornerRadius="8dp"
-                app:icon="@drawable/ic_round_archive_24"
-                app:iconTint="@color/error_color"
-                app:layout_constraintBottom_toTopOf="@id/archive_project_info"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/projects_last_comment"
-                app:rippleColor="@color/error_color_background"
-                app:strokeColor="@color/error_color"
-                app:strokeWidth="1dp"
-                tools:layout_editor_absoluteX="196dp"
-                tools:layout_editor_absoluteY="685dp"
-                tools:visibility="visible" />
-
-            <TextView
-                android:id="@+id/archive_project_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="16dp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/archive_project_btn"
-                tools:layout_editor_absoluteY="685dp"
-                tools:text="You can un-archive the project later."
-                tools:visibility="visible" />
 
             <TextView
                 android:id="@+id/remove_ad_btn"

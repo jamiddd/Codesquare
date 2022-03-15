@@ -71,7 +71,7 @@ class ReportFragment: Fragment() {
                         is Result.Success -> {
                             val project = it.data
                             val commentByText = "Comment by " + project.creator.name
-                            setContextUi(project.images.first(), commentByText)
+                            setContextUi(contextObject.sender.photo, commentByText)
                         }
                         null -> Log.w(TAG, "Something went wrong while trying to fetch project with id: ${contextObject.projectId}")
                     }

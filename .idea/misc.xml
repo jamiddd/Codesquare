@@ -79,7 +79,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_balloon_right.xml" value="0.4" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_bottom_layout.xml" value="0.4" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_channel_item.xml" value="0.33" />
-        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_container_sample_layout.xml" value="0.264" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_container_sample_layout.xml" value="0.2" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/chat_option_layout.xml" value="0.72" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/circle_image_layout.xml" value="0.30925925925925923" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/comment_bottom_layout.xml" value="0.5" />
@@ -87,7 +87,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/comment_top_layout.xml" value="0.16" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/custom_btn.xml" value="0.22407407407407406" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/custom_post_ad.xml" value="0.4" />
-        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/default_profile_image_sheet.xml" value="0.5" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/default_profile_image_sheet.xml" value="0.264" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/document_layout.xml" value="0.264" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/document_layout_small.xml" value="0.6" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/drawee_view_background.xml" value="0.3197463768115942" />
@@ -132,7 +132,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_project.xml" value="0.264" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_project_contributors.xml" value="0.2874331550802139" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_projects.xml" value="0.32407407407407407" />
-        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_report.xml" value="0.4" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_report.xml" value="0.33101851851851855" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_search.xml" value="0.176" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_search_projects.xml" value="0.2" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/fragment_search_users.xml" value="0.34629629629629627" />
@@ -211,6 +211,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/notifications_menu.xml" value="0.3314814814814815" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/other_profile_menu.xml" value="0.34629629629629627" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/profile_menu.xml" value="0.32407407407407407" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/project_frag_menu.xml" value="0.22407407407407406" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/project_menu.xml" value="0.1527777777777778" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/search_menu.xml" value="0.1726851851851852" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/menu/search_result_menu.xml" value="0.20925925925925926" />

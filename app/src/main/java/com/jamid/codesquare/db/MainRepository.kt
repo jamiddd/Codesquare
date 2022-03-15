@@ -578,6 +578,10 @@ class MainRepository(private val db: CodesquareDatabase) {
         return projectRequestDao.getProjectRequestByProject(project.id)
     }
 
+    suspend fun disableLocationBasedProjects() {
+        projectDao.disableLocationBasedProjects()
+    }
+
     companion object {
 
         private const val TAG = "MainRepository"

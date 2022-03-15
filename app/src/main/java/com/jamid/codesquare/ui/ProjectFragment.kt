@@ -40,7 +40,6 @@ import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.CommentListener
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
-import com.jamid.codesquare.ui.home.chat.ChatDetailFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -69,6 +68,7 @@ class ProjectFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         project = arguments?.getParcelable(PROJECT) ?: return
+
 
         val currentUser = UserManager.currentUser
 
@@ -144,6 +144,11 @@ class ProjectFragment : Fragment() {
                     isSelected = creator.isLiked
 
                     setOnClickListener {
+                        if (creator.isLiked) {
+                            Snackbar.make(binding.root, "Disliked ${creator.name}", Snackbar.LENGTH_LONG).show()
+                        } else {
+                            Snackbar.make(binding.root, "Liked ${creator.name}", Snackbar.LENGTH_LONG).show()
+                        }
                         userClickListener.onUserLikeClick(creator)
                     }
                 }
@@ -169,7 +174,7 @@ class ProjectFragment : Fragment() {
                 setMutableProperties(currentProject)
 
                 // setting archive related properties
-                setArchiveProperties(project)
+//                setArchiveProperties(project)
 
             } else {
                 Log.i(TAG, "Not possible for a project to be absent in local database " +
@@ -180,7 +185,6 @@ class ProjectFragment : Fragment() {
 
     private fun setAdView() {
         val adView = requireActivity().findViewById<AdView>(R.id.adView)
-
         adView.loadAd(AdRequest.Builder().build())
         adView.adListener = object: AdListener() {
             override fun onAdFailedToLoad(p0: LoadAdError) {
@@ -290,7 +294,7 @@ class ProjectFragment : Fragment() {
             setTextColor(textColor)
 
             setOnClickListener {
-                (parentFragment as ProjectFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag))
+                (parentFragment as ProjectFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag, SUB_TITLE to "Projects related to ${project.name.uppercase()}"))
             }
         }
 
@@ -299,7 +303,7 @@ class ProjectFragment : Fragment() {
     private fun setContributors() {
         binding.seeAllContributorsBtn.setOnClickListener {
             (parentFragment as ProjectFragmentContainer).navigate(ProjectContributorsFragment.TAG, bundleOf(
-                PROJECT to project))
+                PROJECT to project, TITLE to "Contributors", SUB_TITLE to project.name.uppercase()))
         }
 
         getChatChannel()
@@ -803,6 +807,11 @@ class ProjectFragment : Fragment() {
                 }
             }
         })
+
+        val initialImagePosition = arguments?.getInt("image_pos") ?: 0
+
+        binding.projectImagesRecycler.smoothScrollToPosition(initialImagePosition)
+
     }
 
     /**
@@ -824,7 +833,9 @@ class ProjectFragment : Fragment() {
             isSelected = project.isLiked
 
             setOnClickListener {
-                projectClickListener.onProjectLikeClick(project.copy())
+                projectClickListener.onProjectLikeClick(project.copy()) {
+                    setMutableProperties(it)
+                }
             }
         }
 
@@ -833,75 +844,8 @@ class ProjectFragment : Fragment() {
             isSelected = project.isSaved
 
             setOnClickListener {
-                projectClickListener.onProjectSaveClick(project.copy())
-            }
-        }
-    }
-
-    private fun archiveProject(project: Project) {
-
-        val currentUser = UserManager.currentUser
-
-        FireUtility.archiveProject(project) {
-            if (it.isSuccessful) {
-                Snackbar.make(
-                    binding.root,
-                    "Archived project successfully",
-                    Snackbar.LENGTH_LONG
-                ).show()
-                // notify the other contributors that the project has been archived
-                val content = "${project.name} has been archived."
-                val notification = Notification.createNotification(
-                    content,
-                    currentUser.id,
-                    project.chatChannel
-                )
-                FireUtility.sendNotificationToChannel(notification) { it1 ->
-                    if (it1.isSuccessful) {
-                        // updating project locally
-                        project.isArchived = true
-                        viewModel.updateLocalProject(project)
-                    } else {
-                        viewModel.setCurrentError(it.exception)
-                    }
-                }
-            } else {
-                viewModel.setCurrentError(it.exception)
-            }
-        }
-    }
-
-    private fun unArchiveProject(project: Project) {
-        FireUtility.unArchiveProject(project) {
-            if (it.isSuccessful) {
-                Snackbar.make(
-                    binding.root,
-                    "Un-archived project successfully",
-                    Snackbar.LENGTH_LONG
-                ).show()
-                project.isArchived = false
-                viewModel.updateLocalProject(project)
-            } else {
-                viewModel.setCurrentError(it.exception)
-            }
-        }
-    }
-
-    private fun setArchiveProperties(project: Project) {
-        binding.archiveProjectBtn.setOnClickListener {
-            if (project.isArchived) {
-                binding.archiveProjectBtn.text = getString(R.string.un_archive)
-                binding.archiveProjectInfo.text = getString(R.string.archive_summary)
-
-                showDialog("Are you sure you want to un-archive this project?", "Un-archiving project ... ") {
-                    unArchiveProject(project)
-                }
-            } else {
-                binding.archiveProjectBtn.text = getString(R.string.archive)
-                binding.archiveProjectInfo.text = getString(R.string.un_archive_summary)
-
-                showDialog("Are you sure you want to archive this project?", "Archiving project ...", posLabel = "Archive") {
-                    archiveProject(project)
+                projectClickListener.onProjectSaveClick(project.copy()) {
+                    setMutableProperties(it)
                 }
             }
         }

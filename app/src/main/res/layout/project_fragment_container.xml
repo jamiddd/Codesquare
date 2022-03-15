@@ -17,7 +17,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="8dp"
-        app:layout_behavior=".ui.SnackBarAwareButtonBehavior"
+        app:layout_behavior=".ui.SnackBarAwareBehavior"
         android:text="@string/join_project"
         android:textColor="@color/white"
         app:backgroundTint="?colorAccent"

@@ -6,7 +6,7 @@
 
     <LinearLayout
         android:id="@+id/message_image_container"
-        style="@style/AppTheme.ChatBalloonRight"
+        style="@style/AppTheme.ChatBalloonRightDocument"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

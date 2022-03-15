@@ -2,9 +2,7 @@ package com.jamid.codesquare.ui.home.feed
 
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
-import android.content.res.ColorStateList
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -20,6 +18,7 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
@@ -34,6 +33,7 @@ import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.abs
@@ -58,6 +58,8 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
         val tagsContainerBinding = TagsContainerBinding.bind(tagsContainerView)
+
+        OverScrollDecoratorHelper.setUpOverScroll(tagsContainerBinding.tagsContainer)
 
         tagsContainerBinding.tagsContainer.setOnScrollChangeListener { _, _, _, _, _ ->
             if (tagsContainerBinding.tagsContainer.canScrollHorizontally(1)) {
@@ -157,37 +159,35 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
     }
 
     private fun setLocationButton(locationBtn: Chip) {
-        /*val (backgroundColor, textColor) = if (isNightMode()) {
-            val colorPair = Pair(R.color.chip_back_pink_night, R.color.chip_front_pink_night)
-            ContextCompat.getColor(requireContext(), colorPair.first) to
-                    ContextCompat.getColor(requireContext(), colorPair.second)
-        } else {
-            val colorPair = Pair(R.color.chip_back_pink_day, R.color.chip_front_pink_day)
-            ContextCompat.getColor(requireContext(), colorPair.first) to
-                    ContextCompat.getColor(requireContext(), colorPair.second)
-        }*/
 
         locationBtn.apply {
-         /*   val length = resources.getDimension(R.dimen.unit_len) / 4
-            chipStrokeWidth = length
-            chipIconTint = ColorStateList.valueOf(textColor)
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)*/
             isCheckable = false
             isCloseIconVisible = false
-//            setTextColor(textColor)
         }
 
+        val a = activity as MainActivity
+
         locationBtn.setOnClickListener {
-            val currentUser = UserManager.currentUser
-            val currentUserLocation = currentUser.location
-            if (currentUserLocation != null) {
-                searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
+
+            binding.pagerNoItemsText.text = "No projects near you"
+
+            // firstly always check if the location is on
+            if (!LocationProvider.isLocationEnabled(requireContext())) {
+                Snackbar.make(binding.root, "Location is not enabled", Snackbar.LENGTH_LONG).setAction("Enable") {
+                    LocationProvider.checkForLocationSettings(requireContext(), a.locationStateLauncher, a.fusedLocationProviderClient)
+                }.show()
             } else {
-                val tempLocation = LocationProvider.currentLocation
-                if (tempLocation != null) {
-                    searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
+                val currentUser = UserManager.currentUser
+                val currentUserLocation = currentUser.location
+                if (currentUserLocation != null) {
+                    searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
                 } else {
-                    LocationProvider.getLastLocation((activity as MainActivity).fusedLocationProviderClient)
+                    val tempLocation = LocationProvider.currentLocation
+                    if (tempLocation != null) {
+                        searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
+                    } else {
+                        LocationProvider.getLastLocation(a.fusedLocationProviderClient)
+                    }
                 }
             }
         }
@@ -196,28 +196,20 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
     private fun setRandomButton(query: CollectionReference, random: Chip) {
 
         random.setOnClickListener {
+
+            binding.pagerNoItemsText.text = "No projects"
+
+            viewModel.disableLocationBasedProjects()
             getItems {
                 viewModel.getFeedItems(query)
             }
         }
 
-       /* val (backgroundColor, textColor) = if (isNightMode()) {
-            val colorPair = colorPalettesNight.random()
-            ContextCompat.getColor(requireContext(), colorPair.first) to
-                    ContextCompat.getColor(requireContext(), colorPair.second)
-        } else {
-            val colorPair = colorPalettesDay.random()
-            ContextCompat.getColor(requireContext(), colorPair.first) to
-                    ContextCompat.getColor(requireContext(), colorPair.second)
-        }
-*/
         random.apply {
-           /* chipIconTint = ColorStateList.valueOf(textColor)
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)*/
             isCheckable = false
             isCloseIconVisible = false
-//            setTextColor(textColor)
         }
+
 
     }
 
@@ -322,7 +314,12 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 //            setTextColor(textColor)
 
             setOnClickListener {
-                val query = Firebase.firestore.collection("projects")
+
+                binding.pagerNoItemsText.text = "No projects related to $tag"
+
+                viewModel.disableLocationBasedProjects()
+
+                val query = Firebase.firestore.collection(PROJECTS)
                     .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
 
                 getItems {

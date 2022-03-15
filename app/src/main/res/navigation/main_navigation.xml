@@ -620,4 +620,17 @@
 
     </fragment>
 
+    <fragment
+        android:id="@+id/locationProjectsFragment"
+        android:name="com.jamid.codesquare.ui.LocationProjectsFragment"
+        android:label="{title}">
+
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Project" />
+
+    </fragment>
+
 </navigation>

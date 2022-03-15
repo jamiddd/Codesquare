@@ -28,12 +28,11 @@ import androidx.core.view.*
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
-import androidx.viewpager2.widget.ViewPager2
+import androidx.recyclerview.widget.RecyclerView
 import com.android.billingclient.api.*
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
@@ -69,7 +68,6 @@ import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.listeners.*
-import com.jamid.codesquare.ui.home.chat.ForwardFragment
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
@@ -98,14 +96,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     private var animationStartView: View? = null
     private var animationEndView: View? = null
     lateinit var billingClient: BillingClient
-
     private var updateJob: Job? = null
-
     var optionsFragment: OptionsFragment? = null
-
     var subscriptionFragment: SubscriptionFragment? = null
     private var isImageViewMode = false
-
     private var currentIndefiniteSnackbar: Snackbar? = null
 
     private fun startNetworkCallback() {
@@ -465,8 +459,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         viewModel.isNetworkAvailable.observe(this) {
             if (it == true) {
-                LocationProvider.initialize(fusedLocationProviderClient, this)
-                currentIndefiniteSnackbar?.dismiss()
+                if (UserManager.isInitialized) {
+                    LocationProvider.initialize(fusedLocationProviderClient, this)
+                    currentIndefiniteSnackbar?.dismiss()
+                }
             } else {
 
                 val (bgColor, txtColor) = if (isNightMode()) {
@@ -537,6 +533,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.homeFragment, R.id.loginFragment))
         NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration)
+
+        updateUi(
+            shouldShowAppBar = false,
+            baseFragmentBehavior = null
+        )
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
 
@@ -784,16 +785,22 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                     hash
                 )
             )
+
             navController.navigateUp()
         }
     }
 
+    // something to do with project image
+    override var imagePos: Int
+        get() = 0
+        set(value) {}
+
     override fun onProjectClick(project: Project) {
-        val bundle = bundleOf(TITLE to project.name, PROJECT to project)
+        val bundle = bundleOf(TITLE to project.name, PROJECT to project, "image_pos" to imagePos)
         navController.navigate(R.id.projectFragmentContainer, bundle, slideRightNavOptions())
     }
 
-    override fun onProjectLikeClick(project: Project) {
+    override fun onProjectLikeClick(project: Project, onChange: (newProject: Project) -> Unit) {
 
         val currentUser = UserManager.currentUser
 
@@ -801,12 +808,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             project.likes = project.likes + 1
             project.isLiked = true
             viewModel.updateLocalProject(project)
+
+            onChange(project)
         }
 
         fun onDislike() {
             project.likes = project.likes - 1
             project.isLiked = false
             viewModel.updateLocalProject(project)
+
+            onChange(project)
         }
 
         if (project.isLiked) {
@@ -851,13 +862,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    override fun onProjectSaveClick(project: Project) {
+    override fun onProjectSaveClick(project: Project, onChange: (newProject: Project) -> Unit) {
         if (project.isSaved) {
             // un-save
             FireUtility.unSaveProject(project) {
                 if (it.isSuccessful) {
                     project.isSaved = false
-                    viewModel.insertProjects(project)
+                    viewModel.updateLocalProject(project)
+
+                    onChange(project)
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
@@ -866,11 +879,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             // save
             FireUtility.saveProject(project) {
                 if (it.isSuccessful) {
-
                     Snackbar.make(binding.root, "Saved this project", Snackbar.LENGTH_LONG).show()
 
                     project.isSaved = true
-                    viewModel.insertProjects(project)
+                    viewModel.updateLocalProject(project)
+
+                    onChange(project)
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
@@ -878,7 +892,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    override fun onProjectJoinClick(project: Project) {
+    override fun onProjectJoinClick(project: Project, onChange: (newProject: Project) -> Unit) {
         if (project.isRequested) {
             // undo request
             FireUtility.getExistingProjectRequest(project.id, UserManager.currentUserId) {
@@ -887,7 +901,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                     is Result.Success -> {
                         val request = it.data
 
-                        onProjectUndoClick(project, request)
+                        onProjectUndoClick(project, request, onChange)
                     }
                     null -> {
                         Log.w(
@@ -917,8 +931,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 val requestsList = project.requests.addItemToList(projectRequest.requestId)
                 project.requests = requestsList
                 project.isRequested = true
-                viewModel.insertProjectsWithoutProcessing(project)
+
+                viewModel.updateLocalProject(project)
                 viewModel.insertProjectRequests(projectRequest)
+
+                onChange(project)
             }
 
             FireUtility.joinProject(notification.id, project) { task, projectRequest ->
@@ -1058,6 +1075,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         viewModel.deleteLocalProject(project)
     }
 
+    override fun onProjectLocationClick(project: Project) {
+        navController.navigate(R.id.locationProjectsFragment, bundleOf(TITLE to "Showing projects near", SUB_TITLE to project.location.address, "location" to project.location), slideRightNavOptions())
+    }
+
     override fun onProjectRequestProjectDeleted(projectRequest: ProjectRequest) {
         deleteProjectRequest(projectRequest)
     }
@@ -1158,7 +1179,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         navController.navigate(R.id.commentsFragment, bundle, slideRightNavOptions())
     }
 
-    override fun onProjectOptionClick(project: Project, position: Int) {
+    override fun onProjectOptionClick(project: Project) {
 
         viewModel.setCurrentFocusedProject(project)
         viewModel.setCurrentFocusedUser(project.creator.toUser())
@@ -1204,41 +1225,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     }
 
-    // TODO("Use const val for holding the long value")
-    private fun archive(project: Project, duration: Long = 2592000000L) {
-        val currentUserId = UserManager.currentUserId
-        FireUtility.archiveProject(project, duration) {
-            if (it.isSuccessful) {
-                // notify the other contributors that the project has been archived
-                val content = "${project.name} has been archived."
-                val notification = Notification.createNotification(
-                    content,
-                    currentUserId,
-                    project.chatChannel
-                )
-                FireUtility.sendNotificationToChannel(notification) { it1 ->
-                    if (it1.isSuccessful) {
-                        // updating project locally
-                        project.expiredAt = System.currentTimeMillis() + duration
-                        project.isArchived = true
-                        viewModel.updateLocalProject(project)
-                    } else {
-                        viewModel.setCurrentError(it.exception)
-                    }
-                }
-            } else {
-                viewModel.setCurrentError(it.exception)
-            }
-        }
-    }
-
-    override fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest) {
+    override fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest, onChange: (newProject: Project) -> Unit) {
         FireUtility.undoJoinProject(projectRequest) {
             if (it.isSuccessful) {
                 project.isRequested = false
                 val newList = project.requests.removeItemFromList(projectRequest.requestId)
                 project.requests = newList
-                viewModel.insertProjectsWithoutProcessing(project)
+
+                viewModel.updateLocalProject(project)
+
+                onChange(project)
             } else {
                 viewModel.setCurrentError(it.exception)
             }
@@ -1263,7 +1259,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     }
 
     override fun onProjectNotFound(project: Project) {
-//        viewModel.deleteLocalProject(project)
+
     }
 
     override fun onUserClick(user: User) {
@@ -2637,7 +2633,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         val focusedUser = viewModel.currentFocusedUser.value
         val focusedChatChannel = viewModel.currentFocusedChatChannel.value
         val focusedProject = viewModel.currentFocusedProject.value
-        val focusedMessage = viewModel.currentFocusedMessage.value
 
         val option3 = OPTION_3 + focusedUser?.name
         val option4 = OPTION_4 + focusedUser?.name
@@ -2665,6 +2660,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             option3 -> {
                 if (focusedUser != null) {
                     likeUser(focusedUser.id)
+                    Snackbar.make(binding.root, "Liked ${focusedUser.name}", Snackbar.LENGTH_LONG).show()
                 }
             }
             option4 -> {
@@ -2823,25 +2819,26 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
             OPTION_10, OPTION_11 -> {
                 if (focusedProject != null) {
-                    onProjectSaveClick(focusedProject)
+                    val currentFeedRecycler = findViewById<RecyclerView>(R.id.pager_items_recycler)
+                    if (currentFeedRecycler != null) {
+                        val holderView = currentFeedRecycler.findViewWithTag<View>(focusedProject.id)
+                        val projectViewHolder = currentFeedRecycler.getChildViewHolder(holderView)
+                        if (projectViewHolder != null && projectViewHolder is ProjectViewHolder) {
+                            projectViewHolder.saveProject(focusedProject)
+                        }
+                    }
                 }
             }
             OPTION_12 -> {
                 if (focusedProject != null) {
-                    val sharedPreference = PreferenceManager.getDefaultSharedPreferences(this)
-                    if (sharedPreference.contains(PROJECT_EXPIRY)) {
-                        val durationS = sharedPreference.getString(PROJECT_EXPIRY, "30")
-                        if (durationS.isNullOrBlank()) {
-                            archive(focusedProject)
-                        } else {
-                            if (durationS.isDigitsOnly()) {
-                                // durationS = number of days for expiry
-                                val duration = durationS.toLong() * 24 * 60 * 60 * 1000
-                                archive(focusedProject, duration)
-                            }
+                    if (focusedProject.isArchived) {
+                        showDialog("Are you sure you want to un-archive this project?", "Un-archiving project ... ") {
+                            unArchiveProject(focusedProject)
                         }
                     } else {
-                        archive(focusedProject)
+                        showDialog("Are you sure you want to archive this project?", "Archiving project ...", posLabel = "Archive") {
+                            archiveProject(focusedProject)
+                        }
                     }
                 }
             }
@@ -2909,6 +2906,55 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             OPTION_27 -> {
                 // settings
                 navController.navigate(R.id.settingsFragment, null, slideRightNavOptions())
+            }
+        }
+    }
+
+    private fun archiveProject(project: Project) {
+
+        val currentUser = UserManager.currentUser
+
+        FireUtility.archiveProject(project) {
+            if (it.isSuccessful) {
+                Snackbar.make(
+                    binding.root,
+                    "Archived project successfully",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                // notify the other contributors that the project has been archived
+                val content = "${project.name} has been archived."
+                val notification = Notification.createNotification(
+                    content,
+                    currentUser.id,
+                    project.chatChannel
+                )
+                FireUtility.sendNotificationToChannel(notification) { it1 ->
+                    if (it1.isSuccessful) {
+                        // updating project locally
+                        project.isArchived = true
+                        viewModel.updateLocalProject(project)
+                    } else {
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
+            } else {
+                viewModel.setCurrentError(it.exception)
+            }
+        }
+    }
+
+    private fun unArchiveProject(project: Project) {
+        FireUtility.unArchiveProject(project) {
+            if (it.isSuccessful) {
+                Snackbar.make(
+                    binding.root,
+                    "Un-archived project successfully",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                project.isArchived = false
+                viewModel.updateLocalProject(project)
+            } else {
+                viewModel.setCurrentError(it.exception)
             }
         }
     }

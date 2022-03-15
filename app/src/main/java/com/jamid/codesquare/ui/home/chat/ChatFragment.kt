@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
@@ -27,6 +28,7 @@ import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.io.File
 
 @ExperimentalPagingApi
@@ -46,18 +48,28 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     }
 
     private fun setNewMessagesListener() {
-        chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) { newChatChannel ->
+        chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) {
+
+            Log.d(TAG, "setNewMessagesListener: Something has changed in this chat channel")
+
+            pagingAdapter.refresh()
+            scrollToBottom()
+        }
+
+
+       /* chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) { newChatChannel ->
             val oldLastMessage = chatChannel.lastMessage
             val newLastMessage = newChatChannel.lastMessage
             if (oldLastMessage?.messageId != newLastMessage?.messageId) {
                 // new messages have arrived
                 if (oldLastMessage != null) {
+                    Log.d(TAG, "setNewMessagesListener: Getting latest messages")
                     chatViewModel.getLatestMessages(chatChannel, oldLastMessage) {
                         scrollToBottom()
                     }
                 }
             }
-        }
+        }*/
     }
 
     private fun setStaticLayout() {
@@ -108,6 +120,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         binding.pagerItemsRecycler.apply {
             layoutManager = LinearLayoutManager(mContext, LinearLayoutManager.VERTICAL, true)
             itemAnimator = null
+            OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_VERTICAL)
             setPadding(0, smallestPadding, 0, largePadding)
 
             addOnScrollListener(object: RecyclerView.OnScrollListener() {

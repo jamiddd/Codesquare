@@ -29,10 +29,6 @@
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
 
     <style name="ThemeOverlay.App.MaterialAlertDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-       <!-- <item name="colorPrimary">@color/shrine_pink_100</item>
-        <item name="colorSecondary">@color/shrine_pink_100</item>
-        <item name="colorSurface">@color/shrine_pink_light</item>
-        <item name="colorOnSurface">@color/shrine_pink_900</item>-->
         <item name="alertDialogStyle">@style/MaterialAlertDialog.App</item>
         <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.App.Title.Text</item>
         <item name="buttonBarPositiveButtonStyle">@style/AppTheme.Button</item>
@@ -66,9 +62,7 @@
     </style>
 
     <style name="AppTheme.AdInstallButton" parent="AppTheme.ButtonOutlined">
-       <!-- <item name="strokeColor">@color/normal_grey</item>
-        <item name="rippleColor">@color/lightest_grey</item>
-        <item name="android:textColor">@color/white</item>-->
+
     </style>
 
     <style name="AppTheme.SmallOverlayBtn" parent="AppTheme.Button.IconOnly">
@@ -163,8 +157,6 @@
     <style name="AppTheme.ProjectItemStyledBtn" parent="AppTheme.SmallIconBtn">
         <item name="iconTint">@color/black</item>
         <item name="rippleColor">@color/lightest_grey</item>
-        <!--<item name="backgroundTint">@color/lightest_grey</item>
-        <item name="android:backgroundTint">@color/lightest_grey</item>-->
     </style>
 
     <style name="AppTheme.SearchView" parent="Widget.AppCompat.SearchView">
@@ -200,7 +192,7 @@
         <item name="android:textSize">18sp</item>
     </style>
 
-    <style name="AppTheme.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
+    <style name="AppTheme.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle2">
         <item name="fontFamily">sans-serif</item>
         <item name="android:fontFamily">sans-serif</item>
     </style>

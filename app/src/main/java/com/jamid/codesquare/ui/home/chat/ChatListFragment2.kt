@@ -120,28 +120,6 @@ class ChatListFragment2: Fragment() {
 
     private fun setAdView() {
         binding.adView.loadAd(AdRequest.Builder().build())
-//        val adView = requireActivity().findViewById<AdView>(R.id.adView)
-        /*if (rand == 2) {
-
-            *//*
-            val adLoader = AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
-                .forNativeAd {
-                    val styles = NativeTemplateStyle.Builder().build()
-                    val template = requireActivity().findViewById<TemplateView>(R.id.my_template)
-                    template.setStyles(styles)
-                    template.setNativeAd(it)
-                }.withAdListener(object: AdListener() {
-                    override fun onAdFailedToLoad(p0: LoadAdError) {
-                        super.onAdFailedToLoad(p0)
-                        Log.e(TAG, p0.message)
-                    }
-                }).build()
-
-            adLoader.loadAd()*//*
-        } else {
-            adView?.hide()
-        }*/
-//        adView.loadAd(AdRequest.Builder().build())
     }
 
     private fun onChatChannelExists() {

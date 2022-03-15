@@ -1509,7 +1509,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             config = PagingConfig(pageSize = 20),
             remoteMediator = ProjectRemoteMediator(query, repo, false)
         ) {
-            repo.projectDao.getArchivedProjects(UserManager.currentUserId)
+            repo.projectDao.getArchivedProjects()
         }.flow.cachedIn(viewModelScope)
     }
 
@@ -1625,6 +1625,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun setCurrentForwardMessages(messages: List<Message> = emptyList()) {
         _currentForwardMessages.postValue(messages)
+    }
+
+    fun getProjectsByLocation(location: Location) {
+
+    }
+
+    fun disableLocationBasedProjects() = viewModelScope.launch (Dispatchers.IO) {
+        repo.disableLocationBasedProjects()
     }
 
     companion object {

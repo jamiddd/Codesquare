@@ -1,10 +1,13 @@
 package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
+import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Transaction
+import com.firebase.geofire.GeoLocation
 import com.jamid.codesquare.data.Project
 
 @Dao
@@ -58,13 +61,17 @@ abstract class ProjectDao: BaseDao<Project>() {
     @Delete
     abstract suspend fun deleteProject(project: Project)
 
-    @Query("SELECT * FROM projects WHERE isArchived = 1 AND project_userId = :currentUserId ORDER BY createdAt DESC")
-    abstract fun getArchivedProjects(currentUserId: String): PagingSource<Int, Project>
+    @Query("SELECT * FROM projects WHERE isArchived = 1 AND isMadeByMe = 1 ORDER BY createdAt DESC")
+    abstract fun getArchivedProjects(): PagingSource<Int, Project>
 
     @Query("DELETE FROM projects WHERE isAd = 1")
     abstract suspend fun deleteAdProjects()
 
     @Query("SELECT * FROM projects WHERE id = :projectId")
     abstract fun getReactiveProject(projectId: String): LiveData<Project>
+
+    @Query("UPDATE projects SET isNearMe = 0")
+    abstract suspend fun disableLocationBasedProjects()
+
 
 }

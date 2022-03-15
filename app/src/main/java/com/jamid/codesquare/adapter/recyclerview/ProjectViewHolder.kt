@@ -5,19 +5,14 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.text.Spannable
 import android.text.SpannableString
-import android.text.SpannableStringBuilder
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.StyleSpan
-import android.text.style.TypefaceSpan
 import android.util.Log
 import android.view.*
 import android.widget.Button
-import android.widget.FrameLayout
-import android.widget.RatingBar
 import android.widget.TextView
-import androidx.core.text.set
 import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.coroutineScope
@@ -29,24 +24,22 @@ import androidx.recyclerview.widget.SnapHelper
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
-import com.google.android.gms.ads.*
-import com.google.android.gms.ads.nativead.NativeAdOptions
-import com.google.android.gms.ads.nativead.NativeAdOptions.ADCHOICES_BOTTOM_RIGHT
-import com.google.android.gms.ads.nativead.NativeAdView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
+import com.jamid.codesquare.data.Image
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.data.User
+import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.ScrollTouchListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.random.Random
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
-class ProjectViewHolder(val v: View): PostViewHolder(v) {
+class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
 
     private val userImg: SimpleDraweeView = view.findViewById(R.id.project_user_img)
     private val userName: TextView = view.findViewById(R.id.project_user_name)
@@ -65,19 +58,27 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
     private val leftBtn: Button = view.findViewById(R.id.left_btn)
     private val rightBtn: Button = view.findViewById(R.id.right_btn)
 
+    // just for external use cases
+    private lateinit var mProject: Project
+
     var currentImagePosition = 0
     private var totalImagesCount = 0
 
     private val projectClickListener = view.context as ProjectClickListener
 
-    fun onSaveProjectClick(project: Project) {
-        projectClickListener.onProjectSaveClick(project.copy())
-        saveBtn.isSelected = !saveBtn.isSelected
+    fun saveProject(project: Project) {
+        projectClickListener.onProjectSaveClick(project.copy()) {
+            bind(it)
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun bind(project: Project?) {
         if (project != null) {
+
+            mProject = project
+
+            view.tag = project.id
 
             val creator = project.creator
             val imagesCount = project.images.size
@@ -101,6 +102,11 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
 
             if (project.location.address.isNotBlank()) {
                 location.text = project.location.address
+
+                location.setOnClickListener {
+                    projectClickListener.onProjectLocationClick(project)
+                }
+
             } else {
                 location.hide()
             }
@@ -186,18 +192,15 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
 
             setLikeDislike(project)
 
-            val imageAdapter = ImageAdapter()
-            val helper: SnapHelper = LinearSnapHelper()
-
-            /*likeComment.setOnClickListener {
-                projectClickListener.onProjectCommentClick(project.copy())
-            }*/
+            val imageAdapter = ImageAdapter(this)
+            val helper = LinearSnapHelper()
 
             val manager = LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
 
             imagesRecycler.apply {
                 adapter = imageAdapter
                 layoutManager = manager
+                OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
                 if (onFlingListener == null) {
                     helper.attachToRecyclerView(this)
                 }
@@ -222,6 +225,7 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
                     val pos = manager.findFirstCompletelyVisibleItemPosition()
                     if (pos != -1) {
                         currentImagePosition = pos
+                        projectClickListener.imagePos = currentImagePosition
                         val counterText = "${pos + 1}/$imagesCount"
                         imagesCounter.text = counterText
 
@@ -263,8 +267,10 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
             likeBtn.isSelected = project.isLiked
 
             likeBtn.setOnClickListener {
-                projectClickListener.onProjectLikeClick(project.copy())
-                if (project.isLiked) {
+                projectClickListener.onProjectLikeClick(project.copy()) {
+                    bind(it)
+                }
+               /* if (project.isLiked) {
                     // dislike
                     project.likes = project.likes - 1
                     project.isLiked = false
@@ -276,13 +282,13 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
                     project.isLiked = true
                     likeBtn.isSelected = true
                     setLikeDislike(project)
-                }
+                }*/
             }
 
             saveBtn.isSelected = project.isSaved
 
             saveBtn.setOnClickListener {
-                onSaveProjectClick(project)
+                saveProject(project)
             }
 
             when {
@@ -304,33 +310,12 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
             }
 
             optionBtn.setOnClickListener {
-                projectClickListener.onProjectOptionClick(project, absoluteAdapterPosition)
+                projectClickListener.onProjectOptionClick(project)
             }
 
             setJoinButton(project)
 
         }
-    }
-
-    private fun s() {
-        /*
-
-            val a1 = project.likes.toString().length
-            val a2 = project.comments.toString().length
-            val a3 = project.contributors.size.toString().length
-
-            val s1 = a1 + 1
-            val e1 = s1 + 1
-
-            val s2 = e1 + a2 + 4
-            val e2 = s2 + 1
-
-            val s3 = e2 + a3 + 4
-            val e3 = s3 + 1
-
-            st.setSpan(MyDynamicDrawableSpan(view.context, R.drawable.ic_round_favorite_16), s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-            st.setSpan(MyDynamicDrawableSpan(view.context, R.drawable.ic_comment), s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-*/
     }
 
     private fun setLikeDislike(project: Project) {
@@ -461,14 +446,18 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
                                         } else {
                                             joinBtn.text = view.context.getString(R.string.join)
                                             joinBtn.setOnClickListener {
-                                                projectClickListener.onProjectJoinClick(project)
+                                                projectClickListener.onProjectJoinClick(project) { newProject ->
+                                                    bind(newProject)
+                                                }
                                             }
                                         }
                                     }
                                 }.addOnFailureListener {
                                     joinBtn.text = view.context.getString(R.string.join)
                                     joinBtn.setOnClickListener {
-                                        projectClickListener.onProjectJoinClick(project)
+                                        projectClickListener.onProjectJoinClick(project) { newProject ->
+                                            bind(newProject)
+                                        }
                                     }
                                 }
                         } else {
@@ -477,7 +466,9 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
                             // already requested
                             joinBtn.text = view.context.getString(R.string.undo)
                             joinBtn.setOnClickListener {
-                                projectClickListener.onProjectUndoClick(project, projectRequest)
+                                projectClickListener.onProjectUndoClick(project, projectRequest) { newProject ->
+                                    bind(newProject)
+                                }
                             }
                         }
                     }
@@ -492,6 +483,15 @@ class ProjectViewHolder(val v: View): PostViewHolder(v) {
             return ProjectViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.project_item, parent, false))
         }
 
+    }
+
+    override fun onImageClick(view: View, image: Image) {
+        projectClickListener.onProjectClick(mProject)
+        projectClickListener.imagePos = currentImagePosition
+    }
+
+    override fun onCloseBtnClick(view: View, image: Image, position: Int) {
+        //
     }
 
 }

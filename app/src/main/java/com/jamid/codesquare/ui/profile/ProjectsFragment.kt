@@ -24,10 +24,10 @@ class ProjectsFragment: PagerListFragment<Project, PostViewHolder>() {
     override fun onViewLaidOut() {
         super.onViewLaidOut()
 
-        val otherUser = arguments?.getParcelable<User>("user")
+        val otherUser = arguments?.getParcelable<User>(USER)
         if (otherUser == null) {
             val currentUser = UserManager.currentUser
-            val query = Firebase.firestore.collection("projects")
+            val query = Firebase.firestore.collection(PROJECTS)
                 .whereEqualTo("creator.userId", currentUser.id)
 
             setIsViewPagerFragment(true)

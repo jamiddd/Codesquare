@@ -25,43 +25,47 @@
             android:backgroundTint="@color/normal_grey" />
 
         <TextView
-            android:id="@+id/textView15"
-            style="@style/AppTheme.ListItem"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Select from default" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/default_profile_img_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            tools:itemCount="1"
-            tools:listitem="@layout/circle_image_layout" />
-
-        <View
-            android:id="@+id/divider25"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/normal_grey" />
-
-        <TextView
             android:id="@+id/select_from_gallery_btn"
             style="@style/AppTheme.ListItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select from gallery" />
-
-        <View
-            android:id="@+id/divider26"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="@color/normal_grey" />
+            android:drawablePadding="16dp"
+            android:gravity="center_vertical"
+            android:text="Select from gallery"
+            app:drawableStartCompat="@drawable/ic_image_coloured" />
 
         <TextView
             android:id="@+id/remove_selected_image_btn"
             style="@style/AppTheme.ListItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Remove selected image" />
+            android:drawablePadding="16dp"
+            android:gravity="center_vertical"
+            android:text="Remove selected image"
+            app:drawableStartCompat="@drawable/ic_remove" />
+
+        <View
+            android:id="@+id/divider7"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider" />
+
+        <TextView
+            android:id="@+id/select_from_default"
+            style="@style/AppTheme.ListItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select from default"
+            app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_down_24" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/default_profile_img_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clipToPadding="false"
+            android:paddingStart="12dp"
+            android:paddingTop="12dp"
+            tools:itemCount="1"
+            tools:listitem="@layout/circle_image_layout" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

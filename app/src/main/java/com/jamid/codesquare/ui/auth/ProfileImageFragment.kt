@@ -92,7 +92,9 @@ class ProfileImageFragment : Fragment() {
             onNewImageOrNullSet(image)
 
             if (image != null) {
+
                 setProfileImage(image)
+
                 if (image.authority?.contains("googleapis.com") == true) {
                     // already uploaded image, no need to upload
                     onImageUploaded()

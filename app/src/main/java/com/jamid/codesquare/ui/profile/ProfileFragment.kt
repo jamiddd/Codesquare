@@ -132,6 +132,14 @@ class ProfileFragment: Fragment(), OptionClickListener {
             collaborationsCount.text = "0 Collaborations"
             likesCount.text = "0 Likes"
 
+            collaborationsCount.setOnClickListener {
+                binding.profileViewPager.setCurrentItem(1, true)
+            }
+
+            projectsCount.setOnClickListener {
+                binding.profileViewPager.setCurrentItem(0, true)
+            }
+
             // setting up things that won't change
             setUpStaticContents(userLayoutBinding, user)
 

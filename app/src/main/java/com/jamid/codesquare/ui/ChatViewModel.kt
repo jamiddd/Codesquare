@@ -90,7 +90,7 @@ class ChatViewModel(context: Context): ViewModel() {
         when (val result = FireUtility.sendTextMessage(chatChannelId, content, replyTo, replyMessage)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-                repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data))
+                repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data), true)
                 val chatChannel = repo.getLocalChatChannel(chatChannelId)
                 if (chatChannel != null) {
                     chatChannel.lastMessage = result.data
@@ -109,7 +109,6 @@ class ChatViewModel(context: Context): ViewModel() {
         when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-
 
                 val messages = result.data
                 repo.insertMessages(imagesDir, documentsDir, messages)

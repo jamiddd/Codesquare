@@ -5,16 +5,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.CircleImageLayoutBinding
 import com.jamid.codesquare.databinding.DefaultProfileImageSheetBinding
-import com.jamid.codesquare.userImages
 
 @ExperimentalPagingApi
 class DefaultProfileImageSheet: BottomSheetDialogFragment() {
@@ -35,6 +34,16 @@ class DefaultProfileImageSheet: BottomSheetDialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val images = userImages
+
+        binding.selectFromDefault.setOnClickListener {
+            if (binding.defaultProfileImgRecycler.isVisible) {
+                binding.defaultProfileImgRecycler.hide()
+                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_round_keyboard_arrow_down_24, 0)
+            } else {
+                binding.defaultProfileImgRecycler.show()
+                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_round_keyboard_arrow_up_24, 0)
+            }
+        }
 
         binding.defaultProfileImgRecycler.apply {
             adapter = DefaultProfileImagesAdapter(images)
