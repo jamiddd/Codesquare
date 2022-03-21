@@ -247,8 +247,7 @@ class MainRepository(private val db: CodesquareDatabase) {
     }
 
     suspend fun insertProjectRequests(requests: List<ProjectRequest>) {
-        val newList = processProjectRequests(requests)
-        projectRequestDao.insert(newList)
+        projectRequestDao.insert(requests)
     }
 
     private suspend fun processProjectRequests(requests: List<ProjectRequest>): List<ProjectRequest> {
@@ -290,9 +289,13 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     }
 
-    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>) {
-        val newList = processProjectRequests(projectRequests.toList())
-        projectRequestDao.insert(newList)
+    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>, shouldProcess: Boolean = true) {
+        if (shouldProcess) {
+            val newList = processProjectRequests(projectRequests.toList())
+            projectRequestDao.insert(newList)
+        } else {
+            projectRequestDao.insert(projectRequests.toList())
+        }
     }
 
     suspend fun getProject(projectId: String): Project? {
@@ -447,6 +450,10 @@ class MainRepository(private val db: CodesquareDatabase) {
         return messageDao.getMessage(messageId)
     }
 
+    suspend fun insertNotifications(notifications: List<Notification>) {
+        notificationDao.insertNotifications(notifications)
+    }
+
     suspend fun insertNotifications(notifications: Array<out Notification>) {
         notificationDao.insertNotifications(notifications.toList())
     }
@@ -580,6 +587,10 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun disableLocationBasedProjects() {
         projectDao.disableLocationBasedProjects()
+    }
+
+    suspend fun getProjectRequest(projectId: String): ProjectRequest? {
+        return projectRequestDao.getProjectRequestByProject(projectId)
     }
 
     companion object {

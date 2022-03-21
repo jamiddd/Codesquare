@@ -6,7 +6,7 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Comment
 
 @ExperimentalPagingApi
-class CommentRemoteMediator(query: Query, repository: MainRepository): FirebaseRemoteMediator<Int, Comment>(query, repository) {
+class CommentRemoteMediator(query: Query, private val repository: MainRepository): FirebaseRemoteMediator<Int, Comment>(query) {
 
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         if (!items.isEmpty) {

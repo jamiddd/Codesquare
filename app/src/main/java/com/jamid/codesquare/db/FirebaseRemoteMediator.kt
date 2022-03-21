@@ -12,7 +12,7 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.data.Result
 
 @ExperimentalPagingApi
-abstract class FirebaseRemoteMediator<K: Any, T: Any>(val query: Query, val repository: MainRepository): RemoteMediator<K, T>() {
+abstract class FirebaseRemoteMediator<K: Any, T: Any>(val query: Query): RemoteMediator<K, T>() {
 
     open var lastSnapshot: DocumentSnapshot? = null
 

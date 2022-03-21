@@ -3,6 +3,7 @@ package com.jamid.codesquare.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ClipData
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -23,12 +24,15 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.ImageSelectType.*
 import com.jamid.codesquare.data.User
 
 @ExperimentalPagingApi
 abstract class LauncherActivity : AppCompatActivity(){
 
     var loadingDialog: AlertDialog? = null
+    var imageSelectType = IMAGE_PROFILE
+
 
     companion object {
         private const val TAG = "LauncherActivity"
@@ -84,61 +88,105 @@ abstract class LauncherActivity : AppCompatActivity(){
         }
     }
 
-    val selectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-            it.data?.data?.let { it1 ->
-                viewModel.setCurrentImage(it1)
-                val options = CropImageOptions()
-                options.fixAspectRatio = true
-                options.aspectRatioX = 1
-                options.aspectRatioY = 1
-                options.cropShape = CropImageView.CropShape.OVAL
-                options.outputRequestHeight = 100
-                options.outputRequestWidth = 100
-                findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_cropFragment2, bundleOf("image" to it1.toString(), "cropOptions" to options))
+
+    private fun getImagesFromClipData(clipData: ClipData): List<Uri> {
+        val images = mutableListOf<Uri>()
+        val count = clipData.itemCount
+        for (i in 0 until count) {
+            val uri = clipData.getItemAt(i)?.uri
+            uri?.let { image ->
+                images.add(image)
             }
         }
+        return images
     }
 
-    val selectImageLauncher1 = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-            it.data?.data?.let { it1 ->
-                viewModel.setCurrentImage(it1)
-                val options = CropImageOptions()
-                options.fixAspectRatio = true
-                options.aspectRatioX = 1
-                options.aspectRatioY = 1
-                options.cropShape = CropImageView.CropShape.OVAL
-                options.outputRequestHeight = 100
-                options.outputRequestWidth = 100
-                findNavController(R.id.nav_host_fragment).navigate(R.id.action_profileImageFragment_to_cropFragment2, bundleOf("image" to it1.toString(), "cropOptions" to options))
-            }
-        }
-    }
+    val sil = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        var images: List<Uri> = emptyList()
+        when (it.resultCode) {
+            Activity.RESULT_OK -> {
+                val data = it.data ?: return@registerForActivityResult
+                val clipData = data.clipData
 
-    val selectProjectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
+                when (imageSelectType) {
+                    IMAGE_CHAT -> {
 
-            val clipData = it.data?.clipData
+                        if (clipData != null) {
+                            images = getImagesFromClipData(clipData).toMutableList()
+                        } else {
+                            val singleImage = data.data
+                            if (singleImage != null) {
+                                images = listOf(singleImage)
+                            }
+                        }
 
-            if (clipData != null) {
-                val count = clipData.itemCount
+                        viewModel.multipleImagesContainer.postValue(images)
+                    }
+                    IMAGE_PROFILE -> {
+                        val singleImage = data.data
+                        if (singleImage != null) {
+                            viewModel.setCurrentImage(singleImage)
+                            val options = CropImageOptions().apply {
+                                fixAspectRatio = true
+                                aspectRatioX = 1
+                                aspectRatioY = 1
+                                cropShape = CropImageView.CropShape.OVAL
+                                outputRequestHeight = 100
+                                outputRequestWidth = 100
+                            }
+                            findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_cropFragment2, bundleOf("image" to singleImage.toString(), "cropOptions" to options))
+                        }
+                    }
+                    IMAGE_PROJECT -> {
 
-                val images = mutableListOf<Uri>()
+                        val isProjectImagesEmpty = viewModel.currentProject.value?.images?.isNullOrEmpty() == true
 
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
+                        if (clipData != null) {
+                            images = getImagesFromClipData(clipData)
+
+                            val formattedImages = images.map {it1 -> it1.toString() }
+
+                            if (isProjectImagesEmpty) {
+                                viewModel.setCurrentProjectImages(formattedImages)
+                            } else {
+                                viewModel.addToExistingProjectImages(formattedImages)
+                            }
+
+                        } else {
+                            val singleImage = data.data
+                            if (singleImage != null) {
+
+                                val formattedImages = listOf(singleImage.toString())
+
+                                if (isProjectImagesEmpty) {
+                                    viewModel.setCurrentProjectImages(formattedImages)
+                                } else {
+                                    viewModel.addToExistingProjectImages(formattedImages)
+                                }
+
+                            }
+                        }
+                    }
+                    IMAGE_REPORT -> {
+
+                        if (clipData != null) {
+                            images = getImagesFromClipData(clipData)
+                            viewModel.setReportUploadImages(images)
+                        } else {
+                            val singleImage = data.data
+                            if (singleImage != null) {
+                                viewModel.setChatUploadImages(listOf(singleImage))
+                            }
+                        }
+
                     }
                 }
-
-                viewModel.setCurrentProjectImages(images.map {it1 -> it1.toString() })
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setCurrentProjectImages(listOf(it1.toString()))
-                }
+            }
+            Activity.RESULT_CANCELED -> {
+                Log.d(TAG, "Activity result was cancelled")
+            }
+            else -> {
+                Log.d(TAG, "Something unexpected happened")
             }
         }
     }
@@ -170,56 +218,6 @@ abstract class LauncherActivity : AppCompatActivity(){
         }
     }
 
-    val selectReportImagesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.setReportUploadImages(images)
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.setChatUploadImages(listOf(it1))
-                }
-            }
-        }
-    }
-
-    val selectChatImagesUploadLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val images = mutableListOf<Uri>()
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-            } else {
-                it.data?.data?.let { it1 ->
-                    images.add(it1)
-                }
-            }
-            viewModel.multipleImagesContainer.postValue(images)
-        }
-    }
 
     val selectMultipleImagesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -243,33 +241,6 @@ abstract class LauncherActivity : AppCompatActivity(){
             } else {
                 it.data?.data?.let { it1 ->
                     viewModel.multipleImagesContainer.postValue(listOf(it1))
-                }
-            }
-        }
-    }
-
-    val selectMoreProjectImageLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-                viewModel.addToExistingProjectImages(images.map {it1 -> it1.toString() })
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.addToExistingProjectImages(listOf(it1.toString()))
                 }
             }
         }

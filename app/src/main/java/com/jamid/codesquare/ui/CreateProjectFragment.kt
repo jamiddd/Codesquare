@@ -6,7 +6,7 @@ import android.provider.OpenableColumns
 import android.text.InputType
 import android.view.*
 import android.webkit.URLUtil
-import androidx.activity.addCallback
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.children
@@ -18,11 +18,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
+import com.jamid.codesquare.data.ImageSelectType
 import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentCreateProjectBinding
@@ -36,6 +39,14 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var imageAdapter: ImageAdapter
     private var imagesCount = 0
+
+    private var isUpdateMode = false
+
+    private fun onUpdateProject(project: Project) {
+        requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar).title = getString(R.string.update_project)
+        isUpdateMode = true
+        viewModel.setCurrentProject(project)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,23 +81,55 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 viewModel.setCurrentProjectContent(getContent())
                 viewModel.setCurrentProjectLinks(getLinks())
 
-                val view = layoutInflater.inflate(R.layout.loading_layout, null, false)
-                val loadingLayoutBinding = LoadingLayoutBinding.bind(view)
-                loadingLayoutBinding.loadingText.text = getString(R.string.create_project_loading)
+                val d = View.inflate(requireContext(), R.layout.loading_layout, null)
 
-                val dialog = MaterialAlertDialogBuilder(requireContext())
-                    .setView(view)
-                    .setCancelable(false)
-                    .show()
+                val loadingLayoutBinding = LoadingLayoutBinding.bind(d)
+                val activity = requireActivity()
 
-                viewModel.createProject {
-                    dialog.dismiss()
-                    if (it.isSuccessful) {
-                        findNavController().navigateUp()
-                        viewModel.setCurrentProject(null)
-                        toast("Project uploaded successfully.")
-                    } else {
-                        viewModel.setCurrentError(it.exception)
+                if (isUpdateMode) {
+                    loadingLayoutBinding.loadingText.text = getString(R.string.update_project_loading)
+
+                    val dialog = MaterialAlertDialogBuilder(requireContext())
+                        .setView(loadingLayoutBinding.root)
+                        .setCancelable(false)
+                        .show()
+
+                    viewModel.updateProject { newProject, task ->
+                        dialog.dismiss()
+                        if (task.isSuccessful) {
+                            activity.runOnUiThread {
+                                val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
+                                Snackbar.make(mainRoot, "Project updated successfully", Snackbar.LENGTH_LONG).show()
+
+                                // updating local project
+                                viewModel.updateLocalProject(newProject)
+                                viewModel.setCurrentProject(null)
+                                findNavController().navigateUp()
+                            }
+                        } else {
+                            viewModel.setCurrentError(task.exception)
+                        }
+                    }
+                } else {
+                    loadingLayoutBinding.loadingText.text = getString(R.string.create_project_loading)
+
+                    val dialog = MaterialAlertDialogBuilder(requireContext())
+                        .setView(loadingLayoutBinding.root)
+                        .setCancelable(false)
+                        .show()
+
+                    viewModel.createProject {
+                        dialog.dismiss()
+                        if (it.isSuccessful) {
+                            findNavController().navigateUp()
+                            viewModel.setCurrentProject(null)
+
+                            val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
+                            Snackbar.make(mainRoot, "Project uploaded successfully.", Snackbar.LENGTH_LONG).show()
+
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
                     }
                 }
 
@@ -147,15 +190,20 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         tabLayout.hide()
 
+        val prevProject = arguments?.getParcelable<Project>(PREVIOUS_PROJECT)
+        if (prevProject != null) {
+            onUpdateProject(prevProject)
+        }
+
         val currentUser = UserManager.currentUser
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
 
-        if (viewModel.currentProject.value == null) {
+        /*if (viewModel.currentProject.value == null) {
             val newProject = Project.newInstance(currentUser)
             viewModel.setCurrentProject(newProject)
         }
-
+*/
         imageAdapter = ImageAdapter()
 
         val helper: SnapHelper = LinearSnapHelper()
@@ -255,7 +303,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         binding.addImagesBtn.setOnClickListener {
-            (activity as MainActivity).selectProjectImages()
+            (activity as MainActivity).selectImage(ImageSelectType.IMAGE_PROJECT)
         }
 
         binding.clearAllImagesBtn.setOnClickListener {
@@ -263,7 +311,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         binding.addMoreImagesBtn.setOnClickListener {
-            (activity as MainActivity).selectMoreProjectImages()
+            (activity as MainActivity).selectImage(ImageSelectType.IMAGE_PROJECT)
         }
 
         binding.addTagBtn.setOnClickListener {
@@ -322,7 +370,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             alertDialog.window?.setGravity(Gravity.BOTTOM)
         }
 
-        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+        /*activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
 
             if (binding.projectTitleText.editText?.text.isNullOrBlank() && binding.projectContentText.editText?.text.isNullOrBlank() && imagesCount == 0) {
                 findNavController().navigateUp()
@@ -342,7 +390,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 alertDialog.window?.setGravity(Gravity.BOTTOM)
             }
         }
-
+*/
         binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)

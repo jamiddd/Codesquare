@@ -3,8 +3,6 @@ package com.jamid.codesquare.ui.home.chat
 import android.content.Context
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.os.Environment
-import android.util.Log
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
@@ -22,22 +20,19 @@ import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.listeners.MyMessageListener
 import com.jamid.codesquare.ui.ChatContainerSample
 import com.jamid.codesquare.ui.ChatViewModel
+import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-import java.io.File
 
 @ExperimentalPagingApi
 class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
-    private val imagesDir: File by lazy { requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: throw NullPointerException("Couldn't get images directory.") }
-    private val documentsDir: File by lazy { requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) ?: throw NullPointerException("Couldn't get documents directory.") }
     private val mContext: Context by lazy { requireContext() }
     private var fab: FloatingActionButton? = null
     private lateinit var chatViewModel: ChatViewModel
@@ -49,27 +44,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     private fun setNewMessagesListener() {
         chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) {
-
-            Log.d(TAG, "setNewMessagesListener: Something has changed in this chat channel")
-
             pagingAdapter.refresh()
             scrollToBottom()
         }
-
-
-       /* chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) { newChatChannel ->
-            val oldLastMessage = chatChannel.lastMessage
-            val newLastMessage = newChatChannel.lastMessage
-            if (oldLastMessage?.messageId != newLastMessage?.messageId) {
-                // new messages have arrived
-                if (oldLastMessage != null) {
-                    Log.d(TAG, "setNewMessagesListener: Getting latest messages")
-                    chatViewModel.getLatestMessages(chatChannel, oldLastMessage) {
-                        scrollToBottom()
-                    }
-                }
-            }
-        }*/
     }
 
     private fun setStaticLayout() {
@@ -153,8 +130,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         // TODO("Currently using paging only for checking old messages, for new messages use a listener")
         getItems {
             chatViewModel.getPagedMessages(
-                imagesDir,
-                documentsDir,
                 chatChannelId,
                 query
             )
@@ -225,12 +200,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         binding.pagerItemsRecycler.smoothScrollToPosition(0)
     }
 
+    // TODO("I don't remember this .. need to check again")
     override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder2<Message>> {
         val chatChannel = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL)
         return if (chatChannel == null) {
-            MessageAdapter3(parentFragment as MyMessageListener)
+            MessageAdapter3(parentFragment as MessageListenerFragment)
         } else {
-            MessageAdapter3(parentFragment as MyMessageListener)
+            MessageAdapter3(parentFragment as MessageListenerFragment)
         }
     }
 

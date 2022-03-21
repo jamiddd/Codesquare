@@ -2,26 +2,18 @@ package com.jamid.codesquare.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.*
-import android.net.*
-import android.os.Build
-import android.os.Environment
+import android.graphics.Color
+import android.net.Uri
 import android.transition.TransitionManager
 import android.util.Log
-import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.widget.PopupMenu
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.*
@@ -31,9 +23,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
-import com.android.billingclient.api.*
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
@@ -41,7 +31,6 @@ import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.CollapsingToolbarLayout
@@ -52,18 +41,11 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FileDownloadTask
 import com.jamid.codesquare.*
-import com.jamid.codesquare.MainViewModel.Companion.MESSAGE_IDLE
-import com.jamid.codesquare.MainViewModel.Companion.MESSAGE_READY
-import com.jamid.codesquare.MainViewModel.Companion.MESSAGE_SELECTED
+import com.jamid.codesquare.PlayBillingController.PremiumState.*
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.ImageSelectType.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
@@ -74,72 +56,28 @@ import com.jamid.codesquare.ui.zoomableView.TapListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.json.JSONObject
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
-
 
 @ExperimentalPagingApi
 class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInviteListener,
-    ProjectClickListener, ProjectRequestListener, UserClickListener, ChatChannelClickListener,
-    MessageClickListener, NotificationItemClickListener, CommentListener, ImageClickListener, OptionClickListener {
+    ProjectClickListener, ProjectRequestListener, UserClickListener, ChatChannelClickListener, NotificationItemClickListener, CommentListener, ImageClickListener, OptionClickListener {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
-    private lateinit var networkCallback: MyNetworkCallback
     private var previouslyFetchedLocation: Location? = null
-    private var currentlyFocusedMessage: Message? = null
-    private var currentMessageView: View? = null
     private var currentImageViewer: View? = null
     private var animationStartView: View? = null
     private var animationEndView: View? = null
-    lateinit var billingClient: BillingClient
     private var updateJob: Job? = null
-    var optionsFragment: OptionsFragment? = null
-    var subscriptionFragment: SubscriptionFragment? = null
     private var isImageViewMode = false
     private var currentIndefiniteSnackbar: Snackbar? = null
 
-    private fun startNetworkCallback() {
-        networkCallback = MyNetworkCallback(viewModel)
-        val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val builder = NetworkRequest.Builder()
+    lateinit var playBillingController: PlayBillingController
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            cm.registerDefaultNetworkCallback(networkCallback)
-        } else {
-            cm.registerNetworkCallback(
-                builder.build(), networkCallback
-            )
-        }
-    }
+    var subscriptionFragment: SubscriptionFragment? = null
+    var optionsFragment: OptionsFragment? = null
 
-    private fun stopNetworkCallback() {
-        val cm: ConnectivityManager =
-            application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        cm.unregisterNetworkCallback(networkCallback)
-    }
-
-    private fun openFile(file: File) {
-        // Get URI and MIME type of file
-        try {
-            Log.d(TAG, file.path)
-            val uri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
-            val mime = contentResolver.getType(uri)
-
-            // Open file with user selected app
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.setDataAndType(uri, mime)
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.d(TAG, e.localizedMessage.orEmpty())
-        }
-
-    }
 
     private fun getMultipleImageIntent(): Intent {
         val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
@@ -152,123 +90,13 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    private fun checkForNetworkPermissions(onCheck: (granted: Boolean) -> Unit) {
-        when {
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_NETWORK_STATE
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                onCheck(true)
-            }
-            shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_NETWORK_STATE) -> {
-                MaterialAlertDialogBuilder(this).setTitle("This app requires permission to check your internet connection ...")
-                    .setMessage("For locating your device using GPS. This helps us in adding your location to the post so that it can be filtered based on location. ")
-                    .setPositiveButton("OK") { dialog, _ ->
-                        dialog.dismiss()
-                    }.show()
-            }
-            else -> {
-                onCheck(false)
-            }
-        }
-    }
-
-    private fun createNewFileAndDownload(
-        externalFilesDir: File,
-        message: Message,
-        onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit
-    ) {
-        val name = message.content + message.metadata!!.ext
-        val destination = File(externalFilesDir, message.chatChannelId)
-
-        fun download(des: File) {
-            val file = File(des, name)
-            try {
-                if (file.createNewFile()) {
-                    FireUtility.downloadMedia(file, message.content, message) {
-                        onComplete(it, message)
-                        if (it.isSuccessful) {
-                            message.isDownloaded = true
-                            viewModel.updateMessage(message)
-                        } else {
-                            file.delete()
-                            viewModel.setCurrentError(it.exception)
-                        }
-                    }
-                } else {
-                    if (file.exists()) {
-                        FireUtility.downloadMedia(file, message.content, message) {
-                            onComplete(it, message)
-                            if (it.isSuccessful) {
-                                message.isDownloaded = true
-                                viewModel.updateMessage(message)
-                            } else {
-                                file.delete()
-                                viewModel.setCurrentError(it.exception)
-                            }
-                        }
-                    }
-                    Log.d(
-                        TAG,
-                        "Probably file already exists. Or some other problem for which we are not being able to "
-                    )
-                }
-            } catch (e: Exception) {
-                viewModel.setCurrentError(e)
-            } finally {
-                Log.d(TAG, file.path)
-            }
-        }
-
-        try {
-            if (destination.mkdir()) {
-                download(destination)
-            } else {
-                Log.d(TAG, "Probably directory already exists")
-                if (destination.exists()) {
-                    download(destination)
-                } else {
-                    throw Exception("Unknown error. Couldn't create file and download.")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, e.localizedMessage.orEmpty())
-        } finally {
-            Log.d(TAG, destination.path)
-        }
-    }
-
-    fun selectImage() {
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-        }
-        selectImageLauncher.launch(intent)
-    }
-
-    fun selectProjectImages() {
-        selectProjectImageLauncher.launch(getMultipleImageIntent())
-    }
-
-    fun selectChatUploadDocuments() {
+    private fun selectChatUploadDocuments() {
         val intent = Intent().apply {
             type = "*/*"
             action = Intent.ACTION_GET_CONTENT
             putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
         selectChatDocumentsUploadLauncher.launch(intent)
-    }
-
-    fun selectChatUploadImages() {
-        selectChatImagesUploadLauncher.launch(getMultipleImageIntent())
-    }
-
-    fun selectReportUploadImages() {
-        selectReportImagesLauncher.launch(getMultipleImageIntent())
-    }
-
-    fun selectMoreProjectImages() {
-        selectMoreProjectImageLauncher.launch(getMultipleImageIntent())
     }
 
     fun selectMultipleImages() {
@@ -296,100 +124,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         return loadingDialog!!
     }
 
-    private fun connectToGooglePlayBilling() {
-        billingClient.startConnection(object : BillingClientStateListener {
-            override fun onBillingServiceDisconnected() {
-                connectToGooglePlayBilling()
-            }
-
-            override fun onBillingSetupFinished(p0: BillingResult) {
-                if (p0.responseCode == BillingClient.BillingResponseCode.OK) {
-                    Log.d(TAG, "onBillingSetupFinished")
-                    getSubscriptionDetails()
-                    querySubscriptions()
-                }
-            }
-        })
-    }
-
-    private fun getSubscriptionDetails() {
-        val subscriptionIds = mutableListOf<String>()
-
-        subscriptionIds.add("remove_ads_subscription")
-        subscriptionIds.add("premium_membership_subscription")
-
-        val query = SkuDetailsParams.newBuilder()
-            .setSkusList(subscriptionIds)
-            .setType(BillingClient.SkuType.SUBS)
-            .build()
-
-        billingClient.querySkuDetailsAsync(
-            query
-        ) { p0, p1 ->
-            if (p0.responseCode == BillingClient.BillingResponseCode.OK && p1 != null) {
-                for (p in p1) {
-                    Log.d(TAG, p.toString())
-                }
-                viewModel.setSubscriptionDetailsList(p1)
-            }
-        }
-    }
-
-    private fun querySubscriptions() {
-        billingClient.queryPurchasesAsync(BillingClient.SkuType.SUBS) { p0, p1 ->
-            if (p0.responseCode == BillingClient.BillingResponseCode.OK) {
-                if (p1.isNotEmpty()) {
-                    // check for subscriptions here.
-                    onPurchasesFetched(p1)
-                } else {
-                    subscriptionFragment?.dismiss()
-                    updatePremiumState(-1)
-                }
-            }
-        }
-    }
-
-    private fun verifyPurchase(purchase: Purchase) {
-
-        val data = mapOf(
-            "purchaseToken" to purchase.purchaseToken,
-            "purchaseTime" to purchase.purchaseTime,
-            "purchaseOrderId" to purchase.orderId,
-            "userId" to UserManager.currentUserId,
-            "productId" to JSONObject(purchase.originalJson).get("productId")
-        )
-
-        FirebaseFunctions.getInstance()
-            .getHttpsCallable("verifyPurchase")
-            .call(data)
-            .addOnCompleteListener {
-                if (it.isSuccessful) {
-                    try {
-                        val purchaseInfoFromServer = JSONObject(it.result.data.toString())
-                        if (purchaseInfoFromServer.getBoolean("isValid")) {
-                            val acknowledgePurchaseParams = AcknowledgePurchaseParams
-                                .newBuilder()
-                                .setPurchaseToken(purchase.purchaseToken)
-                                .build()
-
-                            billingClient.acknowledgePurchase(acknowledgePurchaseParams) { it1 ->
-                                if (it1.responseCode == BillingClient.BillingResponseCode.OK) {
-                                    subscriptionFragment?.dismiss()
-                                    navController.navigate(R.id.subscriberFragment, null, slideRightNavOptions())
-                                } else {
-                                    viewModel.setCurrentError(Exception("Something went wrong while acknowledging purchase."))
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        viewModel.setCurrentError(e)
-                    }
-                } else {
-                    toast("Something went wrong: " + it.exception?.localizedMessage.orEmpty())
-                }
-            }
-    }
-
     @SuppressLint("UnsafeOptInUsageError", "VisibleForTests")
     override fun onCreate() {
         super.onCreate()
@@ -400,26 +134,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         // initialize all nodes
         MobileAds.initialize(this)
-        billingClient = BillingClient.newBuilder(this)
-            .enablePendingPurchases()
-            .setListener { p0, p1 ->
-            if (p0.responseCode == BillingClient.BillingResponseCode.OK && p1 != null) {
-                    for (purchase in p1) {
-                        if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged) {
-                            verifyPurchase(purchase)
-                        }
-                    }
-                }
-            }
-            .build()
 
-        connectToGooglePlayBilling()
         fusedLocationProviderClient = FusedLocationProviderClient(this)
-        MyNotificationManager.init(this)
-        startNetworkCallback()
+        NotificationManager.init(this)
 
-        // TODO("What if the user rejects and later on he hates it because i'm asking
-        //  for the permission every time the app opens. Check this out")
         requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
 
         setupNavigation()
@@ -457,14 +175,55 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
         }
 
-        viewModel.isNetworkAvailable.observe(this) {
-            if (it == true) {
+
+
+        UserManager.currentUserLive.observe(this) {
+            if (it != null) {
+                viewModel.currentUserBitmap = null
+                viewModel.insertCurrentUser(it)
+
+                if (it.premiumState.toInt() != -1) {
+                    viewModel.deleteAdProjects()
+                }
+            }
+        }
+
+        UserManager.authState.observe(this) { isSignedIn ->
+            if (isSignedIn != null) {
+                if (isSignedIn) {
+                   /* if (UserManager.isEmailVerified) {
+                        TODO("Do all actions that require current user to be legit")
+                    }*/
+                } else {
+                    viewModel.isNetworkAvailable.removeObservers(this)
+                }
+            }
+        }
+
+        onReceiveData()
+
+        // TODO("Not actually working, need to do a whole lot of changes for this")
+        clearActiveNotifications()
+
+
+        playBillingController = PlayBillingController(this)
+
+
+        lifecycle.addObserver(SnapshotListenerContainer())
+        val networkManager = MainNetworkManager(this)
+        lifecycle.addObserver(networkManager)
+        lifecycle.addObserver(ChatOnlineStateListener())
+        lifecycle.addObserver(playBillingController)
+
+        setLiveDataObservers()
+
+        networkManager.networkAvailability.observe(this) { isNetworkAvailable ->
+            if (isNetworkAvailable == true) {
                 if (UserManager.isInitialized) {
                     LocationProvider.initialize(fusedLocationProviderClient, this)
                     currentIndefiniteSnackbar?.dismiss()
                 }
             } else {
-
                 val (bgColor, txtColor) = if (isNightMode()) {
                     ContextCompat.getColor(this, R.color.error_color) to Color.WHITE
                 } else {
@@ -479,52 +238,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
         }
 
-        UserManager.currentUserLive.observe(this) {
-            if (it != null) {
-                viewModel.currentUserBitmap = null
-                viewModel.insertCurrentUser(it)
-
-                if (it.premiumState.toInt() != -1) {
-                    viewModel.deleteAdProjects()
-                }
-
-            }
-        }
-
-        UserManager.authState.observe(this) { isSignedIn ->
-            if (isSignedIn != null) {
-                if (isSignedIn) {
-                    if (UserManager.isEmailVerified) {
-                        listenForNotifications()
-                        viewModel.lateInitChatController(UserManager.currentUserId)
-
-                        downloadAllProjectRequestsByCurrentUser()
-                        listenForProjectRequestsByCurrentUser()
-                    }
-                } else {
-                    viewModel.isNetworkAvailable.removeObservers(this)
-                }
-            }
-        }
-
-        onReceiveData()
-
-        // TODO("Not actually working, need to do a whole lot of changes for this")
-        clearActiveNotifications()
-
     }
 
-    private fun downloadAllProjectRequestsByCurrentUser() {
-        FireUtility.getProjectRequestsOfCurrentUser { result ->
-            when (result) {
-                is Result.Error -> viewModel.setCurrentError(result.exception)
-                is Result.Success -> {
-                    val projectRequests = result.data
-                    viewModel.insertProjectRequests(projectRequests)
-                }
-            }
-        }
-    }
 
     private fun setupNavigation() {
         val navHostFragment =
@@ -678,20 +393,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    private fun updatePremiumState(state: Long) {
-        FireUtility.updateUser2(mapOf("premiumState" to state)) {
-            if (it.isSuccessful) {
-                if (state.toInt() == -1) {
-                    FireUtility.removeSubscriptions {
-                        Log.d(TAG, "Deleted purchases")
-                    }
-                }
-            } else {
-                viewModel.setCurrentError(it.exception)
-            }
-        }
-    }
-
     private fun updateUi(
         shouldShowAppBar: Boolean = true,
         shouldShowToolbar: Boolean = true,
@@ -761,12 +462,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     }
 
 
-    private fun listenForNotifications() {
-        FireUtility.listenForNotifications {
-            viewModel.insertNotifications(*it.toTypedArray())
-        }
-    }
-
     private fun clearActiveNotifications() {
         NotificationManagerCompat.from(this).cancelAll()
     }
@@ -790,13 +485,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    // something to do with project image
-    override var imagePos: Int
-        get() = 0
-        set(value) {}
-
     override fun onProjectClick(project: Project) {
-        val bundle = bundleOf(TITLE to project.name, PROJECT to project, "image_pos" to imagePos)
+        val bundle = bundleOf(TITLE to project.name, PROJECT to project, "image_pos" to 0)
         navController.navigate(R.id.projectFragmentContainer, bundle, slideRightNavOptions())
     }
 
@@ -892,28 +582,79 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
+    private fun setLiveDataObservers() {
+        ChatManager.currentUserChatChannels.observe(this) { channels ->
+            if (!channels.isNullOrEmpty()) {
+                viewModel.insertChatChannels(channels)
+            }
+        }
+
+        ChatManager.channelContributors.observe(this) { contributors ->
+            if (!contributors.isNullOrEmpty()) {
+                viewModel.insertUsers(contributors)
+            }
+        }
+
+        ChatManager.immediateChange.observe(this) {
+            for (channel in it) {
+                viewModel.getLatestMessages(channel) {
+                    // notify that new messages
+                }
+            }
+        }
+
+        ChatManager.chatErrors.observe(this) {
+            Log.e(TAG, "setLiveDataObservers: ${it.localizedMessage}")
+        }
+
+        ProjectManager.myProjectRequests.observe(this) { requests ->
+            if (!requests.isNullOrEmpty()) {
+                viewModel.insertProjectRequests(requests)
+            }
+        }
+
+        NotificationManager.notifications.observe(this) { notifications ->
+            if (!notifications.isNullOrEmpty()) {
+                viewModel.insertNotifications(notifications)
+            }
+        }
+
+
+        playBillingController.isPurchaseAcknowledged.observe(this) { isPurchaseAcknowledged ->
+            if (isPurchaseAcknowledged == true) {
+                subscriptionFragment?.dismiss()
+                navController.navigate(R.id.subscriberFragment, null, slideRightNavOptions())
+            }
+        }
+
+        playBillingController.premiumState.observe(this) {
+            val premiumState = it ?: return@observe
+
+            when (premiumState) {
+                STATE_NO_PURCHASE -> {
+                    subscriptionFragment?.dismiss()
+                }
+                STATE_HALF_PURCHASE -> {
+                    //
+                }
+                STATE_FULL_PURCHASE -> {
+                    //
+                }
+            }
+        }
+
+        playBillingController.purchaseDetails.observe(this) {p1 ->
+            if (!p1.isNullOrEmpty()) {
+                viewModel.setSubscriptionDetailsList(p1)
+            }
+        }
+
+    }
+
     override fun onProjectJoinClick(project: Project, onChange: (newProject: Project) -> Unit) {
         if (project.isRequested) {
             // undo request
-            FireUtility.getExistingProjectRequest(project.id, UserManager.currentUserId) {
-                when (it) {
-                    is Result.Error -> viewModel.setCurrentError(it.exception)
-                    is Result.Success -> {
-                        val request = it.data
-
-                        onProjectUndoClick(project, request, onChange)
-                    }
-                    null -> {
-                        Log.w(
-                            TAG,
-                            "Project request could not be found in firestore. " +
-                                    "Check the server to see if everything is in place. " +
-                                    "Project Id -> ${project.id}, " +
-                                    "SenderId -> ${UserManager.currentUserId}"
-                        )
-                    }
-                }
-            }
+            onProjectUndoClick(project, onChange)
         } else {
             // send request
             val currentUser = UserManager.currentUser
@@ -1225,20 +966,29 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     }
 
-    override fun onProjectUndoClick(project: Project, projectRequest: ProjectRequest, onChange: (newProject: Project) -> Unit) {
-        FireUtility.undoJoinProject(projectRequest) {
-            if (it.isSuccessful) {
-                project.isRequested = false
-                val newList = project.requests.removeItemFromList(projectRequest.requestId)
-                project.requests = newList
+    override fun onProjectUndoClick(project: Project, onChange: (newProject: Project) -> Unit) {
 
-                viewModel.updateLocalProject(project)
+        viewModel.getProjectRequest(project.id) { projectRequest ->
+            runOnUiThread {
+                if (projectRequest != null) {
+                    FireUtility.undoJoinProject(projectRequest) {
+                        if (it.isSuccessful) {
+                            project.isRequested = false
+                            val newList = project.requests.removeItemFromList(projectRequest.requestId)
+                            project.requests = newList
 
-                onChange(project)
-            } else {
-                viewModel.setCurrentError(it.exception)
+                            viewModel.updateLocalProject(project)
+
+                            onChange(project)
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                }
             }
         }
+
+
     }
 
     override fun onProjectContributorsClick(project: Project) {
@@ -1271,274 +1021,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         navController.navigate(R.id.profileFragment, bundle, slideRightNavOptions())
     }
 
-    override fun onUserOptionClick(
-       user: User
-    ) {
-
+    override fun onUserOptionClick(user: User) {
         viewModel.setCurrentFocusedUser(user)
-
-        /*val option1 = "Set as admin"
-        val option2 = "Remove from admin"
-        val option3 = "Like ${user.name}"
-        val option4 = "Dislike ${user.name}"
-        val option5 = "Report ${user.name}"
-        val option6 = "Remove from project"
-        val option7 = "Leave project"
-
-        val currentUser = UserManager.currentUser
-        val currentUserId = currentUser.id
-        val isCurrentUserAdministrator = administrators.contains(currentUserId)
-
-        if (currentUser.id == user.id) {
-
-            // the user has created the project, hence cannot leave project
-            if (currentUser.projects.contains(projectId))
-                return
-
-            val choices = arrayOf(option7)
-
-            val alertDialog = MaterialAlertDialogBuilder(this)
-                .setTitle("You")
-                .setItems(choices) { _, index ->
-                    when (choices[index]) {
-                        option7 -> {
-
-                            // Removing current user from project
-                            FireUtility.removeUserFromProject(
-                                currentUser,
-                                projectId,
-                                chatChannelId
-                            ) {
-                                if (it.isSuccessful) {
-
-                                    navController.popBackStack(R.id.homeFragment, false)
-
-                                    viewModel.getLocalChatChannel(chatChannelId) { channel ->
-                                        if (channel != null) {
-
-                                            // Removing the current user from chat channel
-                                            FireUtility.removeUserFromChatChannel(
-                                                currentUser,
-                                                channel
-                                            ) { task ->
-                                                if (task.isSuccessful) {
-                                                    // notifying other users that the current user has left the project
-                                                    val content =
-                                                        "${currentUser.name} has left the project"
-                                                    val notification =
-                                                        Notification.createNotification(
-                                                            content,
-                                                            currentUserId,
-                                                            chatChannelId
-                                                        )
-                                                    FireUtility.sendNotificationToChannel(
-                                                        notification
-                                                    ) { it1 ->
-                                                        if (it1.isSuccessful) {
-
-                                                            // if there is a project in local db, update it
-                                                            viewModel.getLocalProject(projectId) { project ->
-                                                                if (project != null) {
-                                                                    val contributors =
-                                                                        project.contributors.removeItemFromList(
-                                                                            currentUserId
-                                                                        )
-                                                                    project.contributors =
-                                                                        contributors
-                                                                    viewModel.updateLocalProject(
-                                                                        project
-                                                                    )
-                                                                } else {
-                                                                    Log.d(
-                                                                        TAG,
-                                                                        "Tried fetching local project with id: $projectId but received null."
-                                                                    )
-                                                                }
-                                                            }
-                                                        } else {
-                                                            viewModel.setCurrentError(it.exception)
-                                                        }
-                                                    }
-                                                } else {
-                                                    viewModel.setCurrentError(task.exception)
-                                                }
-                                            }
-                                        } else {
-                                            Log.d(
-                                                TAG,
-                                                "Tried fetching local chat channel with id: $chatChannelId but received null."
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    viewModel.setCurrentError(it.exception)
-                                }
-                            }
-                        }
-                    }
-                }.show()
-
-            alertDialog.window?.setGravity(Gravity.BOTTOM)
-
-        } else {
-            val isOtherUserLiked = currentUser.likedUsers.contains(user.id)
-
-            val likeText = if (isOtherUserLiked) {
-                option4
-            } else {
-                option3
-            }
-
-            val choices = if (administrators.contains(user.id)) {
-                if (isCurrentUserAdministrator) {
-                    arrayOf(option2, likeText, option5, option6)
-                } else {
-                    arrayOf(likeText, option5)
-                }
-            } else {
-                if (isCurrentUserAdministrator) {
-                    arrayOf(option1, likeText, option5, option6)
-                } else {
-                    arrayOf(likeText, option5)
-                }
-            }
-
-            val alertDialog = MaterialAlertDialogBuilder(this)
-                .setTitle(user.name)
-                .setItems(choices) { _, index ->
-                    when (choices[index]) {
-                        option1 -> {
-                            viewModel.setOtherUserAsAdmin(chatChannelId, user.id) {
-                                if (!it.isSuccessful) {
-                                    viewModel.setCurrentError(it.exception)
-                                }
-                            }
-                        }
-                        option2 -> {
-                            viewModel.removeOtherUserFromAdmin(chatChannelId, user.id) {
-                                if (!it.isSuccessful) {
-                                    viewModel.setCurrentError(it.exception)
-                                }
-                            }
-                        }
-                        option3 -> {
-                            likeUser(user.id)
-                        }
-                        option4 -> {
-                            dislikeUser(user.id)
-                        }
-                        option5 -> {
-                            navController.navigate(
-                                R.id.action_chatDetailFragment_to_reportFragment,
-                                bundleOf("contextObject" to user),
-                                slideRightNavOptions()
-                            )
-                        }
-                        option6 -> {
-
-                            FireUtility.removeUserFromProject(user, projectId, chatChannelId) {
-                                if (it.isSuccessful) {
-                                    viewModel.getLocalChatChannel(chatChannelId) { channel ->
-                                        if (channel != null) {
-
-                                            // Removing the current user from chat channel
-                                            FireUtility.removeUserFromChatChannel(
-                                                user,
-                                                channel
-                                            ) { task ->
-                                                if (task.isSuccessful) {
-                                                    // notifying other users that the current user has left the project
-                                                    val content =
-                                                        "${user.name} has left the project"
-                                                    val notification =
-                                                        Notification.createNotification(
-                                                            content,
-                                                            currentUserId,
-                                                            chatChannelId
-                                                        )
-                                                    FireUtility.sendNotificationToChannel(
-                                                        notification
-                                                    ) { it1 ->
-                                                        if (it1.isSuccessful) {
-
-                                                            // if there is a project in local db, update it
-                                                            viewModel.getLocalProject(projectId) { project ->
-                                                                if (project != null) {
-                                                                    val contributors =
-                                                                        project.contributors.removeItemFromList(
-                                                                            user.id
-                                                                        )
-                                                                    project.contributors =
-                                                                        contributors
-                                                                    viewModel.updateLocalProject(
-                                                                        project
-                                                                    )
-                                                                } else {
-                                                                    Log.d(
-                                                                        TAG,
-                                                                        "Tried fetching local project with id: $projectId but received null."
-                                                                    )
-                                                                }
-                                                            }
-                                                        } else {
-                                                            viewModel.setCurrentError(it.exception)
-                                                        }
-                                                    }
-                                                } else {
-                                                    viewModel.setCurrentError(task.exception)
-                                                }
-                                            }
-                                        } else {
-                                            Log.d(
-                                                TAG,
-                                                "Tried fetching local chat channel with id: $chatChannelId but received null."
-                                            )
-                                        }
-                                    }
-                                } else {
-                                    viewModel.setCurrentError(it.exception)
-                                }
-                            }
-
-                            *//*viewModel.castVoteToRemoveUser(user, projectId, currentUserId) {
-                                if (it.isSuccessful) {
-                                    val ad = MaterialAlertDialogBuilder(this)
-                                        .setTitle("Collab")
-                                        .setMessage("Your vote to remove ${user.name} has been submitted anonymously. No one is notified of this action. As more contributors cast their vote on favor, the decision will be concluded.")
-                                        .setCancelable(false)
-                                        .setPositiveButton("OK") { a, _ ->
-                                            a.dismiss()
-                                        }.setNegativeButton("Undo") { _, _ ->
-                                            viewModel.undoVoteCast(
-                                                user,
-                                                projectId,
-                                                currentUserId
-                                            ) { it1 ->
-                                                if (it1.isSuccessful) {
-                                                    Snackbar.make(
-                                                        binding.root,
-                                                        "Your vote has been removed.",
-                                                        Snackbar.LENGTH_SHORT
-                                                    ).show()
-                                                } else {
-                                                    viewModel.setCurrentError(it1.exception)
-                                                }
-                                            }
-                                        }
-                                        .show()
-
-                                    ad.window?.setGravity(Gravity.BOTTOM)
-                                } else {
-                                    viewModel.setCurrentError(it.exception)
-                                }
-                            }*//*
-                        }
-                    }
-                }
-                .show()
-
-            alertDialog.window?.setGravity(Gravity.BOTTOM)
-        }*/
     }
 
     private fun dislikeUser(userId: String) {
@@ -1688,9 +1172,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     }
 
     override fun onReportClick(comment: Comment) {
-        val bundle = bundleOf(
-            CONTEXT_OBJECT to comment
-        )
+
+        val report = Report.getReportForComment(comment)
+        val bundle = bundleOf(REPORT to report)
 
         navController.navigate(
             R.id.reportFragment, bundle, slideRightNavOptions()
@@ -1748,21 +1232,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     }
 
-    override fun onStartDownload(
-        message: Message,
-        onComplete: (Task<FileDownloadTask.TaskSnapshot>, newMessage: Message) -> Unit
-    ) {
-        if (message.type == image) {
-            getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.let {
-                createNewFileAndDownload(it, message, onComplete)
-            }
-        } else if (message.type == document) {
-            getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)?.let {
-                createNewFileAndDownload(it, message, onComplete)
-            }
-        }
-    }
-
     override fun onBackPressed() {
         if (isImageViewMode) {
             removeImageViewFragment()
@@ -1786,31 +1255,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         WindowCompat.setDecorFitsSystemWindows(window, true)
         val controller = ViewCompat.getWindowInsetsController(binding.root)
         controller?.show(WindowInsetsCompat.Type.systemBars())
-    }
-
-    override fun onDocumentClick(message: Message) {
-        val externalDir = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        val destination = File(externalDir, message.chatChannelId)
-        val name = message.content + message.metadata!!.ext
-        val file = File(destination, name)
-        openFile(file)
-    }
-
-    override fun onImageClick(
-        view: View,
-        message: Message,
-        controllerListener: FrescoImageControllerListener
-    ) {
-        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val name = message.content + message.metadata!!.ext
-        val destination = File(imagesDir, message.chatChannelId)
-        val file = File(destination, name)
-        val uri = Uri.fromFile(file)
-
-        val image = Image(uri.toString(), controllerListener.finalWidth, controllerListener.finalHeight, message.metadata?.ext!!)
-
-        showImageViewFragment(view, image, message)
-
     }
 
     private fun removeImageViewFragment() {
@@ -2000,145 +1444,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    // make sure to change this later on for null safety
-    override fun onMessageRead(message: Message) {
-        val a1 = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
-        val a2 = getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
-
-        val currentUserId = UserManager.currentUserId
-        if (!message.readList.contains(currentUserId)) {
-            viewModel.updateReadList(a1, a2, message)
-        }
-    }
-
-    override fun onUserClick(message: Message) {
-        onUserClick(message.sender)
-    }
-
-    override fun onForwardClick(view: View, messages: ArrayList<Message>) {
-
-    }
-
-    override fun onMessageLongClick(message: Message) {
-        viewModel.updateRestOfTheMessages(message.chatChannelId, MESSAGE_READY)
-
-        lifecycleScope.launch {
-            delay(300)
-            message.state = MESSAGE_SELECTED
-            viewModel.updateMessage(message)
-        }
-
-    }
-
-    override fun onMessageLongPress(p0: MotionEvent?) {
-        if (currentlyFocusedMessage != null && currentlyFocusedMessage?.isDownloaded == true) {
-            if (currentlyFocusedMessage!!.state == MESSAGE_IDLE) {
-                currentlyFocusedMessage!!.state = MESSAGE_READY
-
-                viewModel.updateRestOfTheMessages(currentlyFocusedMessage!!.chatChannelId, MESSAGE_READY)
-
-                lifecycleScope.launch {
-                    delay(300)
-                    viewModel.setSelectMode(true)
-                    currentlyFocusedMessage!!.state = MESSAGE_SELECTED
-                    viewModel.updateMessage(currentlyFocusedMessage!!)
-                }
-            } else {
-                Log.d(TAG, "${currentlyFocusedMessage!!.state} is the state of the message")
-            }
-        }
-    }
-
-    override fun onMessageClick(p0: MotionEvent?): Boolean {
-        if (currentlyFocusedMessage != null && currentMessageView != null) {
-            if (currentlyFocusedMessage!!.type != text && !currentlyFocusedMessage!!.isDownloaded) {
-                return true
-            }
-
-            if (currentlyFocusedMessage!!.state == 0) {
-                currentlyFocusedMessage!!.state = 1
-                currentMessageView!!.isSelected = true
-                if (isNightMode()) {
-                    currentMessageView!!.setBackgroundColor(
-                        ContextCompat.getColor(
-                            this,
-                            R.color.lightest_black
-                        )
-                    )
-                } else {
-                    currentMessageView!!.setBackgroundColor(
-                        ContextCompat.getColor(
-                            this,
-                            R.color.lightest_blue
-                        )
-                    )
-                }
-                viewModel.updateMessage(currentlyFocusedMessage!!)
-            } else {
-                currentlyFocusedMessage!!.state = 0
-                currentMessageView!!.isSelected = false
-                currentMessageView!!.setBackgroundColor(
-                    ContextCompat.getColor(
-                        this,
-                        R.color.transparent
-                    )
-                )
-                viewModel.updateMessage(currentlyFocusedMessage!!)
-            }
-        }
-        return true
-    }
-
-    override fun onMessageDoubleTapped(p0: MotionEvent?): Boolean {
-        if (viewModel.selectedMessages.value.isNullOrEmpty() && viewModel.singleSelectedMessage.value == null) {
-
-            if (currentlyFocusedMessage?.isDownloaded != true)
-                return true
-
-            val flag = currentlyFocusedMessage?.senderId != UserManager.currentUserId
-
-            val popupMenu = if (!flag) {
-                PopupMenu(this, currentMessageView!!, Gravity.END)
-            } else {
-                PopupMenu(this, currentMessageView!!, Gravity.START)
-            }
-
-            popupMenu.inflate(R.menu.chat_popup_menu)
-
-            popupMenu.setOnMenuItemClickListener {
-                when (it.itemId) {
-                    R.id.popup_reply -> {
-                        viewModel.setCurrentlySelectedMessage(currentlyFocusedMessage)
-                    }
-                    R.id.popup_forward -> {
-                        onForwardClick(currentMessageView!!, arrayListOf(currentlyFocusedMessage!!))
-                    }
-                    R.id.popup_details -> {
-                        val bundle = bundleOf("message" to currentlyFocusedMessage)
-                        navController.navigate(
-                            R.id.action_chatFragment_to_messageDetailFragment,
-                            bundle,
-                            slideRightNavOptions()
-                        )
-                    }
-                    R.id.popup_sender -> {
-                        onUserClick(currentlyFocusedMessage!!)
-                    }
-                }
-                true
-            }
-
-            if (currentlyFocusedMessage?.senderId != UserManager.currentUserId) {
-                popupMenu.menu.getItem(2).isVisible = false
-            } else {
-                popupMenu.menu.getItem(3).isVisible = false
-            }
-
-            popupMenu.show()
-        }
-        return true
-    }
-
     override fun onNotificationRead(notification: Notification) {
         FireUtility.checkIfNotificationExistsById(
             notification.receiverId,
@@ -2261,152 +1566,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    override fun onGetReplyMessage(
-        parentMessage: Message,
-        onResult: (newMessage: Message) -> Unit
-    ) {
-        if (parentMessage.replyTo != null) {
-
-            val ref = Firebase.firestore.collection("chatChannels")
-                .document(parentMessage.chatChannelId)
-                .collection("messages")
-                .document(parentMessage.replyTo!!)
-
-            FireUtility.getDocument(ref) {
-                if (it.isSuccessful) {
-                    if (it.result.exists()) {
-                        val replyMessage = it.result.toObject(Message::class.java)!!
-                        viewModel.getLocalUser(replyMessage.senderId) { sender ->
-                            if (sender != null) {
-                                // this step is necessary as it cannot convert a message to reply message if there is no user attached to it.
-                                replyMessage.sender = sender
-                                parentMessage.replyMessage = replyMessage.toReplyMessage()
-                                onResult(parentMessage)
-                                viewModel.updateMessage(parentMessage)
-                            }
-                        }
-                    } else {
-                        Log.e(TAG, "1097 ${it.exception?.localizedMessage}")
-                    }
-                } else {
-                    Log.e(TAG, "1100 ${it.exception?.localizedMessage}")
-                }
-            }
-        }
-    }
-
-    override fun onGetMessageReplyUser(senderId: String, onComplete: (User?) -> Unit) {
-        viewModel.getLocalUser(senderId) {
-            onComplete(it)
-        }
-    }
-
-    override fun onMessageStateChanged(message: Message) {
-        viewModel.updateMessage(message)
-    }
-
-    override fun onMessageFocused(message: Message, parent: View) {
-        currentlyFocusedMessage = message
-        currentMessageView = parent
-    }
-
-    override fun onPause() {
-        super.onPause()
-
-        Log.d(TAG, "Paused main activity")
-
-        if (UserManager.isInitialized) {
-            val currentUser = UserManager.currentUser
-            val batch = Firebase.firestore.batch()
-
-            for (channel in currentUser.chatChannels) {
-                viewModel.updateRestOfTheMessages(channel, MESSAGE_IDLE)
-
-                for (token in currentUser.registrationTokens) {
-                    val ref = Firebase.firestore.collection("chatChannels").document(channel)
-                    batch.update(ref, "registrationTokens", FieldValue.arrayUnion(token))
-                }
-            }
-
-            batch.commit().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Log.d(
-                        TAG,
-                        "Successfully changed offline status to online in chat channel document."
-                    )
-                } else {
-                    Log.e(TAG, "1109 - ${it.exception?.localizedMessage}")
-                }
-            }
-        }
-
-        stopNetworkCallback()
-    }
-
-    private fun onPurchasesFetched(purchases: List<Purchase>) {
-        try {
-            Log.d(TAG, purchases.toString())
-            if (purchases.size > 1) {
-                throw IllegalStateException("There cannot be more than one subscription at a time.")
-            } else {
-                for (purchase in purchases) {
-                    if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged) {
-                        verifyPurchase(purchase)
-                    } else {
-                        when (JSONObject(purchase.originalJson).get("productId")) {
-                            "remove_ads_subscription" -> {
-                                updatePremiumState(0)
-                            }
-                            "premium_membership_subscription" -> {
-                                updatePremiumState(1)
-                            }
-                            else -> {
-                                //
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            viewModel.setCurrentError(e)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
-
-        val firebaseUser = Firebase.auth.currentUser
-        if (firebaseUser != null && UserManager.isInitialized) {
-            val currentUser = UserManager.currentUser
-            val batch = Firebase.firestore.batch()
-            for (channel in currentUser.chatChannels) {
-                for (token in currentUser.registrationTokens) {
-                    val ref = Firebase.firestore.collection("chatChannels").document(channel)
-                    batch.update(ref, "registrationTokens", FieldValue.arrayRemove(token))
-                }
-            }
-
-            batch.commit().addOnCompleteListener {
-                if (it.isSuccessful) {
-                    Log.d(
-                        TAG,
-                        "Successfully set the online status to offline in chat channel document"
-                    )
-                } else {
-                    Log.e(TAG, "1142 - ${it.exception?.localizedMessage}")
-                }
-            }
-
-            if (::billingClient.isInitialized) {
-                querySubscriptions()
-            }
-        }
-
-        checkForNetworkPermissions {
-            if (it) {
-                startNetworkCallback()
-            }
-        }
 
         lifecycleScope.launch {
             UserManager.listenForUserVerification(20, 5)
@@ -2553,67 +1714,24 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    fun selectImage1() {
-        val intent = Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-        }
-        selectImageLauncher1.launch(intent)
-    }
 
+    fun selectImage(type: ImageSelectType) {
+        imageSelectType = type
 
-    private fun listenForProjectRequestsByCurrentUser() {
-        // deleting all existing project requests because we will get new ones here
-        viewModel.deleteAllProjectRequests {
+        val intent = Intent()
+        intent.type = "image/*"
+        intent.action = Intent.ACTION_GET_CONTENT
 
-            // this line requires that the UserManager must be initialized first
-            val currentUser = UserManager.currentUser
+        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
 
-            for (requestId in currentUser.projectRequests) {
-                Firebase.firestore.collection(PROJECT_REQUESTS)
-                    .document(requestId)
-                    .addSnapshotListener { documentSnapshot, error ->
-                        if (error != null) {
-                            viewModel.setCurrentError(error)
-                            return@addSnapshotListener
-                        }
-
-                        if (documentSnapshot != null) {
-                            if (documentSnapshot.exists()) {
-                                // we need the project request in future in case we need to revoke out request or if the request gets accepted
-                                viewModel.insertProjectRequests(documentSnapshot.toObject(ProjectRequest::class.java)!!)
-                            } else {
-                                /*
-
-                                document got deleted
-                                * the request was revoked
-                                * the request was accepted
-
-                                whichever it maybe we are only concerned that the latest data of
-                                the project associated with this request needs to be localized
-
-                                */
-
-                                viewModel.getLocalProjectRequest(requestId) { existingRequest ->
-                                    if (existingRequest != null) {
-                                        val projectId = existingRequest.projectId
-                                        FireUtility.getProject(projectId) {
-                                            when (it) {
-                                                is Result.Error -> viewModel.setCurrentError(it.exception)
-                                                is Result.Success -> {
-                                                    val project = it.data
-                                                    viewModel.insertProjects(project)
-                                                }
-                                                null -> {
-                                                    Log.w(TAG, "Something went wrong while looking for project with project id: $projectId through request with id: ${existingRequest.requestId}")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+        when (type) {
+            IMAGE_PROFILE -> {
+                sil.launch(intent)
+            }
+            IMAGE_CHAT, IMAGE_PROJECT, IMAGE_REPORT -> {
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                sil.launch(intent)
             }
         }
     }
@@ -2812,7 +1930,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 }
             }
             OPTION_8 -> {
-                selectChatUploadImages()
+                selectImage(IMAGE_CHAT)
             }
             OPTION_9 -> {
                 selectChatUploadDocuments()
@@ -2824,7 +1942,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                         val holderView = currentFeedRecycler.findViewWithTag<View>(focusedProject.id)
                         val projectViewHolder = currentFeedRecycler.getChildViewHolder(holderView)
                         if (projectViewHolder != null && projectViewHolder is ProjectViewHolder) {
-                            projectViewHolder.saveProject(focusedProject)
+                            projectViewHolder.saveUnSaveProject(focusedProject)
                         }
                     }
                 }
@@ -2856,18 +1974,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 }
             }
             OPTION_14 -> {
-                val bundle = bundleOf(CONTEXT_OBJECT to focusedProject)
-                navController.navigate(R.id.reportFragment, bundle, slideRightNavOptions())
+                if (focusedProject != null) {
+                    val report = Report.getReportForProject(focusedProject)
+                    val bundle = bundleOf(REPORT to report)
+                    navController.navigate(R.id.reportFragment, bundle, slideRightNavOptions())
+                }
             }
             OPTION_15 -> {
-                val bundle = bundleOf(PROJECT to focusedProject)
-                navController.navigate(R.id.updateProjectFragment, bundle, slideRightNavOptions())
+                val bundle = bundleOf(PREVIOUS_PROJECT to focusedProject)
+                navController.navigate(R.id.createProjectFragment, bundle, slideRightNavOptions())
             }
             OPTION_16 -> {
                 navController.navigate(R.id.projectFragment, bundleOf(PROJECT to focusedProject, TITLE to focusedProject?.name), slideRightNavOptions())
             }
             OPTION_17 -> {
-                selectImage()
+                selectImage(IMAGE_PROFILE)
             }
             OPTION_18 -> {
                 viewModel.setCurrentImage(null)

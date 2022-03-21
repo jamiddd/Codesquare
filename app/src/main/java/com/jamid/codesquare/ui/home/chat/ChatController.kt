@@ -1,26 +1,64 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.content.Context
-import android.os.Environment
-import android.util.Log
-import androidx.lifecycle.ViewModel
 import androidx.paging.ExperimentalPagingApi
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.User
-import com.jamid.codesquare.ui.ChatViewModel
 
 @ExperimentalPagingApi
-class ChatController(private val viewModel: ViewModel, private val mContext: Context) {
+class ChatController() {
 
-    private var isInitialized = false
+    /*private var isInitialized = false
+    private val database: CodesquareDatabase
+    private val scope: CoroutineScope = activity.lifecycleScope
+    private val errors = MutableLiveData<Exception>()
+
+    init {
+        val currentUser = Firebase.auth.currentUser
+        database = CodesquareDatabase.getInstance(activity.applicationContext)
+        if (currentUser != null) {
+            isInitialized = true
+            initialize(currentUser.uid)
+        }
+    }
+
+    private fun processChatChannel(chatChannel: ChatChannel): ChatChannel {
+        val lastMessage = chatChannel.lastMessage
+
+        if (lastMessage != null && lastMessage.sender.isEmpty()) {
+
+            scope.launch (Dispatchers.IO) {
+                val sender = database.userDao().getUser(lastMessage.senderId)
+                if (sender != null) {
+                    lastMessage.sender = sender
+                    chatChannel.lastMessage = lastMessage
+                } else {
+                    when (val result = FireUtility.getUser(lastMessage.senderId)) {
+                        is Result.Error -> {
+                            errors.postValue(result.exception)
+                        }
+                        is Result.Success -> {
+                            val unknownContributor = result.data
+                            database.userDao().insert(processUsers(unknownContributor).toList())
+                            lastMessage.sender = unknownContributor
+                            chatChannel.lastMessage = lastMessage
+                        }
+                        null -> {
+                            Log.d(TAG, "Probably the document doesn't exist")
+                        }
+                    }
+                }
+            }
+
+        }
+        return chatChannel
+    }
+
+    private fun initialize(currentUserId: String) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
+            .get()
+            .addOnCompleteListener(onChannelsReceived)
+
+        addChannelsListener(currentUserId)
+    }
 
     private val onChannelsReceived = OnCompleteListener<QuerySnapshot> {
         if (it.isSuccessful) {
@@ -28,13 +66,16 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
             if (querySnapshot.isEmpty) {
                 return@OnCompleteListener
             } else {
-                val chatChannels = querySnapshot.toObjects(ChatChannel::class.java)
-                if (viewModel is ChatViewModel) {
-                    viewModel.insertChatChannels(chatChannels)
 
+                val chatChannels = querySnapshot.toObjects(ChatChannel::class.java)
+                val newListOfChatChannels = mutableListOf<ChatChannel>()
+                for (chatChannel in chatChannels) {
+                    newListOfChatChannels.add(processChatChannel(chatChannel))
                 }
-                if (viewModel is MainViewModel) {
-                    viewModel.insertChatChannels(chatChannels)
+
+                scope.launch (Dispatchers.IO) {
+                    database.chatChannelDao().insert(newListOfChatChannels)
+
                 }
 
                 for (chatChannel in chatChannels) {
@@ -45,23 +86,6 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
         } else {
             it.exception?.localizedMessage?.let { it1 -> Log.e(TAG, it1) }
         }
-    }
-
-    init {
-        val currentUser = Firebase.auth.currentUser
-        if (currentUser != null) {
-            isInitialized = true
-            initialize(currentUser.uid)
-        }
-    }
-
-    private fun initialize(currentUserId: String) {
-        Firebase.firestore.collection(CHAT_CHANNELS)
-            .whereArrayContains(CONTRIBUTORS, currentUserId)
-            .get()
-            .addOnCompleteListener(onChannelsReceived)
-
-        addChannelsListener(currentUserId)
     }
 
     fun lateInitialize(currentUserId: String) {
@@ -92,7 +116,7 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
                             val messages = querySnapshot.toObjects(Message::class.java)
                             if (imagesDir != null && documentsDir != null) {
                                 if (viewModel is ChatViewModel) {
-                                    viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                                    viewModel.insertChannelMessages(messages)
                                 }
 
                                 if (viewModel is MainViewModel) {
@@ -121,7 +145,7 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
     private fun addChannelsListener(currentUserId: String) {
         Firebase.firestore.collection(CHAT_CHANNELS)
             .whereArrayContains(CONTRIBUTORS, currentUserId)
-            .addSnapshotListener { value, error ->
+            .addSnapshotListener(mContext as MainActivity) { value, error ->
 
                 if (error != null) {
                     Log.e(TAG, error.localizedMessage.orEmpty())
@@ -165,7 +189,7 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
 
                     if (imagesDir != null && documentsDir != null) {
                         if (viewModel is ChatViewModel) {
-                            viewModel.insertChannelMessages(imagesDir, documentsDir, messages)
+                            viewModel.insertChannelMessages(messages)
                         }
 
                         if (viewModel is MainViewModel) {
@@ -186,12 +210,9 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
                     if (!querySnapshot.isEmpty) {
 
                         val contributors = querySnapshot.toObjects(User::class.java)
-                        if (viewModel is ChatViewModel) {
-                            viewModel.insertUsers(*contributors.toTypedArray())
-                        }
 
-                        if (viewModel is MainViewModel) {
-                            viewModel.insertUsers(*contributors.toTypedArray())
+                        scope.launch (Dispatchers.IO) {
+                            database.userDao().insert(processUsers(*contributors.toTypedArray()).toList())
                         }
 
                     }
@@ -204,7 +225,7 @@ class ChatController(private val viewModel: ViewModel, private val mContext: Con
 
     companion object {
         private const val TAG = "ChatController"
-    }
+    }*/
 
 
 }

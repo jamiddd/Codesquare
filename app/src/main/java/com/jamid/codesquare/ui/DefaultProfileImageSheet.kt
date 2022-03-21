@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.ImageSelectType
 import com.jamid.codesquare.databinding.CircleImageLayoutBinding
 import com.jamid.codesquare.databinding.DefaultProfileImageSheetBinding
 
@@ -56,7 +57,7 @@ class DefaultProfileImageSheet: BottomSheetDialogFragment() {
         }
 
         binding.selectFromGalleryBtn.setOnClickListener {
-            (activity as MainActivity).selectImage1()
+            (activity as MainActivity).selectImage(ImageSelectType.IMAGE_PROFILE)
             dismiss()
         }
 

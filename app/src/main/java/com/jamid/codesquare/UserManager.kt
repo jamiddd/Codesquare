@@ -4,11 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.navigation.fragment.findNavController
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.jamid.codesquare.data.Result
@@ -23,7 +21,7 @@ object UserManager {
     val errors = MutableLiveData<Exception>().apply { value = null }
     lateinit var currentUserId: String
 
-    val testEmails = listOf(
+    private val testEmails = listOf(
         "richard.green@gmail.com",
         "julia.lowe@gmail.com",
         "ricky.carlson@gmail.com",
@@ -99,25 +97,6 @@ object UserManager {
             })
     }
 
-    private fun addUserListener() {
-        Firebase.firestore.collection(USERS)
-            .document(currentUserId)
-            .addSnapshotListener { value, error ->
-                if (error != null) {
-                    Log.e(TAG, error.localizedMessage.orEmpty())
-                    return@addSnapshotListener
-                }
-
-                if (value != null && value.exists()) {
-                    val newUser = value.toObject(User::class.java)
-                    if (newUser != null) {
-                        currentUser = newUser
-                        currentUserData.postValue(newUser)
-                    }
-                }
-            }
-    }
-
     private fun getCurrentUser(onComplete: ((Result<User>?) -> Unit)? = null) {
         if (::currentUserId.isInitialized) {
             FireUtility.getUser(currentUserId) {
@@ -135,7 +114,7 @@ object UserManager {
         }
     }
 
-    fun setAuthStateForceful(isSignedIn: Boolean) {
+    private fun setAuthStateForceful(isSignedIn: Boolean) {
         authStateData.postValue(isSignedIn)
         this.isSignedIn = isSignedIn
         if (!isSignedIn) {
@@ -153,7 +132,7 @@ object UserManager {
                 isEmailVerified = firebaseUser.isEmailVerified || testEmails.contains(firebaseUser.email)
                 currentUserId = firebaseUser.uid
                 getCurrentUser()
-                addUserListener()
+//                addUserListener()
                 addTokenListener()
             } else {
                 Log.d(TAG, "The user is not signed in.")
@@ -189,6 +168,5 @@ object UserManager {
     }
 
     private const val TAG = "UserManager"
-    private const val USERS = "users"
 
 }

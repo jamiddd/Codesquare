@@ -808,10 +808,6 @@ class ProjectFragment : Fragment() {
             }
         })
 
-        val initialImagePosition = arguments?.getInt("image_pos") ?: 0
-
-        binding.projectImagesRecycler.smoothScrollToPosition(initialImagePosition)
-
     }
 
     /**

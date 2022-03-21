@@ -5,5 +5,9 @@ import com.jamid.codesquare.data.Image
 
 interface ImageClickListener {
     fun onImageClick(view: View, image: Image)
+
+    /**
+     * Action on close button overlay click present on the image
+     * */
     fun onCloseBtnClick(view: View, image: Image, position: Int)
 }

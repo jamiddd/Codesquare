@@ -64,23 +64,14 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="16dp"
-        tools:text="@string/name_of_context"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:textSize="18sp"
-        app:layout_constraintBottom_toTopOf="@+id/report_time_text"
+        app:layout_constraintBottom_toBottomOf="@+id/context_img"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/context_img"
         app:layout_constraintTop_toTopOf="@+id/context_img"
-        app:layout_constraintVertical_chainStyle="packed" />
-
-    <TextView
-        android:id="@+id/report_time_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@+id/context_img"
-        app:layout_constraintStart_toStartOf="@+id/context_name"
-        app:layout_constraintTop_toBottomOf="@+id/context_name"
-        tools:text="12:45 pm Sunday" />
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="@string/name_of_context" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/report_images_recycler"

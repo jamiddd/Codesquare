@@ -7,10 +7,9 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.listeners.MessageClickListener
-import com.jamid.codesquare.listeners.MyMessageListener
+import com.jamid.codesquare.ui.MessageListenerFragment
 
-class MessageAdapter3(private val mClickListener: MyMessageListener? = null): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
+class MessageAdapter3(private val fragment: MessageListenerFragment): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
 
     private val currentUserId = UserManager.currentUser.id
     var chatChannel: ChatChannel? = null
@@ -73,9 +72,7 @@ class MessageAdapter3(private val mClickListener: MyMessageListener? = null): Pa
         }
 
         return MessageViewHolder2<Message>(view, viewType).apply {
-            if (mClickListener != null) {
-                myMessageListener = mClickListener
-            }
+            fragment = this@MessageAdapter3.fragment
         }
 
     }

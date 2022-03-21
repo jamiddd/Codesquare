@@ -146,11 +146,9 @@ object FireUtility {
         project.images = downloadUrls
 
         val chatChannelRef =
-            Firebase.firestore.collection("chatChannels").document(project.chatChannel)
+            Firebase.firestore.collection(CHAT_CHANNELS).document(project.chatChannel)
 
-        val tokens = mutableListOf<String>()
-
-        tokens.addAll(currentUser.registrationTokens)
+        val tokens = mutableListOf(currentUser.token)
 
         val chatChannel = ChatChannel(
             project.chatChannel,
@@ -608,7 +606,7 @@ object FireUtility {
                 NOTIFICATIONS
             ).document(projectRequest.notificationId)
 
-        batch.addNewUserToProject(project.id, project.chatChannel, projectRequest.senderId)
+        batch.addNewUserToProject(project.id, project.chatChannel, projectRequest.senderId, "")
             .updateParticularDocument(senderRef, senderChanges)
             .deleteParticularDocument(projectRequestRef)
             .deleteParticularDocument(currentUserNotificationRef)
@@ -2215,7 +2213,7 @@ object FireUtility {
         val db = Firebase.firestore
         val project = projectInvite.project
         val currentUserId = currentUser.id
-        val currentUserRegistrationTokens = currentUser.registrationTokens
+        val currentUserRegistrationToken = currentUser.token
 
         val batch = db.batch()
         if (project != null) {
@@ -2247,7 +2245,7 @@ object FireUtility {
                 project.id,
                 project.chatChannel,
                 currentUserId,
-                currentUserRegistrationTokens
+                currentUserRegistrationToken
             )
                 .updateCurrentUser(currentUserId, currentUserChanges)
                 .updateParticularDocument(
@@ -2266,7 +2264,7 @@ object FireUtility {
         projectId: String,
         chatChannelId: String,
         userId: String,
-        userRegistrationTokens: List<String> = emptyList()
+        token: String
     ): WriteBatch {
         val projectReference = Firebase.firestore.collection(PROJECTS).document(projectId)
         val changes1 = mapOf(
@@ -2282,8 +2280,8 @@ object FireUtility {
             UPDATED_AT to System.currentTimeMillis()
         )
 
-        if (userRegistrationTokens.isNotEmpty()) {
-            changes2[REGISTRATION_TOKENS] = FieldValue.arrayUnion(userRegistrationTokens.first())
+        if (token.isNotEmpty()) {
+            changes2[REGISTRATION_TOKENS] = FieldValue.arrayUnion(token)
         }
 
         return this.update(projectReference, changes1)
@@ -2380,23 +2378,6 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
-    fun listenForNotifications(onReceive: (notifications: List<Notification>) -> Unit) {
-        val currentUser = UserManager.currentUser
-        Firebase.firestore.collection(USERS).document(currentUser.id)
-            .collection(NOTIFICATIONS)
-            .limit(30)
-            .addSnapshotListener { value, error ->
-                if (error != null) {
-                    Log.e(TAG, error.localizedMessage.orEmpty())
-                }
-
-                if (value != null && !value.isEmpty) {
-                    val notifications = value.toObjects(Notification::class.java)
-                    onReceive(notifications)
-                }
-
-            }
-    }
 
     fun checkIfNotificationExistsByContent(
         oldNotification: Notification,
@@ -2477,7 +2458,7 @@ object FireUtility {
         val channelTokens = chatChannel.registrationTokens
 
         val newAdministrators = administrators.removeItemFromList(user.id)
-        val newTokens = channelTokens.removeItemsFromList(user.registrationTokens)
+        val newTokens = channelTokens.removeItemFromList(user.token)
 
         Firebase.firestore.collection(CHAT_CHANNELS)
             .document(chatChannel.chatChannelId)

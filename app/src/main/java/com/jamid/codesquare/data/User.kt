@@ -30,7 +30,7 @@ import kotlinx.serialization.Transient
  * @param projectRequests A list of all the projects requested by the current user
  * @param projectInvites A list of all the invites created by the current user
  * @param chatChannels A list of all the chat channels the current user is associated with
- * @param registrationTokens A list of all the devices used by the current user that is represented by unique ids by firebase
+ * @param token A token that is represented by unique id by firebase
  * @param projectsCount A counter for the projects created by the current user
  * @param collaborationsCount A counter for the collaborations by the current user
  * @param likesCount A counter for all the likes received by the current user by other users
@@ -66,7 +66,7 @@ data class User(
     var projectRequests: List<String> = emptyList(),
     var projectInvites: List<String> = emptyList(),
     var chatChannels: List<String> = emptyList(),
-    var registrationTokens: List<String> = emptyList(),
+    var token: String = "",
     var projectsCount: Long = 0,
     var collaborationsCount: Long = 0,
     var likesCount: Long = 0,
@@ -82,7 +82,7 @@ data class User(
     var location: Location? = null,
     var premiumState: Long = -1
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, 0, 0, false, false)
+    constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0, 0, 0, 0, 0, false, false)
 
     @Exclude
     fun minify(): UserMinimal {
@@ -94,7 +94,7 @@ data class User(
 
     companion object {
         fun newUser(id: String, name: String, email: String) =
-            User(id, name, randomId().take(16), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isLiked = false, isCurrentUser = true)
+            User(id, name, randomId().take(16), "", email, "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), isLiked = false, isCurrentUser = true)
 
     }
 

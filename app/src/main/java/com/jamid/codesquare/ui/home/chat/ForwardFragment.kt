@@ -100,7 +100,7 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
                 binding.forwardBtn.hide()
                 binding.forwardProgressBar.show()
                 if (imagesDir != null && documentsDir != null) {
-                    chatViewModel.sendForwardsToChatChannels(imagesDir, documentsDir, messages, listOfChannels) { result ->
+                    chatViewModel.sendForwardsToChatChannels(messages, listOfChannels) { result ->
                         when (result) {
                             is Result.Error -> {}
                             is Result.Success -> {

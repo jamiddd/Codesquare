@@ -5,22 +5,16 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.*
 import androidx.paging.*
-import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.Query
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.FireUtility
-import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.db.ChatRepository
 import com.jamid.codesquare.db.CodesquareDatabase
-import com.jamid.codesquare.db.MainRepository
 import com.jamid.codesquare.db.MessageRemoteMediator
-import com.jamid.codesquare.ui.home.chat.ChatController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import java.io.File
 
 /**
  * Responsible for handling network and database requests for chats only
@@ -29,17 +23,54 @@ import java.io.File
 @OptIn(ExperimentalPagingApi::class)
 class ChatViewModel(context: Context): ViewModel() {
 
-    private val repo: MainRepository
-    private val chatController: ChatController
+    private val chatRepository: ChatRepository
 
     init {
         val db = CodesquareDatabase.getInstance(context)
-        repo = MainRepository(db)
-        chatController = ChatController(this, context)
+        chatRepository = ChatRepository(viewModelScope, context, db)
     }
 
-    @ExperimentalPagingApi
-    fun getPagedMessages(imagesDir: File, documentsDir: File, chatChannelId: String, query: Query): Flow<PagingData<Message>> {
+    /**
+     * List of chat channels for ForwardFragment
+     * */
+    private val _forwardList = MutableLiveData<List<ChatChannel>>()
+    val forwardList: LiveData<List<ChatChannel>> = _forwardList
+
+    /**
+     * Flag for holding the current state of the chat, whether messages are being selected or not
+     * */
+    var isSelectModeOn = false
+
+
+    /**
+     * Placeholder for the current message that has been selected to be replied to
+     * */
+    private val _replyMessage = MutableLiveData<Message>().apply { value = null }
+    val replyMessage: LiveData<Message> = _replyMessage
+
+    /**
+     * List of images to be uploaded in the current chat
+     * */
+    private val _chatImagesUpload = MutableLiveData<List<Uri>>()
+    val chatImagesUpload: LiveData<List<Uri>> = _chatImagesUpload
+
+
+    /**
+     * List of documents to be uploaded in the current chat
+     * */
+    private val _chatDocumentsUpload = MutableLiveData<List<Uri>>()
+    val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
+
+
+    /**
+     * To get messages for ChatFragment in paged order
+     *
+     * @param chatChannelId Channel to get messages from local database
+     * @param query FireBase query to get messages on boundary callbacks
+     *
+     * @return A flow of messages in paged order by position in local database by recent order
+     * */
+    fun getPagedMessages(chatChannelId: String, query: Query): Flow<PagingData<Message>> {
         return Pager(config =
         PagingConfig(
             pageSize = 50,
@@ -48,20 +79,19 @@ class ChatViewModel(context: Context): ViewModel() {
             prefetchDistance = 25,
             initialLoadSize= 40),
             remoteMediator = MessageRemoteMediator(
-                imagesDir,
-                documentsDir,
-                viewModelScope,
                 query,
-                repo
+                chatRepository
             )
         ) {
-            repo.messageDao.getChannelPagedMessages(chatChannelId)
+            chatRepository.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.cachedIn(viewModelScope)
     }
 
-    private val _forwardList = MutableLiveData<List<ChatChannel>>()
-    val forwardList: LiveData<List<ChatChannel>> = _forwardList
 
+    /**
+     * To add channel to forward list that is accessed by ForwardFragment
+     * @param chatChannel The chat channel to add to the list
+     * */
     fun addChannelToForwardList(chatChannel: ChatChannel) {
         val oldList = forwardList.value
         if (oldList != null) {
@@ -73,6 +103,11 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
+
+    /**
+     * To remove channel from the forward list which is accessed by ForwardFragment
+     * @param chatChannel The chat channel to remove from the list
+     * */
     fun removeChannelFromForwardList(chatChannel: ChatChannel) {
         val oldList = forwardList.value
         if (oldList != null && oldList.isNotEmpty()) {
@@ -82,56 +117,72 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
+    /**
+     * To clear all data present to list accessed by ForwardFragment
+     * */
     fun clearForwardList() {
         _forwardList.postValue(emptyList())
     }
 
-    fun sendTextMessage(externalImagesDir: File, externalDocumentsDir: File, chatChannelId: String, content: String, replyTo: String? = null, replyMessage: MessageMinimal? = null) = viewModelScope.launch (Dispatchers.IO) {
+    /**
+     * To upload message to firestore
+     *
+     * @param chatChannelId The chat channel id to where this project belongs
+     * @param content Content of the text message
+     * @param replyTo An optional message id attached to the current message to be send which is connected respectively
+     * @param replyMessage An optional message attached to the current message in minified form
+     * */
+    fun sendTextMessage(chatChannelId: String, content: String, replyTo: String? = null, replyMessage: MessageMinimal? = null) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.sendTextMessage(chatChannelId, content, replyTo, replyMessage)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-                repo.insertMessages(externalImagesDir, externalDocumentsDir, listOf(result.data), true)
-                val chatChannel = repo.getLocalChatChannel(chatChannelId)
-                if (chatChannel != null) {
-                    chatChannel.lastMessage = result.data
-                    chatChannel.updatedAt = result.data.createdAt
-
-                    Log.d(TAG, chatChannel.toString())
-
-                    repo.insertChatChannels(listOf(chatChannel))
-                }
+                chatRepository.insertMessage(result.data, true)
             }
         }
     }
 
 
-    fun sendMessagesSimultaneously(imagesDir: File, documentsDir: File, chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
+    /**
+     * To send multiple messages together, may include message of all type [image, document, text]
+     *
+     * @param chatChannelId The chat channel id to where this project belongs
+     * @param listOfMessages The messages to be sent
+     *
+     * */
+    fun sendMessagesSimultaneously(chatChannelId: String, listOfMessages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
         when (val result = FireUtility.sendMessagesSimultaneously(chatChannelId, listOfMessages)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
 
                 val messages = result.data
-                repo.insertMessages(imagesDir, documentsDir, messages)
+                chatRepository.insertMessages(messages)
 
                 setChatUploadImages(emptyList())
                 setChatUploadDocuments(emptyList())
-
-                val chatChannel = repo.getLocalChatChannel(chatChannelId)
-
-                if (chatChannel != null) {
-                    chatChannel.lastMessage = messages.last()
-                    chatChannel.updatedAt = messages.last().createdAt
-                    repo.insertChatChannels(listOf(chatChannel))
-                }
             }
         }
     }
 
+    /**
+     * Get all channels for forward fragment based on the user id provided, from local database wrapped in livedata
+     *
+     * @param userId The userId to filter channels for ForwardFragment
+     * @return A list of chat channel for ForwardFragment wrapped in livedata
+     *
+     * */
     fun getForwardChannels(userId: String): LiveData<List<ChatChannel>> {
-        return repo.getForwardChannels("%$userId%")
+        return chatRepository.getForwardChannels("%$userId%")
     }
 
-    fun sendForwardsToChatChannels(imagesDir: File, documentsDir: File, messages: List<Message>, channels: List<ChatChannel>, onComplete: (result: Result<List<Message>>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+    /**
+     * To send messages to selected chat channels as forward messages
+     *
+     * @param messages messages selected to be forwarded
+     * @param channels list of chat channels to which the selected messages needs to be forwarded
+     * @param onComplete A callback function that is invoked on completion of sending all the messages to their respective chat channels
+     *
+     * */
+    fun sendForwardsToChatChannels(messages: List<Message>, channels: List<ChatChannel>, onComplete: (result: Result<List<Message>>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         val result = FireUtility.sendMultipleMessageToMultipleChannels(messages, channels)
         when (result) {
             is Result.Error -> {
@@ -139,100 +190,64 @@ class ChatViewModel(context: Context): ViewModel() {
             }
             is Result.Success -> {
                 val newMessages = result.data
-                insertMessages(imagesDir, documentsDir, newMessages)
-
-                for (i in channels.indices) {
-                    val channelMessages = newMessages.filter {
-                        it.chatChannelId == channels[i].chatChannelId
-                    }
-                    if (channelMessages.isNotEmpty()) {
-                        val lastMessage = channelMessages.last()
-                        lastMessage.chatChannelId = channels[i].chatChannelId
-                        channels[i].lastMessage = lastMessage
-                        channels[i].updatedAt = lastMessage.createdAt
-                    }
-                }
-
-                insertChatChannels(channels)
+                chatRepository.insertMessages(newMessages)
             }
         }
         onComplete(result)
     }
 
-    fun insertUsers(vararg users: User) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertUsers(users)
-    }
-
+    /**
+     * To report error related to chat
+     *
+     * @param error The error to be reported that is related to chat
+     * */
     fun setCurrentError(error: Exception?) {
-
+        Log.e(TAG, "setCurrentError: ${error?.localizedMessage}")
     }
 
-    // insert channel messages and also update the channel along with it
-    fun insertChannelMessages(imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
-        val uid = Firebase.auth.currentUser?.uid
-        if (messages.isNotEmpty() && uid != null) {
 
-            val firstTimeMessages = messages.filter { message ->
-                !message.deliveryList.contains(uid)
-            }
-
-            val alreadyDeliveredMessages = messages.filter { message ->
-                message.deliveryList.contains(uid)
-            }
-
-            insertMessages(imagesDir, documentsDir, alreadyDeliveredMessages)
-
-            // update the delivery list
-            updateDeliveryListOfMessages(uid, firstTimeMessages) { it1 ->
-                if (!it1.isSuccessful) {
-                    setCurrentError(it1.exception)
-                } else {
-                    insertMessages(imagesDir, documentsDir, firstTimeMessages)
-                }
-            }
-        }
-    }
-
-    fun insertChatChannels(chatChannels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertChatChannels(chatChannels)
-    }
-
-    private fun updateDeliveryListOfMessages(currentUserId: String, messages: List<Message>, onComplete: (task: Task<Void>) -> Unit) {
-        repo.updateDeliveryListOfMessages(currentUserId, messages, onComplete)
-    }
-
-    private fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertMessages(imagesDir, documentsDir, messages)
-    }
-
-    var isSelectModeOn = false
-
-
-    private val _replyMessage = MutableLiveData<Message>().apply { value = null }
-    val replyMessage: LiveData<Message> = _replyMessage
-
-    private val _chatImagesUpload = MutableLiveData<List<Uri>>()
-    val chatImagesUpload: LiveData<List<Uri>> = _chatImagesUpload
-
-    private val _chatDocumentsUpload = MutableLiveData<List<Uri>>()
-    val chatDocumentsUpload: LiveData<List<Uri>> = _chatDocumentsUpload
-
+    /**
+     * To get the currently selected messages in a chat channel
+     *
+     * @param chatChannelId The channel id for which messages are being selected
+     * @return A list of messages wrapped in livedata
+     * */
     fun selectedMessages(chatChannelId: String): LiveData<List<Message>> {
-        return repo.selectedMessages(chatChannelId)
+        return chatRepository.selectedMessages(chatChannelId)
     }
 
+
+    /**
+     * To fill [chatImagesUpload] with images retrieved by the user
+     * */
     fun setChatUploadImages(images: List<Uri>) {
         _chatImagesUpload.postValue(images)
     }
 
+    /**
+     * To fill [chatDocumentsUpload] with documents retrieved by the user
+     * */
     fun setChatUploadDocuments(documents: List<Uri>) {
         _chatDocumentsUpload.postValue(documents)
     }
 
+
+    /**
+     * To get currently selected messages in a given chat channel
+     *
+     * @param chatChannelId Channel id for which messages are being selected
+     * @param onComplete A callback function for completion of process
+     *
+     * */
     fun getCurrentlySelectedMessages(chatChannelId: String, onComplete: (List<Message>) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        onComplete(repo.getCurrentlySelectedMessages(chatChannelId))
+        onComplete(chatRepository.getCurrentlySelectedMessages(chatChannelId))
     }
 
+    /**
+     * To set message as attached reply for another message to be sent currently
+     *
+     * @param message The message to be attached
+     * */
     fun setReplyMessage(message: Message?) {
         _replyMessage.postValue(message)
         if (message != null) {
@@ -240,19 +255,32 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
-    fun getLatestMessages(chatChannel: ChatChannel, lastMessage: Message, onComplete: () -> Unit) {
-        chatController.getLatestMessages(chatChannel, lastMessage, onComplete)
-    }
 
+    /**
+     * To get a live version of the current chat Channel wrapped in livedata from local database
+     *
+     * @param chatChannelId Id of the chat channel to retrieve
+     * @return A reactive chat channel that reacts to changes in the local database
+     *
+     * */
     fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
-        return repo.getReactiveChatChannel(chatChannelId)
+        return chatRepository.getReactiveChatChannel(chatChannelId)
     }
 
+    /**
+     * To disable select mode and update all messages that are in select mode in local database
+     * @see isSelectModeOn
+     * */
     fun disableSelectMode(chatChannelId: String) = viewModelScope.launch (Dispatchers.IO) {
         isSelectModeOn = false
-        repo.updateMessages(chatChannelId, MESSAGE_IDLE)
+        chatRepository.updateMessages(chatChannelId, MESSAGE_IDLE)
     }
 
+    /**
+     * To add images to already existing list [chatImagesUpload]
+     *
+     * @param images new images to be appended to the existing list
+     * */
     fun addUploadingImages(images: List<Uri>) {
         val existingImages = chatImagesUpload.value
         if (existingImages != null) {
@@ -264,6 +292,11 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
+    /**
+     * To add documents to already existing list [chatDocumentsUpload]
+     *
+     * @param documents new documents to be appended to the existing list
+     * */
     fun addUploadingDocuments(documents: List<Uri>) {
         val existingDocuments = chatDocumentsUpload.value
         if (existingDocuments != null) {
@@ -275,9 +308,15 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
+    /**
+     * To enable select mode
+     * @see isSelectModeOn
+     *
+     * @param firstSelectedMessage The message which invoked select mode
+     * */
     fun enableSelectMode(firstSelectedMessage: Message) = viewModelScope.launch (Dispatchers.IO) {
         isSelectModeOn = true
-        repo.updateMessages(firstSelectedMessage.chatChannelId, MESSAGE_READY)
+        chatRepository.updateMessages(firstSelectedMessage.chatChannelId, MESSAGE_READY)
 
         delay(300)
 
@@ -285,11 +324,22 @@ class ChatViewModel(context: Context): ViewModel() {
         updateMessage(firstSelectedMessage)
     }
 
+
+    /**
+     * To update a message in local database
+     *
+     * @param message The message to be updated
+     * */
     fun updateMessage(message: Message) = viewModelScope.launch (Dispatchers.IO) {
         Log.d(TAG, "Updating message: ${message.state}")
-        repo.updateMessage(message)
+        chatRepository.updateMessage(message)
     }
 
+    /**
+     * To remove an image from the [chatImagesUpload] list
+     *
+     * @param position The position where the image is to be removed
+     * */
     fun removeImageAtPosition(position: Int) {
         val existingList = chatImagesUpload.value
         if (existingList != null) {
@@ -299,6 +349,11 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
+    /**
+     * To remove a document from the [chatDocumentsUpload] list
+     *
+     * @param position The position where the document is to be removed
+     * */
     fun removeDocumentAtPosition(position: Int) {
         val existingList = chatDocumentsUpload.value
         if (existingList != null) {
@@ -316,11 +371,4 @@ class ChatViewModel(context: Context): ViewModel() {
     }
 
 
-}
-
-@Suppress("UNCHECKED_CAST")
-class ChatViewModelFactory(val context: Context): ViewModelProvider.NewInstanceFactory() {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return ChatViewModel(context) as T
-    }
 }

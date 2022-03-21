@@ -26,14 +26,13 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
     private val auth = Firebase.auth
 
     override fun onNewToken(token: String) {
-        Log.d(TAG, "Refreshed token: $token")
-
         if (auth.currentUser != null) {
             if (application != null) {
                 val intent = Intent(TOKEN_INTENT).apply {
                     putExtra(ARG_TOKEN, token)
                 }
-                LocalBroadcastManager.getInstance(applicationContext).sendBroadcast(intent)
+                LocalBroadcastManager.getInstance(applicationContext)
+                    .sendBroadcast(intent)
             }
         }
     }
@@ -81,7 +80,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) {
             val notificationChannel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID, "collab_channel",
+                NOTIFICATION_CHANNEL_ID, "collaboration_channel",
                 NotificationManager.IMPORTANCE_HIGH
             )
             notificationChannel.description = "Any description can be given!"

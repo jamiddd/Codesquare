@@ -13,25 +13,21 @@ import java.io.File
 
 @ExperimentalPagingApi
 class MessageRemoteMediator(
-    private val imagesDir: File,
-    private val documentsDir: File,
-    private val scope: CoroutineScope,
     query: Query,
-    repo: MainRepository
-): FirebaseRemoteMediator<Int, Message>(query, repo) {
-
-    private val tag = "MessageRemoteMediator"
+    private val chatRepository: ChatRepository
+): FirebaseRemoteMediator<Int, Message>(query) {
 
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val messages = items.toObjects(Message::class.java)
+        chatRepository.insertChannelMessages(messages)
+    }
 
-        val currentUser = UserManager.currentUser
-
+    /*
         val nonUpdatedMessages = messages.filter {
             !it.deliveryList.contains(currentUser.id)
         }
 
-        repository.updateDeliveryListOfMessages(currentUser.id, nonUpdatedMessages) {
+        chatRepository.updateDeliveryListOfMessages(currentUser.id, nonUpdatedMessages) {
             if (it.isSuccessful) {
                 scope.launch (Dispatchers.IO) {
                     repository.insertMessages(imagesDir, documentsDir, nonUpdatedMessages)
@@ -41,8 +37,7 @@ class MessageRemoteMediator(
             }
         }
 
-        repository.insertMessages(imagesDir, documentsDir, messages)
-    }
+        repository.insertMessages(imagesDir, documentsDir, messages)*/
 
     override suspend fun onRefresh() {
 

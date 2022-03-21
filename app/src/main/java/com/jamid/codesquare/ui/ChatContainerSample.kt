@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.core.view.*
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.MutableLiveData
@@ -37,7 +36,6 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ChatContainerSampleLayoutBinding
 import com.jamid.codesquare.listeners.DocumentClickListener
 import com.jamid.codesquare.listeners.ImageClickListener
-import com.jamid.codesquare.listeners.MyMessageListener
 import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.ui.home.chat.*
 import java.io.File
@@ -60,7 +58,7 @@ import kotlin.math.abs
  *
  * */
 @ExperimentalPagingApi
-class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener, MyMessageListener, DocumentClickListener {
+class ChatContainerSample : MessageListenerFragment(), ImageClickListener, OptionClickListener, DocumentClickListener {
 
     private lateinit var binding: ChatContainerSampleLayoutBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -148,6 +146,14 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
 
         chatViewModel.selectedMessages(chatChannel.chatChannelId).observe(viewLifecycleOwner) { selectedMessages ->
             chatViewModel.isSelectModeOn = !selectedMessages.isNullOrEmpty()
+
+            if (chatViewModel.isSelectModeOn) {
+                binding.chatBottomRoot.hide()
+                binding.chatOptionRoot.show()
+            } else {
+                binding.chatOptionRoot.hide()
+                binding.chatBottomRoot.show()
+            }
 
             isSingleSelectedMessage = if (chatViewModel.isSelectModeOn) {
                 selectedMessages.size == 1
@@ -524,7 +530,7 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
             binding.replyLayoutRoot.show()
 
             if (replyMessage.senderId == UserManager.currentUserId) {
-                binding.replyName.text = "You"
+                binding.replyName.text = getString(R.string.you)
             } else {
                 binding.replyName.text = replyMessage.sender.name
             }
@@ -727,8 +733,6 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                 isInProgressMode = true
 
                 chatViewModel.sendMessagesSimultaneously(
-                    imagesDir,
-                    documentsDir,
                     chatChannel.chatChannelId,
                     listOfMessages
                 )
@@ -741,8 +745,6 @@ class ChatContainerSample : Fragment(), ImageClickListener, OptionClickListener,
                 val content = binding.chatInputLayout.text.trim().toString()
 
                 chatViewModel.sendTextMessage(
-                    imagesDir,
-                    documentsDir,
                     chatChannel.chatChannelId,
                     content,
                     chatViewModel.replyMessage.value?.messageId,

@@ -5,20 +5,20 @@ import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import android.view.View
+import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.Image
 import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.*
-import com.jamid.codesquare.listeners.MyMessageListener
+import com.jamid.codesquare.ui.MessageListenerFragment
 import java.io.File
 import kotlin.math.abs
 
@@ -29,9 +29,9 @@ class MessageViewHolder2<T: Any>(
 
     private val controllerListener = FrescoImageControllerListener()
     private val currentUserId = UserManager.currentUser.id
-    lateinit var myMessageListener: MyMessageListener
+    var fragment: MessageListenerFragment? = null
 
-    fun updateMessageUi(state: Int) {
+    private fun updateMessageUi(state: Int) {
         when (state) {
             MESSAGE_IDLE -> {
                 view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
@@ -117,7 +117,7 @@ class MessageViewHolder2<T: Any>(
         updateMessageUi(message.state)
 
         view.setOnClickListener {
-            myMessageListener.onMessageClick(message.copy())
+            fragment?.onMessageClick(message.copy())
 
             // updating ui changes to cover database delay
             if (message.state != MESSAGE_IDLE) {
@@ -127,7 +127,7 @@ class MessageViewHolder2<T: Any>(
         }
 
         view.setOnLongClickListener {
-            myMessageListener.onMessageContextClick(message.copy())
+            fragment?.onMessageContextClick(message.copy())
 
             // updating ui changes to cover database delay
             if (message.isDownloaded) {
@@ -137,7 +137,7 @@ class MessageViewHolder2<T: Any>(
             true
         }
 
-        myMessageListener.onMessageRead(message)
+        fragment?.onMessageRead(message)
 
     }
 
@@ -212,13 +212,13 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                myMessageListener.onMessageNotDownloaded(message) {
+                fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
             }
         }
 
-        setDocumentListener(binding.messageDocumentContainer, message)
+        setDocumentListener(binding.messageDocumentContainer, binding.documentDownloadProgress, binding.documentDownloadBtn, message)
     }
 
     private fun setMessageMiddleImageRightItem(message: Message) {
@@ -231,7 +231,7 @@ class MessageViewHolder2<T: Any>(
         } else {
             binding.messageImgProgress.show()
 
-            myMessageListener.onMessageNotDownloaded(message) {
+            fragment?.onMessageNotDownloaded(message) {
                 bind(it)
             }
 
@@ -298,7 +298,7 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                myMessageListener.onMessageNotDownloaded(message) {
+                fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
             }
@@ -307,7 +307,7 @@ class MessageViewHolder2<T: Any>(
         // set time
         setTimeForTextView(binding.messageCreatedAt, message.createdAt)
 
-        setDocumentListener(binding.messageDocumentContainer, message)
+        setDocumentListener(binding.messageDocumentContainer, binding.documentDownloadProgress, binding.documentDownloadBtn, message)
 
     }
 
@@ -320,7 +320,7 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            myMessageListener.onMessageNotDownloaded(message) {
+            fragment?.onMessageNotDownloaded(message) {
                 bind(it)
             }
         }
@@ -389,13 +389,13 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                myMessageListener.onMessageNotDownloaded(message) {
+                fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
             }
         }
 
-        setDocumentListener(binding.messageDocumentContainer, message)
+        setDocumentListener(binding.messageDocumentContainer, binding.documentDownloadProgress, binding.documentDownloadBtn, message)
     }
 
     private fun setMessageMiddleImageItem(message: Message) {
@@ -407,7 +407,7 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            myMessageListener.onMessageNotDownloaded(message) {
+            fragment?.onMessageNotDownloaded(message) {
                 bind(it)
             }
         }
@@ -447,7 +447,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            myMessageListener.onMessageSenderClick(message)
+            fragment?.onMessageSenderClick(message)
         }
 
         // setting time
@@ -481,7 +481,7 @@ class MessageViewHolder2<T: Any>(
             binding.documentDownloadBtn.disappear()
             binding.documentDownloadProgress.show()
 
-            myMessageListener.onMessageNotDownloaded(message) {
+            fragment?.onMessageNotDownloaded(message) {
                 bind(it)
             }
 
@@ -491,7 +491,7 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                myMessageListener.onMessageNotDownloaded(message) {
+                fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
             }*/
@@ -501,7 +501,7 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                myMessageListener.onMessageNotDownloaded(message) {
+                fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
             }
@@ -514,18 +514,28 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            myMessageListener.onMessageSenderClick(message)
+            fragment?.onMessageSenderClick(message)
         }
 
         //
-        setDocumentListener(binding.messageDocumentContainer, message)
+        setDocumentListener(binding.messageDocumentContainer, binding.documentDownloadProgress, binding.documentDownloadBtn, message)
     }
 
-    private fun setDocumentListener(documentContainer: View, message: Message) {
+    private fun setDocumentListener(documentContainer: View, downloadProgress: ProgressBar, downloadBtn: Button, message: Message) {
 
         if (message.state == MESSAGE_IDLE) {
-            documentContainer.setOnClickListener {
-                myMessageListener.onMessageDocumentClick(message)
+            if (message.isDownloaded) {
+                documentContainer.setOnClickListener {
+                    fragment?.onMessageDocumentClick(message)
+                }
+            } else {
+                documentContainer.setOnClickListener {
+                    downloadProgress.show()
+                    downloadBtn.disappear()
+                    fragment?.onMessageNotDownloaded(message) {
+                        bind(it)
+                    }
+                }
             }
         } else {
             documentContainer.setOnClickListener {
@@ -549,7 +559,7 @@ class MessageViewHolder2<T: Any>(
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
-            myMessageListener.onMessageNotDownloaded(message) {
+            fragment?.onMessageNotDownloaded(message) {
                 bind(it)
             }
         }
@@ -558,7 +568,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            myMessageListener.onMessageSenderClick(message)
+            fragment?.onMessageSenderClick(message)
         }
 
         // setting time
@@ -572,7 +582,7 @@ class MessageViewHolder2<T: Any>(
         setTimeForTextView(binding.messageCreatedAt, message.createdAt)
 
         binding.messageSenderImg.setOnClickListener {
-            myMessageListener.onMessageSenderClick(message)
+            fragment?.onMessageSenderClick(message)
         }
     }
 
@@ -610,7 +620,7 @@ class MessageViewHolder2<T: Any>(
                 imageHolder.setOnClickListener {
                     message.metadata!!.height = controllerListener.finalHeight.toLong()
                     message.metadata!!.width = controllerListener.finalWidth.toLong()
-                    myMessageListener.onMessageImageClick(imageHolder, message)
+                    fragment?.onMessageImageClick(imageHolder, message)
                 }
             } else {
                 imageHolder.setOnClickListener {

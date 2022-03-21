@@ -6,7 +6,7 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.ProjectInvite
 
 @ExperimentalPagingApi
-class ProjectInviteRemoteMediator(q: Query, val r: MainRepository): FirebaseRemoteMediator<Int, ProjectInvite>(q, r){
+class ProjectInviteRemoteMediator(q: Query, private val repository: MainRepository): FirebaseRemoteMediator<Int, ProjectInvite>(q){
 
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val invites = items.toObjects(ProjectInvite::class.java).toTypedArray()

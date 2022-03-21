@@ -11,17 +11,27 @@ import android.os.Build
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavDeepLinkBuilder
+import com.jamid.codesquare.data.Notification
 
-object MyNotificationManager {
+@Suppress("ObjectPropertyName")
+object NotificationManager {
 
-   /* private lateinit var notificationManager: NotificationManager
+    private lateinit var notificationManager: NotificationManager
     private lateinit var tokenReceiver: BroadcastReceiver
     private lateinit var notificationReceiver: BroadcastReceiver
 
-    fun init(mContext: Context) {
+    private val _notifications = MutableLiveData<List<Notification>>()
+    val notifications: LiveData<List<Notification>> = _notifications
 
+    fun setNotifications(notifications: List<Notification>) {
+        _notifications.postValue(notifications)
+    }
+
+    fun init(mContext: Context) {
         tokenReceiver = object: BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 val token = intent?.extras?.getString(MyFirebaseMessagingService.ARG_TOKEN)
@@ -91,6 +101,6 @@ object MyNotificationManager {
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-    }*/
+    }
 
 }

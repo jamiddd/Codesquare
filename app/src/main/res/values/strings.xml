@@ -62,7 +62,6 @@
 
     <string name="delete">Delete</string>
     <string name="update_interests">Update interests</string>
-    <string name="you">You</string>
     <string name="revoke">Revoke</string>
 
     <string name="undo">Undo</string>
@@ -176,4 +175,6 @@
     <string name="sample_subscription_price">$ 2.00/month</string>
     <string name="sample_subscription_content">• Remove all ads\n• No limits on projects creation\n• No limits on collaboration\n• No limits for number of contributors in a project</string>
     <string name="best_value">Best value</string>
+    <string name="update_project">Update project</string>
+    <string name="you">You</string>
 </resources>

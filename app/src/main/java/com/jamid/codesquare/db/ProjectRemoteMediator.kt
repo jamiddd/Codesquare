@@ -6,15 +6,15 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Project
 
 @ExperimentalPagingApi
-class ProjectRemoteMediator(query: Query, repo: MainRepository, private val shouldClear: Boolean = false): FirebaseRemoteMediator<Int, Project>(query, repo) {
+class ProjectRemoteMediator(query: Query, private val repo: MainRepository, private val shouldClear: Boolean = false): FirebaseRemoteMediator<Int, Project>(query) {
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val projects = items.toObjects(Project::class.java)
-        repository.insertProjects(projects.toTypedArray())
+        repo.insertProjects(projects.toTypedArray())
     }
 
     override suspend fun onRefresh() {
         if (shouldClear) {
-            repository.clearProjects()
+            repo.clearProjects()
         }
     }
 }

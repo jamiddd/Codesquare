@@ -15,10 +15,10 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.listeners.MessageClickListener
+import com.jamid.codesquare.ui.MessageListenerFragment
 import java.io.File
 
-class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
+class GridImageMessagesAdapter(private val fragment: MessageListenerFragment): ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Message>() {
@@ -36,7 +36,6 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
 
         private val imageHolder = view.findViewById<SimpleDraweeView>(R.id.grid_image)
         private val progress = view.findViewById<ProgressBar>(R.id.small_message_image_progress)
-        private val messageListener = view.context as MessageClickListener
         private val controllerListener = FrescoImageControllerListener()
 
         fun bind(message: Message) {
@@ -48,33 +47,16 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
                 setMessageImageBasedOnExtension(imageHolder, uri, message)
 
                 imageHolder.setOnClickListener {
-                    messageListener.onImageClick(imageHolder, message, controllerListener)
+                    message.metadata!!.height = controllerListener.finalHeight.toLong()
+                    message.metadata!!.width = controllerListener.finalWidth.toLong()
+                    fragment.onMessageImageClick(imageHolder, message)
                 }
 
             } else {
                 progress.show()
-                messageListener.onStartDownload(message) { task, _ ->
-                    if (task.isSuccessful) {
-                        progress.hide()
-                        val uri = getImageUriFromMessage(message, view.context)
 
-                        if (message.metadata!!.ext == ".webp") {
-                            val controller = Fresco.newDraweeControllerBuilder()
-                                .setUri(uri)
-                                .setAutoPlayAnimations(true)
-                                .build()
-
-                            imageHolder.controller = controller
-                        } else {
-                            imageHolder.setImageURI(uri.toString())
-                        }
-
-                        imageHolder.setOnClickListener {
-                            messageListener.onImageClick(imageHolder, message, controllerListener)
-                        }
-                    } else {
-                        view.context.toast("Something went wrong while downloading media.")
-                    }
+                fragment.onMessageNotDownloaded(message) { newMessage ->
+                    bind(newMessage)
                 }
             }
         }
@@ -109,7 +91,6 @@ class GridImageMessagesAdapter: ListAdapter<Message, GridImageMessagesAdapter.Gr
         }
 
     }
-
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GridImageMessageViewHolder {

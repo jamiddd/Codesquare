@@ -6,7 +6,7 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Notification
 
 @ExperimentalPagingApi
-class NotificationRemoteMediator(q: Query, r: MainRepository): FirebaseRemoteMediator<Int, Notification>(q, r) {
+class NotificationRemoteMediator(q: Query, private val repository: MainRepository): FirebaseRemoteMediator<Int, Notification>(q) {
 
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val notifications = items.toObjects(Notification::class.java)

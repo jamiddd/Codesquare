@@ -2,6 +2,7 @@ package com.jamid.codesquare.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.os.Parcelable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,11 +19,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
-import com.jamid.codesquare.data.Comment
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.Report
-import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentReportBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
 
@@ -42,19 +39,20 @@ class ReportFragment: Fragment() {
         return binding.root
     }
 
-    private fun setContextUi(image: String, name: String) {
-        binding.contextImg.setImageURI(image)
-        binding.contextName.text = name
-    }
-
     @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val contextObject = arguments?.get("contextObject") ?: return
-        binding.reportTimeText.text = getTextForChatTime(System.currentTimeMillis())
+        val report = arguments?.getParcelable<Report>("report") ?: return
+        binding.contextImg.setImageURI(report.image)
+        binding.contextName.text = report.title
 
-        when (contextObject) {
+
+        reportViewModel.setReportContext(report.contextId)
+
+//        val contextObject = arguments?.get("contextObject") ?: return
+
+        /*when (contextObject) {
             is Project -> {
                 reportViewModel.setReportContext(contextObject.id)
                 setContextUi(contextObject.images.first(), contextObject.name)
@@ -77,7 +75,7 @@ class ReportFragment: Fragment() {
                     }
                 }
             }
-        }
+        }*/
 
         viewModel.reportUploadImages.observe(viewLifecycleOwner) { reportImages ->
             if (!reportImages.isNullOrEmpty()) {
@@ -159,7 +157,7 @@ class ReportFragment: Fragment() {
         } else {
             binding.reportAddScreenshots.text = getString(R.string.add_images)
             binding.reportAddScreenshots.setOnClickListener {
-                (activity as MainActivity).selectReportUploadImages()
+                (activity as MainActivity).selectImage(ImageSelectType.IMAGE_REPORT)
             }
         }
     }

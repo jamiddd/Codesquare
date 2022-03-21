@@ -7,11 +7,11 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.User
 
 @ExperimentalPagingApi
-class UserRemoteMediator(query: Query, repo: MainRepository): FirebaseRemoteMediator<Int, User>(query, repo) {
+class UserRemoteMediator(query: Query, private val repo: MainRepository): FirebaseRemoteMediator<Int, User>(query) {
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val users = items.toObjects(User::class.java)
         Log.d(TAG, "onLoadComplete: ${users.size}")
-        repository.insertUsers(users)
+        repo.insertUsers(users)
     }
 
     override suspend fun onRefresh() {

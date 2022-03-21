@@ -24,6 +24,7 @@ import com.jamid.codesquare.databinding.FragmentChatDetailBinding
 import com.jamid.codesquare.listeners.CommonImageListener
 import com.jamid.codesquare.ui.ChatContainerSample
 import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.OptionsFragment
 
 @ExperimentalPagingApi
@@ -144,7 +145,7 @@ class ChatDetailFragment: Fragment() {
     }
 
     private fun setMediaRecyclerAndData(chatChannelId: String) {
-        val gridAdapter = GridImageMessagesAdapter()
+        val gridAdapter = GridImageMessagesAdapter(parentFragment as MessageListenerFragment)
 
         binding.chatMediaRecycler.apply {
             layoutManager = GridLayoutManager(requireContext(), 3)

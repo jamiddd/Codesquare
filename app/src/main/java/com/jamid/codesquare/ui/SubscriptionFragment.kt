@@ -6,7 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioButton
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,7 +13,6 @@ import com.android.billingclient.api.BillingFlowParams
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
-import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.SubscriptionAdapter
 import com.jamid.codesquare.data.Subscription
 import com.jamid.codesquare.databinding.SubscriptionLayoutBinding
@@ -74,7 +72,7 @@ class SubscriptionFragment : BottomSheetDialogFragment(), SubscriptionListener {
         }
 
         binding.subscriptionDoneBtn.setOnClickListener {
-            val billingClient = (activity as MainActivity?)?.billingClient
+            val billingClient = (activity as MainActivity?)?.playBillingController?.billingClient
             if (billingClient != null) {
 
                 binding.loadingScrim.show()

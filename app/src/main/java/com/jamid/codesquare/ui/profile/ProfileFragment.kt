@@ -18,9 +18,7 @@ import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.ProfilePagerAdapter
-import com.jamid.codesquare.data.Option
-import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.databinding.UserInfoLayoutBinding
 import com.jamid.codesquare.listeners.OptionClickListener
@@ -305,11 +303,15 @@ class ProfileFragment: Fragment(), OptionClickListener {
     }
 
     override fun onOptionClick(option: Option) {
-        val user = arguments?.getParcelable<User>("user")
+        val user = arguments?.getParcelable<User>(USER)
         (activity as MainActivity).optionsFragment?.dismiss()
         when (option.item) {
             OPTION_14 -> {
-                findNavController().navigate(R.id.reportFragment, bundleOf(CONTEXT_OBJECT to user), slideRightNavOptions())
+                if (user != null) {
+                    val report = Report.getReportForUser(user)
+                    val bundle = bundleOf(REPORT to report)
+                    findNavController().navigate(R.id.reportFragment, bundle, slideRightNavOptions())
+                }
             }
             OPTION_23 -> {
                 // log out

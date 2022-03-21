@@ -1,27 +1,41 @@
 package com.jamid.codesquare.ui.home.chat
 
+import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
+import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentChatImagesBinding
-import com.jamid.codesquare.hide
-import com.jamid.codesquare.show
+import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.MessageListenerFragment
 import kotlinx.coroutines.launch
+import java.io.File
 
 @ExperimentalPagingApi
-class ChatImagesFragment : Fragment() {
+class ChatImagesFragment : MessageListenerFragment() {
 
     private lateinit var binding: FragmentChatImagesBinding
     private val viewModel: MainViewModel by activityViewModels()
+    private val imagesDir: File by lazy {
+        requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            ?: throw NullPointerException("Couldn't get images directory.")
+    }
+    private val documentsDir: File by lazy {
+        requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            ?: throw NullPointerException("Couldn't get documents directory.")
+    }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,7 +56,7 @@ class ChatImagesFragment : Fragment() {
 
     private fun setMediaRecyclerAndData(chatChannelId: String) =
         viewLifecycleOwner.lifecycleScope.launch {
-            val gridAdapter = GridImageMessagesAdapter()
+            val gridAdapter = GridImageMessagesAdapter(this@ChatImagesFragment)
 
             binding.chatImagesRecycler.apply {
                 layoutManager = GridLayoutManager(requireContext(), 3)
@@ -57,26 +71,111 @@ class ChatImagesFragment : Fragment() {
                 binding.noImagesText.show()
             }
 
-
         }
 
-    /*private fun getImages(chatChannelId: String): List<String> {
-        val images = mutableListOf<String>()
-        val externalImagesDir = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-        val file = File(externalImagesDir, chatChannelId)
-        if (externalImagesDir != null) {
-            val files = file.listFiles()
-            if (files != null) {
-                for (i in files.indices) {
-                    if (i > 5) break
-                    val uri = Uri.fromFile(files[i])
-                    images.add(uri.toString())
+
+    override fun onMessageImageClick(imageView: View, message: Message) {
+        val metadata = message.metadata
+        if (metadata != null) {
+            val name = message.content + metadata.ext
+            val destination = File(imagesDir, message.chatChannelId)
+            val file = File(destination, name)
+            val uri = Uri.fromFile(file)
+
+            val image = Image(
+                uri.toString(),
+                metadata.width.toInt(),
+                metadata.height.toInt(),
+                metadata.ext
+            )
+
+            (requireActivity() as MainActivity).showImageViewFragment(imageView, image, message)
+        }
+    }
+
+    override fun onMessageRead(message: Message) {
+
+    }
+    override fun onMessageUpdated(message: Message) {
+
+    }
+    override fun onMessageSenderClick(message: Message) {}
+
+    override fun onMessageNotDownloaded(
+        message: Message,
+        onComplete: (newMessage: Message) -> Unit
+    ) {
+        if (message.type == image) {
+            createNewFileAndDownload(imagesDir, message, onComplete)
+        } else if (message.type == document) {
+            createNewFileAndDownload(documentsDir, message, onComplete)
+        }
+    }
+
+    private fun createNewFileAndDownload(
+        externalFilesDir: File,
+        message: Message,
+        onComplete: (newMessage: Message) -> Unit
+    ) {
+        val name = message.content + message.metadata!!.ext
+        val destination = File(externalFilesDir, message.chatChannelId)
+
+        fun download(des: File) {
+            val file = File(des, name)
+            try {
+                if (file.createNewFile()) {
+                    FireUtility.downloadMedia(file, message.content, message) {
+                        message.isDownloaded = true
+                        onComplete(message)
+                        if (it.isSuccessful) {
+                            viewModel.updateMessage(message)
+                        } else {
+                            file.delete()
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                } else {
+                    if (file.exists()) {
+                        FireUtility.downloadMedia(file, message.content, message) {
+                            message.isDownloaded = true
+                            onComplete(message)
+                            if (it.isSuccessful) {
+                                viewModel.updateMessage(message)
+                            } else {
+                                file.delete()
+                                viewModel.setCurrentError(it.exception)
+                            }
+                        }
+                    }
+                    Log.d(
+                        TAG,
+                        "Probably file already exists. Or some other problem for which we are not being able to "
+                    )
                 }
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
+            } finally {
+                Log.d(TAG, file.path)
             }
         }
-        return images
-    }*/
 
+        try {
+            if (destination.mkdir()) {
+                download(destination)
+            } else {
+                Log.d(TAG, "Probably directory already exists")
+                if (destination.exists()) {
+                    download(destination)
+                } else {
+                    throw Exception("Unknown error. Couldn't create file and download.")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, e.localizedMessage.orEmpty())
+        } finally {
+            Log.d(TAG, destination.path)
+        }
+    }
 
     companion object {
 

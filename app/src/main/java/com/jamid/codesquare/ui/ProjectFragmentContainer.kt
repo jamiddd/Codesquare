@@ -13,7 +13,6 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.ToolbarAdjustment
 import com.jamid.codesquare.databinding.ProjectFragmentContainerBinding
 
 @ExperimentalPagingApi
@@ -81,10 +80,8 @@ class ProjectFragmentContainer: Fragment() {
             toolbar.title = project.name
         }
 
-        val initialImagePos = arguments?.getInt("image_pos") ?: 0
-
         if (childFragmentManager.backStackEntryCount == 0) {
-            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project, TITLE to project.name, "image_pos" to initialImagePos))
+            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project, TITLE to project.name, "image_pos" to 0))
             childFragmentManager.beginTransaction()
                 .add(binding.projectFragContainer.id, frag, ProjectFragment.TAG)
                 .addToBackStack(ProjectFragment.TAG)
@@ -104,30 +101,10 @@ class ProjectFragmentContainer: Fragment() {
             isPrimaryFragment = childFragmentManager.backStackEntryCount == 1
             setJoinBtn()
 
-
             val topFragment = childFragmentManager.fragments.lastOrNull()
             if (topFragment != null) {
                 setToolbarForFragment(topFragment)
             }
-
-            /*if (topFragment != null) {
-                when (topFragment) {
-                    is ProjectContributorsFragment -> {
-                        toolbar.title = "Contributors"
-                        toolbar.menu.clear()
-                    }
-                    is CommentsFragment -> {
-                        toolbar.title = "Comments"
-                        toolbar.menu.clear()
-                    }
-                    is ProjectFragment -> {
-                        toolbar.title = project.name
-                        if (!toolbar.menu.hasVisibleItems() && project.isMadeByMe) {
-                            toolbar.inflateMenu(R.menu.project_menu)
-                        }
-                    }
-                }
-            }*/
 
             updateNavigation()
 
@@ -190,14 +167,10 @@ class ProjectFragmentContainer: Fragment() {
                     text = getString(R.string.undo_request)
                     icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_20)
 
-                    viewModel.getRequestByProject(project) { projectRequest ->
-                        if (projectRequest != null) {
-                            setOnClickListener {
-                                activity.onProjectUndoClick(project, projectRequest) {
-                                    project = it
-                                    setJoinBtn()
-                                }
-                            }
+                    setOnClickListener {
+                        activity.onProjectUndoClick(project) {
+                            project = it
+                            setJoinBtn()
                         }
                     }
                 }
@@ -236,31 +209,7 @@ class ProjectFragmentContainer: Fragment() {
             toolbar.subtitle = subtitle
         }
 
-       /* when (fragment) {
-            is ProjectFragment -> {
-
-            }
-            is ProjectContributorsFragment -> {
-
-            }
-            is TagFragment -> {
-
-            }
-        }*/
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     /**
      * This function assumes that title and/or subtitle will be provided in the bundle for any particular
@@ -275,8 +224,5 @@ class ProjectFragmentContainer: Fragment() {
             .commit()
     }
 
-    companion object {
-        private const val TAG = "ProjectFragmentContainer"
-    }
 
 }
