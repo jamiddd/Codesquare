@@ -13,6 +13,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.*
@@ -53,7 +54,7 @@ class LocationFragment: Fragment() {
             layoutManager = LinearLayoutManager(activity)
         }
 
-        viewModel.isNetworkAvailable.observe(viewLifecycleOwner) { isNetworkAvailable ->
+        (activity as MainActivity).networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
             if (isNetworkAvailable == true) {
                 progressBar?.show()
 
@@ -70,24 +71,41 @@ class LocationFragment: Fragment() {
                 }
 
                 if (LocationProvider.isLocationPermissionAvailable) {
+
+                    Log.d(TAG, "onViewCreated: Location permission available")
+
                     if (LocationProvider.isLocationEnabled) {
+
+                        Log.d(TAG, "onViewCreated: Location is enabled")
+
                         LocationProvider.getNearbyPlaces {
                             progressBar?.hide()
                             if (it.isSuccessful) {
+                                Log.d(TAG, "onViewCreated: Got result for nearby places")
+
                                 val response = it.result
                                 val places = response.placeLikelihoods.map { it1 -> it1.place }
                                 locationAdapter.submitList(places)
                             } else {
-                                viewModel.setCurrentError(it.exception)
+                                Log.e(TAG, "onViewCreated: ${it.exception?.localizedMessage}", )
                             }
                         }
                     } else {
-                        val launcher = (activity as MainActivity).locationStateLauncher
+
+                        Log.d(TAG, "onViewCreated: Location is not enabled")
+
+                        val launcher = activity.locationStateLauncher
                         val fusedLocationProviderClient = activity.fusedLocationProviderClient
                         LocationProvider.checkForLocationSettings(requireContext(), launcher, fusedLocationProviderClient)
+
+                        findNavController().navigateUp()
+
                     }
                 } else {
-                    (activity as MainActivity).requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+
+                    Log.d(TAG, "onViewCreated: Location permission not available")
+
+                    activity.requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
 
                 /*

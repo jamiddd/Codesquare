@@ -30,6 +30,7 @@
         style="@style/AppTheme.CloseBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        tools:text=" "
         android:layout_margin="@dimen/smallest_padding"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="@+id/small_image"

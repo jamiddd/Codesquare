@@ -10,8 +10,12 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.drawee.controller.BaseControllerListener
+import com.facebook.imagepipeline.image.ImageInfo
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentProfileImageBinding
+import com.jamid.codesquare.listeners.CommonImageListener
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
 
 @ExperimentalPagingApi
@@ -20,6 +24,8 @@ class ProfileImageFragment : Fragment() {
     private lateinit var binding: FragmentProfileImageBinding
     private val viewModel: MainViewModel by activityViewModels()
     private var profileImage: String? = null
+
+    private var listener: BaseControllerListener<ImageInfo>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +49,8 @@ class ProfileImageFragment : Fragment() {
         // setting listeners
         binding.userImage.setOnClickListener(onImageUpdateClick)
         binding.updateImageBtn.setOnClickListener(onImageUpdateClick)
+
+        listener = CommonImageListener(binding.userImgProgressBar)
 
         // skipping entirely
         binding.skipImageUpdateBtn.setOnClickListener {
@@ -108,7 +116,6 @@ class ProfileImageFragment : Fragment() {
         // setting ui for current fragment
         binding.userName.text = currentUser.name
 
-
     }
 
     private fun setProfileImage(image: Uri?) {
@@ -117,7 +124,13 @@ class ProfileImageFragment : Fragment() {
 
     private fun setProfileImage(image: String?) {
         profileImage = image
-        binding.userImage.setImageURI(profileImage)
+        binding.userImgProgressBar.show()
+
+        val builder = Fresco.newDraweeControllerBuilder()
+            .setUri(image)
+            .setControllerListener(listener)
+
+        binding.userImage.controller = builder.build()
     }
 
     private fun onImageUploaded() {

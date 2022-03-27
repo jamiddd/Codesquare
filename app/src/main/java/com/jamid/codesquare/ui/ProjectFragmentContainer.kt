@@ -1,10 +1,12 @@
 package com.jamid.codesquare.ui
 
+import android.content.Context
 import android.os.Bundle
 import android.view.*
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -154,6 +156,7 @@ class ProjectFragmentContainer: Fragment() {
     private fun setJoinBtn() {
         val activity = requireActivity() as MainActivity
         binding.projectJoinBtn.apply {
+
             when {
                 !isPrimaryFragment -> hide()
                 project.isMadeByMe -> hide()
@@ -165,7 +168,8 @@ class ProjectFragmentContainer: Fragment() {
 
                     show()
                     text = getString(R.string.undo_request)
-                    icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_20)
+                    setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.pink))
+//                    icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_undo_20)
 
                     setOnClickListener {
                         activity.onProjectUndoClick(project) {
@@ -177,7 +181,8 @@ class ProjectFragmentContainer: Fragment() {
                 else -> {
                     show()
                     text = getString(R.string.join_project)
-                    icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+                    setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.green_dark))
+//                    icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
 
                     setOnClickListener {
                         flagForSnackbar = true
@@ -187,6 +192,21 @@ class ProjectFragmentContainer: Fragment() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    fun setJoinBtnForChildScroll(v1: NestedScrollView) {
+        val joinBtnOffset = resources.getDimension(R.dimen.chat_bottom_offset)
+        v1.setOnScrollChangeListener { v, scrollX, scrollY, oldScrollX, oldScrollY ->
+            if (scrollY > oldScrollY && scrollY - oldScrollY >= 100) {
+                // slide down
+                binding.projectJoinBtn.slideDown(joinBtnOffset)
+            }
+
+            if (scrollY < oldScrollY && oldScrollY - scrollY >= 50) {
+                // slide up
+                binding.projectJoinBtn.slideReset()
             }
         }
     }

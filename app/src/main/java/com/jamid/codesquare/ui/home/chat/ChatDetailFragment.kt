@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.home.chat
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -36,6 +37,8 @@ class ChatDetailFragment: Fragment() {
     private lateinit var chatChannel: ChatChannel
     private lateinit var project: Project
 
+    private val prevList = mutableListOf<User>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
@@ -61,6 +64,7 @@ class ChatDetailFragment: Fragment() {
         return binding.root
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -69,17 +73,7 @@ class ChatDetailFragment: Fragment() {
 
         val currentUser = UserManager.currentUser
 
-        viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
-            if (reactiveChatChannel != null) {
-                if (reactiveChatChannel.administrators.contains(currentUser.id)) {
-                    binding.updateGuidelinesBtn.show()
-                } else {
-                    binding.updateGuidelinesBtn.hide()
-                }
-            }
-        }
-
-        setMediaRecyclerAndData(chatChannel.chatChannelId)
+        viewModel.setCurrentFocusedChatChannel(chatChannel)
 
         userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel)
 
@@ -88,8 +82,50 @@ class ChatDetailFragment: Fragment() {
             layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
         }
 
+        viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
+            if (reactiveChatChannel != null) {
+                chatChannel = reactiveChatChannel
+
+                userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = reactiveChatChannel)
+                binding.chatContributorsRecycler.adapter = userAdapter
+
+                userAdapter.submitList(prevList)
+                userAdapter.notifyDataSetChanged()
+
+                if (reactiveChatChannel.administrators.contains(currentUser.id)) {
+                    binding.updateGuidelinesBtn.show()
+                } else {
+                    binding.updateGuidelinesBtn.hide()
+                }
+
+                if (reactiveChatChannel.rules.isEmpty()) {
+                    binding.chatProjectGuidelines.gravity = Gravity.CENTER_HORIZONTAL
+                    binding.chatProjectGuidelines.text = "Update rules of this chat"
+                } else {
+                    binding.chatProjectGuidelines.gravity = Gravity.START
+                    setRules(reactiveChatChannel)
+                }
+
+                binding.updateGuidelinesBtn.setOnClickListener {
+                    (parentFragment as ChatContainerSample).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
+                        CHAT_CHANNEL to reactiveChatChannel))
+                }
+
+                binding.chatMediaHeader.setOnClickListener {
+                    (parentFragment as ChatContainerSample).navigate(ChatMediaFragment.TAG, bundleOf(
+                        CHAT_CHANNEL to reactiveChatChannel))
+                }
+
+            }
+        }
+
+        setMediaRecyclerAndData(chatChannel.chatChannelId)
+
+
         viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
             if (it.isNotEmpty()) {
+                Log.d(TAG, "onViewCreated: $it")
+                prevList.addAll(it)
                 userAdapter.submitList(it)
             } else {
                 Log.d(TAG, "No contributors ...")
@@ -104,32 +140,16 @@ class ChatDetailFragment: Fragment() {
 
         binding.chatProjectImage.controller = builder.build()
 
-        binding.updateGuidelinesBtn.setOnClickListener {
-            (parentFragment as ChatContainerSample).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
-                PROJECT to project))
-        }
-
         binding.chatProjectImage.setOnClickListener {
             (activity as MainActivity).showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
         }
 
-        binding.chatMediaHeader.setOnClickListener {
-            (parentFragment as ChatContainerSample).navigate(ChatMediaFragment.TAG, bundleOf(
-                CHAT_CHANNEL to chatChannel))
-        }
 
-        viewModel.getReactiveProject(chatChannel.projectId).observe(viewLifecycleOwner) {
-            if (it != null) {
-                val guidelines = getFormattedGuidelinesText(it.rules)
-                if (it.rules.isEmpty()) {
-                    binding.chatProjectGuidelines.gravity = Gravity.CENTER_HORIZONTAL
-                } else {
-                    binding.chatProjectGuidelines.gravity = Gravity.START
-                }
-                binding.chatProjectGuidelines.text = guidelines
-            }
-        }
 
+    }
+
+    fun setRules(chatChannel: ChatChannel) {
+        binding.chatProjectGuidelines.text = chatChannel.rules
     }
 
     private fun onMediaMessagesExists() = requireActivity().runOnUiThread {
@@ -225,21 +245,6 @@ class ChatDetailFragment: Fragment() {
                 }
             }
         }
-    }
-
-    private fun getFormattedGuidelinesText(rules: List<String>): String {
-
-        if (rules.isEmpty()) {
-            return "Guidelines are rules \uD83D\uDCC4 set by the admin \uD83E\uDD34\uD83C\uDFFB\uD83D\uDC78\uD83C\uDFFB for the contributors to adhere to. To maintain equilibrium ⚖️  and order of \uD83D\uDEE0️ work, guidelines are essential tool ⚒️\uD83D\uDD2C to shape the progress \uD83D\uDCC8 of the project. \uD83C\uDF08\uD83E\uDDD1\uD83C\uDFFB\u200D\uD83D\uDCBB\uD83D\uDC69\uD83C\uDFFB\u200D\uD83D\uDCBB."
-        }
-
-        var guidelinesText = ""
-
-        for (l in rules.indices) {
-            guidelinesText = guidelinesText + (l + 1).toString() + ". ${rules[l]}" + "\n"
-        }
-
-        return guidelinesText
     }
 
 }

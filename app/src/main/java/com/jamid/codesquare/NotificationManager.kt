@@ -24,12 +24,6 @@ object NotificationManager {
     private lateinit var tokenReceiver: BroadcastReceiver
     private lateinit var notificationReceiver: BroadcastReceiver
 
-    private val _notifications = MutableLiveData<List<Notification>>()
-    val notifications: LiveData<List<Notification>> = _notifications
-
-    fun setNotifications(notifications: List<Notification>) {
-        _notifications.postValue(notifications)
-    }
 
     fun init(mContext: Context) {
         tokenReceiver = object: BroadcastReceiver() {

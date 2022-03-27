@@ -93,14 +93,6 @@ class ChatImagesFragment : MessageListenerFragment() {
         }
     }
 
-    override fun onMessageRead(message: Message) {
-
-    }
-    override fun onMessageUpdated(message: Message) {
-
-    }
-    override fun onMessageSenderClick(message: Message) {}
-
     override fun onMessageNotDownloaded(
         message: Message,
         onComplete: (newMessage: Message) -> Unit

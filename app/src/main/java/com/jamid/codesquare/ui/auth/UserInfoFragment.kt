@@ -168,12 +168,26 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         chip.isCheckedIconVisible = true
         chip.checkedIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_done_24)
         chip.isCloseIconVisible = false
+        chip.tag = s
 
-        if (currentList.find {
-                it.queryString == s
-            } == null) {
+        if (currentList.find { it.queryString == s } == null) {
             this.addView(chip, 0)
+        } else {
+            val oldChip = this.findViewWithTag<Chip>(s)
+            if (oldChip != null) {
+                oldChip.performClick()
+            } else {
+                this.addView(chip, 0)
+            }
         }
+
+        chip.setOnClickListener {
+            this.removeView(chip)
+            if (chip.isChecked) {
+                this.addView(chip, 0)
+            }
+        }
+
 
     }
 

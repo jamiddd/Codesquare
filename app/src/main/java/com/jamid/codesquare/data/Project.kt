@@ -26,7 +26,6 @@ data class Project(
     var creator: UserMinimal,
     var likes: Long,
     var comments: Long,
-    var rules: List<String>,
     var images: List<String>,
     var tags: List<String>,
     var sources: List<String>,
@@ -66,7 +65,7 @@ data class Project(
     @Transient
     var isAd: Boolean = false,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
 
     companion object {
 

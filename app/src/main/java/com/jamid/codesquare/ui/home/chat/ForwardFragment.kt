@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,15 +20,14 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentForwardBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 import com.jamid.codesquare.ui.ChatContainerSample
-import com.jamid.codesquare.ui.ChatViewModel
 import java.io.File
 
 @ExperimentalPagingApi
 class ForwardFragment: Fragment(), ChatChannelClickListener {
 
     private lateinit var binding: FragmentForwardBinding
-    private lateinit var chatViewModel: ChatViewModel
     private lateinit var chatChannelId: String
+    private val viewModel: MainViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +46,6 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
             return
         }
 
-        chatViewModel = (parentFragment as ChatContainerSample).chatViewModel
 
         val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
@@ -75,7 +74,7 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
             message.content = uri.toString()
         }
 
-        chatViewModel.forwardList.observe(viewLifecycleOwner) {
+        viewModel.forwardList.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it.isNotEmpty()) {
                     binding.forwardBtn.isEnabled = true
@@ -95,16 +94,16 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
         }
 
         binding.forwardBtn.setOnClickListener {
-            val listOfChannels = chatViewModel.forwardList.value
+            val listOfChannels = viewModel.forwardList.value
             if (listOfChannels != null && listOfChannels.isNotEmpty()) {
                 binding.forwardBtn.hide()
                 binding.forwardProgressBar.show()
                 if (imagesDir != null && documentsDir != null) {
-                    chatViewModel.sendForwardsToChatChannels(messages, listOfChannels) { result ->
+                    viewModel.sendForwardsToChatChannels(messages, listOfChannels) { result ->
                         when (result) {
                             is Result.Error -> {}
                             is Result.Success -> {
-                                chatViewModel.disableSelectMode(chatChannelId)
+                                viewModel.disableSelectMode(chatChannelId)
                                 (parentFragment as ChatContainerSample).navigateUp()
                             }
                         }
@@ -130,7 +129,7 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
 
-        chatViewModel.getForwardChannels(UserManager.currentUserId).observe(viewLifecycleOwner) {
+        viewModel.getForwardChannels(UserManager.currentUserId).observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
                 channelAdapter.submitList(it.filter { it1 ->
                     it1.chatChannelId != chatChannelId
@@ -157,17 +156,17 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
     }
 
     override fun onChatChannelSelected(chatChannel: ChatChannel) {
-        chatViewModel.addChannelToForwardList(chatChannel)
+        viewModel.addChannelToForwardList(chatChannel)
     }
 
     override fun onChatChannelDeSelected(chatChannel: ChatChannel) {
-        chatViewModel.removeChannelFromForwardList(chatChannel)
+        viewModel.removeChannelFromForwardList(chatChannel)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        chatViewModel.clearForwardList()
-        chatViewModel.disableSelectMode(chatChannelId)
+        viewModel.clearForwardList()
+        viewModel.disableSelectMode(chatChannelId)
     }
 
 }

@@ -16,24 +16,29 @@ import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.fragment.app.activityViewModels
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
 import com.facebook.drawee.generic.RoundingParams
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallDocumentsAdapter
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ChatContainerSampleLayoutBinding
+import com.jamid.codesquare.databinding.NewChatGreetingBinding
 import com.jamid.codesquare.listeners.DocumentClickListener
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.OptionClickListener
@@ -71,12 +76,8 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     private var currentMessage: Message? = null
     private var isInProgressMode = false
 
-    private val chatViewModelFactory: ChatViewModelFactory by lazy {
-        ChatViewModelFactory(
-            requireContext()
-        )
-    }
-    val chatViewModel: ChatViewModel by viewModels { chatViewModelFactory }
+    private var chatListener: ListenerRegistration? = null
+    
     private val imagesDir: File by lazy {
         requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
@@ -85,6 +86,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             ?: throw NullPointerException("Couldn't get documents directory.")
     }
+
     private val errorsList = MutableLiveData<List<Uri>>().apply { value = emptyList() }
     private lateinit var documentsAdapter: SmallDocumentsAdapter
     private lateinit var smallImagesAdapter: SmallImagesAdapter
@@ -108,7 +110,47 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         super.onViewCreated(view, savedInstanceState)
 
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
-        chatViewModel.isSelectModeOn = false
+        viewModel.isSelectModeOn = false
+
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val chatChannelIsOpened = sharedPref.getBoolean(chatChannel.chatChannelId + "_is_opened", false)
+        if (chatChannelIsOpened) {
+            val xv = layoutInflater.inflate(R.layout.new_chat_greeting, null, false)
+            val greetingBinding = NewChatGreetingBinding.bind(xv)
+
+            val dialog = MaterialAlertDialogBuilder(requireContext())
+                .setView(greetingBinding.root)
+                .setCancelable(false)
+                .show()
+
+            greetingBinding.apply {
+
+                chatRulesText.text = "Message by the admin:\n\n" + chatChannel.rules
+//                chatRulesText.text = getString(R.string.large_text)
+
+                greetingsHeading.text = "Greetings, " + UserManager.currentUser.name
+
+                dismissGreetingBtn.setOnClickListener {
+                    dialog.dismiss()
+                }
+
+                sendFirstMsgBtn.setOnClickListener {
+                    dialog.dismiss()
+                    viewModel.sendTextMessage(
+                        chatChannel.chatChannelId,
+                        "\uD83D\uDC4B",
+                        null,
+                        null
+                    )
+                }
+
+            }
+
+            val editor = sharedPref.edit()
+            editor.putBoolean(chatChannel.chatChannelId + "_is_opened", true)
+            editor.apply()
+        }
+
 
         toolbar.title = chatChannel.projectTitle
 
@@ -116,7 +158,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             if (it == null) {
                 FireUtility.getProject(chatChannel.projectId) { projectResult ->
                     when (projectResult) {
-                        is Result.Error -> chatViewModel.setCurrentError(projectResult.exception)
+                        is Result.Error -> viewModel.setCurrentError(projectResult.exception)
                         is Result.Success -> {
                             viewModel.insertProjects(projectResult.data)
                             project = projectResult.data
@@ -144,10 +186,10 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 .commit()
         }
 
-        chatViewModel.selectedMessages(chatChannel.chatChannelId).observe(viewLifecycleOwner) { selectedMessages ->
-            chatViewModel.isSelectModeOn = !selectedMessages.isNullOrEmpty()
+        viewModel.selectedMessages(chatChannel.chatChannelId).observe(viewLifecycleOwner) { selectedMessages ->
+            viewModel.isSelectModeOn = !selectedMessages.isNullOrEmpty()
 
-            if (chatViewModel.isSelectModeOn) {
+            if (viewModel.isSelectModeOn) {
                 binding.chatBottomRoot.hide()
                 binding.chatOptionRoot.show()
             } else {
@@ -155,7 +197,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 binding.chatBottomRoot.show()
             }
 
-            isSingleSelectedMessage = if (chatViewModel.isSelectModeOn) {
+            isSingleSelectedMessage = if (viewModel.isSelectModeOn) {
                 selectedMessages.size == 1
             } else {
                 false
@@ -166,7 +208,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 newList.add(i)
             }
 
-            updateChatInputUi(chatViewModel.isSelectModeOn, selectedMessages = newList)
+            updateChatInputUi(viewModel.isSelectModeOn, selectedMessages = newList)
             updateNavigation()
 
             if (::projectIcon.isInitialized && ::moreBtn.isInitialized)
@@ -174,13 +216,13 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
             val secondaryToolbar = requireActivity().findViewById<MaterialToolbar>(R.id.secondary_toolbar)
             val dy = resources.getDimension(R.dimen.appbar_slide_translation)
-            if (chatViewModel.isSelectModeOn) {
+            if (viewModel.isSelectModeOn) {
                 toolbar.slideUp(dy)
                 secondaryToolbar.slideReset()
                 secondaryToolbar.title = "${selectedMessages.size} Selected"
 
                 secondaryToolbar.setNavigationOnClickListener {
-                    chatViewModel.disableSelectMode(chatChannel.chatChannelId)
+                    viewModel.disableSelectMode(chatChannel.chatChannelId)
                 }
 
             } else {
@@ -200,11 +242,11 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
         }
 
-        chatViewModel.replyMessage.observe(viewLifecycleOwner) { replyMessage ->
+        viewModel.replyMessage.observe(viewLifecycleOwner) { replyMessage ->
             setReplyLayout(replyMessage = replyMessage)
         }
 
-        chatViewModel.chatDocumentsUpload.observe(viewLifecycleOwner) { documents ->
+        viewModel.chatDocumentsUpload.observe(viewLifecycleOwner) { documents ->
             updateChatInputUi(documents = documents)
             if (documents.isNullOrEmpty()) {
                 // hiding progress after upload
@@ -214,7 +256,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             }
         }
 
-        chatViewModel.chatImagesUpload.observe(viewLifecycleOwner) { images ->
+        viewModel.chatImagesUpload.observe(viewLifecycleOwner) { images ->
             updateChatInputUi(images = images)
             if (images.isNullOrEmpty()) {
                 // hiding progress after upload
@@ -228,24 +270,6 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
         smallImagesAdapter = SmallImagesAdapter(this).apply {
             shouldShowCloseBtn = true
-        }
-
-        // entry point for selecting images for upload
-        viewModel.multipleImagesContainer.observe(viewLifecycleOwner) { images ->
-            if (!images.isNullOrEmpty()) {
-                chatViewModel.setChatUploadDocuments(emptyList())
-                Log.d(TAG, "Images just arrived: ${images.size}")
-                chatViewModel.addUploadingImages(images)
-            }
-        }
-
-        // entry point for selecting documents for upload
-        viewModel.multipleDocumentsContainer.observe(viewLifecycleOwner) { documents ->
-            if (!documents.isNullOrEmpty()) {
-                chatViewModel.setChatUploadImages(emptyList())
-                Log.d(TAG, "Documents just arrived: ${documents.size}")
-                chatViewModel.addUploadingDocuments(documents)
-            }
         }
 
         addNecessaryTools()
@@ -268,6 +292,16 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 updateToolbarItems(true)
                 hideTabLayout()
                 hideOptionsLayout()
+
+                val chatDetailFragment = childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)
+                viewModel.getChatChannel(chatChannel.chatChannelId) {
+                    if (it != null) {
+                        requireActivity().runOnUiThread {
+                            (chatDetailFragment as ChatDetailFragment).setRules(it)
+                        }
+                    }
+                }
+
             }
             childFragmentManager.findFragmentByTag(MessageDetailFragment.TAG)?.isVisible == true -> {
                 updateToolbarItems()
@@ -401,9 +435,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     private fun updateNavigation() {
         if (isChatFragment) {
             // We care about select mode only if the current child fragment is chat fragment
-            if (chatViewModel.isSelectModeOn) {
+            if (viewModel.isSelectModeOn) {
                 setNavigation {
-                    chatViewModel.disableSelectMode(chatChannel.chatChannelId)
+                    viewModel.disableSelectMode(chatChannel.chatChannelId)
                 }
             } else {
 
@@ -442,6 +476,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         val dy = resources.getDimension(R.dimen.generic_len) * 30
 
         if (isChatFragment) {
+
+            binding.chatBottomRoot.show()
+
             if (isSelectModeOn) {
                 // hide input and show options
                 binding.chatBottomRoot.slideDown(dy)
@@ -458,6 +495,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
             setChatOptionsLayout(isSelectModeOn, isChatFragment, selectedMessages)
         } else {
+
+            binding.chatBottomRoot.hide()
+
             binding.chatBottomRoot.slideDown(dy)
         }
     }
@@ -482,6 +522,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     }
 
 
+
     /**
      * To set chat options layout
      *
@@ -504,15 +545,23 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 binding.chatsReplyBtn.setOnClickListener {
                     val replyMessage = selectedMessages?.firstOrNull()
                     if (replyMessage != null) {
-                        chatViewModel.setReplyMessage(replyMessage)
+                        viewModel.setReplyMessage(replyMessage)
                     }
+                }
+
+                binding.chatsForwardBtn.isEnabled = UserManager.currentUser.chatChannels.size > 1
+
+                if (UserManager.currentUser.chatChannels.size <= 1) {
+                    binding.chatsForwardBtn.text = "No channels to forward"
+                } else {
+                    binding.chatsForwardBtn.text = "Forward"
                 }
 
                 // setting forward btn
                 binding.chatsForwardBtn.setOnClickListener {
                     if (selectedMessages != null) {
                         forward(selectedMessages)
-                        chatViewModel.disableSelectMode(chatChannel.chatChannelId)
+                        viewModel.disableSelectMode(chatChannel.chatChannelId)
                     }
                 }
 
@@ -538,7 +587,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             binding.replyText.text = replyMessage.content
 
             binding.replyCloseBtn.setOnClickListener {
-                chatViewModel.setReplyMessage(null)
+                viewModel.setReplyMessage(null)
             }
 
         } else {
@@ -732,7 +781,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
                 isInProgressMode = true
 
-                chatViewModel.sendMessagesSimultaneously(
+                viewModel.sendMessagesSimultaneously(
                     chatChannel.chatChannelId,
                     listOfMessages
                 )
@@ -744,18 +793,18 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
                 val content = binding.chatInputLayout.text.trim().toString()
 
-                chatViewModel.sendTextMessage(
+                viewModel.sendTextMessage(
                     chatChannel.chatChannelId,
                     content,
-                    chatViewModel.replyMessage.value?.messageId,
-                    chatViewModel.replyMessage.value?.toReplyMessage()
+                    viewModel.replyMessage.value?.messageId,
+                    viewModel.replyMessage.value?.toReplyMessage()
                 )
             }
 
             // regardless of type clear the message input
 
             binding.chatInputLayout.text.clear()
-            chatViewModel.setReplyMessage(null)
+            viewModel.setReplyMessage(null)
         }
 
     }
@@ -774,7 +823,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     private fun cleanUp() {
         viewModel.multipleDocumentsContainer.postValue(emptyList())
         viewModel.multipleDocumentsContainer.postValue(emptyList())
-        chatViewModel.disableSelectMode(chatChannel.chatChannelId)
+        viewModel.disableSelectMode(chatChannel.chatChannelId)
         viewModel.setCurrentFocusedUser(null)
         viewModel.setCurrentFocusedChatChannel(null)
 
@@ -784,12 +833,13 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
     override fun onPause() {
         super.onPause()
-        chatViewModel.disableSelectMode(chatChannel.chatChannelId)
+        viewModel.disableSelectMode(chatChannel.chatChannelId)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         cleanUp()
+        chatListener?.remove()
     }
 
     private fun createNewFileAndDownload(
@@ -890,16 +940,16 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
         Log.d(TAG, "onMessageClick: Pressed")
 
-        if (chatViewModel.isSelectModeOn) {
+        if (viewModel.isSelectModeOn) {
             // if select mode is on, we simply need to toggle the state of this message
             message.state = 1 - abs(message.state) // since the values can be either 1 or 0
 
             // in case this was the only selected message and it has been deselected in this current click,
             // disable select mode entirely, else simply update the message
             if (isSingleSelectedMessage && message.state == 0) {
-                chatViewModel.disableSelectMode(message.chatChannelId)
+                viewModel.disableSelectMode(message.chatChannelId)
             } else {
-                chatViewModel.updateMessage(message)
+                viewModel.updateMessage(message)
             }
 
         } else {
@@ -941,7 +991,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 .addCallback(object: BaseTransientBottomBar.BaseCallback<Snackbar>() {
                 override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
                     super.onDismissed(transientBottomBar, event)
-                    if (chatViewModel.isSelectModeOn) {
+                    if (viewModel.isSelectModeOn) {
                         if (binding.chatOptionRoot.translationY != 0f) {
                             binding.chatOptionRoot.slideReset()
                         }
@@ -955,7 +1005,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             return
         }
 
-        if (chatViewModel.isSelectModeOn) {
+        if (viewModel.isSelectModeOn) {
             // if the select mode is already on, simple toggle the state of this message
             // since the values can be only 1, 0
             message.state = 1 - message.state
@@ -963,14 +1013,14 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             // in case this was the only selected message and it has been deselected in this current long click,
             // disable select mode entirely, else simply update the message
             if (isSingleSelectedMessage && message.state == 0) {
-                chatViewModel.disableSelectMode(message.chatChannelId)
+                viewModel.disableSelectMode(message.chatChannelId)
             } else {
-                chatViewModel.updateMessage(message)
+                viewModel.updateMessage(message)
             }
 
         } else {
             // if select mode is not on, start select mode here
-            chatViewModel.enableSelectMode(message)
+            viewModel.enableSelectMode(message)
         }
     }
 
@@ -1010,7 +1060,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     }
 
     override fun onMessageUpdated(message: Message) {
-        chatViewModel.updateMessage(message)
+        viewModel.updateMessage(message)
     }
 
     override fun onMessageSenderClick(message: Message) {
@@ -1070,14 +1120,14 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     }
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
-        chatViewModel.removeImageAtPosition(position)
+        viewModel.removeImageAtPosition(position)
     }
 
     override fun onOptionClick(option: Option) {
         (activity as MainActivity).optionsFragment?.dismiss()
         when (option.item) {
             OPTION_19 -> {
-                chatViewModel.setReplyMessage(currentMessage)
+                viewModel.setReplyMessage(currentMessage)
             }
             OPTION_20 -> {
                 forward(arrayListOf(currentMessage!!))
@@ -1100,7 +1150,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     }
 
     override fun onCloseBtnClick(view: View, metadata: Metadata, position: Int) {
-        chatViewModel.removeDocumentAtPosition(position)
+        viewModel.removeDocumentAtPosition(position)
     }
 
 }

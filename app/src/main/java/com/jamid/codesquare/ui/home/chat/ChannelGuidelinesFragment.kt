@@ -4,15 +4,14 @@ import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.MutableLiveData
-import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
-import androidx.recyclerview.widget.DividerItemDecoration
-import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
-import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.GuidelinesAdapter
-import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.CHAT_CHANNEL
+import com.jamid.codesquare.FireUtility
+import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.R
+import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
 import com.jamid.codesquare.ui.ChatContainerSample
 
@@ -21,8 +20,7 @@ class ChannelGuidelinesFragment : Fragment() {
 
     private lateinit var binding: FragmentChannelGuidelinesBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private val currentGuidelines = MutableLiveData<List<String>>()
-    private lateinit var project: Project
+    private lateinit var chatChannel: ChatChannel
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -48,92 +46,33 @@ class ChannelGuidelinesFragment : Fragment() {
         when (item.itemId) {
             R.id.update_guidelines -> {
 
-                val changes = mapOf(
-                    "rules" to currentGuidelines.value.orEmpty()
-                )
+                val updatedRule = binding.channelRulesText.text
+                if (updatedRule.isNotBlank()) {
+                    val changes = mapOf(
+                        "rules" to updatedRule.toString()
+                    )
 
-                viewModel.updateProject(project.id, changes) {
-                    if (it.isSuccessful) {
-                        project.rules = currentGuidelines.value.orEmpty()
-                        viewModel.updateLocalProject(project)
-                        toast("Project guidelines updated")
-                        (parentFragment as ChatContainerSample).navigateUp()
-                    } else {
-                        toast("Something went wrong!")
+                    FireUtility.updateChatChannel(chatChannel.chatChannelId, changes) {
+                        if (it.isSuccessful) {
+                            Snackbar.make(binding.root, "Rules updated", Snackbar.LENGTH_LONG).show()
+                            (parentFragment as ChatContainerSample).navigateUp()
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
                     }
+
                 }
             }
         }
         return super.onOptionsItemSelected(item)
     }
 
-    /*   override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-           val dialog = super.onCreateDialog(savedInstanceState)
-           dialog.setCancelable(false)
-
-           dialog.setOnShowListener {
-               val bottomSheet =
-                   (it as BottomSheetDialog).findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) as FrameLayout?
-               val behavior = BottomSheetBehavior.from(bottomSheet!!)
-
-               behavior.isDraggable = false
-           }
-
-           return dialog
-       }
-   */
-    private fun getNewAdapter(): GuidelinesAdapter {
-        return GuidelinesAdapter { _, p ->
-            val existingList = currentGuidelines.value.orEmpty().toMutableList()
-            existingList.removeAt(p)
-            currentGuidelines.postValue(existingList)
-        }
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        project = arguments?.getParcelable(PROJECT) ?: return
+        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
 
-        currentGuidelines.postValue(project.rules)
-
-        val rulesAdapter = getNewAdapter()
-
-        binding.rulesRecycler.apply {
-            adapter = rulesAdapter
-            layoutManager = LinearLayoutManager(requireContext())
-            addItemDecoration(
-                DividerItemDecoration(
-                    requireContext(),
-                    DividerItemDecoration.VERTICAL
-                )
-            )
-        }
-
-        currentGuidelines.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                binding.rulesRecycler.show()
-                val newAdapter = getNewAdapter()
-                binding.rulesRecycler.adapter = newAdapter
-                newAdapter.submitList(it)
-                binding.noGuidelinesText.hide()
-            } else {
-                binding.rulesRecycler.hide()
-                binding.noGuidelinesText.show()
-            }
-        }
-
-        binding.addRuleBtn.setOnClickListener {
-            val newRuleText = binding.newRuleText.text
-            if (!newRuleText.isNullOrBlank()) {
-                val newRule = newRuleText.toString()
-                val newList = currentGuidelines.value.orEmpty().toMutableList()
-                newList.add(newRule)
-
-                currentGuidelines.postValue(newList)
-                binding.newRuleText.text.clear()
-            }
-        }
+        binding.channelRulesText.setText(chatChannel.rules)
 
     }
 

@@ -3,8 +3,10 @@ package com.jamid.codesquare.ui
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
+import android.os.Environment
 import android.transition.TransitionManager
 import android.util.Log
 import android.view.View
@@ -23,6 +25,7 @@ import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
@@ -41,6 +44,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.PlayBillingController.PremiumState.*
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
@@ -49,10 +55,12 @@ import com.jamid.codesquare.data.ImageSelectType.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import com.jamid.codesquare.databinding.UserInfoLayoutBinding
 import com.jamid.codesquare.listeners.*
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -61,9 +69,9 @@ import java.util.*
 
 @ExperimentalPagingApi
 class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInviteListener,
-    ProjectClickListener, ProjectRequestListener, UserClickListener, ChatChannelClickListener, NotificationItemClickListener, CommentListener, ImageClickListener, OptionClickListener {
+    ProjectClickListener, ProjectRequestListener, UserClickListener, ChatChannelClickListener, NotificationItemClickListener, CommentListener, OptionClickListener {
 
-    private lateinit var binding: ActivityMainBinding
+    lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
     private var previouslyFetchedLocation: Location? = null
     private var currentImageViewer: View? = null
@@ -72,23 +80,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     private var updateJob: Job? = null
     private var isImageViewMode = false
     private var currentIndefiniteSnackbar: Snackbar? = null
-
+    lateinit var networkManager: MainNetworkManager
     lateinit var playBillingController: PlayBillingController
 
     var subscriptionFragment: SubscriptionFragment? = null
     var optionsFragment: OptionsFragment? = null
 
-
-    private fun getMultipleImageIntent(): Intent {
-        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
-
-        return Intent().apply {
-            type = "image/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-    }
 
     private fun selectChatUploadDocuments() {
         val intent = Intent().apply {
@@ -100,7 +97,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     }
 
     fun selectMultipleImages() {
-        selectMultipleImagesLauncher.launch(getMultipleImageIntent())
+        /*selectMultipleImagesLauncher.launch(getMultipleImageIntent())*/
     }
 
     // needs checking
@@ -185,6 +182,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 if (it.premiumState.toInt() != -1) {
                     viewModel.deleteAdProjects()
                 }
+
+                setMessagesListener(it.chatChannels)
+
+                viewModel.checkAndUpdateLocalProjects(it)
+
             }
         }
 
@@ -209,20 +211,18 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         playBillingController = PlayBillingController(this)
 
 
-        lifecycle.addObserver(SnapshotListenerContainer())
-        val networkManager = MainNetworkManager(this)
+        lifecycle.addObserver(SnapshotListenerContainer(viewModel))
+        networkManager = MainNetworkManager(this)
         lifecycle.addObserver(networkManager)
-        lifecycle.addObserver(ChatOnlineStateListener())
+//        lifecycle.addObserver(ChatOnlineStateListener())
         lifecycle.addObserver(playBillingController)
 
         setLiveDataObservers()
 
         networkManager.networkAvailability.observe(this) { isNetworkAvailable ->
             if (isNetworkAvailable == true) {
-                if (UserManager.isInitialized) {
-                    LocationProvider.initialize(fusedLocationProviderClient, this)
-                    currentIndefiniteSnackbar?.dismiss()
-                }
+                LocationProvider.initialize(fusedLocationProviderClient, this)
+                currentIndefiniteSnackbar?.dismiss()
             } else {
                 val (bgColor, txtColor) = if (isNightMode()) {
                     ContextCompat.getColor(this, R.color.error_color) to Color.WHITE
@@ -238,6 +238,50 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
         }
 
+
+        // prefetching some of the profile images for smoother Ui
+        val sp = PreferenceManager.getDefaultSharedPreferences(this)
+        val isActivityOpenedFirstTime = sp.getBoolean("is_activity_opened_first_time", true)
+        if (isActivityOpenedFirstTime) {
+            prefetchProfileImages()
+
+            val spEditor = sp.edit()
+            spEditor.putBoolean("is_activity_opened_first_time", false)
+            spEditor.apply()
+        }
+
+    }
+
+    private fun prefetchProfileImages() = lifecycleScope.launch (Dispatchers.IO) {
+        val imagePipeline = Fresco.getImagePipeline()
+
+        for (image in userImages) {
+            val imageRequest = ImageRequest.fromUri(image)
+            imagePipeline.prefetchToDiskCache(imageRequest, this)
+        }
+    }
+
+    private fun setMessagesListener(chatChannels: List<String>) {
+        for (channel in chatChannels) {
+            Firebase.firestore.collection(CHAT_CHANNELS)
+                .document(channel)
+                .collection(MESSAGES)
+                .limit(10)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        viewModel.setCurrentError(error)
+                    }
+
+                    if (value != null && !value.isEmpty) {
+                        val messages = value.toObjects(Message::class.java)
+                        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
+                        val documentsDir =  getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
+
+                        viewModel.insertMessages(imagesDir, documentsDir, messages)
+                    }
+
+                }
+        }
     }
 
 
@@ -607,19 +651,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             Log.e(TAG, "setLiveDataObservers: ${it.localizedMessage}")
         }
 
-        ProjectManager.myProjectRequests.observe(this) { requests ->
-            if (!requests.isNullOrEmpty()) {
-                viewModel.insertProjectRequests(requests)
-            }
-        }
-
-        NotificationManager.notifications.observe(this) { notifications ->
-            if (!notifications.isNullOrEmpty()) {
-                viewModel.insertNotifications(notifications)
-            }
-        }
-
-
         playBillingController.isPurchaseAcknowledged.observe(this) { isPurchaseAcknowledged ->
             if (isPurchaseAcknowledged == true) {
                 subscriptionFragment?.dismiss()
@@ -710,19 +741,86 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     }
 
+    private fun updateLocalProjectOnRequestAccept(project: Project, projectRequest: ProjectRequest) {
+        // removing the request id from project->requests list
+        val newRequestsList = project.requests.removeItemFromList(projectRequest.requestId)
+        project.requests = newRequestsList
+
+        // adding the request sender to the project->contributors list
+        val newContList = project.contributors.addItemToList(projectRequest.senderId)
+        project.contributors = newContList
+
+        // recording the time of update locally
+        project.updatedAt = System.currentTimeMillis()
+
+        viewModel.updateLocalProject(project)
+    }
+
+    // TODO("5 Contributor is also a limitation")
     // project request must have project included inside it
     override fun onProjectRequestAccept(projectRequest: ProjectRequest) {
         val project = projectRequest.project
         val currentUser = UserManager.currentUser
         if (project != null) {
             if (project.contributors.size < 5 || currentUser.premiumState.toInt() == 1) {
-                viewModel.acceptRequest(projectRequest)
+
+                FireUtility.acceptProjectRequest(project, projectRequest) {
+                    if (it.isSuccessful) {
+                        // 1. update the local project
+                        updateLocalProjectOnRequestAccept(project, projectRequest)
+
+                        // 2. insert the new user to local database
+                        getNewContributorOnRequestAccept(projectRequest.senderId)
+
+                        // 3. delete the project request
+                        viewModel.deleteProjectRequest(projectRequest)
+
+                        // 4. send notification
+                        val title = project.name
+                        val content = currentUser.name + " has accepted your project request"
+                        val notification = Notification.createNotification(content, currentUser.id, projectRequest.senderId, projectId = project.id, title = title)
+
+                        if (notification.senderId != notification.receiverId) {
+                            FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
+                                if (error != null) {
+                                    viewModel.setCurrentError(error)
+                                } else {
+                                    if (!exists) {
+                                        FireUtility.sendNotification(notification) { it1 ->
+                                            if (it1.isSuccessful) {
+                                                //
+                                            } else {
+                                                viewModel.setCurrentError(it1.exception)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Log.d(TAG, "Not possible")
+                        }
+
+                    } else {
+                        viewModel.setCurrentError(it.exception)
+                    }
+                }
             } else {
                 val appName = getString(R.string.app_name)
                 val upgradeMsg = getString(R.string.upgrade_plan_imsg)
                 showDialog(upgradeMsg, appName, posLabel = getString(R.string.upgrade)) {
                     showSubscriptionFragment()
                 }
+            }
+        }
+    }
+
+    private fun getNewContributorOnRequestAccept(userId: String) {
+        FireUtility.getUser(userId) {
+            val result = it ?: return@getUser
+
+            when (result) {
+                is Result.Error -> viewModel.setCurrentError(result.exception)
+                is Result.Success -> viewModel.insertUsers(result.data)
             }
         }
     }
@@ -845,6 +943,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     override fun onProjectRequestUndo(projectRequest: ProjectRequest) {
         FireUtility.undoJoinProject(projectRequest) {
             if (it.isSuccessful) {
+                lifecycleScope.launch (Dispatchers.IO) {
+                    val localProject = viewModel.getLocalProject(projectRequest.projectId)
+                    if (localProject != null) {
+                        val requestsList = localProject.requests.removeItemFromList(projectRequest.requestId)
+                        localProject.requests = requestsList
+                        localProject.isRequested = false
+                        viewModel.updateLocalProject(localProject)
+                    }
+                }
                 viewModel.deleteProjectRequest(projectRequest)
             } else {
                 viewModel.setCurrentError(it.exception)
@@ -1187,28 +1294,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     override fun onOptionClick(comment: Comment) {
         val isCommentByMe = comment.senderId == UserManager.currentUserId
+        val name: String
 
-        val option1 = "Report"
-        val option2 = "Delete"
-
-        val choices = if (isCommentByMe) {
-            arrayOf(option1, option2)
+        val (choices, icons) = if (isCommentByMe) {
+            name = "You"
+            arrayListOf(OPTION_29, OPTION_30) to arrayListOf(R.drawable.ic_report, R.drawable.ic_remove)
         } else {
-            arrayOf(option1)
+            name = comment.sender.name
+            arrayListOf(OPTION_29) to arrayListOf(R.drawable.ic_report)
         }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle("Comment")
-            .setItems(choices) { _, index ->
-                when (choices[index]) {
-                    option1 -> {
-                        onReportClick(comment)
-                    }
-                    option2 -> {
-                        onCommentDelete(comment)
-                    }
-                }
-            }.show()
+        optionsFragment = OptionsFragment.newInstance(title = "Comment by $name", options = choices, icons = icons)
+        optionsFragment?.show(supportFragmentManager, OptionsFragment.TAG)
+
+        viewModel.setCurrentFocusedComment(comment)
+
     }
 
     override fun onChannelClick(chatChannel: ChatChannel) {
@@ -1568,20 +1668,23 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     override fun onResume() {
         super.onResume()
-
-        lifecycleScope.launch {
-            UserManager.listenForUserVerification(20, 5)
-        }
-
+        viewModel.setListenerForEmailVerification()
     }
 
     override fun onStop() {
         super.onStop()
         LocationProvider.stopLocationUpdates(fusedLocationProviderClient)
+
+        FireUtility.updateUser2(mapOf("online" to false)) {
+            if (it.isCanceled) {
+                Log.e(TAG, "onStop: ${it.exception?.localizedMessage}")
+            }
+        }
+
     }
 
     companion object {
-        private const val TAG = "MainActivityDebugTag"
+        private const val TAG = "MyMainActivity"
     }
 
     override fun updateProjectInvite(newProjectInvite: ProjectInvite) {
@@ -1736,21 +1839,93 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-    override fun onImageClick(view: View, image: Image) {
-        showImageViewFragment(view, image)
-    }
+    fun setUserViewOnProfileIconClick(view: View, u: User? = null) {
+        val userLayoutBinding = UserInfoLayoutBinding.bind(view)
+        val user = u ?: UserManager.currentUser
 
-    override fun onCloseBtnClick(view: View, image: Image, position: Int) {
-        viewModel.deleteChatUploadImageAtPosition(position)
+        userLayoutBinding.apply {
+
+            if (isNightMode()) {
+                userImg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.normal_grey))
+            } else {
+                userImg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.darker_grey))
+            }
+
+            // before setting up static contents clear the views existing data
+            userName.text = ""
+            userAbout.text = ""
+            userTag.text = ""
+            val projectsCountText = "0 Projects"
+            projectsCount.text = projectsCountText
+            val collaborationsCountText = "0 Collaborations"
+            collaborationsCount.text = collaborationsCountText
+            val likesCountText = "0 Likes"
+            likesCount.text = likesCountText
+
+            collaborationsCount.setOnClickListener {
+//                binding.profileViewPager.setCurrentItem(1, true)
+            }
+
+            inviteBtn.hide()
+
+            projectsCount.setOnClickListener {
+//                binding.profileViewPager.setCurrentItem(0, true)
+            }
+
+            // setting up things that won't change
+            // image, name, tag, about, projectsCount, collaborationsCount
+            userImg.setImageURI(user.photo)
+
+            userName.text = user.name
+
+            if (user.tag.isBlank()) {
+                userTag.hide()
+            } else {
+                userTag.show()
+                userTag.text = user.tag
+            }
+
+            if (user.about.isBlank()) {
+                userAbout.hide()
+            } else {
+                userAbout.show()
+                userAbout.text = user.about
+            }
+
+            val t1 = user.projectsCount.toString() + " Projects"
+            projectsCount.text = t1
+
+            val t2 = user.collaborationsCount.toString() + " Collaborations"
+            collaborationsCount.text = t2
+
+            profilePrimaryBtn.iconTint = ColorStateList.valueOf(profilePrimaryBtn.context.accentColor())
+            profilePrimaryBtn.setTextColor(profilePrimaryBtn.context.accentColor())
+
+            // set primary btn for current user
+            profilePrimaryBtn.text = getString(R.string.edit_profile)
+            profilePrimaryBtn.icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_round_arrow_forward_ios_24)
+            profilePrimaryBtn.iconGravity = MaterialButton.ICON_GRAVITY_END
+            val size = resources.getDimension(R.dimen.large_len)
+            profilePrimaryBtn.iconSize = size.toInt()
+
+            /*profilePrimaryBtn.setOnClickListener {
+                findNavController().navigate(R.id.action_profileFragment_to_editProfileFragment, null, slideRightNavOptions())
+            }*/
+
+            profilePrimaryBtn.show()
+            
+        }
     }
 
     override fun onOptionClick(option: Option) {
 
         optionsFragment?.dismiss()
+        optionsFragment = null
 
         val focusedUser = viewModel.currentFocusedUser.value
         val focusedChatChannel = viewModel.currentFocusedChatChannel.value
         val focusedProject = viewModel.currentFocusedProject.value
+        val focusedComment = viewModel.currentFocusedComment.value
 
         val option3 = OPTION_3 + focusedUser?.name
         val option4 = OPTION_4 + focusedUser?.name
@@ -1762,8 +1937,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                     viewModel.setOtherUserAsAdmin(focusedChatChannel.chatChannelId, focusedUser.id) {
                         if (!it.isSuccessful) {
                             viewModel.setCurrentError(it.exception)
+                        } else {
+                            Snackbar.make(binding.root, "Successfully set ${focusedUser.name} as admin", Snackbar.LENGTH_LONG).show()
                         }
                     }
+                } else {
+                    toast("either focused chat channel or focused user is null")
                 }
             }
             OPTION_2 -> {
@@ -1787,72 +1966,72 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 }
             }
             option5 -> {
-                navController.navigate(
-                    R.id.action_chatDetailFragment_to_reportFragment,
-                    bundleOf("contextObject" to focusedUser),
-                    slideRightNavOptions()
-                )
+                if (focusedUser != null) {
+                    val report = Report.getReportForUser(focusedUser)
+                    navController.navigate(
+                        R.id.action_chatDetailFragment_to_reportFragment,
+                        bundleOf("report" to report),
+                        slideRightNavOptions()
+                    )
+
+                }
+
             }
             OPTION_6 -> {
                 if (focusedChatChannel != null && focusedUser != null) {
-                    FireUtility.removeUserFromProject(focusedUser, focusedChatChannel.projectId, focusedChatChannel.chatChannelId) {
-                        if (it.isSuccessful) {
-                            viewModel.getLocalChatChannel(focusedChatChannel.chatChannelId) { channel ->
-                                if (channel != null) {
-                                    FireUtility.removeUserFromChatChannel(
-                                        focusedUser,
-                                        channel
-                                    ) { task ->
-                                        if (task.isSuccessful) {
-                                            val content =
-                                                "${focusedUser.name} has left the project"
-                                            val notification =
-                                                Notification.createNotification(
-                                                    content,
-                                                    UserManager.currentUserId,
-                                                    focusedChatChannel.chatChannelId
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("Removing user from project")
+                        .setMessage("Are you sure you want to remove ${focusedUser.name} from the project?")
+                        .setPositiveButton("Remove") { _, _ ->
+                            FireUtility.removeUserFromProject(focusedUser, focusedChatChannel.projectId, focusedChatChannel.chatChannelId) {
+                                if (it.isSuccessful) {
+
+                                    Snackbar.make(binding.root, "Removed ${focusedUser.name} from project", Snackbar.LENGTH_LONG).show()
+
+                                    val content =
+                                        "${focusedUser.name} has left the project"
+                                    val notification =
+                                        Notification.createNotification(
+                                            content,
+                                            UserManager.currentUserId,
+                                            focusedChatChannel.chatChannelId
+                                        )
+
+                                    viewModel.getLocalProject(focusedChatChannel.projectId) { project ->
+                                        if (project != null) {
+                                            val contributors =
+                                                project.contributors.removeItemFromList(
+                                                    focusedUser.id
                                                 )
-                                            FireUtility.sendNotificationToChannel(
-                                                notification
-                                            ) { it1 ->
-                                                if (it1.isSuccessful) {
-                                                    viewModel.getLocalProject(focusedChatChannel.projectId) { project ->
-                                                        if (project != null) {
-                                                            val contributors =
-                                                                project.contributors.removeItemFromList(
-                                                                    focusedUser.id
-                                                                )
-                                                            project.contributors =
-                                                                contributors
-                                                            viewModel.updateLocalProject(
-                                                                project
-                                                            )
-                                                        } else {
-                                                            Log.d(
-                                                                TAG,
-                                                                "Tried fetching local project with id: ${focusedChatChannel.projectId} but received null."
-                                                            )
-                                                        }
-                                                    }
-                                                } else {
-                                                    viewModel.setCurrentError(it.exception)
-                                                }
-                                            }
+                                            project.contributors =
+                                                contributors
+                                            viewModel.updateLocalProject(
+                                                project
+                                            )
                                         } else {
-                                            viewModel.setCurrentError(task.exception)
+                                            Log.d(
+                                                TAG,
+                                                "Tried fetching local project with id: ${focusedChatChannel.projectId} but received null."
+                                            )
+                                        }
+                                    }
+
+                                    viewModel.removeProjectFromUserLocally(focusedChatChannel.chatChannelId, focusedChatChannel.projectId, focusedUser)
+
+                                    FireUtility.sendNotificationToChannel(
+                                        notification
+                                    ) { it1 ->
+                                        if (!it1.isSuccessful) {
+                                            viewModel.setCurrentError(it.exception)
                                         }
                                     }
                                 } else {
-                                    Log.d(
-                                        TAG,
-                                        "Tried fetching local chat channel with id: ${focusedChatChannel.chatChannelId} but received null."
-                                    )
+                                    viewModel.setCurrentError(it.exception)
                                 }
                             }
-                        } else {
-                            viewModel.setCurrentError(it.exception)
-                        }
-                    }
+                        }.setNegativeButton("Cancel") { a, _ ->
+                            a.dismiss()
+                        }.show()
                 }
             }
             OPTION_7 -> {
@@ -1866,61 +2045,42 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
                             navController.popBackStack(R.id.homeFragment, false)
 
-                            viewModel.getLocalChatChannel(focusedChatChannel.chatChannelId) { channel ->
-                                if (channel != null) {
+                            viewModel.removeProjectFromUserLocally(focusedChatChannel.chatChannelId, focusedChatChannel.projectId, focusedUser)
 
-                                    // Removing the current user from chat channel
-                                    FireUtility.removeUserFromChatChannel(
-                                        UserManager.currentUser,
-                                        channel
-                                    ) { task ->
-                                        if (task.isSuccessful) {
-                                            // notifying other users that the current user has left the project
-                                            val content =
-                                                "${UserManager.currentUser.name} has left the project"
-                                            val notification =
-                                                Notification.createNotification(
-                                                    content,
-                                                    UserManager.currentUserId,
-                                                    focusedChatChannel.chatChannelId
-                                                )
-                                            FireUtility.sendNotificationToChannel(
-                                                notification
-                                            ) { it1 ->
-                                                if (it1.isSuccessful) {
-
-                                                    // if there is a project in local db, update it
-                                                    viewModel.getLocalProject(focusedChatChannel.projectId) { project ->
-                                                        if (project != null) {
-                                                            val contributors =
-                                                                project.contributors.removeItemFromList(
-                                                                    UserManager.currentUserId
-                                                                )
-                                                            project.contributors =
-                                                                contributors
-                                                            viewModel.updateLocalProject(
-                                                                project
-                                                            )
-                                                        } else {
-                                                            Log.d(
-                                                                TAG,
-                                                                "Tried fetching local project with id: ${focusedChatChannel.projectId} but received null."
-                                                            )
-                                                        }
-                                                    }
-                                                } else {
-                                                    viewModel.setCurrentError(it.exception)
-                                                }
-                                            }
-                                        } else {
-                                            viewModel.setCurrentError(task.exception)
-                                        }
-                                    }
+                            // if there is a project in local db, update it
+                            viewModel.getLocalProject(focusedChatChannel.projectId) { project ->
+                                if (project != null) {
+                                    val contributors =
+                                        project.contributors.removeItemFromList(
+                                            UserManager.currentUserId
+                                        )
+                                    project.contributors =
+                                        contributors
+                                    viewModel.updateLocalProject(
+                                        project
+                                    )
                                 } else {
                                     Log.d(
                                         TAG,
-                                        "Tried fetching local chat channel with id: ${focusedChatChannel.chatChannelId} but received null."
+                                        "Tried fetching local project with id: ${focusedChatChannel.projectId} but received null."
                                     )
+                                }
+                            }
+
+                            // notifying other users that the current user has left the project
+                            val content =
+                                "${UserManager.currentUser.name} has left the project"
+                            val notification =
+                                Notification.createNotification(
+                                    content,
+                                    UserManager.currentUserId,
+                                    focusedChatChannel.chatChannelId
+                                )
+                            FireUtility.sendNotificationToChannel(
+                                notification
+                            ) { it1 ->
+                                if (!it1.isSuccessful) {
+                                    viewModel.setCurrentError(it.exception)
                                 }
                             }
                         } else {
@@ -2028,7 +2188,33 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 // settings
                 navController.navigate(R.id.settingsFragment, null, slideRightNavOptions())
             }
+            OPTION_28 -> {
+                val currentFocusedTag = viewModel.currentFocusedTag
+                if (currentFocusedTag != null) {
+                    val changes = mapOf(INTERESTS to FieldValue.arrayUnion(currentFocusedTag))
+                    FireUtility.updateUser2(changes) {
+                        if (it.isSuccessful) {
+                            Snackbar.make(binding.root, "Added $currentFocusedTag to your interests", Snackbar.LENGTH_LONG).show()
+                        } else {
+                            viewModel.setCurrentError(it.exception)
+                        }
+                    }
+                }
+            }
+            OPTION_29 -> {
+                if (focusedComment != null) {
+                    onReportClick(focusedComment)
+                }
+            }
+            OPTION_30 -> {
+                if (focusedComment != null) {
+                    onCommentDelete(focusedComment)
+                }
+            }
         }
+
+        viewModel.setCurrentFocusedUser(null)
+
     }
 
     private fun archiveProject(project: Project) {
@@ -2064,6 +2250,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
+
     private fun unArchiveProject(project: Project) {
         FireUtility.unArchiveProject(project) {
             if (it.isSuccessful) {
@@ -2079,5 +2266,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
         }
     }
+
+
+
+
 
 }

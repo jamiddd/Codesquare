@@ -24,6 +24,21 @@
 
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
 
+    <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/white</item>
+    </style>
+
+    <!-- set the rounded drawable as background to your bottom sheet -->
+    <style name="BottomSheet" parent="@style/Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@drawable/bottom_sheet_background</item>
+    </style>
+
+    <style name="BaseBottomSheetDialog" parent="@style/Theme.Design.Light.BottomSheetDialog">
+        <item name="android:windowIsFloating">false</item>
+        <item name="bottomSheetStyle">@style/BottomSheet</item>
+    </style>
+
     <style name="AppTheme.ReplyLayout">
         <item name="background">@drawable/message_body</item>
         <item name="android:background">@drawable/message_body</item>
@@ -393,6 +408,11 @@
     <style name="AppTheme.TextInputLayout.HintText" parent="TextAppearance.AppCompat.Caption">
 
     </style>
+
+    <style name="AppTheme.AnimationChatGreeting">
+        <item name="lottie_rawRes">@raw/welcome_night</item>
+    </style>
+
 
     <style name="AppTheme.Fragment">
         <item name="android:background">@color/dank_grey</item>

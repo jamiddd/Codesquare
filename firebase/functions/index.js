@@ -175,7 +175,7 @@ exports.onNewChannelNotification = functions.firestore.document("chatChannels/{c
                 response: `Document with id - ${chatChannelId} doesn\'t exist.`
             };
         } else {
-            const registrationTokens = chatChannelSnap.get("registrationTokens");
+            const registrationTokens = chatChannelSnap.get("tokens");
             if (registrationTokens.length > 0) {
                 return await this.sendNotificationToTopic(context.params.chatChannelId, data);
             } else {
@@ -232,9 +232,9 @@ exports.onNewNotification = functions.firestore.document("users/{userId}/notific
                 response: `Document with id - ${context.params.userId} doesn't exist.`
             }
         } else {
-            const registrationTokens = receiverSnap.get("registrationTokens");
-            if (registrationTokens.length > 0) {
-                return await this.sendNotification(registrationTokens, data);
+            const registrationToken = receiverSnap.get("token");
+            if (registrationToken) {
+                return await this.sendNotification(registrationToken, data);
             } else {
                 return {
                     response: `No registration tokens found for user: ${context.params.userId}`
@@ -269,10 +269,10 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
                 const projectTitle = chatChannelSnap.get("projectTitle");
 
                 const senderName = senderSnap.get("name");
-                const senderRegistrationTokens = senderSnap.get("registrationTokens");
+                const senderRegistrationTokens = senderSnap.get("tokens");
 
                 var channelRegistrationTokens = [];
-                channelRegistrationTokens = chatChannelSnap.get("registrationTokens");
+                channelRegistrationTokens = chatChannelSnap.get("tokens");
 
                 const finalTokens = channelRegistrationTokens.filter(t => senderRegistrationTokens.indexOf(t) === -1);
 
@@ -305,7 +305,7 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
             
                     const goodTokens = channelRegistrationTokens.filter(t => staleTokens.indexOf(t) === -1);
 
-                    return await admin.firestore.collection("chatChannels").doc(chatChannelId).update({registrationTokens: goodTokens});
+                    return await admin.firestore.collection("chatChannels").doc(chatChannelId).update({tokens: goodTokens});
                 } else {
                     return {
                         response: "Successfully sent message to chat channel with no stale tokens."

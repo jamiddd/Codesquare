@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/channel_rules_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/channel_rules_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <TextView
+            android:id="@+id/channel_rules_heading"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center"
+            android:text="Update rules"
+            android:textAppearance="@style/AppTheme.Headline6"
+            app:layout_constraintBottom_toTopOf="@+id/divider17"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <Button
+            android:id="@+id/channel_rules_close"
+            style="@style/AppTheme.ProjectItemStyledBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            app:icon="@drawable/ic_round_close_24"
+            app:layout_constraintBottom_toBottomOf="@+id/channel_rules_heading"
+            app:layout_constraintStart_toStartOf="@+id/channel_rules_heading"
+            app:layout_constraintTop_toTopOf="@+id/channel_rules_heading" />
+
+        <Button
+            android:id="@+id/channel_rules_update"
+            style="@style/AppTheme.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="Update"
+            app:layout_constraintBottom_toBottomOf="@+id/channel_rules_heading"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/channel_rules_heading" />
+
+        <View
+            android:id="@+id/divider17"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toTopOf="@+id/channel_rules_text"
+            app:layout_constraintTop_toBottomOf="@+id/channel_rules_heading" />
+
+        <EditText
+            android:id="@+id/channel_rules_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@null"
+            android:ems="10"
+            android:gravity="start|top"
+            android:hint="@string/write_something_here"
+            android:inputType="textPersonName"
+            android:minHeight="100dp"
+            android:padding="12dp"
+            app:layout_constraintBottom_toTopOf="@+id/divider25"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider17" />
+
+        <View
+            android:id="@+id/divider25"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/channel_rules_text" />
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>

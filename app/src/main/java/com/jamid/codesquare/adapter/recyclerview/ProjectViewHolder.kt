@@ -223,6 +223,10 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
         binding.projectTitle.text = project.name
         binding.projectContent.text = project.content
 
+        /*binding.projectContent.setOnLongClickListener {
+            binding.root.performLongClick()
+        }*/
+
         binding.projectContent.doOnLayout {
             if (binding.projectContent.lineCount > MAX_LINES) {
                 val lastCharShown = binding.projectContent.layout.getLineVisibleEnd(MAX_LINES - 1)
@@ -311,6 +315,11 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
 
         binding.root.setOnClickListener {
             projectClickListener.onProjectClick(project.copy())
+        }
+
+        binding.root.setOnLongClickListener {
+            projectClickListener.onProjectOptionClick(project.copy())
+            true
         }
 
     }
@@ -432,12 +441,12 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
             project.isMadeByMe -> {
                 binding.projectJoinBtn.hide()
             }
+            project.isCollaboration -> {
+                binding.projectJoinBtn.hide()
+            }
             project.isRequested -> {
                 binding.projectJoinBtn.show()
                 binding.projectJoinBtn.text = view.context.getString(R.string.undo)
-            }
-            project.isCollaboration -> {
-                binding.projectJoinBtn.hide()
             }
             else -> binding.projectJoinBtn.show()
         }

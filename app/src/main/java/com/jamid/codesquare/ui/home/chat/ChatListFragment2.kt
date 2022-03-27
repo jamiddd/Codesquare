@@ -103,6 +103,8 @@ class ChatListFragment2: Fragment() {
                         if (!it.result.isEmpty) {
                             val chatChannels = it.result.toObjects(ChatChannel::class.java)
                             viewModel.insertChatChannels(chatChannels)
+                        } else {
+                            viewModel.clearAllChannels()
                         }
                     } else {
                         viewModel.setCurrentError(it.exception)
@@ -127,6 +129,7 @@ class ChatListFragment2: Fragment() {
         binding.noChannelsImage.hide()
         binding.getStartedBtn.hide()
         binding.exploreProjectBtn.hide()
+        binding.chatListRecycler.show()
     }
 
     private fun onChatChannelNotFound() {
@@ -134,6 +137,7 @@ class ChatListFragment2: Fragment() {
         binding.noChannelsImage.show()
         binding.getStartedBtn.show()
         binding.exploreProjectBtn.show()
+        binding.chatListRecycler.hide()
     }
 
 }

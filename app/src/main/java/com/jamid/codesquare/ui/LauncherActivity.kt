@@ -90,15 +90,23 @@ abstract class LauncherActivity : AppCompatActivity(){
 
 
     private fun getImagesFromClipData(clipData: ClipData): List<Uri> {
-        val images = mutableListOf<Uri>()
+        return getItemsFromClipData(clipData)
+    }
+
+    private fun getDocumentsFromClipData(clipData: ClipData): List<Uri> {
+        return getItemsFromClipData(clipData)
+    }
+
+    private fun getItemsFromClipData(clipData: ClipData): List<Uri> {
+        val items = mutableListOf<Uri>()
         val count = clipData.itemCount
         for (i in 0 until count) {
             val uri = clipData.getItemAt(i)?.uri
-            uri?.let { image ->
-                images.add(image)
+            uri?.let { item ->
+                items.add(item)
             }
         }
-        return images
+        return items
     }
 
     val sil = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
@@ -120,7 +128,7 @@ abstract class LauncherActivity : AppCompatActivity(){
                             }
                         }
 
-                        viewModel.multipleImagesContainer.postValue(images)
+                        viewModel.setChatUploadImages(images)
                     }
                     IMAGE_PROFILE -> {
                         val singleImage = data.data
@@ -200,49 +208,15 @@ abstract class LauncherActivity : AppCompatActivity(){
             val clipData = it.data?.clipData
 
             if (clipData != null) {
-                val count = clipData.itemCount
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        documents.add(image)
-                    }
-                }
+               documents.addAll(getDocumentsFromClipData(clipData))
             } else {
                 it.data?.data?.let { it1 ->
                     documents.add(it1)
                 }
             }
 
-            viewModel.multipleDocumentsContainer.postValue(documents)
+            viewModel.setChatUploadDocuments(documents)
 
-        }
-    }
-
-
-    val selectMultipleImagesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        if (it.resultCode == Activity.RESULT_OK) {
-
-            val clipData = it.data?.clipData
-
-            if (clipData != null) {
-                val count = clipData.itemCount
-
-                val images = mutableListOf<Uri>()
-
-                for (i in 0 until count) {
-                    val uri = clipData.getItemAt(i)?.uri
-                    uri?.let { image ->
-                        images.add(image)
-                    }
-                }
-
-               viewModel.multipleImagesContainer.postValue(images)
-
-            } else {
-                it.data?.data?.let { it1 ->
-                    viewModel.multipleImagesContainer.postValue(listOf(it1))
-                }
-            }
         }
     }
 
@@ -262,6 +236,7 @@ abstract class LauncherActivity : AppCompatActivity(){
                             viewModel.insertCurrentUser(oldUser)
                         } else {
                             val localUser = User.newUser(user.uid, user.displayName!!, user.email!!)
+
                             FireUtility.uploadDocument(ref, localUser) { it2 ->
                                 if (it2.isSuccessful) {
                                     UserManager.updateUser(localUser)

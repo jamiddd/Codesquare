@@ -144,11 +144,16 @@ class LoginFragment : Fragment() {
             loadingDialog?.dismiss()
             binding.signInBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
-                findNavController().navigate(
-                    R.id.action_loginFragment_to_homeFragment,
-                    null,
-                    slideRightNavOptions()
-                )
+
+                if (UserManager.currentUser.interests.isEmpty()) {
+                    findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
+                } else {
+                    findNavController().navigate(
+                        R.id.action_loginFragment_to_homeFragment,
+                        null,
+                        slideRightNavOptions()
+                    )
+                }
             }
         }
 
@@ -206,8 +211,6 @@ class LoginFragment : Fragment() {
                         binding.passwordText.error = "Unknown error occurred. Maybe check your internet connection."
                     }
                 }
-
-
 
             }
         }

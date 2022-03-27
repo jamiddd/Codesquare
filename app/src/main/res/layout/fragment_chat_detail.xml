@@ -67,7 +67,6 @@
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="12dp"
-                android:text="@string/large_text"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 
             <Button
@@ -77,7 +76,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginBottom="8dp"
-                android:text="Set guidelines"
+                android:text="Set rules for chat"
                 android:textAllCaps="true" />
 
             <TextView

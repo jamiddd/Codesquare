@@ -158,6 +158,7 @@ object FireUtility {
             project.contributors.size.toLong(),
             listOf(project.creator.userId),
             listOf(project.creator.userId),
+            "",
             project.createdAt,
             project.updatedAt,
             null,
@@ -259,15 +260,15 @@ object FireUtility {
         onComplete: (task: Task<Void>) -> Unit
     ) {
         val db = Firebase.firestore
-        val currentUser = UserManager.currentUser
         val batch = db.batch()
 
         // updating user
-        val currentUserRef = db.collection(USERS).document(currentUser.id)
+        val currentUserRef = db.collection(USERS).document(Firebase.auth.currentUser!!.uid)
         batch.update(currentUserRef, changes)
 
         // updating projects where the creator is current user
         if (shouldUpdateProjects) {
+            val currentUser = UserManager.currentUser
             for (project in currentUser.projects) {
                 val ref = db.collection(PROJECTS).document(project)
                 val miniUser = currentUser.minify()
@@ -1547,11 +1548,7 @@ object FireUtility {
     fun sendRegistrationTokenToServer(token: String, onComplete: (task: Task<Void>) -> Unit) {
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null) {
-            Firebase.firestore.collection("users")
-                .document(currentUser.uid)
-                .update("registrationTokens", FieldValue.arrayUnion(token))
-                .addOnCompleteListener(onComplete)
-
+            updateUser2(mapOf("token" to token), false, onComplete)
         }
     }
 
@@ -1597,8 +1594,8 @@ object FireUtility {
         userId: String,
         onComplete: (task: Task<Void>) -> Unit
     ) {
-        Firebase.firestore.collection("chatChannels").document(chatChannelId)
-            .update("administrators", FieldValue.arrayRemove(userId))
+        Firebase.firestore.collection(CHAT_CHANNELS).document(chatChannelId)
+            .update(ADMINISTRATORS, FieldValue.arrayRemove(userId))
             .addOnCompleteListener(onComplete)
     }
 
@@ -1617,7 +1614,8 @@ object FireUtility {
 
         val userChanges = mapOf(
             COLLABORATIONS to FieldValue.arrayRemove(projectId),
-            CHANNELS to FieldValue.arrayRemove(chatChannelId)
+            COLLABORATIONS_COUNT to FieldValue.increment(-1),
+            CHAT_CHANNELS to FieldValue.arrayRemove(chatChannelId)
         )
 
         val chatChannelRef = Firebase.firestore
@@ -1627,7 +1625,9 @@ object FireUtility {
         val channelChanges = mapOf(
             CONTRIBUTORS to FieldValue.arrayRemove(user.id),
             ADMINISTRATORS to FieldValue.arrayRemove(user.id),
-            CONTRIBUTORS_COUNT to FieldValue.increment(-1)
+            CONTRIBUTORS_COUNT to FieldValue.increment(-1),
+            TOKENS to FieldValue.arrayRemove(user.token),
+            UPDATED_AT to System.currentTimeMillis()
         )
 
         val projectRef = Firebase.firestore
@@ -2281,7 +2281,7 @@ object FireUtility {
         )
 
         if (token.isNotEmpty()) {
-            changes2[REGISTRATION_TOKENS] = FieldValue.arrayUnion(token)
+            changes2[TOKENS] = FieldValue.arrayUnion(token)
         }
 
         return this.update(projectReference, changes1)
@@ -2451,19 +2451,17 @@ object FireUtility {
 
     fun removeUserFromChatChannel(
         user: User,
-        chatChannel: ChatChannel,
+        chatChannelId: String,
         onComplete: (task: Task<Void>) -> Unit
     ) {
-        val administrators = chatChannel.administrators
-        val channelTokens = chatChannel.registrationTokens
-
-        val newAdministrators = administrators.removeItemFromList(user.id)
-        val newTokens = channelTokens.removeItemFromList(user.token)
-
         Firebase.firestore.collection(CHAT_CHANNELS)
-            .document(chatChannel.chatChannelId)
-            .update(mapOf(ADMINISTRATORS to newAdministrators, REGISTRATION_TOKENS to newTokens))
-            .addOnCompleteListener(onComplete)
+            .document(chatChannelId)
+            .update(mapOf(
+                ADMINISTRATORS to FieldValue.arrayRemove(user.id),
+                TOKENS to FieldValue.arrayRemove(user.id),
+                CONTRIBUTORS to FieldValue.arrayRemove(user.id),
+                UPDATED_AT to System.currentTimeMillis())
+            ).addOnCompleteListener(onComplete)
 
     }
 
@@ -2694,7 +2692,7 @@ object FireUtility {
         for (channel in currentUser.chatChannels) {
             val ref = Firebase.firestore.collection(CHAT_CHANNELS).document(channel)
             val changes = mapOf(
-                REGISTRATION_TOKENS to FieldValue.arrayUnion(token)
+                TOKENS to FieldValue.arrayUnion(token)
             )
             batch.update(ref, changes)
         }
@@ -2739,6 +2737,40 @@ object FireUtility {
 
             }
 
+    }
+
+    fun getCurrentUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+        Firebase.firestore.collection(USERS).document(userId)
+            .get()
+            .addOnCompleteListener(onComplete)
+
+    }
+
+    fun getContributors(channel: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
+        Firebase.firestore.collection(USERS)
+            .whereArrayContains(CHAT_CHANNELS, channel)
+            .get()
+            .addOnCompleteListener(onComplete)
+    }
+
+    suspend fun getContributors(channel: String): Result<List<User>> {
+        return try {
+            val task = Firebase.firestore.collection(USERS)
+                .whereArrayContains(CHAT_CHANNELS, channel)
+                .get()
+
+            val result = task.await()
+
+            val contributors = result.toObjects(User::class.java)
+            Result.Success(contributors)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun updateChatChannel(channelId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection(CHAT_CHANNELS).document(channelId)
+            .update(changes).addOnCompleteListener(onComplete)
     }
 
 }

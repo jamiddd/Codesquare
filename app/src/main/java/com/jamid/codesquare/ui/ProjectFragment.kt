@@ -38,13 +38,14 @@ import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.CommentListener
+import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.listeners.UserClickListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
-class ProjectFragment : Fragment() {
+class ProjectFragment : Fragment(), ImageClickListener {
 
     private lateinit var binding: FragmentProjectBinding
     private lateinit var project: Project
@@ -68,7 +69,6 @@ class ProjectFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         project = arguments?.getParcelable(PROJECT) ?: return
-
 
         val currentUser = UserManager.currentUser
 
@@ -109,6 +109,9 @@ class ProjectFragment : Fragment() {
             }
         }
 
+        // join btn slide for scroll change
+        (parentFragment as ProjectFragmentContainer).setJoinBtnForChildScroll(binding.projectFragmentScroll)
+
     }
 
     private fun setCreatorRelatedUi(mCreator: UserMinimal) {
@@ -136,6 +139,12 @@ class ProjectFragment : Fragment() {
 
                 binding.userName.setOnClickListener {
                     userClickListener.onUserClick(creator)
+                }
+
+                if (creator.isLiked) {
+                    binding.userLikeBtn.text = "Dislike"
+                } else {
+                    binding.userLikeBtn.text = "Like"
                 }
 
                 binding.userLikeBtn.apply {
@@ -296,6 +305,18 @@ class ProjectFragment : Fragment() {
             setOnClickListener {
                 (parentFragment as ProjectFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag, SUB_TITLE to "Projects related to ${project.name.uppercase()}"))
             }
+
+            setOnLongClickListener {
+                val choices = arrayListOf(OPTION_28)
+                val icons = arrayListOf(R.drawable.ic_round_add_24)
+
+                viewModel.currentFocusedTag = tag
+
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(title = "\"$tag\"", options = choices, icons = icons)
+                (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+
+                true
+            }
         }
 
     }
@@ -392,6 +413,9 @@ class ProjectFragment : Fragment() {
     }
 
     private fun onCommentReceived(comment: Comment) {
+
+        Log.d(TAG, "onCommentReceived: received comment")
+
         viewModel.insertCommentToCache(comment)
         viewModel.insertComment(comment)
 
@@ -405,16 +429,30 @@ class ProjectFragment : Fragment() {
     private fun onCommentChannelReceived(commentChannel: CommentChannel) {
         val lastComment = commentChannel.lastComment
         if (lastComment != null) {
-
+            Log.d(TAG, "onCommentChannelReceived: Comment channel last comment received")
             val updatedLastComment = viewModel.getCachedComment(lastComment.commentId)
 
             if (updatedLastComment != null) {
+
+                Log.d(TAG, "onCommentChannelReceived: Updated last comment found")
+
                 onCommentReceived(updatedLastComment)
             } else {
+
+                Log.d(TAG, "onCommentChannelReceived: Updated last comment is null. Fetching from firestore .. ")
+
                 FireUtility.getComment(lastComment.commentId) { commentResult ->
                     when (commentResult) {
-                        is Result.Error -> viewModel.setCurrentError(commentResult.exception)
+                        is Result.Error -> {
+                            Log.e(
+                                TAG,
+                                "onCommentChannelReceived: ${commentResult.exception.localizedMessage}"
+                                )
+                        }
                         is Result.Success -> {
+
+                            Log.d(TAG, "onCommentChannelReceived: Got comment from firestore")
+
                             val comment = commentResult.data
                             onCommentReceived(comment)
                         }
@@ -433,17 +471,27 @@ class ProjectFragment : Fragment() {
     }
 
     private fun setCommentRelatedUi(project: Project) {
+
+        Log.d(TAG, "setCommentRelatedUi: Setting comment related UI")
+
         val cachedCommentChannel = viewModel.getCachedCommentChannel(project.commentChannel)
         if (cachedCommentChannel != null) {
+
+            Log.d(TAG, "setCommentRelatedUi: Found comment channel in viewModel")
+
             onCommentChannelReceived(cachedCommentChannel)
         } else {
+
+            Log.d(TAG, "setCommentRelatedUi: Comment channel not found in viewModel")
+
             FireUtility.getCommentChannel(project.commentChannel) {
                 when (it) {
                     is Result.Error -> {
-                        viewModel.setCurrentError(it.exception)
+                        Log.e(TAG, "setCommentRelatedUi: ${it.exception.localizedMessage}", )
                         updateCommentUi(NO_COMMENT, project)
                     }
                     is Result.Success -> {
+                        Log.d(TAG, "setCommentRelatedUi: Got the comment channel from fireStore")
                         val commentChannel = it.data
                         viewModel.putCommentChannelToCache(commentChannel)
                         onCommentChannelReceived(commentChannel)
@@ -776,7 +824,7 @@ class ProjectFragment : Fragment() {
      * */
     private fun setProjectImages() {
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
-        val imageAdapter = ImageAdapter(requireActivity() as MainActivity)
+        val imageAdapter = ImageAdapter(this)
 
         val helper = LinearSnapHelper()
 
@@ -863,6 +911,14 @@ class ProjectFragment : Fragment() {
         fun newInstance(bundle: Bundle) = ProjectFragment().apply {
             arguments = bundle
         }
+
+    }
+
+    override fun onImageClick(view: View, image: Image) {
+        (activity as MainActivity).showImageViewFragment(view, image)
+    }
+
+    override fun onCloseBtnClick(view: View, image: Image, position: Int) {
 
     }
 

@@ -11,17 +11,18 @@
         app:defaultNavHost="false"
         android:layout_height="match_parent" />
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/project_join_btn"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_gravity="bottom"
         android:layout_margin="8dp"
-        app:layout_behavior=".ui.SnackBarAwareBehavior"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
         android:text="@string/join_project"
-        android:textColor="@color/white"
-        app:backgroundTint="?colorAccent"
-        app:icon="@drawable/ic_round_add_24"
-        app:iconTint="@color/white" />
+        android:textSize="15sp"
+        app:backgroundTint="@color/green_dark"
+        app:cornerRadius="12dp"
+        app:layout_behavior=".ui.SnackBarAwareBehavior" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

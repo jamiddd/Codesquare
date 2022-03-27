@@ -9,6 +9,7 @@ import androidx.room.Query
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.document
 import com.jamid.codesquare.image
+import com.jamid.codesquare.text
 
 @Dao
 abstract class MessageDao: BaseDao<Message>() {
@@ -76,5 +77,8 @@ abstract class MessageDao: BaseDao<Message>() {
 
     @Query("SELECT * FROM messages WHERE chatChannelId = :channelId AND state = 1")
     abstract fun selectedMessages(channelId: String): LiveData<List<Message>>
+
+    @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId AND type != :type ORDER BY createdAt DESC LIMIT :limit")
+    abstract fun getMediaMessages(chatChannelId: String, limit: Int = 6, type: String = text): LiveData<List<Message>>
 
 }

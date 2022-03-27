@@ -2,17 +2,35 @@ package com.jamid.codesquare.ui
 
 import android.view.View
 import androidx.fragment.app.Fragment
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.data.Message
 
-abstract class MessageListenerFragment: Fragment() {
+abstract class MessageListenerFragment: Fragment(), MessageListener {
 
-    open fun onMessageClick(message: Message) {}
-    open fun onMessageContextClick(message: Message) {}
-    open fun onMessageImageClick(imageView: View, message: Message) {}
-    open fun onMessageDocumentClick(message: Message) {}
-    open fun onMessageRead(message: Message) {}
-    open fun onMessageUpdated(message: Message) {}
-    open fun onMessageSenderClick(message: Message) {}
-    open fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit) {}
+    override fun onMessageClick(message: Message) {}
+    override fun onMessageContextClick(message: Message) {}
+    override fun onMessageImageClick(imageView: View, message: Message) {}
+    override fun onMessageDocumentClick(message: Message) {}
+    override fun onMessageRead(message: Message) {}
+    override fun onMessageUpdated(message: Message) {}
+    override fun onMessageSenderClick(message: Message) {}
+    override fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit) {}
 
+}
+
+interface MediaMessageListener {
+    fun onMessageImageClick(imageView: View, message: Message)
+    fun onMessageDocumentClick(message: Message)
+    fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit)
+}
+
+interface MessageListener {
+    fun onMessageClick(message: Message) {}
+    fun onMessageContextClick(message: Message) {}
+    fun onMessageImageClick(imageView: View, message: Message) {}
+    fun onMessageDocumentClick(message: Message) {}
+    fun onMessageRead(message: Message) {}
+    fun onMessageUpdated(message: Message) {}
+    fun onMessageSenderClick(message: Message) {}
+    fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit) {}
 }

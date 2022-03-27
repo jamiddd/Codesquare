@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.Option
 import com.jamid.codesquare.databinding.FragmentOptionsBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 
-class OptionsFragment: BottomSheetDialogFragment() {
+class OptionsFragment: RoundedBottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentOptionsBinding
     private lateinit var optionsAdapter: OptionsAdapter

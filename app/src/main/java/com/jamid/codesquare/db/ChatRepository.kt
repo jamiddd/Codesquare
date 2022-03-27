@@ -7,26 +7,178 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Result
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.data.User
+import kotlinx.coroutines.*
 import java.io.File
 
-class ChatRepository(private val scope: CoroutineScope, context: Context, a: CodesquareDatabase): BaseRepository(a) {
+class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, context: Context): BaseRepository(
+    db
+) {
 
     val messageDao = database.messageDao()
     private val chatChannelDao = database.chatChannelDao()
+
+    private lateinit var currentUser: User
+
+    private val userDao = database.userDao()
 
     val errors = MutableLiveData<Exception>()
 
     private val imagesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
     private val documentsDir =  context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
+
+    private var chatChannelsListenerRegistration: ListenerRegistration? = null
+    private val allContributors = mutableMapOf<String, User>()
+
+    init {
+        Firebase.auth.addAuthStateListener {
+            val currentFirebaseUser = it.currentUser
+            if (currentFirebaseUser == null) {
+                // is not signed in
+            } else {
+                // is signed in
+                FireUtility.getCurrentUser(currentFirebaseUser.uid) { currentUserDocumentSnapshotTask ->
+                    if (currentUserDocumentSnapshotTask.isSuccessful) {
+                        val currentUserDocumentSnapshot = currentUserDocumentSnapshotTask.result
+                        if (currentUserDocumentSnapshot != null && currentUserDocumentSnapshot.exists()) {
+                            val currentUser = currentUserDocumentSnapshot.toObject(User::class.java)
+                            if (currentUser != null) {
+                                this.currentUser = currentUser
+                                setupContributors(currentUser.chatChannels)
+                            }
+                        } else {
+                            Log.d(TAG, "OnInit: Either the current user document snapshot is null or doesn't exist.")
+                        }
+                    } else {
+                        Log.e(
+                            TAG,
+                            "OnInit: ${currentUserDocumentSnapshotTask.exception?.localizedMessage}"
+                        )
+                    }
+                }
+
+            }
+        }
+    }
+
+    private fun setupContributors(chatChannels: List<String>) = scope.launch {
+        val contributors = withContext(scope.coroutineContext) { prefetchRelatedUsers(chatChannels) }
+        for (contributor in contributors) {
+            allContributors[contributor.id] = contributor
+        }
+        withContext(scope.coroutineContext) { setChannelListener() }
+        insertUsers(contributors)
+    }
+
+    private suspend fun prefetchRelatedUsers(channels: List<String>): List<User> {
+
+        val users = mutableListOf<User>()
+
+        for (channel in channels) {
+            when (val result = FireUtility.getContributors(channel)) {
+                is Result.Error -> {
+                    Log.e(TAG, "prefetchRelatedUsers: ${result.exception.localizedMessage}")
+                }
+                is Result.Success -> {
+                    users.addAll(result.data)
+                }
+            }
+        }
+
+        return users
+    }
+
+    private fun processUsers(users: List<User>): List<User> {
+        val newList = mutableListOf<User>()
+        for (user in users) {
+            newList.add(processUser(user))
+        }
+        return newList
+    }
+
+    private fun processUser(user: User): User {
+        user.isCurrentUser = currentUser.id == user.id
+        user.isLiked = currentUser.likedUsers.contains(user.id)
+        return user
+    }
+
+    private fun insertUser(user: User) = scope.launch (Dispatchers.IO) {
+        userDao.insert(processUser(user))
+    }
+
+    private fun insertUsers(users: List<User>) = scope.launch (Dispatchers.IO) {
+        userDao.insert(processUsers(users))
+    }
+
+    private fun setChannelListener() {
+        chatChannelsListenerRegistration?.remove()
+        chatChannelsListenerRegistration = Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUser.id)
+            .addSnapshotListener { value, error ->
+
+                if (error != null) {
+                    Log.e(
+                        TAG,
+                        "initializeListeners: Something went wrong - ${error.localizedMessage}")
+                    return@addSnapshotListener
+                }
+
+                if (value != null && !value.isEmpty) {
+
+                    clearChatChannels()
+
+                    val chatChannels = value.toObjects(ChatChannel::class.java)
+                    insertChatChannels(chatChannels)
+                }
+            }
+    }
+
+    private suspend fun processChatChannels(chatChannels: List<ChatChannel>): List<ChatChannel> {
+        val newList = mutableListOf<ChatChannel>()
+        for (chatChannel in chatChannels) {
+            val lastMessage = chatChannel.lastMessage
+
+            if (lastMessage != null && lastMessage.sender.isEmpty()) {
+
+                // will only try once, in case it is null, it is very unfortunate because it should
+                // not be possible.
+                val lastMessageSender = allContributors[lastMessage.senderId]
+                if (lastMessageSender != null) {
+                    lastMessage.sender = lastMessageSender
+                    chatChannel.lastMessage = lastMessage
+                } else {
+                    when (val senderResult = FireUtility.getUser(lastMessage.senderId)) {
+                        is Result.Error -> Log.e(
+                            TAG,
+                            "processChatChannels: ${senderResult.exception}"
+                            )
+                        is Result.Success -> {
+                            allContributors[senderResult.data.id] = senderResult.data
+                            lastMessage.sender = senderResult.data
+                            chatChannel.lastMessage = lastMessage
+                            insertUser(senderResult.data)
+                        }
+                        null -> Log.e(TAG, "processChatChannels: No user found whatsoever", )
+                    }
+                }
+            }
+
+            newList.add(chatChannel)
+        }
+
+        return newList
+    }
+
+    private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch (Dispatchers.IO) {
+        chatChannelDao.insert(processChatChannels(chatChannels))
+    }
 
     fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
 
@@ -214,6 +366,19 @@ class ChatRepository(private val scope: CoroutineScope, context: Context, a: Cod
 
     suspend fun getChatChannel(chatChannelId: String): ChatChannel? {
         return chatChannelDao.getChatChannel(chatChannelId)
+    }
+
+    fun getMediaMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
+        return messageDao.getMediaMessages(chatChannelId, limit)
+    }
+
+    fun clearChatChannels() = scope.launch (Dispatchers.IO) {
+        chatChannelDao.clearTable()
+    }
+
+
+    companion object {
+        private const val TAG = "ChatRepository"
     }
 
 }

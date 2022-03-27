@@ -50,7 +50,7 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
             if (messageData.containsKey(CHANNEL_ID)) {
                 // chat notification
                 val channelId = messageData[CHANNEL_ID]!!
-                destination = R.id.chatFragment
+                destination = R.id.chatContainerSample
                 FireUtility.getChatChannel(channelId) { result ->
                     when (result) {
                         is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())

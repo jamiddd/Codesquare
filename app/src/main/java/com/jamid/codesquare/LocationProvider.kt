@@ -25,6 +25,8 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.*
 import com.google.android.libraries.places.api.net.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
 
@@ -164,15 +166,19 @@ object LocationProvider {
                         val hash =
                             GeoFireUtils.getGeoHashForLocation(GeoLocation(currentLocation?.latitude ?: 0.0, currentLocation?.longitude ?: 0.0))
 
-                        FireUtility.updateUser2(mapOf("location" to com.jamid.codesquare.data.Location(
-                            currentLocation?.latitude ?: 0.0, currentLocation?.longitude ?: 0.0, "", hash)), false) { it1 ->
-                            if (it1.isSuccessful) {
-                                Log.d(TAG, "Updated users location")
-                            } else {
-                                it1.exception?.localizedMessage?.toString()
-                                    ?.let { it2 -> Log.e(TAG, it2) }
+                        if (Firebase.auth.currentUser != null) {
+                            FireUtility.updateUser2(mapOf("location" to com.jamid.codesquare.data.Location(
+                                currentLocation?.latitude ?: 0.0, currentLocation?.longitude ?: 0.0, "", hash)), false) { it1 ->
+                                if (it1.isSuccessful) {
+                                    Log.d(TAG, "Updated users location")
+                                } else {
+                                    it1.exception?.localizedMessage?.toString()
+                                        ?.let { it2 -> Log.e(TAG, it2) }
+                                }
                             }
                         }
+
+
                         getNearbyPlaces { it1 ->
                             if (it1.isSuccessful) {
                                 val response = it1.result

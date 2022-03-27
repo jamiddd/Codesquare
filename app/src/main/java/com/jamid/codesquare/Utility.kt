@@ -16,15 +16,18 @@ import android.util.Log
 import android.util.Patterns
 import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
@@ -42,7 +45,10 @@ import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.*
+import com.jamid.codesquare.ui.home.HomeFragment
+import com.jamid.codesquare.ui.home.HomeFragment.AnchorSide.*
 import com.jamid.codesquare.ui.home.chat.*
 import com.jamid.codesquare.ui.profile.EditProfileFragment
 import com.jamid.codesquare.ui.profile.ProfileFragment
@@ -52,6 +58,7 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import kotlin.math.abs
+
 
 
 val colorPalettesDay = mutableListOf(
@@ -69,6 +76,8 @@ val colorPalettesNight = mutableListOf(
 )
 
 fun getWindowWidth() = Resources.getSystem().displayMetrics.widthPixels
+
+fun getWindowHeight() = Resources.getSystem().displayMetrics.heightPixels
 
 fun View.show() {
     this.visibility = View.VISIBLE
@@ -114,6 +123,93 @@ fun View.hideWithAnimation() {
 
         this.disappear()
     }
+
+}
+
+fun View.hideWithFadeAnimation() {
+    if (this.isVisible) {
+        val objAnimator = ObjectAnimator.ofFloat(this, View.ALPHA, 0f)
+        objAnimator.duration = 300
+        objAnimator.start()
+        this.disappear()
+    }
+}
+
+@OptIn(ExperimentalPagingApi::class)
+fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, side: HomeFragment.AnchorSide): View? {
+    // the parameters for this function should be the anchorView and gravity
+
+    var v: View? = null
+
+    // 1. first get the position of the anchor view on the screen and then find the center of the anchor view
+    // 2. based on the gravity choose x and y where the arrow should point
+    // 3. find the horizontal bias for the arrow based on the ratio made by (startToX/XtoEnd) of the screen
+    // 4. apply the layout params to the arrow and set appropriate paddings and constraints
+    // 5. set scrim click to dismiss the tooltip
+
+    val pos = intArrayOf(0, 0)
+    
+    anchorView.getLocationInWindow(pos)
+
+    val anchorX = pos[0]
+    val anchorY = pos[1]
+
+    val widthRadius = anchorView.measuredWidth / 2
+    val heightRadius = anchorView.measuredHeight / 2
+
+    val anchorCenterX = anchorX + widthRadius
+    val anchorCenterY = anchorY + heightRadius
+
+    Log.d(TAG, "showTooltip: $msg, ($anchorX, $anchorY), ($anchorCenterX, $anchorCenterY)")
+
+    when (side) {
+        Left -> {}
+        Top -> {}
+        Right -> {}
+        Bottom -> {
+            val arrowX = anchorCenterX
+            val arrowY = anchorY /*+ anchorView.measuredHeight*/ + resources.getDimension(R.dimen.generic_len_2)
+
+            val hb = arrowX.toFloat()/getWindowWidth()
+            val vb = arrowY/ getWindowHeight()
+
+            Log.d(TAG, "showTooltip: hb=$hb, vb=$vb")
+
+            v = layoutInflater.inflate(R.layout.tooltip_layout, container, false)
+            val b = TooltipLayoutBinding.bind(v)
+
+            container.addView(b.root)
+
+            b.tooltipMsg.text = msg
+
+            b.tooltipTail.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                startToStart = b.root.id
+                endToEnd = b.root.id
+                topToTop = b.root.id
+                bottomToBottom = b.root.id
+
+                horizontalBias = hb
+                verticalBias = vb
+            }
+
+            b.tooltipMsg.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                startToStart = b.tooltipTail.id
+                endToEnd = b.tooltipTail.id
+                topToTop = b.tooltipTail.id
+                horizontalBias = hb
+
+                val m = resources.getDimension(R.dimen.unit_len) * 1.5
+                setMargins(0, m.toInt(), 0, 0)
+            }
+
+            b.root.setOnClickListener {
+                container.removeView(v)
+            }
+
+        }
+    }
+
+    return v
 
 }
 

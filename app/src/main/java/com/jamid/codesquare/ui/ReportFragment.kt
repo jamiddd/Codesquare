@@ -22,9 +22,10 @@ import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentReportBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import com.jamid.codesquare.listeners.ImageClickListener
 
 @ExperimentalPagingApi
-class ReportFragment: Fragment() {
+class ReportFragment: Fragment(), ImageClickListener {
 
     private lateinit var binding: FragmentReportBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -128,7 +129,7 @@ class ReportFragment: Fragment() {
 
         binding.reportBtn.isEnabled = false
 
-        val smallImagesAdapter = SmallImagesAdapter(requireActivity() as MainActivity)
+        val smallImagesAdapter = SmallImagesAdapter(this)
         binding.reportImagesRecycler.apply {
             adapter = smallImagesAdapter
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
@@ -169,5 +170,13 @@ class ReportFragment: Fragment() {
 
     companion object {
         private const val TAG = "ReportFragment"
+    }
+
+    override fun onImageClick(view: View, image: Image) {
+        (activity as MainActivity).showImageViewFragment(view, image)
+    }
+
+    override fun onCloseBtnClick(view: View, image: Image, position: Int) {
+        //
     }
 }

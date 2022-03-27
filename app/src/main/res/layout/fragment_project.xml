@@ -45,19 +45,18 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/user_like_btn"
-                style="@style/AppTheme.Button.IconOnly"
+                style="@style/AppTheme.ProfilePrimaryAction"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
                 android:contentDescription="@string/user_like_btn_desc"
                 app:icon="@drawable/thumb_selector"
+                app:iconSize="18dp"
                 app:layout_constraintBottom_toBottomOf="@id/user_img"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/user_name"
                 app:layout_constraintTop_toTopOf="@+id/user_img"
-                app:strokeColor="@color/lightest_grey"
-                app:strokeWidth="1dp"
                 tools:visibility="visible" />
 
             <com.facebook.drawee.view.SimpleDraweeView
@@ -98,7 +97,8 @@
                 app:layout_constraintTop_toBottomOf="@id/user_project_divider"
                 tools:ignore="SpeakableTextPresentCheck"
                 tools:itemCount="1"
-                tools:listitem="@layout/imageview_layout">
+                tools:listitem="@layout/imageview_layout"
+                tools:visibility="gone">
 
             </androidx.recyclerview.widget.RecyclerView>
 
@@ -352,22 +352,24 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Body2"
                 android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@id/projects_last_comment"
-                app:layout_constraintTop_toBottomOf="@id/project_contributors_recycler"
-                tools:layout_editor_absoluteY="723dp" />
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/project_contributors_recycler" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/see_all_comments"
-                style="@style/AppTheme.TextButton"
+                style="@style/AppTheme.ButtonOutlined"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="@string/see_all"
+                android:text="@string/see_all_comments"
+                android:textAllCaps="true"
                 app:icon="@drawable/ic_round_arrow_forward_24"
                 app:iconGravity="end"
                 app:iconSize="18dp"
-                app:layout_constraintBottom_toBottomOf="@id/comments_header"
-                app:layout_constraintEnd_toEndOf="@id/comments_header"
-                app:layout_constraintTop_toTopOf="@id/comments_header" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="@+id/projects_last_comment"
+                app:layout_constraintStart_toStartOf="@+id/projects_last_comment"
+                app:layout_constraintTop_toBottomOf="@+id/projects_last_comment" />
 
             <include
                 android:id="@+id/projects_last_comment"
@@ -375,9 +377,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintBottom_toTopOf="@id/see_all_comments"
                 app:layout_constraintTop_toBottomOf="@id/comments_header"
-                tools:visibility="gone" />
+                tools:visibility="visible" />
 
 
             <com.airbnb.lottie.LottieAnimationView

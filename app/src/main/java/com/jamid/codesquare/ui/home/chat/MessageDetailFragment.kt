@@ -5,14 +5,11 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.transition.Transition
-import androidx.transition.TransitionInflater
 import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -20,8 +17,6 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentMessageDetailBinding
-import com.jamid.codesquare.ui.ChatContainerSample
-import com.jamid.codesquare.ui.ChatViewModel
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi

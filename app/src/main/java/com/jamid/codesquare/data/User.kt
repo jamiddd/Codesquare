@@ -80,7 +80,8 @@ data class User(
     var isCurrentUser: Boolean = false,
     @Embedded(prefix = "user_")
     var location: Location? = null,
-    var premiumState: Long = -1
+    var premiumState: Long = -1,
+    var online: Boolean = false
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0, 0, 0, 0, 0, false, false)
 

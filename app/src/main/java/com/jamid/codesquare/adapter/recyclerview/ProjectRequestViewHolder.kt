@@ -8,13 +8,11 @@ import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.setMargins
 import androidx.core.view.setPadding
 import androidx.core.view.updateLayoutParams
-import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ProjectRequest
 import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectRequestListener
-import kotlinx.coroutines.launch
 
 class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
@@ -45,7 +43,8 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.requestSecondaryAction.show()
         binding.requestProjectName.text = projectRequest.project?.name
         binding.requestImg.setImageURI(projectRequest.project?.images?.firstOrNull())
-        binding.requestContent.text = projectRequest.sender?.name + " wants to join your project."
+        val content = projectRequest.sender?.name + " wants to join your project."
+        binding.requestContent.text = content
 
         binding.requestPrimaryAction.setOnClickListener {
             onActionStarted()
@@ -72,7 +71,7 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.requestProjectName.text = projectRequest.project?.name
 
         binding.requestPrimaryAction.apply {
-            text = "Undo"
+            text = view.context.getText(R.string.undo)
             show()
 
             setOnClickListener {

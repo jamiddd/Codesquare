@@ -17,7 +17,6 @@ class Collab: Application() {
         // these are all custom objects, and hence require that firebase is
         // initialized first
         UserManager.initialize()
-        ChatManager.initialize()
 
     }
 

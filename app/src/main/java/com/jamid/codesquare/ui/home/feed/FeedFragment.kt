@@ -2,6 +2,7 @@ package com.jamid.codesquare.ui.home.feed
 
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
+import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.isVisible
@@ -31,6 +32,7 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.TagsContainerBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
+import com.jamid.codesquare.ui.home.HomeFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
@@ -44,6 +46,8 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
     init {
         shouldHideRecyclerView = true
     }
+
+    private var tooltipView: View? = null
 
     @SuppressLint("InflateParams")
     override fun onViewLaidOut() {
@@ -155,6 +159,25 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
             }
         }
+
+        val container = (activity as MainActivity).binding.root
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(1500)
+            container.removeView(tooltipView)
+
+            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val feedTagsDialogFlag = sharedPref.getBoolean("feed_fragment_tags", true)
+            if (feedTagsDialogFlag) {
+                tooltipView = showTooltip("Filter projects by tags", container, tagsContainerView, HomeFragment.AnchorSide.Bottom)
+
+                val editor = sharedPref.edit()
+                editor.putBoolean("feed_fragment_tags", false)
+                editor.apply()
+            }
+
+        }
+
 
     }
 

@@ -1,6 +1,5 @@
 package com.jamid.codesquare
 
-import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.firebase.auth.ktx.auth
@@ -34,7 +33,7 @@ object ChatManager {
     val immediateChange: LiveData<List<ChatChannel>> = _immediateChange
 
     fun initialize() {
-        if (UserManager.isInitialized) {
+        /*if (UserManager.isInitialized) {
             val currentUser = UserManager.currentUser
             setupContributors(currentUser)
         } else {
@@ -50,13 +49,13 @@ object ChatManager {
                         chatErrors.postValue(it)
                     }
             }
-        }
+        }*/
     }
 
     fun lateInitialize(currentUser: User) {
-        if (allContributors.isEmpty()) {
+       /* if (allContributors.isEmpty()) {
             setupContributors(currentUser)
-        }
+        }*/
     }
 
     private fun setupContributors(currentUser: User) {
@@ -118,7 +117,7 @@ object ChatManager {
         _immediateChange.postValue(newList)
     }
 
-    fun setChannelContributors(contributors: List<User>) {
+    private fun setChannelContributors(contributors: List<User>) {
         _channelContributors.postValue(contributors)
     }
 

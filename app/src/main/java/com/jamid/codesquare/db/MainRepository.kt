@@ -3,7 +3,6 @@ package com.jamid.codesquare.db
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -26,10 +25,6 @@ class MainRepository(private val db: CodesquareDatabase) {
     val projectInviteDao = db.projectInviteDao()
 
     val currentUser: LiveData<User> = userDao.currentUser()
-    val onMessagesModeChanged = messageDao.onMessagesModeChanged()
-
-    /*val previousProjectQueries = searchQueryDao.previousQueries(QUERY_TYPE_PROJECT)
-    val previousUserQueries = searchQueryDao.previousQueries(QUERY_TYPE_USER)*/
 
     val allPreviousQueries = searchQueryDao.prevQueries()
 
@@ -318,11 +313,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         return commentDao.getCommentById(parentId)
     }
 
-    suspend fun insertComment(comment: Comment) {
-
-        commentDao.insert(comment)
-    }
-
     suspend fun insertComments(comments: List<Comment>) {
         val currentUser = UserManager.currentUser
         for (comment in comments) {
@@ -354,24 +344,12 @@ class MainRepository(private val db: CodesquareDatabase) {
         userDao.insert(newUsers.toList())
     }
 
-    suspend fun updateMessage(message: Message) {
-        messageDao.update(message)
-    }
-
-    suspend fun getProjectByChatChannel(channelId: String): Project? {
-        return projectDao.getProjectByChatChannel(channelId)
-    }
-
     suspend fun getLocalChannelContributors(chatChannel: String): List<User> {
         return userDao.getChannelContributors(chatChannel) ?: emptyList()
     }
 
     suspend fun updateLocalProject(project: Project) {
         projectDao.update(project)
-    }
-
-    fun getLiveProjectByChatChannel(chatChannel: String): LiveData<Project> {
-        return projectDao.getLiveProjectByChatChannel(chatChannel)
     }
 
     suspend fun getLimitedMediaMessages(channelId:String, limit: Int, type: String = image): List<Message> {
@@ -388,10 +366,6 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return messageDao.getMessages(chatChannelId).orEmpty()
-    }
-
-    fun getLiveProjectById(id: String): LiveData<Project> {
-        return projectDao.getLiveProjectById(id)
     }
 
     suspend fun deleteComment(comment: Comment) {
@@ -411,10 +385,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    fun getForwardChannels(userId: String): LiveData<List<ChatChannel>> {
-        return chatChannelDao.getForwardChannels(userId)
-    }
-
     suspend fun updateLocalProjects(updatedUser: User, projects: List<String>) {
 
         val updatedProjects = mutableListOf<Project>()
@@ -428,26 +398,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
 
         insertProjects(updatedProjects.toTypedArray())
-    }
-
-    fun updateDeliveryListOfMessages(
-        currentUserId: String,
-        messages: List<Message>,
-        onComplete: (task: Task<Void>) -> Unit
-    ) {
-        FireUtility.updateDeliveryListOfMessages(currentUserId, messages, onComplete)
-    }
-
-    suspend fun getLastMessageForChannel(chatChannelId: String): Message? {
-        return messageDao.getLastMessageForChannel(chatChannelId)
-    }
-
-    suspend fun updateRestOfTheMessages(chatChannelId: String, selected: Int) {
-        messageDao.updateRestOfTheMessagesInChannel(chatChannelId, selected)
-    }
-
-    suspend fun getLocalMessage(messageId: String): Message? {
-        return messageDao.getMessage(messageId)
     }
 
     suspend fun insertNotifications(notifications: List<Notification>) {
@@ -469,10 +419,6 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     fun getCurrentUserProjects(): LiveData<List<Project>> {
         return projectDao.getCurrentUserProjects()
-    }
-
-    suspend fun updateLocalChatChannel(chatChannel: ChatChannel) {
-        chatChannelDao.update(chatChannel)
     }
 
     suspend fun deleteNotification(notification: Notification) {
@@ -533,10 +479,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         return userDao.getChannelContributorsLive(formattedChannelId)
     }
 
-    fun liveLocalUser(userId: String): LiveData<User> {
-        return userDao.liveLocalUser(userId)
-    }
-
     suspend fun deleteLocalChatChannelById(chatChannelId: String) {
         chatChannelDao.deleteChatChannelById(chatChannelId)
     }
@@ -549,40 +491,12 @@ class MainRepository(private val db: CodesquareDatabase) {
         return projectDao.getReactiveProject(projectId)
     }
 
-    suspend fun getLocalProjectRequest(requestId: String): ProjectRequest? {
-        return projectRequestDao.getProjectRequestById(requestId)
-    }
-
-    suspend fun deleteAllProjectRequests() {
-        projectRequestDao.clearTable()
-    }
-
     fun getReactiveComment(commentId: String): LiveData<Comment> {
         return commentDao.getReactiveComment(commentId)
     }
 
     suspend fun clearProjectInvites() {
         projectInviteDao.clearTable()
-    }
-
-    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
-        return chatChannelDao.getReactiveChatChannel(chatChannelId)
-    }
-
-    suspend fun getCurrentlySelectedMessages(chatChannelId: String): List<Message> {
-        return messageDao.getCurrentlySelectedMessages(chatChannelId)
-    }
-
-    suspend fun updateMessages(chatChannelId: String, state: Int) {
-        messageDao.updateMessages(chatChannelId, state)
-    }
-
-    fun selectedMessages(channelId: String): LiveData<List<Message>> {
-        return messageDao.selectedMessages(channelId)
-    }
-
-    suspend fun getRequestByProject(project: Project): ProjectRequest? {
-        return projectRequestDao.getProjectRequestByProject(project.id)
     }
 
     suspend fun disableLocationBasedProjects() {

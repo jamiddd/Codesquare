@@ -7,20 +7,17 @@ import android.view.*
 import androidx.activity.addCallback
 import androidx.appcompat.widget.Toolbar
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
-import androidx.core.net.toUri
 import androidx.core.os.bundleOf
+import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.common.references.CloseableReference
-import com.facebook.datasource.DataSource
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
-import com.facebook.imagepipeline.image.CloseableImage
-import com.facebook.imagepipeline.request.ImageRequestBuilder
+import com.facebook.drawee.view.SimpleDraweeView
+import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
@@ -30,18 +27,22 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.databinding.FragmentHomeBinding
+import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.SubscriptionFragment
+import com.jamid.codesquare.ui.home.HomeFragment.AnchorSide.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.concurrent.Executors
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class HomeFragment: Fragment() {
 
     private lateinit var binding: FragmentHomeBinding
     private val viewModel: MainViewModel by activityViewModels()
+
+    private var tooltipView: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,15 +57,94 @@ class HomeFragment: Fragment() {
             it.cornerRadius = length
         }
 
+        var userInfoLayout = requireActivity().findViewById<View>(R.id.user_info)
+
         val toolbar = requireActivity().findViewById<Toolbar>(R.id.main_toolbar)
         requireActivity().runOnUiThread {
             if (toolbar != null) {
                 val menu = toolbar.menu
                 if (menu != null) {
                     if (menu.size() > 3) {
+
+                        val container = (activity as MainActivity).binding.root
+
+                        container.removeView(tooltipView)
+
+                        val createItem = requireActivity().findViewById<View>(R.id.create_project)
+                        if (createItem != null) {
+
+                            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+                            val createProjectDialogFlag = sharedPref.getBoolean("home_fragment_create_project", true)
+                            if (createProjectDialogFlag) {
+                                tooltipView = showTooltip("Click here to create a new project", container, createItem, Bottom)
+                                val editor = sharedPref.edit()
+                                editor.putBoolean("home_fragment_create_project", false)
+                                editor.apply()
+                            }
+
+                        }
+
                         val profileItem = menu.getItem(3)
                         if (profileItem != null) {
-                            profileItem.icon = drawable
+
+                            var time = System.currentTimeMillis()
+
+                            var flag: Boolean
+                            profileItem.setActionView(R.layout.view_action_button)
+
+                            profileItem.actionView.findViewById<SimpleDraweeView>(R.id.image_icon)?.background = drawable
+
+                            profileItem.actionView.setOnTouchListener { view, motionEvent ->
+                                when (motionEvent.action) {
+                                    MotionEvent.ACTION_DOWN -> {
+                                        time = System.currentTimeMillis()
+                                        flag = true
+
+                                        viewLifecycleOwner.lifecycleScope.launch {
+                                            delay(750)
+                                            if (flag) {
+                                                if (userInfoLayout == null) {
+                                                    val userStub = requireActivity().findViewById<ViewStub>(R.id.user_profile_view_stub)
+                                                    userInfoLayout = userStub.inflate()
+
+                                                    val actionLength = resources.getDimension(R.dimen.action_height)
+                                                    userInfoLayout.updateLayoutParams<CollapsingToolbarLayout.LayoutParams> {
+                                                        setMargins(0, actionLength.toInt(), 0, 0)
+                                                    }
+                                                }
+                                                (activity as MainActivity).setUserViewOnProfileIconClick(userInfoLayout)
+                                                userInfoLayout.show()
+                                            }
+                                        }
+
+                                    }
+                                    MotionEvent.ACTION_UP -> {
+                                        flag = false
+                                        val oldTime = time
+                                        time = System.currentTimeMillis()
+                                        val diff = time - oldTime
+                                        if (diff < 300) {
+                                            findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
+                                            view.performClick()
+                                        }
+
+                                        if (diff in 300..750) {
+//                                            toast("Long click")
+                                            view.performLongClick()
+                                        }
+
+                                        if (diff > 750) {
+                                            userInfoLayout?.hide()
+                                        }
+
+                                    }
+                                    MotionEvent.ACTION_MOVE -> {
+
+                                    }
+                                }
+                                true
+                            }
+
                         }
                     }
                 }
@@ -99,6 +179,12 @@ class HomeFragment: Fragment() {
             }
         }
     }
+
+    enum class AnchorSide {
+        Left, Top, Right, Bottom
+    }
+
+
 
     private fun setImage() {
         val currentUser = UserManager.currentUser
@@ -138,7 +224,7 @@ class HomeFragment: Fragment() {
                 true
             }
             R.id.profile -> {
-                findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
+//                findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
                 true
             }
             else -> true
@@ -171,6 +257,8 @@ class HomeFragment: Fragment() {
 
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
 
+        OverScrollDecoratorHelper.setUpOverScroll(binding.homeViewPager.getChildAt(0) as RecyclerView, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
+
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         TabLayoutMediator(tabLayout, binding.homeViewPager) { a, b ->
             when (b) {
@@ -196,6 +284,10 @@ class HomeFragment: Fragment() {
 
         setImage()
 
+    }
+
+    companion object {
+        private const val TAG = "HomeFragment"
     }
 
 }

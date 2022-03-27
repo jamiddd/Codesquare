@@ -4,6 +4,7 @@ import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.InputType
+import android.util.Log
 import android.view.*
 import android.webkit.URLUtil
 import androidx.coordinatorlayout.widget.CoordinatorLayout
@@ -190,20 +191,21 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         tabLayout.hide()
 
+        val currentUser = UserManager.currentUser
         val prevProject = arguments?.getParcelable<Project>(PREVIOUS_PROJECT)
         if (prevProject != null) {
             onUpdateProject(prevProject)
+        } else {
+            if (viewModel.currentProject.value == null) {
+                val newProject = Project.newInstance(currentUser)
+                viewModel.setCurrentProject(newProject)
+            }
         }
 
-        val currentUser = UserManager.currentUser
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
 
-        /*if (viewModel.currentProject.value == null) {
-            val newProject = Project.newInstance(currentUser)
-            viewModel.setCurrentProject(newProject)
-        }
-*/
+
         imageAdapter = ImageAdapter()
 
         val helper: SnapHelper = LinearSnapHelper()
@@ -220,6 +222,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             if (currentProject != null) {
                 val images = currentProject.images
                 if (images.isNotEmpty()) {
+
+                    Log.d(TAG, "onViewCreated: Images not empty")
 
                     val newImages = checkForSizeIssues(images)
 
@@ -240,6 +244,9 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     binding.removeCurrentImgBtn.show()
 
                 } else {
+
+                    Log.d(TAG, "onViewCreated: Images empty")
+
                     imageAdapter.submitList(emptyList())
                     updateBtnOnImageCleared()
 

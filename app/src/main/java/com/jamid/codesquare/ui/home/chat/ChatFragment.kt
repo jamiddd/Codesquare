@@ -20,8 +20,6 @@ import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.ui.ChatContainerSample
-import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
@@ -35,7 +33,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     private lateinit var chatChannel: ChatChannel
     private val mContext: Context by lazy { requireContext() }
     private var fab: FloatingActionButton? = null
-    private lateinit var chatViewModel: ChatViewModel
 
     private fun getScrollPosition(): Int {
         val layoutManager = binding.pagerItemsRecycler.layoutManager as LinearLayoutManager?
@@ -43,8 +40,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     }
 
     private fun setNewMessagesListener() {
-        chatViewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) {
-            pagingAdapter.refresh()
+        viewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) {
             scrollToBottom()
         }
     }
@@ -117,8 +113,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
         chatChannelId = chatChannel.chatChannelId
 
-        chatViewModel = (parentFragment as ChatContainerSample).chatViewModel
-
         shouldShowProgress = false
 
         setStaticLayout()
@@ -129,7 +123,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
         // TODO("Currently using paging only for checking old messages, for new messages use a listener")
         getItems {
-            chatViewModel.getPagedMessages(
+            viewModel.getPagedMessages(
                 chatChannelId,
                 query
             )

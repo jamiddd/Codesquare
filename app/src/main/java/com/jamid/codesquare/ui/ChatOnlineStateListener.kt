@@ -9,7 +9,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.jamid.codesquare.CHAT_CHANNELS
-import com.jamid.codesquare.REGISTRATION_TOKENS
+import com.jamid.codesquare.TOKENS
 import com.jamid.codesquare.UserManager
 
 class ChatOnlineStateListener: LifecycleEventObserver {
@@ -43,9 +43,9 @@ class ChatOnlineStateListener: LifecycleEventObserver {
         val batch = Firebase.firestore.batch()
 
         val change = if (!state) {
-            mapOf(REGISTRATION_TOKENS to FieldValue.arrayUnion(token))
+            mapOf(TOKENS to FieldValue.arrayUnion(token))
         } else {
-            mapOf(REGISTRATION_TOKENS to FieldValue.arrayRemove(token))
+            mapOf(TOKENS to FieldValue.arrayRemove(token))
         }
 
         for (channel in channels) {

@@ -5,6 +5,7 @@ import androidx.paging.PagingDataAdapter
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.PROJECT_REQUESTS
+import com.jamid.codesquare.R
 import com.jamid.codesquare.SENDER_ID
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.ProjectRequestAdapter
@@ -25,7 +26,7 @@ class MyRequestsFragment: PagerListFragment<ProjectRequest, ProjectRequestViewHo
             viewModel.getMyProjectRequests(query)
         }
 
-        binding.pagerNoItemsText.text = "You have not sent any project requests"
+        binding.pagerNoItemsText.text = getString(R.string.empty_current_user_requests)
 
     }
 

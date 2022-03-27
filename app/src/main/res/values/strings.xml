@@ -156,6 +156,7 @@
     <string name="tags">Tags</string>
     <string name="contributors">Contributors</string>
     <string name="see_all">See All</string>
+    <string name="see_all_comments">See all comments</string>
     <string name="comments">Comments</string>
     <string name="archive_project">Archive Project</string>
     <string name="remove_ad">Remove ad</string>
@@ -177,4 +178,5 @@
     <string name="best_value">Best value</string>
     <string name="update_project">Update project</string>
     <string name="you">You</string>
+    <string name="empty_current_user_requests">You have not sent any project requests</string>
 </resources>

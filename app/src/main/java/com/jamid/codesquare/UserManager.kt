@@ -70,33 +70,6 @@ object UserManager {
         currentUserData.postValue(newUser)
     }
 
-    private fun addTokenListener() {
-        FirebaseMessaging.getInstance().token
-            .addOnCompleteListener(OnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-                    return@OnCompleteListener
-                }
-
-                // Get new FCM registration token
-                val token = task.result
-                FireUtility.sendRegistrationTokenToServer(token) {
-                    if (it.isSuccessful) {
-                        if (token != null)
-                            FireUtility.sendRegistrationTokenToChatChannels(token) { it1 ->
-                                if (!it1.isSuccessful) {
-                                    errors.postValue(it1.exception)
-                                } else {
-                                    Log.d(TAG, "Updated all channels with registration token")
-                                }
-                            }
-                    } else {
-                        errors.postValue(it.exception)
-                    }
-                }
-            })
-    }
-
     private fun getCurrentUser(onComplete: ((Result<User>?) -> Unit)? = null) {
         if (::currentUserId.isInitialized) {
             FireUtility.getUser(currentUserId) {
@@ -132,37 +105,12 @@ object UserManager {
                 isEmailVerified = firebaseUser.isEmailVerified || testEmails.contains(firebaseUser.email)
                 currentUserId = firebaseUser.uid
                 getCurrentUser()
-//                addUserListener()
-                addTokenListener()
             } else {
                 Log.d(TAG, "The user is not signed in.")
                 authStateData.postValue(false)
                 currentUserData.postValue(null)
                 currentUser = User()
                 isSignedIn = false
-            }
-        }
-    }
-
-    suspend fun listenForUserVerification(timeoutInSeconds: Int, periodInBetween: Long) {
-        for (i in 1..timeoutInSeconds) {
-            delay(periodInBetween * 1000)
-            val currentUser = Firebase.auth.currentUser
-            if (currentUser != null) {
-                if (currentUser.isEmailVerified || testEmails.contains(currentUser.email)) {
-                    isEmailVerified = true
-                    return
-                }
-
-                val task = currentUser.reload()
-                task.addOnCompleteListener {
-                    if (it.isSuccessful) {
-                        isEmailVerified = Firebase.auth.currentUser?.isEmailVerified == true
-                        authStateData.postValue(true)
-                    } else {
-                        errors.postValue(it.exception)
-                    }
-                }
             }
         }
     }
