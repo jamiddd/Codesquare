@@ -11,13 +11,13 @@ class Collab: Application() {
     override fun onCreate() {
         super.onCreate()
         FirebaseApp.initializeApp(applicationContext)
-        Fresco.initialize(applicationContext)
-        Places.initialize(applicationContext, BuildConfig.GOOGLE_MAPS_KEY)
+        UserManager.initialize()
 
         // these are all custom objects, and hence require that firebase is
         // initialized first
-        UserManager.initialize()
 
+        Places.initialize(applicationContext, BuildConfig.GOOGLE_MAPS_KEY)
+        Fresco.initialize(applicationContext)
     }
 
 }

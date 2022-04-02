@@ -69,13 +69,16 @@ abstract class LauncherActivity : AppCompatActivity(){
         }
     }
 
-    val requestGoogleSingInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    val requestGoogleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         loadingDialog?.dismiss()
         if (it.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
             try {
+
+
                 // Google Sign In was successful, authenticate with Firebase
                 val account = task.getResult(ApiException::class.java)
+
                 Log.d(TAG, "firebaseAuthWithGoogle:" + account.id)
                 account?.idToken?.let { it1 ->
                     firebaseAuthWithGoogle(it1)
@@ -83,6 +86,7 @@ abstract class LauncherActivity : AppCompatActivity(){
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
                 Log.w(TAG, "Google sign in failed", e)
+
                 viewModel.setCurrentError(e)
             }
         }

@@ -7,13 +7,14 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class MessageMinimal(
     val senderId: String,
-    val name: String,
-    val content: String,
-    val type: String,
-    val chatChannelId: String,
-    val isDownloaded: Boolean,
+    var name: String,
+    var content: String,
+    var type: String,
+    var messageId: String,
+    var chatChannelId: String,
+    var isDownloaded: Boolean,
     @Embedded(prefix = "metadata_")
-    val metadata: Metadata?
+    var metadata: Metadata?
 ): Parcelable {
-    constructor(): this("", "", "", "", "", false, null)
+    constructor(): this("", "", "", "", "", "", false, null)
 }

@@ -6,12 +6,15 @@ import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
@@ -27,6 +30,7 @@ class EditProfileFragment: Fragment() {
     private var profileImage: String = userImages.random()
     private var loadingDialog: AlertDialog? = null
     private lateinit var currentUser: User
+    private val needToUpdate = MutableLiveData<Boolean>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,12 +42,27 @@ class EditProfileFragment: Fragment() {
         inflater.inflate(R.menu.edit_profle_menu, menu)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+
+        val saveBtn = menu.getItem(0)
+        menu.getItem(0).isVisible = false
+
+        needToUpdate.observe(viewLifecycleOwner) {
+            val shouldUpdate = it ?: return@observe
+            saveBtn.isVisible = shouldUpdate
+        }
+
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.edit_profile_save -> {
-                if (!validateUser())
+                if (!validateUser()) {
+                    toast("Not valid")
                     return true
+                }
 
                 val username = binding.usernameText.editText?.text.toString()
 
@@ -108,11 +127,11 @@ class EditProfileFragment: Fragment() {
             viewModel.updateUser(updatedUser, changes) { it1 ->
                 loadingDialog?.dismiss()
                 if (it1.isSuccessful) {
-                    toast("Saved changes successfully")
+                    Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG).show()
                     viewModel.setCurrentImage(null)
                     findNavController().navigateUp()
                 } else {
-                    toast("Something went wrong. Try again.")
+                    Snackbar.make(binding.root, "Something went wrong. Try again.", Snackbar.LENGTH_LONG).show()
                 }
             }
         }
@@ -237,6 +256,70 @@ class EditProfileFragment: Fragment() {
 
         }
 
+        binding.nameText.editText?.doAfterTextChanged {
+            if (!it.isNullOrBlank()) {
+                checkState()
+            } else {
+                disableSaveBtn()
+            }
+        }
+
+        binding.usernameText.editText?.doAfterTextChanged {
+            if (!it.isNullOrBlank()) {
+                checkState()
+            } else {
+                disableSaveBtn()
+            }
+        }
+
+        binding.aboutText.editText?.doAfterTextChanged {
+            if (!it.isNullOrBlank()) {
+                checkState()
+            } else {
+                if (currentUser.about == "") {
+                    disableSaveBtn()
+                } else {
+                    enableSaveBtn()
+                }
+            }
+        }
+
+        binding.tagText.editText?.doAfterTextChanged {
+            if (!it.isNullOrBlank()) {
+                checkState()
+            } else {
+                if (currentUser.tag == "") {
+                    disableSaveBtn()
+                } else {
+                    enableSaveBtn()
+                }
+            }
+        }
+
+
+    }
+
+    private fun checkState() {
+        onChange()
+    }
+
+    private fun shouldDisableSaveBtn(): Boolean {
+        val e1 = currentUser.name == binding.nameText.editText?.text.toString()
+        val e2 = currentUser.photo == profileImage
+        val e3 = currentUser.tag == binding.tagText.editText?.text.toString()
+        val e4 = currentUser.username == binding.usernameText.editText?.text.toString()
+        val e5 = currentUser.about == binding.aboutText.editText?.text.toString()
+        val e6 = currentUser.interests.sorted().toString() == getInterests().sorted().toString()
+
+        return e1 && e2 && e3 && e4 && e5 && e6
+    }
+
+    private fun disableSaveBtn() {
+        needToUpdate.postValue(false)
+    }
+
+    private fun enableSaveBtn() {
+        needToUpdate.postValue(true)
     }
 
     private fun uploadImage(image: Uri) {
@@ -263,8 +346,6 @@ class EditProfileFragment: Fragment() {
 
     private fun onImageUploaded() {
         binding.userImageProgress.hide()
-//        binding.imageUpdateNextBtn.enable()
-//        binding.skipImageUpdateBtn.enable()
         binding.userImg.colorFilter = null
     }
 
@@ -280,17 +361,11 @@ class EditProfileFragment: Fragment() {
         binding.userImageProgress.show()
         binding.userImg.setColorFilter(colorFilter)
 
-        // disable actions because a work is in progress
-//        binding.imageUpdateNextBtn.disable()
-//        binding.skipImageUpdateBtn.disable()
-
         // if there was no image
         if (image == null) {
             // update UI
             binding.userImg.colorFilter = null
             binding.userImageProgress.hide()
-//            binding.imageUpdateNextBtn.enable()
-//            binding.skipImageUpdateBtn.enable()
 
             // setting the already existing image as profile image
             setProfileImage(currentUser.photo)
@@ -324,30 +399,30 @@ class EditProfileFragment: Fragment() {
     private fun addInterest(interest: String) {
         interest.trim()
         val chip = Chip(requireContext())
-        val lContext = requireContext()
-
-       /* val (backgroundColor, textColor) = if (isNightMode()) {
-            val colorPair = colorPalettesNight.random()
-            ContextCompat.getColor(lContext, colorPair.first) to
-                    ContextCompat.getColor(lContext, colorPair.second)
-        } else {
-            val colorPair = colorPalettesDay.random()
-            ContextCompat.getColor(lContext, colorPair.first) to
-                    ContextCompat.getColor(lContext, colorPair.second)
-        }*/
 
         chip.apply {
             text = interest
             isCheckable = false
             isCloseIconVisible = true
-           /* chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
-            setTextColor(textColor)*/
         }
 
         chip.setOnCloseIconClickListener {
             binding.interestsGroup.removeView(chip)
+            onChange()
         }
+
         binding.interestsGroup.addView(chip, 0)
+
+        onChange()
+
+    }
+
+    private fun onChange() {
+        if (shouldDisableSaveBtn()) {
+            needToUpdate.postValue(false)
+        } else {
+            needToUpdate.postValue(true)
+        }
     }
 
     override fun onDestroyView() {

@@ -2,15 +2,14 @@ package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
 import android.view.*
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.MaterialSharedAxis
-import com.jamid.codesquare.CHAT_CHANNEL
-import com.jamid.codesquare.FireUtility
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.R
+import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
 import com.jamid.codesquare.ui.ChatContainerSample
@@ -21,6 +20,7 @@ class ChannelGuidelinesFragment : Fragment() {
     private lateinit var binding: FragmentChannelGuidelinesBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var chatChannel: ChatChannel
+    private val shouldUpdate = MutableLiveData<Boolean>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -67,12 +67,32 @@ class ChannelGuidelinesFragment : Fragment() {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        menu.getItem(0).isEnabled = false
+
+        shouldUpdate.observe(viewLifecycleOwner) {
+            val shouldUpdate = it ?: return@observe
+
+            menu.getItem(0).isEnabled = shouldUpdate
+        }
+
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
 
         binding.channelRulesText.setText(chatChannel.rules)
+
+        binding.channelRulesText.doAfterTextChanged {
+            if (!it.isNullOrBlank()) {
+                shouldUpdate.postValue(chatChannel.rules != it.toString())
+            } else {
+                shouldUpdate.postValue(false)
+            }
+        }
 
     }
 

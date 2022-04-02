@@ -6,6 +6,7 @@ import android.view.*
 import androidx.activity.addCallback
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -43,8 +44,6 @@ class ProjectFragmentContainer: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.project_menu_option -> {
-                viewModel.setCurrentFocusedProject(project)
-
                 val option = if (project.isArchived) {
                     OPTION_13
                 } else {
@@ -54,7 +53,7 @@ class ProjectFragmentContainer: Fragment() {
                 val options = arrayListOf(OPTION_15, option)
                 val icons = arrayListOf(R.drawable.ic_edit, R.drawable.ic_round_archive_24)
 
-                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons)
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, project = project)
                 (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
 
                 true
@@ -107,6 +106,8 @@ class ProjectFragmentContainer: Fragment() {
             if (topFragment != null) {
                 setToolbarForFragment(topFragment)
             }
+
+            requireActivity().findViewById<View>(R.id.project_menu_option)?.isVisible = isPrimaryFragment
 
             updateNavigation()
 

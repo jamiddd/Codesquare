@@ -6,9 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.Option
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentOptionsBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 
@@ -40,6 +39,12 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         val icons = arguments?.getIntegerArrayList(ARG_ICONS)
         val title = arguments?.getString(ARG_TITLE)
 
+        val user = arguments?.getParcelable<User>(ARG_OPTION_USER)
+        val project = arguments?.getParcelable<Project>(ARG_OPTION_PROJECT)
+        val chatChannel = arguments?.getParcelable<ChatChannel>(ARG_OPTION_CHAT_CHANNEL)
+        val comment = arguments?.getParcelable<Comment>(ARG_OPTION_COMMENT)
+        val tag = arguments?.getString(ARG_STRING)
+
         binding.optionsTitle.text = title
 
         if (title == null) {
@@ -49,9 +54,9 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         }
 
         optionsAdapter = if (listener != null) {
-            OptionsAdapter(listener!!)
+            OptionsAdapter(listener!!, user, project, chatChannel, comment, tag)
         } else {
-            OptionsAdapter(requireActivity() as MainActivity)
+            OptionsAdapter(requireActivity() as MainActivity, user, project, chatChannel, comment, tag)
         }
 
 
@@ -81,11 +86,22 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         const val ARG_ICONS = "icons"
         const val ARG_TITLE = "title"
 
-        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null) = OptionsFragment().apply {
+        const val ARG_OPTION_USER = "ARG_OPTION_USER"
+        const val ARG_OPTION_PROJECT = "ARG_OPTION_PROJECT"
+        const val ARG_OPTION_CHAT_CHANNEL = "ARG_OPTION_CHAT_CHANNEL"
+        const val ARG_OPTION_COMMENT = "ARG_OPTION_COMMENT"
+        const val ARG_STRING = "ARG_STRING"
+
+        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null, user: User? = null, project: Project? = null, chatChannel: ChatChannel? = null, comment: Comment? = null, tag: String? = null) = OptionsFragment().apply {
             arguments = Bundle().apply {
                 putString(TITLE, title)
                 putStringArrayList(ARG_OPTIONS, options)
                 putIntegerArrayList(ARG_ICONS, icons)
+                putParcelable(ARG_OPTION_USER, user)
+                putParcelable(ARG_OPTION_PROJECT, project)
+                putParcelable(ARG_OPTION_CHAT_CHANNEL, chatChannel)
+                putParcelable(ARG_OPTION_COMMENT, comment)
+                putString(ARG_STRING, tag)
             }
             setOptionsListener(listener)
         }

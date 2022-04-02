@@ -16,6 +16,8 @@ abstract class MessageListenerFragment: Fragment(), MessageListener {
     override fun onMessageSenderClick(message: Message) {}
     override fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit) {}
 
+    abstract fun onCheckForStaleData(message: Message)
+
 }
 
 interface MediaMessageListener {

@@ -25,7 +25,6 @@ import com.jamid.codesquare.adapter.recyclerview.CommentAdapter
 import com.jamid.codesquare.adapter.recyclerview.CommentViewHolder
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.databinding.CommentBottomLayoutBinding
 import com.jamid.codesquare.listeners.CommentListener
 
 @ExperimentalPagingApi
@@ -112,7 +111,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                 replyToText.show()
                 val sender = it.sender
 
-                val rt = if (sender.id == UserManager.currentUserId) {
+                val rt = if (sender.userId == UserManager.currentUserId) {
                     "Replying to your comment"
                 } else {
                     // setting styles to reply view
@@ -172,6 +171,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                     randomId(),
                     content,
                     currentUser.id,
+                    currentUser.minify(),
                     replyComment.commentId,
                     replyComment.projectId,
                     replyComment.threadChannelId,
@@ -180,8 +180,8 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                     0,
                     replyComment.commentLevel + 1,
                     System.currentTimeMillis(),
+                    System.currentTimeMillis(),
                     emptyList(),
-                    currentUser,
                     false,
                     replyComment.postTitle
                 )
@@ -205,6 +205,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                         randomId(),
                         content,
                         currentUser.id,
+                        currentUser.minify(),
                         project!!.id,
                         project!!.id,
                         project!!.commentChannel,
@@ -213,8 +214,8 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                         0,
                         0,
                         System.currentTimeMillis(),
+                        System.currentTimeMillis(),
                         emptyList(),
-                        currentUser,
                         false,
                         project!!.name
                     )
@@ -225,6 +226,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                             randomId(),
                             content,
                             currentUser.id,
+                            currentUser.minify(),
                             comment!!.commentId,
                             comment!!.projectId,
                             comment!!.threadChannelId,
@@ -233,8 +235,8 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                             0,
                             comment!!.commentLevel + 1,
                             System.currentTimeMillis(),
+                            System.currentTimeMillis(),
                             emptyList(),
-                            currentUser,
                             false,
                             comment!!.postTitle
                         )

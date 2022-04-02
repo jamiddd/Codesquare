@@ -18,18 +18,17 @@ data class Message(
     var type: String,
     var content: String,
     var senderId: String,
+    @Embedded(prefix = "message_")
+    var sender: UserMinimal,
     @Embedded(prefix = "meta_")
     var metadata: Metadata?,
     var deliveryList: List<String>,
     var readList: List<String>,
     val createdAt: Long,
+    var updatedAt: Long,
     var replyTo: String? = null,
     @Embedded(prefix = "reply_")
-    @Exclude @set: Exclude @get: Exclude
-    var replyMessage: MessageMinimal? = null,
-    @Embedded(prefix = "sender_")
-    @Exclude @set: Exclude @get: Exclude
-    var sender: User,
+    var replyMessage: MessageMinimal?,
     @Exclude @set: Exclude @get: Exclude
     var isDownloaded: Boolean,
     @Exclude @set: Exclude @get: Exclude
@@ -39,8 +38,8 @@ data class Message(
 ): Parcelable {
 
     fun toReplyMessage(): MessageMinimal {
-        return MessageMinimal(senderId, sender.name, content, type, chatChannelId, isDownloaded, metadata)
+        return MessageMinimal(senderId, sender.name, content, type, messageId, chatChannelId, isDownloaded, metadata)
     }
 
-    constructor(): this("", "", "", "", "", Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), null, null, User(), false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), System.currentTimeMillis(), null, MessageMinimal(),false, false)
 }

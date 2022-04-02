@@ -74,7 +74,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     private lateinit var toolbar: MaterialToolbar
     private var isSingleSelectedMessage = false
     private var currentMessage: Message? = null
-    private var isInProgressMode = false
+    var isInProgressMode = false
 
     private var chatListener: ListenerRegistration? = null
     
@@ -114,8 +114,8 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val chatChannelIsOpened = sharedPref.getBoolean(chatChannel.chatChannelId + "_is_opened", false)
-        if (chatChannelIsOpened) {
-            val xv = layoutInflater.inflate(R.layout.new_chat_greeting, null, false)
+        if (!chatChannelIsOpened) {
+            val xv = View.inflate(requireContext(), R.layout.new_chat_greeting, null)
             val greetingBinding = NewChatGreetingBinding.bind(xv)
 
             val dialog = MaterialAlertDialogBuilder(requireContext())
@@ -125,8 +125,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
             greetingBinding.apply {
 
-                chatRulesText.text = "Message by the admin:\n\n" + chatChannel.rules
-//                chatRulesText.text = getString(R.string.large_text)
+                if (chatChannel.rules.isNotBlank()) {
+                    chatRulesText.text = "Message by the admin:\n\n" + chatChannel.rules
+                }
 
                 greetingsHeading.text = "Greetings, " + UserManager.currentUser.name
 
@@ -174,6 +175,20 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 init()
             }
         }
+
+        Firebase.firestore.collection(USERS)
+            .whereArrayContains(CHAT_CHANNEL, chatChannel.chatChannelId)
+            .addSnapshotListener { value, error ->
+                if (error != null) {
+                    Log.e(ChatDetailFragment.TAG, "onViewCreated: ${error.localizedMessage}")
+                }
+
+                if (value != null && !value.isEmpty) {
+                    val contributors = value.toObjects(User::class.java)
+                    viewModel.insertUsers(contributors)
+                }
+            }
+
 
     }
 
@@ -368,11 +383,10 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             moreBtn = btn
 
             setMoreBtnAction {
-                viewModel.setCurrentFocusedProject(project)
                 val options = arrayListOf(OPTION_16, OPTION_15)
                 val icons = arrayListOf(R.drawable.ic_project1, R.drawable.ic_edit)
 
-                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons)
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, project = project)
                 (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
             }
         }
@@ -440,14 +454,13 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                     viewModel.disableSelectMode(chatChannel.chatChannelId)
                 }
             } else {
-
                 if (!isInProgressMode) {
                     setNavigation {
                         cleanUp()
                         findNavController().navigateUp()
                     }
                 } else {
-                    toast("Upload in progress, please wait for a while")
+                    Snackbar.make(binding.root, "Upload in progress, please wait for a while", Snackbar.LENGTH_LONG).show()
                 }
             }
         } else {
@@ -699,13 +712,14 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 if (isImage) image else document,
                 randomId(),
                 currentUser.id,
+                currentUser.minify(),
                 m,
                 emptyList(),
                 emptyList(),
                 now,
+                now,
                 null,
                 null,
-                currentUser,
                 isDownloaded = false,
                 isCurrentUserMessage = true
             )
@@ -733,6 +747,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     ) {
 
         binding.chatSendBtn.setOnClickListener {
+            isInProgressMode = true
             val currentUser = UserManager.currentUser
 
             val now = System.currentTimeMillis()
@@ -764,13 +779,14 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                         text,
                         binding.chatInputLayout.text.toString(),
                         currentUser.id,
+                        currentUser.minify(),
                         null,
                         emptyList(),
                         emptyList(),
                         now,
+                        now,
                         null,
                         null,
-                        currentUser,
                         false,
                         isCurrentUserMessage = true
                     )
@@ -778,8 +794,6 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 }
 
                 hideChatInput()
-
-                isInProgressMode = true
 
                 viewModel.sendMessagesSimultaneously(
                     chatChannel.chatChannelId,
@@ -1064,7 +1078,29 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
     }
 
     override fun onMessageSenderClick(message: Message) {
-        (activity as MainActivity).onUserClick(message.sender)
+
+        val cachedUser = viewModel.getCachedUser(message.senderId)
+        if (cachedUser == null) {
+            FireUtility.getUser(message.senderId) {
+                val userResult = it ?: return@getUser
+
+                when (userResult) {
+                    is Result.Error -> Log.e(
+                        TAG,
+                        "onCheckForStaleData: ${userResult.exception.localizedMessage}"
+                    )
+                    is Result.Success -> {
+                        val user = userResult.data
+                        viewModel.insertUserToCache(user)
+                        (activity as MainActivity).onUserClick(user)
+                    }
+                }
+
+            }
+        } else {
+            (activity as MainActivity).onUserClick(cachedUser)
+        }
+
     }
 
     override fun onMessageNotDownloaded(
@@ -1076,6 +1112,135 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         } else if (message.type == document) {
             createNewFileAndDownload(documentsDir, message, onComplete)
         }
+    }
+
+    @Suppress("LABEL_NAME_CLASH")
+    override fun onCheckForStaleData(message: Message) {
+
+        fun onChangeNeeded(user: User) {
+
+            message.sender = user.minify()
+            message.updatedAt = System.currentTimeMillis()
+
+            val change = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
+            FireUtility.updateMessage(message.chatChannelId, message.messageId, change) {
+                if (it.isSuccessful) {
+                    viewModel.updateMessage(message)
+
+                    viewModel.getChatChannel(message.chatChannelId) { it1 ->
+                        val chatChannel = it1 ?: return@getChatChannel
+
+                        if (chatChannel.lastMessage != null && chatChannel.lastMessage!!.messageId == message.messageId) {
+                            // updated chat channel also
+                            val chatChannelChanges = mapOf("lastMessage" to message, "updatedAt" to System.currentTimeMillis())
+                            FireUtility.updateChatChannel(chatChannel.chatChannelId, chatChannelChanges) {  it2 ->
+                                if (!it2.isSuccessful) {
+                                    Log.e(
+                                        TAG,
+                                        "onChangeNeeded: ${it2.exception?.localizedMessage}"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "onChangeNeeded: ${it.exception?.localizedMessage}")
+                }
+            }
+        }
+
+        val cachedUser = viewModel.getCachedUser(message.senderId)
+        if (cachedUser == null) {
+
+            viewModel.getUser(message.senderId) { localUser ->
+                if (localUser != null) {
+                    if (localUser.minify() != message.sender) {
+                        onChangeNeeded(localUser)
+                    }
+                } else {
+                    FireUtility.getUser(message.senderId) {
+                        val userResult = it ?: return@getUser
+
+                        when (userResult) {
+                            is Result.Error -> Log.e(
+                                TAG,
+                                "onCheckForStaleData: ${userResult.exception.localizedMessage}"
+                            )
+                            is Result.Success -> {
+                                val user = userResult.data
+                                viewModel.insertUserToCache(user)
+                                viewModel.insertUsers(user)
+                                if (user.minify() != message.sender) {
+                                    onChangeNeeded(user)
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+        } else {
+            if (cachedUser.minify() != message.sender) {
+                onChangeNeeded(cachedUser)
+            }
+        }
+
+        fun onChangeNeeded1(user: User) {
+            message.replyMessage!!.name = user.name
+
+            val changes = mapOf("replyMessage" to message.replyMessage, "updatedAt" to System.currentTimeMillis())
+
+            FireUtility.updateMessage(message.chatChannelId, message.messageId, changes) {
+                if (it.isSuccessful) {
+                    viewModel.updateMessage(message)
+                } else {
+                    Log.e(TAG, "onChangeNeeded1: ${it.exception?.localizedMessage}")
+                }
+            }
+        }
+
+        if (message.replyMessage != null) {
+            val cachedUser1 = viewModel.getCachedUser(message.replyMessage!!.senderId)
+            if (cachedUser1 == null) {
+
+                viewModel.getUser(message.replyMessage!!.senderId) { localUser ->
+                    if (localUser != null) {
+
+                        viewModel.insertUserToCache(localUser)
+
+                        if (localUser.name != message.replyMessage!!.name) {
+                            onChangeNeeded1(localUser)
+                        }
+
+                    } else {
+                        FireUtility.getUser(message.senderId) {
+                            val userResult = it ?: return@getUser
+
+                            when (userResult) {
+                                is Result.Error -> Log.e(
+                                    TAG,
+                                    "onCheckForStaleData: ${userResult.exception.localizedMessage}"
+                                )
+                                is Result.Success -> {
+                                    val user = userResult.data
+                                    viewModel.insertUserToCache(user)
+                                    viewModel.insertUsers(user)
+                                    if (user.name != message.replyMessage!!.name) {
+                                        onChangeNeeded1(user)
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            } else {
+                if (cachedUser1.name != message.replyMessage!!.name) {
+                    onChangeNeeded1(cachedUser1)
+                }
+            }
+        }
+
     }
 
     fun navigate(tag: String, bundle: Bundle) {
@@ -1123,7 +1288,26 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         viewModel.removeImageAtPosition(position)
     }
 
-    override fun onOptionClick(option: Option) {
+    private fun forward(messages: ArrayList<Message>) {
+        navigate(ForwardFragment.TAG, bundleOf(MESSAGES to messages))
+    }
+
+    override fun onDocumentClick(view: View, metadata: Metadata) {
+
+    }
+
+    override fun onCloseBtnClick(view: View, metadata: Metadata, position: Int) {
+        viewModel.removeDocumentAtPosition(position)
+    }
+
+    override fun onOptionClick(
+        option: Option,
+        user: User?,
+        project: Project?,
+        chatChannel: ChatChannel?,
+        comment: Comment?,
+        tag: String?
+    ) {
         (activity as MainActivity).optionsFragment?.dismiss()
         when (option.item) {
             OPTION_19 -> {
@@ -1139,18 +1323,6 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 onMessageSenderClick(currentMessage!!)
             }
         }
-    }
-
-    private fun forward(messages: ArrayList<Message>) {
-        navigate(ForwardFragment.TAG, bundleOf(MESSAGES to messages))
-    }
-
-    override fun onDocumentClick(view: View, metadata: Metadata) {
-
-    }
-
-    override fun onCloseBtnClick(view: View, metadata: Metadata, position: Int) {
-        viewModel.removeDocumentAtPosition(position)
     }
 
 }

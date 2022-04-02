@@ -17,7 +17,10 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:name=".Collab"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        tools:targetApi="s"
+        tools:ignore="DataExtractionRules">
 
         <service
             android:name=".MyFirebaseMessagingService"

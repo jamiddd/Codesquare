@@ -139,6 +139,8 @@ class MessageViewHolder2<T: Any>(
 
         fragment?.onMessageRead(message)
 
+        fragment?.onCheckForStaleData(message)
+
     }
 
 
@@ -150,23 +152,18 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
+        binding.replyComponent.root.show()
         if (replyMessage != null) {
-            binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
                 binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
             binding.replyComponent.replyText.text = replyMessage.content
-        } else {
-            binding.replyComponent.root.hide()
-            getReplyMessage(message) {
-                setMessageMiddleReplyRightItem(it)
-            }
         }
     }
 
-    private fun getReplyMessage(message: Message, onMessageFetched: (newMessage: Message) -> Unit) {
+    /*private fun getReplyMessage(message: Message, onMessageFetched: (newMessage: Message) -> Unit) {
         val replyMessageId = message.replyTo
         if (replyMessageId != null) {
             FireUtility.getMessage(message.chatChannelId, replyMessageId) {
@@ -183,7 +180,7 @@ class MessageViewHolder2<T: Any>(
                 }
             }
         }
-    }
+    }*/
 
     private fun setMessageMiddleDocumentRightItem(message: Message) {
         val binding = MessageMiddleDocumentRightItemBinding.bind(view)
@@ -250,19 +247,14 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
+        binding.replyComponent.root.show()
         if (replyMessage != null) {
-            binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
                 binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
             binding.replyComponent.replyText.text = replyMessage.content
-        } else {
-            binding.replyComponent.root.hide()
-            getReplyMessage(message) {
-                setMessageMiddleReplyItem(it)
-            }
         }
 
         // setting time
@@ -342,19 +334,14 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
+        binding.replyComponent.root.show()
         if (replyMessage != null) {
-            binding.replyComponent.root.show()
             if (currentUserId == replyMessage.senderId) {
                 binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
             binding.replyComponent.replyText.text = replyMessage.content
-        } else {
-            binding.replyComponent.root.hide()
-            getReplyMessage(message) {
-                setMessageMiddleReplyItem(it)
-            }
         }
     }
 
@@ -426,22 +413,17 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
-        if (replyMessage != null) {
-            binding.replyComponent.root.show()
+        binding.replyComponent.root.show()
 
+        if (replyMessage != null) {
             if (currentUserId == replyMessage.senderId) {
                 binding.replyComponent.replyName.text = view.context.getString(R.string.you)
             } else {
                 binding.replyComponent.replyName.text = replyMessage.name
             }
-
             binding.replyComponent.replyText.text = replyMessage.content
-        } else {
-            binding.replyComponent.root.hide()
-            getReplyMessage(message) {
-                setMessageMiddleReplyItem(it)
-            }
         }
+
 
         // setting sender image
         binding.messageSenderImg.setImageURI(message.sender.photo)

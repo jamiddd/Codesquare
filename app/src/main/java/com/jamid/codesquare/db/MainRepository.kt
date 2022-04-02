@@ -1,10 +1,7 @@
 package com.jamid.codesquare.db
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import java.io.File
@@ -101,63 +98,18 @@ class MainRepository(private val db: CodesquareDatabase) {
         chatChannelDao.insert(channels)
     }
 
-    private suspend fun processChatChannel(chatChannel: ChatChannel): ChatChannel {
-        val lastMessage = chatChannel.lastMessage
-
-        if (lastMessage != null && lastMessage.sender.isEmpty()) {
-            val sender = getUser(lastMessage.senderId)
-            if (sender != null) {
-                lastMessage.sender = sender
-                chatChannel.lastMessage = lastMessage
-            } else {
-                when (val result = FireUtility.getUser(lastMessage.senderId)) {
-                    is Result.Error -> {
-                        errors.postValue(result.exception)
-                    }
-                    is Result.Success -> {
-                        val unknownContributor = result.data
-                        insertUser(unknownContributor)
-                        lastMessage.sender = unknownContributor
-                        chatChannel.lastMessage = lastMessage
-                    }
-                    null -> {
-                        Log.d(TAG, "Probably the document doesn't exist")
-                    }
-                }
-            }
-        }
-        return chatChannel
-    }
-
     // the contributors must be downloaded before the channels
     suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
-        val newListOfChatChannels = mutableListOf<ChatChannel>()
+        /*val newListOfChatChannels = mutableListOf<ChatChannel>()
         for (chatChannel in chatChannels) {
             newListOfChatChannels.add(processChatChannel(chatChannel))
-        }
-        chatChannelDao.insert(newListOfChatChannels)
+        }*/
+        chatChannelDao.insert(chatChannels)
     }
 
-    private suspend fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
+    private fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
         // filter the messages which are marked as not delivered by the message
         for (message in messages) {
-            // check if the message has user attached to it
-            val user = getUser(message.senderId)
-            if (user != null) {
-                message.sender = user
-            } else {
-                when (val result = FireUtility.getUser(message.senderId)) {
-                    is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                    is Result.Success -> {
-                        insertUsers(arrayOf(result.data))
-                        message.sender = result.data
-                    }
-                    else -> {
-                        //
-                    }
-                }
-            }
-
             // check if the media is already downloaded in the local folder
             if (message.type == image) {
                 val name = message.content + message.metadata?.ext.orEmpty()
@@ -175,67 +127,12 @@ class MainRepository(private val db: CodesquareDatabase) {
                 message.isDownloaded = true
             }
 
-            if (message.replyTo != null) {
-                val localMessage = messageDao.getMessage(message.replyTo!!)
-                if (localMessage != null) {
-                    message.replyMessage = localMessage.toReplyMessage()
-                } else {
-                    val docRef = Firebase.firestore.collection("chatChannels")
-                        .document(message.chatChannelId)
-                        .collection("messages")
-                        .document(message.replyTo!!)
-
-                    when (val result = FireUtility.getDocument(docRef)) {
-                        is Result.Error -> {
-                            Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                        }
-                        is Result.Success -> {
-                            if (result.data.exists()) {
-                                val msg = result.data.toObject(Message::class.java)!!
-                                val sender = getUser(msg.senderId)
-                                if (sender != null) {
-                                    msg.sender = sender
-                                    message.replyMessage = msg.toReplyMessage()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
             message.isCurrentUserMessage = UserManager.currentUserId == message.senderId
 
         }
 
         return messages
     }
-
-
-    /*suspend fun onJoinProject(project: Project) {
-        val currentUser = UserManager.currentUser
-        val title = project.name
-//        val notification = NotificationProvider.createNotification(project, project.creator.userId, NOTIFICATION_JOIN_PROJECT)
-        val content = currentUser.name + " wants to join your project"
-        val notification = Notification.createNotification(content, currentUser.id, project.creator.userId, userId = currentUser.id, title = title)
-        // join project
-        when (val sendRequestResult = FireUtility.joinProject(currentUser, project, notification)) {
-            is Result.Error -> {
-                Log.e(TAG, "296 -" + sendRequestResult.exception.localizedMessage.orEmpty())
-            }
-            is Result.Success -> {
-                val projectRequest = sendRequestResult.data
-                notificationDao.insert(notification)
-                val projectRequestsList = currentUser.projectRequests.addItemToList(projectRequest.requestId)
-                currentUser.projectRequests = projectRequestsList
-                val requestsList = project.requests.addItemToList(projectRequest.requestId)
-                project.requests = requestsList
-                insertCurrentUser(currentUser)
-                project.isRequested = true
-                insertProjectsWithoutProcessing(arrayOf(project))
-                projectRequestDao.insert(sendRequestResult.data)
-            }
-        }
-    }*/
 
     suspend fun insertProjectsWithoutProcessing(projects: Array<out Project>) {
         insertProjects(projects, false)
@@ -245,52 +142,8 @@ class MainRepository(private val db: CodesquareDatabase) {
         projectRequestDao.insert(requests)
     }
 
-    private suspend fun processProjectRequests(requests: List<ProjectRequest>): List<ProjectRequest> {
-
-        val finalProjectRequestList = mutableListOf<ProjectRequest>()
-
-        for (request in requests) {
-            when (val res1 = FireUtility.getProject(request.projectId)) {
-                is Result.Error -> {
-                    Log.e(TAG, res1.exception.localizedMessage.orEmpty())
-                }
-                is Result.Success -> {
-                    val project = res1.data
-                    request.project = project
-                }
-                null -> {
-                    Log.d(TAG, "Probably project doesn't exist with project id: ${request.projectId}")
-                }
-            }
-
-            when (val res2 = FireUtility.getUser(request.senderId)) {
-                is Result.Error -> {
-                    Log.e(TAG, res2.exception.localizedMessage.orEmpty())
-                }
-                is Result.Success -> {
-                    val user = res2.data
-                    request.sender = user
-                }
-                null -> {
-                    Log.d(TAG, "Probably user doesn't exist with user id: ${request.senderId}")
-                }
-            }
-
-            finalProjectRequestList.add(request)
-
-        }
-
-        return finalProjectRequestList
-
-    }
-
-    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>, shouldProcess: Boolean = true) {
-        if (shouldProcess) {
-            val newList = processProjectRequests(projectRequests.toList())
-            projectRequestDao.insert(newList)
-        } else {
-            projectRequestDao.insert(projectRequests.toList())
-        }
+    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>) {
+        projectRequestDao.insert(projectRequests.toList())
     }
 
     suspend fun getProject(projectId: String): Project? {
@@ -317,19 +170,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         val currentUser = UserManager.currentUser
         for (comment in comments) {
             comment.isLiked = currentUser.likedComments.contains(comment.commentId)
-
-            when (val result = FireUtility.getOtherUser(comment.senderId)) {
-                is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                is Result.Success -> {
-                    comment.sender = result.data
-                }
-                null -> {
-                    Log.d(TAG, "Couldn't fetch user for comment.")
-                    comment.sender = User().apply {
-                        name = "User not found"
-                    }
-                }
-            }
         }
         commentDao.insert(comments)
     }
@@ -509,7 +349,6 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     companion object {
 
-        private const val TAG = "MainRepository"
         @Volatile private var instance: MainRepository? = null
 
         fun getInstance(db: CodesquareDatabase): MainRepository {

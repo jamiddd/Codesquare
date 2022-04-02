@@ -179,4 +179,8 @@
     <string name="update_project">Update project</string>
     <string name="you">You</string>
     <string name="empty_current_user_requests">You have not sent any project requests</string>
+    <string name="no_location_projects">No projects near you</string>
+    <string name="no_projects">No projects</string>
+    <string name="choose_your_plan">Choose your <b>Subscription</b></string>
+    <string name="update_chat_rules">Update rules of this chat</string>
 </resources>

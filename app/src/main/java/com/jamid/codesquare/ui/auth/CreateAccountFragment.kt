@@ -150,11 +150,6 @@ class CreateAccountFragment : Fragment() {
                     null,
                     slideRightNavOptions()
                 )
-               /* findNavController().navigate(
-                    R.id.action_createAccountFragment_to_profileImageFragment,
-                    null,
-                    slideRightNavOptions()
-                )*/
             }
         }
 

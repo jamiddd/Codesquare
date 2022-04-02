@@ -308,8 +308,9 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Body2"
                 android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@id/project_contributors_recycler"
-                app:layout_constraintTop_toBottomOf="@id/project_tags"
-                tools:layout_editor_absoluteY="685dp" />
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/project_tags" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/see_all_contributors_btn"
@@ -331,11 +332,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:overScrollMode="never"
-                android:visibility="gone"
+                android:visibility="visible"
                 app:layout_constraintBottom_toTopOf="@id/comments_header"
                 app:layout_constraintTop_toBottomOf="@id/contributors_header"
                 tools:itemCount="1"
-                tools:layout_editor_absoluteY="723dp"
                 tools:listitem="@layout/user_grid_item" />
 
             <TextView

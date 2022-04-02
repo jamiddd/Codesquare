@@ -19,7 +19,7 @@ import com.jamid.codesquare.data.User
  * was paused in the middle.
  *
  * This class is dependent on the fact that the singleton objects such as
- * [NotificationManager], [UserManager] and [ChatManager] are
+ * [NotificationManager], [UserManager] are
  * already initialized and ready for action.
  *
  * */
@@ -128,6 +128,7 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
 
                         if (value != null && !value.isEmpty) {
                             val projectRequests = value.toObjects(ProjectRequest::class.java)
+
                             viewModel.insertProjectRequests(projectRequests)
                         }
                     }

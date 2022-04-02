@@ -181,10 +181,15 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
 
             setStaticContent(project)
 
-
             setMutableContent(project)
 
+            checkForStaleData(project)
+
         }
+    }
+
+    private fun checkForStaleData(project: Project) {
+        projectClickListener.onCheckForStaleData(project)
     }
 
     /**

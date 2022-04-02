@@ -81,7 +81,13 @@ class ProjectListFragment: BottomSheetDialogFragment(), ProjectMiniItemClickList
         val currentUser = UserManager.currentUser
         val title = project.name
         val content = currentUser.name + " has invited you to join their project: ${project.name}"
-        val notification = Notification.createNotification(content, currentUser.id, receiverId, type = -1,  projectId = project.id, title = title)
+        val notification = Notification.createNotification(
+            content,
+            receiverId,
+            type = -1,
+            projectId = project.id,
+            title = title
+        )
 
         FireUtility.inviteUserToProject(project, receiverId, notification.id) {
             if (it.isSuccessful) {

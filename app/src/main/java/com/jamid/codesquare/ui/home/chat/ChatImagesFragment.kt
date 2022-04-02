@@ -104,6 +104,10 @@ class ChatImagesFragment : MessageListenerFragment() {
         }
     }
 
+    override fun onCheckForStaleData(message: Message) {
+
+    }
+
     private fun createNewFileAndDownload(
         externalFilesDir: File,
         message: Message,

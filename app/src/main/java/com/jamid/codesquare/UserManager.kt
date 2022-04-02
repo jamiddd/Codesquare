@@ -1,7 +1,10 @@
 package com.jamid.codesquare
 
+import android.app.Activity
 import android.content.Context
 import android.util.Log
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.tasks.OnCompleteListener
@@ -11,13 +14,14 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
+import com.jamid.codesquare.ui.MessageDialogFragment
 import kotlinx.coroutines.delay
 
 object UserManager {
 
     private val currentUserData = MutableLiveData<User>().apply { value = null }
     val currentUserLive: LiveData<User> = currentUserData
-    lateinit var currentUser: User
+    var currentUser = User()
     val errors = MutableLiveData<Exception>().apply { value = null }
     lateinit var currentUserId: String
 
@@ -43,11 +47,28 @@ object UserManager {
     val authState: LiveData<Boolean> = authStateData
 
 
-    var isInitialized = false
-    private var isSignedIn = false
     var isEmailVerified = false
 
     fun logOut(context: Context, onPositive: () -> Unit) {
+
+        val frag = MessageDialogFragment.builder("Are you sure you want to log out?")
+            .setPositiveButton("Log out", object: MessageDialogFragment.MessageDialogInterface.OnClickListener {
+                override fun onClick(d: MessageDialogFragment, v: View) {
+                    Firebase.auth.signOut()
+                    setAuthStateForceful(false)
+                    onPositive()
+                }
+            })
+            .setNegativeButton("Cancel", object : MessageDialogFragment.MessageDialogInterface.OnClickListener {
+                override fun onClick(d: MessageDialogFragment, v: View) {
+                    d.dismiss()
+                }
+            })
+            .build()
+
+        frag.show((context as AppCompatActivity).supportFragmentManager, MessageDialogFragment.TAG)
+/*
+
         MaterialAlertDialogBuilder(context)
             .setTitle("Logging out")
             .setMessage("Are you sure you want to log out?")
@@ -58,30 +79,27 @@ object UserManager {
             }.setNegativeButton("Cancel") { d, _ ->
                 d.dismiss()
             }
-            .show()
+            .show()*/
     }
 
     fun updateUser(newUser: User) {
-        isInitialized = true
         currentUserId = newUser.id
         currentUser = newUser
-        isSignedIn = true
         authStateData.postValue(true)
         currentUserData.postValue(newUser)
     }
 
-    private fun getCurrentUser(onComplete: ((Result<User>?) -> Unit)? = null) {
-        if (::currentUserId.isInitialized) {
-            FireUtility.getUser(currentUserId) {
-                when (it) {
-                    is Result.Error -> errors.postValue(it.exception)
-                    is Result.Success -> {
-                        updateUser(it.data)
-                    }
-                    null -> Log.d(TAG, "Document doesn't exist.")
-                }
-                if (onComplete != null) {
-                    onComplete(it)
+    private fun getCurrentUser() {
+        val mAuth = Firebase.auth
+        val currentUser = mAuth.currentUser ?: return
+
+        val uid = currentUser.uid
+        FireUtility.getUser(uid) {
+            val userResult = it ?: return@getUser
+            when (userResult) {
+                is Result.Error -> errors.postValue(userResult.exception)
+                is Result.Success -> {
+                    updateUser(userResult.data)
                 }
             }
         }
@@ -89,10 +107,8 @@ object UserManager {
 
     private fun setAuthStateForceful(isSignedIn: Boolean) {
         authStateData.postValue(isSignedIn)
-        this.isSignedIn = isSignedIn
         if (!isSignedIn) {
             isEmailVerified = false
-            isInitialized = false
             currentUserData.postValue(null)
         }
     }
@@ -106,11 +122,9 @@ object UserManager {
                 currentUserId = firebaseUser.uid
                 getCurrentUser()
             } else {
-                Log.d(TAG, "The user is not signed in.")
                 authStateData.postValue(false)
                 currentUserData.postValue(null)
                 currentUser = User()
-                isSignedIn = false
             }
         }
     }

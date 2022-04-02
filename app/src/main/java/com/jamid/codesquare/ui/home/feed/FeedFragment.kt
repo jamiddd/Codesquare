@@ -5,14 +5,12 @@ import android.annotation.SuppressLint
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.isDigitsOnly
-import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
@@ -28,17 +26,17 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
+import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.TagsContainerBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.PagerListFragment
-import com.jamid.codesquare.ui.home.HomeFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.abs
+
 
 @ExperimentalPagingApi
 class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
@@ -59,6 +57,16 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         binding.root.layoutTransition = LayoutTransition()
 
         binding.pagerItemsRecycler.itemAnimator = null
+
+        binding.root.removeView(binding.noDataImage)
+
+        (activity as MainActivity).networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
+            if (!isNetworkAvailable) {
+                binding.pagerNoItemsText.text = "There's a problem with the network."
+            } else {
+                binding.pagerNoItemsText.text = "No projects to show at this time. Check back later."
+            }
+        }
 
         val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
         val tagsContainerBinding = TagsContainerBinding.bind(tagsContainerView)
@@ -105,37 +113,6 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         setLocationButton(tagsContainerBinding.nearMe)
 
-        var oldPosition = 0
-
-        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-
-                val newPosition = oldPosition + dy
-
-                val diff = abs(newPosition - oldPosition)
-
-                if (diff > SCROLL_THRESHOLD) {
-                    if (newPosition > oldPosition) {
-
-                        if (tagsContainerView.isVisible) {
-                            tagsContainerView.hide()
-                        }
-                    } else {
-                        viewLifecycleOwner.lifecycleScope.launch {
-                            delay(500)
-                            if (!tagsContainerView.isVisible) {
-                                tagsContainerView.show()
-                            }
-                        }
-                    }
-                }
-
-                oldPosition = newPosition
-            }
-        })
-
         viewModel.currentUser.observe(viewLifecycleOwner) {
             if (it != null) {
 
@@ -160,25 +137,26 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
             }
         }
 
+        showFilterTagsTooltip(tagsContainerView)
+
+    }
+
+    private fun showFilterTagsTooltip(tagsContainer: View) = viewLifecycleOwner.lifecycleScope.launch {
         val container = (activity as MainActivity).binding.root
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            delay(1500)
-            container.removeView(tooltipView)
+        delay(1500)
 
-            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            val feedTagsDialogFlag = sharedPref.getBoolean("feed_fragment_tags", true)
-            if (feedTagsDialogFlag) {
-                tooltipView = showTooltip("Filter projects by tags", container, tagsContainerView, HomeFragment.AnchorSide.Bottom)
+        container.removeView(tooltipView)
 
-                val editor = sharedPref.edit()
-                editor.putBoolean("feed_fragment_tags", false)
-                editor.apply()
-            }
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val feedTagsDialogFlag = sharedPref.getBoolean(PREF_PROJECT_TAGS, true)
+        if (feedTagsDialogFlag) {
+            tooltipView = showTooltip("Filter projects by tags", container, tagsContainer, AnchorSide.Bottom)
 
+            val editor = sharedPref.edit()
+            editor.putBoolean(PREF_PROJECT_TAGS, false)
+            editor.apply()
         }
-
-
     }
 
     private fun setLocationButton(locationBtn: Chip) {
@@ -192,7 +170,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         locationBtn.setOnClickListener {
 
-            binding.pagerNoItemsText.text = "No projects near you"
+            binding.pagerNoItemsText.text = getString(R.string.no_location_projects)
 
             // firstly always check if the location is on
             if (!LocationProvider.isLocationEnabled(requireContext())) {
@@ -220,7 +198,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         random.setOnClickListener {
 
-            binding.pagerNoItemsText.text = "No projects"
+            binding.pagerNoItemsText.text = getString(R.string.no_projects)
 
             viewModel.disableLocationBasedProjects()
             getItems {
@@ -311,34 +289,19 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         val lContext = requireContext()
         val chip = Chip(lContext)
 
-      /*  val (backgroundColor, textColor) = if (isNightMode()) {
-            val colorPair = colorPalettesNight.random()
-            ContextCompat.getColor(lContext, colorPair.first) to
-                    ContextCompat.getColor(lContext, colorPair.second)
-        } else {
-            val colorPair = colorPalettesDay.random()
-            ContextCompat.getColor(lContext, colorPair.first) to
-                    ContextCompat.getColor(lContext, colorPair.second)
-        }*/
-
         val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
         val t2 = tag.uppercase()
         val t3 = tag.lowercase()
 
         chip.apply {
-         /*   val length = resources.getDimension(R.dimen.unit_len) / 4
-            chipStrokeWidth = length*/
             isCheckable = true
             text = tag
-//            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
             isCloseIconVisible = false
             addView(this)
 
-//            setTextColor(textColor)
-
             setOnClickListener {
-
-                binding.pagerNoItemsText.text = "No projects related to $tag"
+                val noItemsText = "No projects related to $tag"
+                binding.pagerNoItemsText.text = noItemsText
 
                 viewModel.disableLocationBasedProjects()
 
@@ -352,10 +315,8 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         }
     }
 
+
     companion object {
-
-        private const val SCROLL_THRESHOLD = 60
-
         @JvmStatic
         fun newInstance() = FeedFragment()
     }

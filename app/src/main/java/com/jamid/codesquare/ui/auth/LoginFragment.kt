@@ -8,20 +8,27 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.Debug
+import com.jamid.codesquare.data.Error
 import com.jamid.codesquare.databinding.FragmentLoginBinding
 import com.jamid.codesquare.ui.MainActivity
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
 class LoginFragment : Fragment() {
@@ -43,14 +50,11 @@ class LoginFragment : Fragment() {
     @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
         val activity = requireActivity()
 
-        val sharedPreferences = activity.getSharedPreferences(
-            "codesquare_shared",
-            AppCompatActivity.MODE_PRIVATE
-        )
+        val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val isInitiatedOnce = sharedPreferences.getBoolean("is_initiated_once", false)
-
         if (!isInitiatedOnce) {
             findNavController().navigate(
                 R.id.action_loginFragment_to_onBoardingFragment,
@@ -140,21 +144,22 @@ class LoginFragment : Fragment() {
 
         }
 
-        UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
-            loadingDialog?.dismiss()
-            binding.signInBtn.isEnabled = true
-            if (isSignedIn != null && isSignedIn) {
+        UserManager.currentUserLive.observe(viewLifecycleOwner) {
+            val currentUser = it ?: return@observe
 
-                if (UserManager.currentUser.interests.isEmpty()) {
-                    findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
-                } else {
-                    findNavController().navigate(
-                        R.id.action_loginFragment_to_homeFragment,
-                        null,
-                        slideRightNavOptions()
-                    )
-                }
+            binding.signInBtn.isEnabled = true
+
+            if (currentUser.interests.isEmpty()) {
+                findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
+            } else {
+                findNavController().navigate(
+                    R.id.action_loginFragment_to_homeFragment,
+                    null,
+                    slideRightNavOptions()
+                )
             }
+
+            loadingDialog?.delayedDismiss()
         }
 
         binding.forgotPasswordBtn.setOnClickListener {
@@ -221,7 +226,14 @@ class LoginFragment : Fragment() {
         showDialog()
 
         val signInIntent = googleSignInClient.signInIntent
-        (activity as MainActivity).requestGoogleSingInLauncher.launch(signInIntent)
+        (activity as MainActivity).requestGoogleSignInLauncher.launch(signInIntent)
+
+    }
+
+
+    private fun AlertDialog.delayedDismiss() = viewLifecycleOwner.lifecycleScope.launch {
+        delay(500)
+        this@delayedDismiss.dismiss()
     }
 
 }

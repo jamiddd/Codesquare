@@ -47,8 +47,10 @@
     </style>
 
     <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog">
+        <item name="colorAccent">@color/darkest_blue</item>
+        <item name="colorPrimary">@color/darkest_blue</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/transparent</item>
     </style>
 
     <!-- set the rounded drawable as background to your bottom sheet -->
@@ -102,7 +104,7 @@
     <style name="AppTheme.SmallOverlayBtn" parent="AppTheme.Button.IconOnly">
         <item name="icon">@drawable/ic_round_close_24</item>
         <item name="iconSize">@dimen/small_icon</item>
-        <item name="android:backgroundTint">@color/darkest_transparent</item>
+        <item name="android:backgroundTint">@color/close_icon_tint</item>
         <item name="iconTint">@color/white</item>
         <item name="android:minHeight">@dimen/close_icon_height</item>
         <item name="android:minWidth">@dimen/close_icon_width</item>
@@ -214,6 +216,10 @@
 
     <style name="AppTheme.AnimationNoPosts">
         <item name="lottie_rawRes">@raw/no_posts</item>
+    </style>
+
+    <style name="AppTheme.AnimationGoPremium">
+        <item name="lottie_rawRes">@raw/go_premium_day</item>
     </style>
 
     <style name="AppTheme.AnimationChatGreeting">
@@ -554,10 +560,10 @@
         <item name="colorOnSurface">?colorOnSurface</item>
     </style>
 
-    <dimen name="small_icon">16dp</dimen>
-    <dimen name="close_icon_height">30dp</dimen>
-    <dimen name="close_icon_width">30dp</dimen>
-    <dimen name="close_icon_padding">7dp</dimen>
+    <dimen name="small_icon">24dp</dimen>
+    <dimen name="close_icon_height">48dp</dimen>
+    <dimen name="close_icon_width">48dp</dimen>
+    <dimen name="close_icon_padding">12dp</dimen>
     <dimen name="zero">0dp</dimen>
 
    <!-- <style name="AppTheme.LikesCommentText" parent="TextAppearance.AppCompat.Small">

@@ -13,8 +13,6 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.data.User
 import kotlinx.coroutines.*
 import java.io.File
 
@@ -24,18 +22,13 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
 
     val messageDao = database.messageDao()
     private val chatChannelDao = database.chatChannelDao()
-
-    private lateinit var currentUser: User
-
-    private val userDao = database.userDao()
-
     val errors = MutableLiveData<Exception>()
+    private var currentUserId: String = ""
 
     private val imagesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
     private val documentsDir =  context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
 
     private var chatChannelsListenerRegistration: ListenerRegistration? = null
-    private val allContributors = mutableMapOf<String, User>()
 
     init {
         Firebase.auth.addAuthStateListener {
@@ -44,83 +37,18 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
                 // is not signed in
             } else {
                 // is signed in
-                FireUtility.getCurrentUser(currentFirebaseUser.uid) { currentUserDocumentSnapshotTask ->
-                    if (currentUserDocumentSnapshotTask.isSuccessful) {
-                        val currentUserDocumentSnapshot = currentUserDocumentSnapshotTask.result
-                        if (currentUserDocumentSnapshot != null && currentUserDocumentSnapshot.exists()) {
-                            val currentUser = currentUserDocumentSnapshot.toObject(User::class.java)
-                            if (currentUser != null) {
-                                this.currentUser = currentUser
-                                setupContributors(currentUser.chatChannels)
-                            }
-                        } else {
-                            Log.d(TAG, "OnInit: Either the current user document snapshot is null or doesn't exist.")
-                        }
-                    } else {
-                        Log.e(
-                            TAG,
-                            "OnInit: ${currentUserDocumentSnapshotTask.exception?.localizedMessage}"
-                        )
-                    }
-                }
+                currentUserId = currentFirebaseUser.uid
+                setChannelListener()
 
             }
         }
     }
 
-    private fun setupContributors(chatChannels: List<String>) = scope.launch {
-        val contributors = withContext(scope.coroutineContext) { prefetchRelatedUsers(chatChannels) }
-        for (contributor in contributors) {
-            allContributors[contributor.id] = contributor
-        }
-        withContext(scope.coroutineContext) { setChannelListener() }
-        insertUsers(contributors)
-    }
-
-    private suspend fun prefetchRelatedUsers(channels: List<String>): List<User> {
-
-        val users = mutableListOf<User>()
-
-        for (channel in channels) {
-            when (val result = FireUtility.getContributors(channel)) {
-                is Result.Error -> {
-                    Log.e(TAG, "prefetchRelatedUsers: ${result.exception.localizedMessage}")
-                }
-                is Result.Success -> {
-                    users.addAll(result.data)
-                }
-            }
-        }
-
-        return users
-    }
-
-    private fun processUsers(users: List<User>): List<User> {
-        val newList = mutableListOf<User>()
-        for (user in users) {
-            newList.add(processUser(user))
-        }
-        return newList
-    }
-
-    private fun processUser(user: User): User {
-        user.isCurrentUser = currentUser.id == user.id
-        user.isLiked = currentUser.likedUsers.contains(user.id)
-        return user
-    }
-
-    private fun insertUser(user: User) = scope.launch (Dispatchers.IO) {
-        userDao.insert(processUser(user))
-    }
-
-    private fun insertUsers(users: List<User>) = scope.launch (Dispatchers.IO) {
-        userDao.insert(processUsers(users))
-    }
 
     private fun setChannelListener() {
         chatChannelsListenerRegistration?.remove()
         chatChannelsListenerRegistration = Firebase.firestore.collection(CHAT_CHANNELS)
-            .whereArrayContains(CONTRIBUTORS, currentUser.id)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
             .addSnapshotListener { value, error ->
 
                 if (error != null) {
@@ -140,47 +68,11 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
             }
     }
 
-    private suspend fun processChatChannels(chatChannels: List<ChatChannel>): List<ChatChannel> {
-        val newList = mutableListOf<ChatChannel>()
-        for (chatChannel in chatChannels) {
-            val lastMessage = chatChannel.lastMessage
-
-            if (lastMessage != null && lastMessage.sender.isEmpty()) {
-
-                // will only try once, in case it is null, it is very unfortunate because it should
-                // not be possible.
-                val lastMessageSender = allContributors[lastMessage.senderId]
-                if (lastMessageSender != null) {
-                    lastMessage.sender = lastMessageSender
-                    chatChannel.lastMessage = lastMessage
-                } else {
-                    when (val senderResult = FireUtility.getUser(lastMessage.senderId)) {
-                        is Result.Error -> Log.e(
-                            TAG,
-                            "processChatChannels: ${senderResult.exception}"
-                            )
-                        is Result.Success -> {
-                            allContributors[senderResult.data.id] = senderResult.data
-                            lastMessage.sender = senderResult.data
-                            chatChannel.lastMessage = lastMessage
-                            insertUser(senderResult.data)
-                        }
-                        null -> Log.e(TAG, "processChatChannels: No user found whatsoever", )
-                    }
-                }
-            }
-
-            newList.add(chatChannel)
-        }
-
-        return newList
-    }
-
     private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch (Dispatchers.IO) {
-        chatChannelDao.insert(processChatChannels(chatChannels))
+        chatChannelDao.insert(chatChannels)
     }
 
-    fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
+    /*fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
 
         val ref = Firebase.firestore.collection(CHAT_CHANNELS)
             .document(chatChannel.chatChannelId)
@@ -208,7 +100,7 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
                 errors.postValue(it.exception)
             }
         }
-    }
+    }*/
 
     /**
      * To insert messages in the local database
@@ -270,10 +162,6 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
         return chatChannelDao.getReactiveChatChannel(chatChannelId)
     }
 
-    suspend fun getCurrentlySelectedMessages(chatChannelId: String): List<Message> {
-        return messageDao.getCurrentlySelectedMessages(chatChannelId)
-    }
-
     fun selectedMessages(channelId: String): LiveData<List<Message>> {
         return messageDao.selectedMessages(channelId)
     }
@@ -282,25 +170,9 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
         return chatChannelDao.getForwardChannels(userId)
     }
 
-    private suspend fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
+    private fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
         // filter the messages which are marked as not delivered by the message
         for (message in messages) {
-            // check if the message has user attached to it
-            val user = ChatManager.getContributor(message.senderId)
-            if (user != null) {
-                message.sender = user
-            } else {
-                when (val result = FireUtility.getUser(message.senderId)) {
-                    is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                    is Result.Success -> {
-                        message.sender = processUsers(result.data).first()
-                    }
-                    else -> {
-                        //
-                    }
-                }
-            }
-
             // check if the media is already downloaded in the local folder
             if (message.type == image) {
                 val name = message.content + message.metadata?.ext.orEmpty()
@@ -318,35 +190,7 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
                 message.isDownloaded = true
             }
 
-            if (message.replyTo != null) {
-                val localMessage = messageDao.getMessage(message.replyTo!!)
-                if (localMessage != null) {
-                    message.replyMessage = localMessage.toReplyMessage()
-                } else {
-                    val docRef = Firebase.firestore.collection("chatChannels")
-                        .document(message.chatChannelId)
-                        .collection("messages")
-                        .document(message.replyTo!!)
-
-                    when (val result = FireUtility.getDocument(docRef)) {
-                        is Result.Error -> {
-                            Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                        }
-                        is Result.Success -> {
-                            if (result.data.exists()) {
-                                val msg = result.data.toObject(Message::class.java)!!
-                                val sender = ChatManager.getContributor(msg.senderId)
-                                if (sender != null) {
-                                    msg.sender = sender
-                                    message.replyMessage = msg.toReplyMessage()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            message.isCurrentUserMessage = UserManager.currentUserId == message.senderId
+            message.isCurrentUserMessage = currentUserId == message.senderId
 
         }
 

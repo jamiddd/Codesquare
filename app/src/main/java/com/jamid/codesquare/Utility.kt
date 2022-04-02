@@ -10,7 +10,6 @@ import android.content.res.Resources
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Bundle
-import android.os.Parcelable
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.Patterns
@@ -23,6 +22,7 @@ import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.animation.doOnEnd
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
@@ -32,7 +32,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
 import androidx.paging.ExperimentalPagingApi
-import androidx.viewpager.widget.ViewPager
 import androidx.viewpager2.widget.ViewPager2
 import com.airbnb.lottie.LottieAnimationView
 import com.algolia.search.saas.Client
@@ -43,16 +42,13 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
 import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.*
-import com.jamid.codesquare.ui.home.HomeFragment
-import com.jamid.codesquare.ui.home.HomeFragment.AnchorSide.*
 import com.jamid.codesquare.ui.home.chat.*
-import com.jamid.codesquare.ui.profile.EditProfileFragment
-import com.jamid.codesquare.ui.profile.ProfileFragment
-import com.jamid.codesquare.ui.profile.SavedProjectsFragment
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
@@ -126,17 +122,8 @@ fun View.hideWithAnimation() {
 
 }
 
-fun View.hideWithFadeAnimation() {
-    if (this.isVisible) {
-        val objAnimator = ObjectAnimator.ofFloat(this, View.ALPHA, 0f)
-        objAnimator.duration = 300
-        objAnimator.start()
-        this.disappear()
-    }
-}
-
 @OptIn(ExperimentalPagingApi::class)
-fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, side: HomeFragment.AnchorSide): View? {
+fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, side: AnchorSide): View? {
     // the parameters for this function should be the anchorView and gravity
 
     var v: View? = null
@@ -163,10 +150,10 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
     Log.d(TAG, "showTooltip: $msg, ($anchorX, $anchorY), ($anchorCenterX, $anchorCenterY)")
 
     when (side) {
-        Left -> {}
-        Top -> {}
-        Right -> {}
-        Bottom -> {
+        AnchorSide.Left -> {}
+        AnchorSide.Top -> {}
+        AnchorSide.Right -> {}
+        AnchorSide.Bottom -> {
             val arrowX = anchorCenterX
             val arrowY = anchorY /*+ anchorView.measuredHeight*/ + resources.getDimension(R.dimen.generic_len_2)
 
@@ -203,7 +190,13 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
             }
 
             b.root.setOnClickListener {
-                container.removeView(v)
+                val fadeAnimation = ObjectAnimator.ofFloat(b.root, View.ALPHA, 0f)
+                fadeAnimation.duration = 300
+                fadeAnimation.start()
+
+                fadeAnimation.doOnEnd {
+                    container.removeView(b.root)
+                }
             }
 
         }
@@ -694,34 +687,6 @@ fun processProjects(projects: Array<out Project>): Array<out Project> {
     return projects
 }
 
-fun <T: Any> List<T>.removeItemsFromList(vararg items: T): List<T> {
-    val opList = this.toMutableList()
-
-    for (item in items) {
-        for (i in this) {
-            if (item == i) {
-                opList.remove(item)
-            }
-        }
-    }
-
-    return opList
-}
-
-fun <T: Any> List<T>.removeItemsFromList(items: List<T>): List<T> {
-    val opList = this.toMutableList()
-
-    for (item in items) {
-        for (i in this) {
-            if (item == i) {
-                opList.remove(item)
-            }
-        }
-    }
-
-    return opList
-}
-
 fun View.enable() {
     this.isEnabled = true
 }
@@ -813,46 +778,6 @@ fun getFragmentByTag(tag: String, bundle: Bundle): Fragment {
         TagFragment.TAG -> TagFragment.newInstance(bundle)
         ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
         else -> ChatFragment.newInstance(bundle)
-    }
-}
-
-private const val MIN_SCALE = 0.9f
-
-class DepthPageTransformer : ViewPager2.PageTransformer {
-
-    override fun transformPage(view: View, position: Float) {
-        view.apply {
-            val pageWidth = width
-            when {
-                position < -1 -> { // [-Infinity,-1)
-                    // This page is way off-screen to the left.
-                    alpha = 0f
-                }
-                position <= 0 -> { // [-1,0]
-                    // Use the default slide transition when moving to the left page
-                    alpha = 1f
-                    translationX = 0f
-                    scaleX = 1f
-                    scaleY = 1f
-                }
-                position <= 1 -> { // (0,1]
-                    // Fade the page out.
-                    alpha = 1 - position
-
-                    // Counteract the default slide transition
-                    translationX = pageWidth * -position
-
-                    // Scale the page down (between MIN_SCALE and 1)
-                    val scaleFactor = (MIN_SCALE + (1 - MIN_SCALE) * (1 - abs(position)))
-                    scaleX = scaleFactor
-                    scaleY = scaleFactor
-                }
-                else -> { // (1,+Infinity]
-                    // This page is way off-screen to the right.
-                    alpha = 0f
-                }
-            }
-        }
     }
 }
 

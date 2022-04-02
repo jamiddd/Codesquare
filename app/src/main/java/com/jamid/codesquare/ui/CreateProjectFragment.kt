@@ -253,6 +253,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     binding.removeCurrentImgBtn.hide()
                 }
 
+
                 if (currentProject.name.isNotBlank()) {
                     binding.projectTitleText.editText?.setText(currentProject.name)
                 }
@@ -268,17 +269,19 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
                     binding.projectLocationText.setOnClickListener {
 
-                        val alertDialog = MaterialAlertDialogBuilder(activity)
+                        val frag = MessageDialogFragment.builder("Are you sure you want to remove location attached to this project?")
                             .setTitle("Removing location ...")
-                            .setMessage("Are you sure you want to remove location attached to this project?")
-                            .setPositiveButton("Remove") { _, _ ->
-                                viewModel.setCurrentProjectLocation(Location())
-                            }.setNegativeButton("Cancel") { a, _ ->
-                                a.dismiss()
-                            }.show()
+                            .setPositiveButton("Remove", object: MessageDialogFragment.MessageDialogInterface.OnClickListener {
+                                override fun onClick(d: MessageDialogFragment, v: View) {
+                                    viewModel.setCurrentProjectLocation(Location())
+                                }
+                            }).setNegativeButton("Cancel", object : MessageDialogFragment.MessageDialogInterface.OnClickListener {
+                                override fun onClick(d: MessageDialogFragment, v: View) {
+                                    d.dismiss()
+                                }
+                            }).build()
 
-                        alertDialog.window?.setGravity(Gravity.BOTTOM)
-
+                        frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
                     }
                 } else {
                     binding.projectLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
@@ -297,6 +300,12 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
                 if (currentProject.tags.isNotEmpty()) {
                     addTags(currentProject.tags)
+                }
+
+                if (currentProject.sources.isNotEmpty()) {
+                    for (source in currentProject.sources) {
+                        addLink(source)
+                    }
                 }
 
             } else {

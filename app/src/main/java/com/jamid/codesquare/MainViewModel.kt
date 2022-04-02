@@ -63,6 +63,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val chatChannelCache = mutableMapOf<String, ChatChannel>()
     private val commentChannelCache = mutableMapOf<String, CommentChannel>()
     private val commentCache = mutableMapOf<String, Comment>()
+    private val projectCache = mutableMapOf<String, Project>()
 
     var currentChatChannel: String? = null
 
@@ -619,12 +620,21 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 parentChannelId = null
                 val content = currentUser.name + " commented on your project"
                 val title = parent.name
-                Notification.createNotification(content, currentUser.id, parent.creator.userId, title = title, commentId = comment.commentId)
+                Notification.createNotification(
+                    content,
+                    parent.creator.userId,
+                    commentId = comment.commentId,
+                    title = title
+                )
             }
             is Comment -> {
                 parentChannelId = parent.commentChannelId
                 val content = currentUser.name + " replied to your comment"
-                Notification.createNotification(content, currentUser.id, parent.senderId, commentId = parent.commentId)
+                Notification.createNotification(
+                    content,
+                    parent.senderId,
+                    commentId = parent.commentId
+                )
             }
             else -> {
                 throw IllegalArgumentException("Only project and comment object is accepted.")
@@ -893,14 +903,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun addCurrentUserToProject(projectInvite: ProjectInvite) = viewModelScope.launch (Dispatchers.IO) {
-        val project = projectInvite.project
-        val currentUserId = projectInvite.receiverId
-        if (project != null) {
-            val newList = project.contributors.addItemToList(currentUserId)
-            project.contributors = newList
-            insertProjects(project)
-        }
-
         deleteProjectInvite(projectInvite)
     }
 
@@ -921,12 +923,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertProjectsWithoutProcessing(projects)
     }
 
-    fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
+    /*fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
         if (chatChannel.lastMessage != null) {
             chatRepository.getLatestMessages(chatChannel, onComplete)
         }
     }
-
+*/
     fun deleteNotificationById(id: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotificationById(id)
     }
@@ -1388,6 +1390,26 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 }
             }
         }
+    }
+
+    fun insertUserToCache(creator: User) {
+        userCache[creator.id] = creator
+    }
+
+    fun getCachedProject(id: String): Project? {
+        return projectCache[id]
+    }
+
+    fun insertProjectToCache(project: Project) {
+        projectCache[project.id] = project
+    }
+
+    fun getUser(senderId: String, function: (User?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        function(repo.getUser(senderId))
+    }
+
+    fun getProject(projectId: String, function: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        function(repo.getProject(projectId))
     }
 
     /* Chat related functions end */

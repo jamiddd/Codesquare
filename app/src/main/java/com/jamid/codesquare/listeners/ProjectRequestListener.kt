@@ -10,4 +10,5 @@ interface ProjectRequestListener {
     fun updateProjectRequest(newProjectRequest: ProjectRequest)
     fun onProjectRequestUndo(projectRequest: ProjectRequest)
     fun onProjectRequestClick(projectRequest: ProjectRequest)
+    fun onCheckForStaleData(projectRequest: ProjectRequest)
 }

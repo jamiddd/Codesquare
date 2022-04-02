@@ -76,24 +76,20 @@ class ChatOnlineStateListener: LifecycleEventObserver {
     }
 
     private fun addTokenToChatChannels() {
-        if (UserManager.isInitialized) {
-            // the user is initialized and ready for action
-            val currentUser = UserManager.currentUser
+        // the user is initialized and ready for action
+        val currentUser = UserManager.currentUser
 
-            if (currentUser.chatChannels.isNotEmpty()) {
-                toggleOnlineState(false, token, currentUser.chatChannels, currentUser.token != token)
-            }
+        if (currentUser.chatChannels.isNotEmpty()) {
+            toggleOnlineState(false, token, currentUser.chatChannels, currentUser.token != token)
         }
     }
 
     private fun removeTokenFromChatChannels() {
-        if (UserManager.isInitialized) {
-            // the user is initialized and ready for action
-            val currentUser = UserManager.currentUser
+        // the user is initialized and ready for action
+        val currentUser = UserManager.currentUser
 
-            if (currentUser.chatChannels.isNotEmpty()) {
-                toggleOnlineState(true, token, currentUser.chatChannels, currentUser.token != token)
-            }
+        if (currentUser.chatChannels.isNotEmpty()) {
+            toggleOnlineState(true, token, currentUser.chatChannels, currentUser.token != token)
         }
     }
 

@@ -32,59 +32,22 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
 
             binding.requestTime.text = getTextForTime(projectInvite.createdAt)
 
-            onProjectRequestUpdated(projectInvite)
-        }
+            binding.requestProgress.hide()
+            binding.requestPrimaryAction.show()
+            binding.requestSecondaryAction.show()
 
-        private fun onProjectRequestUpdated(projectInvite: ProjectInvite) {
-            if (projectInvite.sender != null && projectInvite.project != null) {
-                binding.requestProgress.hide()
-                binding.requestPrimaryAction.show()
-                binding.requestSecondaryAction.show()
-
-                binding.requestPrimaryAction.setOnClickListener {
-                    binding.requestProgress.show()
-                    binding.requestPrimaryAction.disappear()
-                    projectInviteListener.onProjectInviteAccept(projectInvite)
-                }
-
-                binding.requestSecondaryAction.setOnClickListener {
-                    projectInviteListener.onProjectInviteCancel(projectInvite)
-                }
-
-                // update the new project request to local database
-                projectInviteListener.updateProjectInvite(projectInvite)
-            } else {
-                FireUtility.getProject(projectInvite.projectId) {
-                    when (it) {
-                        is Result.Error -> Log.e(TAG, it.exception.localizedMessage.orEmpty())
-                        is Result.Success -> {
-                            val project = processProjects(arrayOf(it.data)).first()
-                            projectInvite.project = project
-                            binding.requestProjectName.text = project.name
-                            onProjectRequestUpdated(projectInvite)
-                        }
-                        null -> projectInviteListener.onProjectInviteProjectDeleted(projectInvite)
-                    }
-                }
-
-                FireUtility.getUser(projectInvite.senderId) {
-                    when (it) {
-                        is Result.Error -> Log.e(TAG, it.exception.localizedMessage.orEmpty())
-                        is Result.Success -> {
-                            val sender = it.data
-                            projectInvite.sender = sender
-
-                            binding.requestImg.setImageURI(sender.photo)
-
-                            val contentText = "${sender.name} has invited you to join their project."
-                            binding.requestContent.text = contentText
-
-                            onProjectRequestUpdated(projectInvite)
-                        }
-                        null -> projectInviteListener.onProjectInviteProjectDeleted(projectInvite)
-                    }
-                }
+            binding.requestPrimaryAction.setOnClickListener {
+                binding.requestProgress.show()
+                binding.requestPrimaryAction.disappear()
+                projectInviteListener.onProjectInviteAccept(projectInvite)
             }
+
+            binding.requestSecondaryAction.setOnClickListener {
+                projectInviteListener.onProjectInviteCancel(projectInvite)
+            }
+
+            projectInviteListener.onCheckForStaleData(projectInvite)
+
         }
 
     }

@@ -5,11 +5,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.RadioButton
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.billingclient.api.BillingFlowParams
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
@@ -20,7 +22,7 @@ import com.jamid.codesquare.listeners.SubscriptionListener
 import com.jamid.codesquare.show
 
 @ExperimentalPagingApi
-class SubscriptionFragment : BottomSheetDialogFragment(), SubscriptionListener {
+class SubscriptionFragment : RoundedBottomSheetDialogFragment(), SubscriptionListener {
 
     private lateinit var binding: SubscriptionLayoutBinding
     private lateinit var subscriptionAdapter: SubscriptionAdapter
@@ -39,6 +41,13 @@ class SubscriptionFragment : BottomSheetDialogFragment(), SubscriptionListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         subscriptionAdapter = SubscriptionAdapter(this)
+
+        val dialog = dialog!!
+        val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+        val behavior = BottomSheetBehavior.from(frame)
+//        behavior.isDraggable = false
+
+        behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
         binding.subscriptionsRecycler.apply {
             adapter = subscriptionAdapter

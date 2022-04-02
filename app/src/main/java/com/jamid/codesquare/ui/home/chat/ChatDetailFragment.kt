@@ -23,13 +23,14 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
 import com.jamid.codesquare.listeners.CommonImageListener
+import com.jamid.codesquare.listeners.UserClickListener
 import com.jamid.codesquare.ui.ChatContainerSample
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.OptionsFragment
 
 @ExperimentalPagingApi
-class ChatDetailFragment: Fragment() {
+class ChatDetailFragment: Fragment(), UserClickListener {
 
     private lateinit var binding: FragmentChatDetailBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -37,7 +38,7 @@ class ChatDetailFragment: Fragment() {
     private lateinit var chatChannel: ChatChannel
     private lateinit var project: Project
 
-    private val prevList = mutableListOf<User>()
+    private var prevList = mutableListOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,7 +76,7 @@ class ChatDetailFragment: Fragment() {
 
         viewModel.setCurrentFocusedChatChannel(chatChannel)
 
-        userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel)
+        userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel, userClickListener = this)
 
         binding.chatContributorsRecycler.apply {
             adapter = userAdapter
@@ -86,7 +87,7 @@ class ChatDetailFragment: Fragment() {
             if (reactiveChatChannel != null) {
                 chatChannel = reactiveChatChannel
 
-                userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = reactiveChatChannel)
+                userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = reactiveChatChannel, userClickListener = this)
                 binding.chatContributorsRecycler.adapter = userAdapter
 
                 userAdapter.submitList(prevList)
@@ -100,7 +101,7 @@ class ChatDetailFragment: Fragment() {
 
                 if (reactiveChatChannel.rules.isEmpty()) {
                     binding.chatProjectGuidelines.gravity = Gravity.CENTER_HORIZONTAL
-                    binding.chatProjectGuidelines.text = "Update rules of this chat"
+                    binding.chatProjectGuidelines.text = getString(R.string.update_chat_rules)
                 } else {
                     binding.chatProjectGuidelines.gravity = Gravity.START
                     setRules(reactiveChatChannel)
@@ -124,10 +125,12 @@ class ChatDetailFragment: Fragment() {
 
         viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
             if (it.isNotEmpty()) {
-                Log.d(TAG, "onViewCreated: $it")
-                prevList.addAll(it)
-                userAdapter.submitList(it)
+                prevList = it.distinctBy { it1 ->
+                    it1.id
+                }.toMutableList()
+                userAdapter.submitList(prevList)
             } else {
+                toast("Something went wrong")
                 Log.d(TAG, "No contributors ...")
             }
         }
@@ -144,12 +147,14 @@ class ChatDetailFragment: Fragment() {
             (activity as MainActivity).showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
         }
 
-
-
     }
 
     fun setRules(chatChannel: ChatChannel) {
-        binding.chatProjectGuidelines.text = chatChannel.rules
+        if (chatChannel.rules.isBlank()) {
+            binding.chatProjectGuidelines.text = getString(R.string.update_chat_rules)
+        } else {
+            binding.chatProjectGuidelines.text = chatChannel.rules
+        }
     }
 
     private fun onMediaMessagesExists() = requireActivity().runOnUiThread {
@@ -185,16 +190,6 @@ class ChatDetailFragment: Fragment() {
                     } else {
                         onMediaMessagesExists()
                     }
-                }
-            }
-        }
-
-        viewModel.currentFocusedUser.observe(viewLifecycleOwner) { currentFocusedUser ->
-            if (currentFocusedUser != null) {
-                val optionsListPair = getFilteredOptionsList(currentFocusedUser)
-                if (optionsListPair.first.isNotEmpty()) {
-                    (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second)
-                    (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
                 }
             }
         }
@@ -245,6 +240,22 @@ class ChatDetailFragment: Fragment() {
                 }
             }
         }
+    }
+
+    override fun onUserClick(user: User) {
+        (activity as MainActivity).onUserClick(user)
+    }
+
+    override fun onUserOptionClick(user: User) {
+        val optionsListPair = getFilteredOptionsList(user)
+        if (optionsListPair.first.isNotEmpty()) {
+            (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second, chatChannel = chatChannel)
+            (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+        }
+    }
+
+    override fun onUserLikeClick(user: User) {
+        (activity as MainActivity).onUserLikeClick(user)
     }
 
 }

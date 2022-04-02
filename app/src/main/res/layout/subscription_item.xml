@@ -41,7 +41,7 @@
         android:layout_marginEnd="24dp"
         android:layout_marginBottom="8dp"
         android:text="@string/sample_subscription_content"
-        app:layout_constraintBottom_toTopOf="@+id/best_value_btn"
+        app:layout_constraintBottom_toTopOf="@+id/best_value_animation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/price_text"
         app:layout_constraintTop_toBottomOf="@+id/price_text" />
@@ -50,25 +50,28 @@
         android:id="@+id/subscription_select_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
         app:layout_constraintBottom_toBottomOf="@+id/price_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/duration_header_text"
         tools:text=" " />
 
-    <Button
-        android:id="@+id/best_value_btn"
-        style="@style/AppTheme.BestValueBtn"
-        android:layout_width="wrap_content"
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/best_value_animation"
+        style="@style/AppTheme.AnimationGoPremium"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
         android:layout_marginBottom="8dp"
-        android:clickable="false"
-        android:focusable="false"
-        android:text="@string/best_value"
         android:visibility="gone"
         app:cornerRadius="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/features_text"
         app:layout_constraintTop_toBottomOf="@+id/features_text"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true"
         tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

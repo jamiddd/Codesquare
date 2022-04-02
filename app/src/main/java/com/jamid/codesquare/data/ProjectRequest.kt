@@ -16,13 +16,12 @@ data class ProjectRequest(
     var senderId: String,
     var receiverId: String,
     @Embedded(prefix = "request_project_")
-    @Exclude @set: Exclude @get: Exclude
-    var project: Project?,
+    var project: ProjectMinimal,
     @Embedded(prefix = "request_user_")
-    @Exclude @set: Exclude @get: Exclude
-    var sender: User?,
+    var sender: UserMinimal,
     var createdAt: Long,
+    var updatedAt: Long,
     var notificationId: String
 ): Parcelable {
-    constructor(): this("", "", "", "", Project(), User(), System.currentTimeMillis(), "")
+    constructor(): this("", "", "", "", ProjectMinimal(), UserMinimal(), System.currentTimeMillis(), System.currentTimeMillis(), "")
 }

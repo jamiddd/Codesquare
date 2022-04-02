@@ -263,22 +263,26 @@ object FireUtility {
         val batch = db.batch()
 
         // updating user
-        val currentUserRef = db.collection(USERS).document(Firebase.auth.currentUser!!.uid)
-        batch.update(currentUserRef, changes)
+        val mAuth = Firebase.auth
 
-        // updating projects where the creator is current user
-        if (shouldUpdateProjects) {
-            val currentUser = UserManager.currentUser
-            for (project in currentUser.projects) {
-                val ref = db.collection(PROJECTS).document(project)
-                val miniUser = currentUser.minify()
-                Log.d(TAG, miniUser.toString())
-                batch.update(ref, "creator", miniUser)
+        if (mAuth.currentUser != null) {
+            val currentUserRef = db.collection(USERS).document(mAuth.currentUser!!.uid)
+            batch.update(currentUserRef, changes)
+
+            // updating projects where the creator is current user
+            if (shouldUpdateProjects) {
+                val currentUser = UserManager.currentUser
+                for (project in currentUser.projects) {
+                    val ref = db.collection(PROJECTS).document(project)
+                    val miniUser = currentUser.minify()
+                    Log.d(TAG, miniUser.toString())
+                    batch.update(ref, "creator", miniUser)
+                }
             }
-        }
 
-        batch.commit()
-            .addOnCompleteListener(onComplete)
+            batch.commit()
+                .addOnCompleteListener(onComplete)
+        }
     }
 
     fun checkIfUserNameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
@@ -519,8 +523,9 @@ object FireUtility {
             project.id,
             currentUser.id,
             project.creator.userId,
-            project,
-            currentUser,
+            project.minify(),
+            currentUser.minify(),
+            System.currentTimeMillis(),
             System.currentTimeMillis(),
             notificationId
         )
@@ -1050,9 +1055,9 @@ object FireUtility {
             val db = Firebase.firestore
             val batch = db.batch()
 
-            val chatChannelRef = db.collection("chatChannels").document(chatChannelId)
+            val chatChannelRef = db.collection(CHAT_CHANNELS).document(chatChannelId)
 
-            val ref = chatChannelRef.collection("messages").document()
+            val ref = chatChannelRef.collection(MESSAGES).document()
             val messageId = ref.id
 
             val message = Message(
@@ -1061,13 +1066,14 @@ object FireUtility {
                 text,
                 content,
                 currentUser.id,
+                currentUser.minify(),
                 null,
                 emptyList(),
                 emptyList(),
                 System.currentTimeMillis(),
+                System.currentTimeMillis(),
                 replyTo,
                 replyMessage,
-                currentUser,
                 false,
                 isCurrentUserMessage = true,
                 -1
@@ -1384,13 +1390,14 @@ object FireUtility {
                         messages[i].type,
                         messages[i].content,
                         currentUser.id,
+                        currentUser.minify(),
                         messages[i].metadata,
                         emptyList(),
                         emptyList(),
                         now,
+                        now,
                         null,
                         null,
-                        currentUser,
                         isDownloaded = false,
                         isCurrentUserMessage = true
                     )
@@ -1778,6 +1785,7 @@ object FireUtility {
         notificationId: String,
         onComplete: (task: Task<Void>) -> Unit
     ) {
+        val currentUser = UserManager.currentUser
         val db = Firebase.firestore
         val batch = db.batch()
         val ref = Firebase.firestore.collection(USERS)
@@ -1789,7 +1797,10 @@ object FireUtility {
             ref.id,
             project.id,
             receiverId,
-            project.creator.userId,
+            currentUser.id,
+            currentUser.minify(),
+            project.minify(),
+            System.currentTimeMillis(),
             System.currentTimeMillis(),
             notificationId = notificationId
         )
@@ -2216,45 +2227,43 @@ object FireUtility {
         val currentUserRegistrationToken = currentUser.token
 
         val batch = db.batch()
-        if (project != null) {
-            val projectInviteSenderReference = db.collection(USERS).document(projectInvite.senderId)
+        val projectInviteSenderReference = db.collection(USERS).document(projectInvite.senderId)
 
-            val projectInviteReference =
-                db.collection(USERS).document(currentUserId).collection(INVITES)
-                    .document(projectInvite.id)
-            batch.delete(projectInviteReference)
+        val projectInviteReference =
+            db.collection(USERS).document(currentUserId).collection(INVITES)
+                .document(projectInvite.id)
+        batch.delete(projectInviteReference)
 
-            val currentUserChanges = mapOf(
-                COLLABORATIONS to FieldValue.arrayUnion(project.id),
-                COLLABORATIONS_COUNT to FieldValue.increment(1),
-                CHAT_CHANNELS to FieldValue.arrayUnion(project.chatChannel),
-                UPDATED_AT to System.currentTimeMillis()
+        val currentUserChanges = mapOf(
+            COLLABORATIONS to FieldValue.arrayUnion(project.id),
+            COLLABORATIONS_COUNT to FieldValue.increment(1),
+            CHAT_CHANNELS to FieldValue.arrayUnion(project.chatChannel),
+            UPDATED_AT to System.currentTimeMillis()
+        )
+
+        val projectInviteSenderDocumentChanges = mapOf(
+            PROJECT_INVITES to FieldValue.arrayRemove(projectInvite.id),
+            UPDATED_AT to System.currentTimeMillis()
+        )
+
+        val inviteNotificationRef =
+            Firebase.firestore.collection(USERS).document(projectInvite.receiverId)
+                .collection(NOTIFICATIONS)
+                .document(projectInvite.notificationId)
+
+        batch.addNewUserToProject(
+            project.id,
+            project.chatChannel,
+            currentUserId,
+            currentUserRegistrationToken
+        )
+            .updateCurrentUser(currentUserId, currentUserChanges)
+            .updateParticularDocument(
+                projectInviteSenderReference,
+                projectInviteSenderDocumentChanges
             )
-
-            val projectInviteSenderDocumentChanges = mapOf(
-                PROJECT_INVITES to FieldValue.arrayRemove(projectInvite.id),
-                UPDATED_AT to System.currentTimeMillis()
-            )
-
-            val inviteNotificationRef =
-                Firebase.firestore.collection(USERS).document(projectInvite.receiverId)
-                    .collection(NOTIFICATIONS)
-                    .document(projectInvite.notificationId)
-
-            batch.addNewUserToProject(
-                project.id,
-                project.chatChannel,
-                currentUserId,
-                currentUserRegistrationToken
-            )
-                .updateCurrentUser(currentUserId, currentUserChanges)
-                .updateParticularDocument(
-                    projectInviteSenderReference,
-                    projectInviteSenderDocumentChanges
-                )
-                .deleteParticularDocument(projectInviteReference)
-                .deleteParticularDocument(inviteNotificationRef)
-        }
+            .deleteParticularDocument(projectInviteReference)
+            .deleteParticularDocument(inviteNotificationRef)
 
         batch.commit()
             .addOnCompleteListener(onComplete)
@@ -2440,6 +2449,15 @@ object FireUtility {
 
     }
 
+    fun updateNotification(receiverId: String, notificationId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection(USERS)
+            .document(receiverId)
+            .collection(NOTIFICATIONS)
+            .document(notificationId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
     fun updateNotification(notification: Notification, onComplete: (task: Task<Void>) -> Unit) {
         Firebase.firestore.collection(USERS)
             .document(notification.receiverId)
@@ -2610,6 +2628,12 @@ object FireUtility {
             }
     }
 
+    fun updateProject(projectId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection(PROJECTS).document(projectId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
     suspend fun updateProject(
         project: Project,
         onComplete: (newProject: Project, task: Task<Void>) -> Unit
@@ -2772,5 +2796,43 @@ object FireUtility {
         Firebase.firestore.collection(CHAT_CHANNELS).document(channelId)
             .update(changes).addOnCompleteListener(onComplete)
     }
+
+    fun updateComment(commentChannelId: String, commentId: String, changes: Map<String, Any?>, onComplete: (Task<Void>) -> Unit) {
+        Firebase.firestore.collection(COMMENT_CHANNELS).document(commentChannelId)
+            .collection(COMMENTS).document(commentId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun updateCommentChannel(commentChannelId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
+        Firebase.firestore.collection(COMMENT_CHANNELS)
+            .document(commentChannelId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun updateProjectRequest(requestId: String, changes: Map<String, Any?>, onComplete: (Task<Void>) -> Unit) {
+        Firebase.firestore.collection(PROJECT_REQUESTS).document(requestId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun updateMessage(chatChannelId: String, messageId: String, changes: Map<String, Any?>, onComplete: (Task<Void>) -> Unit) {
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .document(chatChannelId)
+            .collection(MESSAGES)
+            .document(messageId)
+            .update(changes)
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun updateProjectInvite(receiverId: String, inviteId: String, changes: Map<String, Any?>, onUpdate: (Task<Void>) -> Unit) {
+        Firebase.firestore.collection(USERS).document(receiverId)
+            .collection(INVITES)
+            .document(inviteId)
+            .update(changes)
+            .addOnCompleteListener(onUpdate)
+    }
+
 
 }

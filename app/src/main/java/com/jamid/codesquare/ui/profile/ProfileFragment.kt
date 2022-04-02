@@ -26,6 +26,7 @@ import com.jamid.codesquare.listeners.UserClickListener
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.OptionsFragment
 import com.jamid.codesquare.ui.ProjectListFragment
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class ProfileFragment: Fragment(), OptionClickListener {
@@ -56,9 +57,7 @@ class ProfileFragment: Fragment(), OptionClickListener {
                     arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_report)
                 }
 
-                viewModel.setCurrentFocusedUser(user)
-
-                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, choices, icons, this)
+                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, choices, icons, listener = this, user = user)
                 (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
 
                 true
@@ -81,10 +80,14 @@ class ProfileFragment: Fragment(), OptionClickListener {
         val activity = requireActivity()
         userClickListener = activity as UserClickListener
 
+        viewModel.setCurrentFocusedUser(null)
+
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
-        val user = arguments?.getParcelable<User>("user")
+        val user = arguments?.getParcelable<User>(USER)
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, user)
-        (binding.profileViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+
+
+        OverScrollDecoratorHelper.setUpOverScroll((binding.profileViewPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
         TabLayoutMediator(tabLayout, binding.profileViewPager) { tab, pos ->
             if (pos == 0) {
@@ -143,6 +146,11 @@ class ProfileFragment: Fragment(), OptionClickListener {
 
             initUser(userLayoutBinding, user)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        viewModel.setCurrentFocusedUser(null)
     }
 
 
@@ -302,8 +310,14 @@ class ProfileFragment: Fragment(), OptionClickListener {
         const val TAG = "ProfileFragment"
     }
 
-    override fun onOptionClick(option: Option) {
-        val user = arguments?.getParcelable<User>(USER)
+    override fun onOptionClick(
+        option: Option,
+        user: User?,
+        project: Project?,
+        chatChannel: ChatChannel?,
+        comment: Comment?,
+        tag: String?
+    ) {
         (activity as MainActivity).optionsFragment?.dismiss()
         when (option.item) {
             OPTION_14 -> {

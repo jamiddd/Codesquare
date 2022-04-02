@@ -16,6 +16,8 @@ data class Comment(
     val commentId: String,
     var content: String,
     var senderId: String,
+    @Embedded(prefix = "comment_")
+    var sender: UserMinimal,
     var parentId: String,
     var projectId: String,
     var commentChannelId: String,
@@ -24,14 +26,12 @@ data class Comment(
     var repliesCount: Long,
     var commentLevel: Long,
     var createdAt: Long,
+    var updatedAt: Long,
     var likes: List<String>,
-    @Embedded(prefix = "comment_sender_")
-    @Exclude @set: Exclude @get: Exclude
-    var sender: User,
     @Exclude @set: Exclude @get: Exclude
     var isLiked: Boolean,
     @Exclude @set: Exclude @get: Exclude
     var postTitle: String,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", "", "", 0, 0, 0, 0, emptyList(), User(), false, "")
+    constructor(): this("", "", "", UserMinimal(), "", "", "", "", 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), emptyList(), false, "")
 }

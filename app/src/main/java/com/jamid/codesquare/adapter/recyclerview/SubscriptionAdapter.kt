@@ -42,9 +42,9 @@ class SubscriptionAdapter(private val subscriptionListener: SubscriptionListener
             }
 
             if (subscription.priceText.contains("150.00")) {
-                binding.bestValueBtn.show()
+                binding.bestValueAnimation.show()
             } else {
-                binding.bestValueBtn.hide()
+                binding.bestValueAnimation.hide()
             }
 
             binding.priceText.text = price

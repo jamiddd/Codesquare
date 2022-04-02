@@ -1,7 +1,7 @@
 package com.jamid.codesquare.listeners
 
-import com.jamid.codesquare.data.Option
+import com.jamid.codesquare.data.*
 
 interface OptionClickListener {
-    fun onOptionClick(option: Option)
+    fun onOptionClick(option: Option, user: User?, project: Project?, chatChannel: ChatChannel?, comment: Comment?, tag: String?)
 }

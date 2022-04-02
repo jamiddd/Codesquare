@@ -14,14 +14,13 @@ data class ProjectInvite(
     var projectId: String,
     var receiverId: String,
     var senderId: String,
-    var createdAt: Long,
     @Embedded(prefix = "project_invite_sender_")
-    @Exclude @set: Exclude @get: Exclude
-    var sender: User? = null,
+    var sender: UserMinimal,
     @Embedded(prefix = "project_invite_project_")
-    @Exclude @set: Exclude @get: Exclude
-    var project: Project? = null,
+    var project: ProjectMinimal,
+    var createdAt: Long,
+    var updatedAt: Long,
     var notificationId: String
 ) {
-    constructor(): this("", "", "", "", System.currentTimeMillis(), null, null, "")
+    constructor(): this("", "", "", "", UserMinimal(), ProjectMinimal(), System.currentTimeMillis(), System.currentTimeMillis(),"")
 }

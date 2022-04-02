@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 data class UserMinimal(
     var userId: String,
     var name: String,
-    var photo: String?,
+    var photo: String,
     var username: String
 ): Parcelable {
     constructor() : this("", "", "", "")

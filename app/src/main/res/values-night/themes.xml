@@ -25,8 +25,10 @@
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
 
     <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog">
+        <item name="colorAccent">@color/darkest_blue</item>
+        <item name="colorPrimary">@color/darkest_blue</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:navigationBarColor">@color/transparent</item>
     </style>
 
     <!-- set the rounded drawable as background to your bottom sheet -->
@@ -416,6 +418,10 @@
 
     <style name="AppTheme.Fragment">
         <item name="android:background">@color/dank_grey</item>
+    </style>
+
+    <style name="AppTheme.AnimationGoPremium">
+        <item name="lottie_rawRes">@raw/go_premium_night</item>
     </style>
 
     <style name="AppTheme.ImageLoadingAnimation">

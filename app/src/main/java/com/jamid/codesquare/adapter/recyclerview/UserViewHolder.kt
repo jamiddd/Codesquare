@@ -30,10 +30,13 @@ class UserViewHolder(
     private val min: Boolean = false,
     private val vague: Boolean = false,
     private val grid: Boolean = false,
-    private val associatedChatChannel: ChatChannel? = null
+    private val associatedChatChannel: ChatChannel? = null,
+    private val listener: UserClickListener? = null
 ): RecyclerView.ViewHolder(view) {
 
-    private val userClickListener = view.context as UserClickListener
+    private val userClickListener: UserClickListener get() {
+        return listener ?: view.context as UserClickListener
+    }
     private lateinit var img: SimpleDraweeView
     private lateinit var name: TextView
     private lateinit var tag: TextView

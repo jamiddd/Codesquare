@@ -20,4 +20,5 @@ interface ProjectClickListener {
     fun onAdInfoClick()
     fun onAdError(project: Project)
     fun onProjectLocationClick(project: Project)
+    fun onCheckForStaleData(project: Project)
 }

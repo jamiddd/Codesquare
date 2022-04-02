@@ -13,20 +13,21 @@ localProperties.load(new FileInputStream(rootProject.file("local.properties")))
 
 android {
     signingConfigs {
-        config {
+        release {
             storeFile file('C:\\Users\\jamid\\AndroidStudioProjects\\Keystores\\KeystoreFile.jks')
             storePassword 'Lunanj@9'
-            keyAlias 'key0'
+            keyAlias 'key0123'
             keyPassword 'Lunanj@9'
         }
     }
+
     compileSdk 31
 
     defaultConfig {
         applicationId "com.jamid.codesquare"
         minSdk 23
         targetSdk 31
-        versionCode 6
+        versionCode 13
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -36,33 +37,34 @@ android {
             noCompress "lite"
         }
 
-        ndk {
+       /* ndk {
             abiFilters 'x86', 'armeabi-v7a', 'arm64-v8a'
-        }
+        }*/
     }
 
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            resValue("string", "google_maps_key", localProperties['GOOGLE_MAPS_API_KEY'])
-            resValue("string", "algolia_id", localProperties['ALGOLIA_ID'])
-            resValue("string", "algolia_secret", localProperties['ALGOLIA_SECRET'])
 
+        /**
+         * By default, Android Studio configures the release build type to enable code
+         * shrinking, using minifyEnabled, and specifies the default Proguard rules file.
+         */
+
+        debug {
             buildConfigField("String", "ALGOLIA_ID", "\"" + localProperties['ALGOLIA_ID'] + "\"")
             buildConfigField("String", "ALGOLIA_SECRET", "\"" + localProperties['ALGOLIA_SECRET'] + "\"")
             buildConfigField("String", "GOOGLE_MAPS_KEY", "\"" + localProperties['GOOGLE_MAPS_API_KEY'] + "\"")
         }
-        debug {
-            resValue("string", "google_maps_key", localProperties['GOOGLE_MAPS_API_KEY'])
-            resValue("string", "algolia_id", localProperties['ALGOLIA_ID'])
-            resValue("string", "algolia_secret", localProperties['ALGOLIA_SECRET'])
 
-            buildConfigField("String", "ALGOLIA_ID", "\"" + localProperties['ALGOLIA_ID'] + "\"")
-            buildConfigField("String", "ALGOLIA_SECRET", "\"" + localProperties['ALGOLIA_SECRET'] + "\"")
-            buildConfigField("String", "GOOGLE_MAPS_KEY", "\"" + localProperties['GOOGLE_MAPS_API_KEY'] + "\"")
+        release {
+
+            initWith debug
+
+            minifyEnabled false // Enables code shrinking for the release build type.
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
         }
     }
+
 
     buildFeatures {
         viewBinding true

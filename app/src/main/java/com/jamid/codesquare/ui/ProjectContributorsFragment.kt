@@ -10,11 +10,11 @@ import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.transition.MaterialSharedAxis
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
-import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentProjectContributorsBinding
 
@@ -45,85 +45,46 @@ class ProjectContributorsFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         project = arguments?.getParcelable(PROJECT) ?: return
+        val prefetchedContributors = arguments?.getParcelableArrayList<User>("contributors") ?: arrayListOf()
 
-        binding.contributorsRefresher.setOnRefreshListener {
-            initProcess()
-        }
+        var creator = User()
 
-        initProcess()
-
-    }
-
-    private fun initProcess() {
-        getChatChannel()
-    }
-
-    // TODO("Do we really need to download the chat channel, take notice")
-    private fun getChatChannel() {
-        FireUtility.getChatChannel(project.chatChannel) {
-            when (it) {
-                is Result.Error -> viewModel.setCurrentError(it.exception)
-                is Result.Success -> {
-                    onReceiveChatChannel(it.data)
-                }
-                null -> Log.w(TAG, "Something went wrong while fetching chat channel with id: ${project.chatChannel}")
-            }
-        }
-    }
-
-    private fun onReceiveChatChannel(chatChannel: ChatChannel) {
-        userAdapter = UserAdapter(small = true, grid = true, associatedChatChannel = chatChannel)
+        userAdapter = UserAdapter(small = true, grid = true)
 
         binding.contributorsRecycler.apply {
             adapter = userAdapter
             layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
         }
 
-        getProjectContributors()
-    }
+        userAdapter.submitList(prefetchedContributors)
 
-    private fun updateUi(isEmpty: Boolean) {
-        if (isEmpty) {
-            binding.contributorsRecycler.hide()
-            binding.noContributorsText.show()
-        } else {
-            binding.contributorsRecycler.show()
-            binding.noContributorsText.hide()
+        getContributors()
+
+        binding.contributorsRefresher.setOnRefreshListener {
+            getContributors()
         }
+
     }
 
-    private fun getProjectContributors() {
-        FireUtility.getProjectContributors(project) {
-            if (it.isSuccessful) {
-                updateUi(false)
-                if (!it.result.isEmpty) {
+    private fun getContributors() {
+        Firebase.firestore.collection(USERS)
+            .whereArrayContains(CHAT_CHANNELS, project.chatChannel)
+            .get()
+            .addOnSuccessListener {
+                if (it != null && !it.isEmpty) {
+                    val contributors = mutableListOf<User>()
+                    val users = it.toObjects(User::class.java)
+                    contributors.addAll(users)
+                    userAdapter.submitList(contributors)
 
-                    val contributors = it.result.toObjects(User::class.java)
-                    onFetchUsers(contributors)
+                    for (user in users) {
+                        viewModel.insertUserToCache(user)
+                    }
 
-                } else {
-                    onFetchUsers()
                 }
-            } else {
-                updateUi(true)
-                viewModel.setCurrentError(it.exception)
+            }.addOnFailureListener {
+                Log.e(TAG, "onViewCreated: ${it.localizedMessage}")
             }
-        }
-    }
-
-    private fun onFetchUsers(contributors: List<User> = emptyList()) {
-        viewModel.getLocalUser(project.creator.userId) { creator ->
-            requireActivity().runOnUiThread {
-                val x = mutableListOf<User>()
-                if (creator != null) {
-                    x.add(creator)
-                    x.addAll(contributors)
-                }
-                viewModel.insertUsers(x)
-                binding.contributorsRefresher.isRefreshing = false
-                userAdapter.submitList(x)
-            }
-        }
     }
 
     companion object {

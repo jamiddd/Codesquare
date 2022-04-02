@@ -67,6 +67,11 @@ data class Project(
 ): Parcelable {
     constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
 
+    @Exclude
+    fun minify(): ProjectMinimal {
+        return ProjectMinimal(id, name, images.first(), creator.userId, chatChannel, commentChannel)
+    }
+
     companion object {
 
         fun newInstance(currentUser: User): Project {

@@ -41,9 +41,9 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.requestProgress.hide()
         binding.requestPrimaryAction.show()
         binding.requestSecondaryAction.show()
-        binding.requestProjectName.text = projectRequest.project?.name
-        binding.requestImg.setImageURI(projectRequest.project?.images?.firstOrNull())
-        val content = projectRequest.sender?.name + " wants to join your project."
+        binding.requestProjectName.text = projectRequest.project.name
+        binding.requestImg.setImageURI(projectRequest.project.image)
+        val content = projectRequest.sender.name + " wants to join your project."
         binding.requestContent.text = content
 
         binding.requestPrimaryAction.setOnClickListener {
@@ -67,8 +67,8 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.requestProgress.hide()
         binding.requestSecondaryAction.hide()
         binding.requestContent.hide()
-        binding.requestImg.setImageURI(projectRequest.project?.images?.first())
-        binding.requestProjectName.text = projectRequest.project?.name
+        binding.requestImg.setImageURI(projectRequest.project.image)
+        binding.requestProjectName.text = projectRequest.project.name
 
         binding.requestPrimaryAction.apply {
             text = view.context.getText(R.string.undo)

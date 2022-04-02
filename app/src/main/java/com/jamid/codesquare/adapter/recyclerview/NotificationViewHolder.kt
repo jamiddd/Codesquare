@@ -35,22 +35,11 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             notificationItemClickListener.onNotificationClick(notification)
         }
 
-        FireUtility.getUser(notification.senderId) {
-            when (it) {
-                is Result.Error -> {
-                    notificationImg.hide()
-                }
-                is Result.Success -> {
-                    notificationImg.show()
-                    notificationImg.setImageURI(it.data.photo)
-                }
-                null -> {
-                    notificationItemClickListener.onNotificationError(notification)
-                }
-            }
-        }
+        notificationImg.show()
+        notificationImg.setImageURI(notification.sender.photo)
 
         notificationItemClickListener.onNotificationRead(notification)
+        notificationItemClickListener.onCheckForStaleData(notification)
 
     }
 
