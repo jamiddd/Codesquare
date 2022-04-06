@@ -40,7 +40,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo = MainRepository.getInstance(db)
         chatRepository = ChatRepository(db, viewModelScope, application.applicationContext)
         userRepository = UserRepository(db, viewModelScope)
-
     }
 
     private val _currentError = MutableLiveData<Exception?>()
@@ -60,40 +59,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     val currentImage: LiveData<Uri?> = _currentImage
 
     private val userCache = mutableMapOf<String, User>()
-    private val chatChannelCache = mutableMapOf<String, ChatChannel>()
-    private val commentChannelCache = mutableMapOf<String, CommentChannel>()
-    private val commentCache = mutableMapOf<String, Comment>()
     private val projectCache = mutableMapOf<String, Project>()
-
-    var currentChatChannel: String? = null
 
     val multipleImagesContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
 
     val multipleDocumentsContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
-
-    private val _currentFocusedUser = MutableLiveData<User>().apply { value = null }
-    val currentFocusedUser: LiveData<User> = _currentFocusedUser
-
-    private val _currentFocusedComment = MutableLiveData<Comment>().apply { value = null }
-    val currentFocusedComment: LiveData<Comment> = _currentFocusedComment
-
-    private val _currentFocusedChatChannel = MutableLiveData<ChatChannel>().apply { value = null }
-    val currentFocusedChatChannel: LiveData<ChatChannel> = _currentFocusedChatChannel
-
-    private val _currentFocusedProject = MutableLiveData<Project>().apply { value = null }
-    val currentFocusedProject: LiveData<Project> = _currentFocusedProject
-
-    fun setCurrentFocusedChatChannel(chatChannel: ChatChannel?) {
-        _currentFocusedChatChannel.postValue(chatChannel)
-    }
-
-    fun setCurrentFocusedUser(user: User?) {
-        _currentFocusedUser.postValue(user)
-    }
-
-    fun setCurrentFocusedProject(project: Project?) {
-        _currentFocusedProject.postValue(project)
-    }
 
 
     /**
@@ -183,6 +153,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertInterests(interests)
     }
 
+    val recentProjectSearchList = MutableLiveData<List<ProjectMinimal2>>()
+    val recentUserSearchList = MutableLiveData<List<UserMinimal2>>()
+
     @Suppress("UNCHECKED_CAST")
     fun search(query: String) = viewModelScope.launch (Dispatchers.IO) {
         val newQueries = mutableListOf<IndexedQuery>()
@@ -200,29 +173,34 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
             val list = response.results as List<ResultMultiSearch<ResponseSearch>>
 
-            val usersList = mutableListOf<User>()
-            val projectsList = mutableListOf<Project>()
+            /* val usersList = mutableListOf<User>()
+             val projectsList = mutableListOf<Project>()*/
+            val usersList = mutableListOf<UserMinimal2>()
+            val projectsList = mutableListOf<ProjectMinimal2>()
 
             val searchList = mutableListOf<SearchQuery>()
             for (result in list) {
                 for (hit in result.response.hits) {
                     val type = hit.json["type"].toString()
                     if (type == "\"user\"") {
-                        val user = hit.deserialize(User.serializer())
+                        val user = hit.deserialize(UserMinimal2.serializer())
+                        val searchQuery = SearchQuery(user.objectID, user.name, System.currentTimeMillis(), QUERY_TYPE_USER)
+                        searchList.add(searchQuery)
                         usersList.add(user)
-                        val searchQuery = SearchQuery(user.id, user.name, System.currentTimeMillis(), QUERY_TYPE_USER)
-                        searchList.add(searchQuery)
                     } else {
-                        val project = hit.deserialize(Project.serializer())
-                        projectsList.add(project)
-                        val searchQuery = SearchQuery(project.id, project.name, System.currentTimeMillis(), QUERY_TYPE_PROJECT)
+                        val project = hit.deserialize(ProjectMinimal2.serializer())
+                        val searchQuery = SearchQuery(project.objectID, project.name, System.currentTimeMillis(), QUERY_TYPE_PROJECT)
                         searchList.add(searchQuery)
+                        projectsList.add(project)
                     }
                 }
             }
 
-            insertProjects(*projectsList.toTypedArray())
-            insertUsers(*usersList.toTypedArray())
+            recentProjectSearchList.postValue(projectsList)
+            recentUserSearchList.postValue(usersList)
+
+         /*   insertProjects(*projectsList.toTypedArray())
+            insertUsers(*usersList.toTypedArray())*/
 
             setSearchData(searchList)
         } catch (e: Exception) {
@@ -279,6 +257,16 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             val existingImages = existingProject.images.toMutableList()
             existingImages.addAll(images)
             existingProject.images = existingImages
+            setCurrentProject(existingProject)
+        }
+    }
+
+    fun addTagsToCurrentProject(tags: List<String>) {
+        val existingProject = currentProject.value
+        if (existingProject != null) {
+            val newList = existingProject.tags.toMutableList()
+            newList.addAll(tags)
+            existingProject.tags = newList.distinct()
             setCurrentProject(existingProject)
         }
     }
@@ -606,11 +594,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun getCommentChannel(project: Project, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
-        val ref = Firebase.firestore.collection("commentChannels")
-            .document(project.commentChannel)
-        FireUtility.getDocument(ref, onComplete)
-    }
 
     fun sendComment(comment: Comment, parent: Any) {
         val parentChannelId: String?
@@ -733,10 +716,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertChatChannelsWithoutProcessing(channels)
     }
 
-    fun getLocalUser(userId: String, onComplete: (User?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        onComplete(repo.getUser(userId))
-    }
-
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return repo.getDocumentMessages(chatChannelId)
     }
@@ -825,6 +804,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun insertProjects(vararg projects: Project) = viewModelScope.launch (Dispatchers.IO) {
+        for (project in projects) {
+            projectCache[project.id] = project
+        }
         repo.insertProjects(projects)
     }
 
@@ -875,10 +857,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getProject(projectId)
     }
 
-    fun getLocalProject(projectId: String, onComplete: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        onComplete(repo.getLocalProject(projectId))
-    }
-
     fun deleteNotification(notification: Notification) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotification(notification)
     }
@@ -902,10 +880,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun addCurrentUserToProject(projectInvite: ProjectInvite) = viewModelScope.launch (Dispatchers.IO) {
-        deleteProjectInvite(projectInvite)
-    }
-
     // in future this should not be private
     fun deleteProjectInvite(projectInvite: ProjectInvite) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteProjectInvite(projectInvite)
@@ -915,20 +889,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertProjectInvites(newProjectInvites)
     }
 
-    fun updateOtherUserLocally(otherUser: User) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertOtherUser(otherUser)
-    }
-
     fun insertProjectsWithoutProcessing(vararg projects: Project) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertProjectsWithoutProcessing(projects)
     }
 
-    /*fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
-        if (chatChannel.lastMessage != null) {
-            chatRepository.getLatestMessages(chatChannel, onComplete)
-        }
-    }
-*/
     fun deleteNotificationById(id: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotificationById(id)
     }
@@ -970,10 +934,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getReactiveProject(projectId)
     }
 
-    fun getReactiveComment(commentId: String): LiveData<Comment> {
-        return repo.getReactiveComment(commentId)
-    }
-
     fun getProjectSupporters(query: Query, projectId: String): Flow<PagingData<User>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
@@ -1001,30 +961,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun getCachedChatChannel(chatChannelId: String): ChatChannel? {
-        return chatChannelCache[chatChannelId]
-    }
-
-    fun putChatChannelToCache(channel: ChatChannel) {
-        chatChannelCache[channel.chatChannelId] = channel
-    }
-
-    fun getCachedCommentChannel(channelId: String): CommentChannel? {
-        return commentChannelCache[channelId]
-    }
-
-    fun putCommentChannelToCache(commentChannel: CommentChannel) {
-        commentChannelCache[commentChannel.commentChannelId] = commentChannel
-    }
-
-    fun getCachedComment(commentId: String): Comment? {
-        return commentCache[commentId]
-    }
-
-    fun insertCommentToCache(comment: Comment) {
-        commentCache[comment.commentId] = comment
-    }
-
     fun getCachedUser(senderId: String): User? {
         return userCache[senderId]
     }
@@ -1036,11 +972,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     fun getProjectRequest(projectId: String, onComplete: (ProjectRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         onComplete(repo.getProjectRequest(projectId))
     }
-
-
-
-
-
 
 
 
@@ -1323,10 +1254,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    fun getMediaMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
-        return chatRepository.getMediaMessages(chatChannelId, limit)
-    }
-
     fun getContributors(chatChannelId: String, limit: Int = 6): LiveData<List<User>> {
         return userRepository.getContributors(chatChannelId, limit)
     }
@@ -1355,10 +1282,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun clearAllChannels() = viewModelScope.launch (Dispatchers.IO) {
         chatRepository.clearChatChannels()
-    }
-
-    fun setCurrentFocusedComment(comment: Comment) {
-        _currentFocusedComment.postValue(comment)
     }
 
     // We cannot set snapshot listener in every project that's why,
@@ -1410,6 +1333,18 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun getProject(projectId: String, function: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         function(repo.getProject(projectId))
+    }
+
+    fun deleteProjectRequestById(id: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteProjectRequestById(id)
+    }
+
+    fun deleteProjectById(projectId: String) = viewModelScope.launch (Dispatchers.IO) {
+        if (projectCache.containsKey(projectId)) {
+            projectCache.remove(projectId)
+        }
+
+        repo.deleteProjectById(projectId)
     }
 
     /* Chat related functions end */

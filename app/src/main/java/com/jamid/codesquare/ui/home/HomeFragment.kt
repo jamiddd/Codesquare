@@ -3,11 +3,13 @@ package com.jamid.codesquare.ui.home
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.activity.addCallback
 import androidx.core.graphics.drawable.RoundedBitmapDrawable
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
+import androidx.core.view.size
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -19,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.ktx.auth
@@ -29,6 +30,7 @@ import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.databinding.FragmentHomeBinding
 import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.MessageDialogFragment
 import com.jamid.codesquare.ui.SubscriptionFragment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -65,71 +67,6 @@ class HomeFragment: Fragment() {
                 editor.putBoolean(PREF_CREATE_TOOLTIP, false)
                 editor.apply()
             }
-
-        }
-
-    }
-
-    private fun setProfileItem(menu: Menu, drawable: RoundedBitmapDrawable) = requireActivity().runOnUiThread {
-        var userInfoLayout = requireActivity().findViewById<View>(R.id.user_info)
-
-        if (menu.size() >= 4) {
-            val profileItem = menu.getItem(3)
-            if (profileItem != null) {
-                var time = System.currentTimeMillis()
-                var flag: Boolean
-                profileItem.setActionView(R.layout.view_action_button)
-                profileItem.actionView.findViewById<SimpleDraweeView>(R.id.image_icon)?.background = drawable
-                profileItem.actionView.setOnTouchListener { view, motionEvent ->
-                    when (motionEvent.action) {
-                        MotionEvent.ACTION_DOWN -> {
-                            time = System.currentTimeMillis()
-                            flag = true
-
-                            viewLifecycleOwner.lifecycleScope.launch {
-                                delay(750)
-                                if (flag) {
-                                    if (userInfoLayout == null) {
-                                        val userStub = requireActivity().findViewById<ViewStub>(R.id.user_profile_view_stub)
-                                        userInfoLayout = userStub.inflate()
-
-                                        val actionLength = resources.getDimension(R.dimen.action_height)
-                                        userInfoLayout.updateLayoutParams<CollapsingToolbarLayout.LayoutParams> {
-                                            setMargins(0, actionLength.toInt(), 0, 0)
-                                        }
-                                    }
-                                    (activity as MainActivity).setUserViewOnProfileIconClick(userInfoLayout)
-                                    userInfoLayout.show()
-                                }
-                            }
-
-                        }
-                        MotionEvent.ACTION_UP -> {
-                            flag = false
-                            val oldTime = time
-                            time = System.currentTimeMillis()
-                            val diff = time - oldTime
-                            if (diff < 300) {
-                                findNavController().navigate(R.id.action_homeFragment_to_profileFragment, null, slideRightNavOptions())
-                                view.performClick()
-                            }
-
-                            if (diff in 300..750) {
-                                view.performLongClick()
-                            }
-
-                            if (diff > 750) {
-                                userInfoLayout?.hide()
-                            }
-
-                        }
-                        MotionEvent.ACTION_MOVE -> {
-                            userInfoLayout?.hide()
-                        }
-                    }
-                    true
-                }
-            }
         }
     }
 
@@ -141,19 +78,27 @@ class HomeFragment: Fragment() {
             it.cornerRadius = length
         }
 
-        setProfileItem(menu, drawable)
-
+        if (menu.size == 4) {
+            val profileItem = menu.getItem(3)
+            profileItem?.icon = drawable
+        }
     }
 
-    private fun setCurrentUserPhotoAsDrawable(menu: Menu, photo: String) = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+    private fun setCurrentUserPhotoAsDrawable(menu: Menu, photo: String) {
+
+        if (this@HomeFragment.isDetached)
+            return
+
         val currentSavedBitmap = viewModel.currentUserBitmap
         if (currentSavedBitmap != null) {
             setBitmapDrawable(menu, currentSavedBitmap)
         } else {
             downloadBitmapUsingFresco(requireContext(), photo) {
-                viewModel.currentUserBitmap = it
-                if (it != null) {
-                    setBitmapDrawable(menu, it)
+                requireActivity().runOnUiThread {
+                    viewModel.currentUserBitmap = it
+                    if (it != null) {
+                        setBitmapDrawable(menu, it)
+                    }
                 }
             }
         }
@@ -178,6 +123,9 @@ class HomeFragment: Fragment() {
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
+
+        Log.d(TAG, "onPrepareOptionsMenu: ${menu.size()} ${menu.size}")
+
         setProfileImage(menu)
         viewLifecycleOwner.lifecycleScope.launch {
             delay(2000)
@@ -207,22 +155,22 @@ class HomeFragment: Fragment() {
                 if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
                     findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
                 } else {
-                    MaterialAlertDialogBuilder(requireContext())
-                        .setTitle("Collab")
-                        .setMessage("You have already created 2 projects. To create more, upgrade your subscription plan!")
+                    val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
                         .setPositiveButton("Upgrade") { _, _ ->
                             val act = activity as MainActivity
                             act.subscriptionFragment = SubscriptionFragment()
                             act.subscriptionFragment?.show(act.supportFragmentManager, "SubscriptionFragment")
                         }.setNegativeButton("Cancel") { a, _ ->
                             a.dismiss()
-                        }
-                        .show()
+                        }.build()
+
+                    frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
                 }
 
                 true
             }
             R.id.profile -> {
+                findNavController().navigate(R.id.profileFragment, null, slideRightNavOptions())
                 true
             }
             else -> true

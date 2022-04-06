@@ -13,13 +13,14 @@ data class UserMinimal(
     var userId: String,
     var name: String,
     var photo: String,
-    var username: String
+    var username: String,
+    var premiumState: Long
 ): Parcelable {
-    constructor() : this("", "", "", "")
+    constructor() : this("", "", "", "", -1)
 
     fun toUser(): User {
         return User.newUser(userId, name, email = "").also {
-            it.photo = photo ?: ""
+            it.photo = photo
             it.username = username
         }
     }

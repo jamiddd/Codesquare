@@ -126,10 +126,25 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             greetingBinding.apply {
 
                 if (chatChannel.rules.isNotBlank()) {
-                    chatRulesText.text = "Message by the admin:\n\n" + chatChannel.rules
+                    val t = "Message by the admin:\n\n" + chatChannel.rules
+                    chatRulesText.text = t
                 }
 
-                greetingsHeading.text = "Greetings, " + UserManager.currentUser.name
+                val g = "Greetings, " + UserManager.currentUser.name
+                greetingsHeading.text = g
+
+                Firebase.firestore.collection(CHAT_CHANNELS)
+                    .document(chatChannel.chatChannelId)
+                    .collection(MESSAGES)
+                    .whereEqualTo(SENDER_ID, UserManager.currentUser.id)
+                    .get()
+                    .addOnSuccessListener {
+                        if (!it.isEmpty) {
+                            sendFirstMsgBtn.hide()
+                        }
+                    }.addOnFailureListener {
+                        Log.e(TAG, "onViewCreated: ${it.localizedMessage}")
+                    }
 
                 dismissGreetingBtn.setOnClickListener {
                     dialog.dismiss()
@@ -155,25 +170,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
         toolbar.title = chatChannel.projectTitle
 
-        viewModel.getLocalProject(chatChannel.projectId) {
-            if (it == null) {
-                FireUtility.getProject(chatChannel.projectId) { projectResult ->
-                    when (projectResult) {
-                        is Result.Error -> viewModel.setCurrentError(projectResult.exception)
-                        is Result.Success -> {
-                            viewModel.insertProjects(projectResult.data)
-                            project = projectResult.data
-                            init()
-                        }
-                        null -> Log.w(TAG,
-                            "Something went wrong while trying to get project with id: ${chatChannel.projectId}"
-                        )
-                    }
-                }
-            } else {
-                project = it
-                init()
-            }
+        (activity as MainActivity).getProjectImpulsive(chatChannel.projectId) {
+            project = it
+            init()
         }
 
         Firebase.firestore.collection(USERS)
@@ -192,7 +191,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
     }
 
-    fun init() = requireActivity().runOnUiThread {
+    fun init() {
         if (childFragmentManager.backStackEntryCount == 0) {
             val frag = ChatFragment.newInstance(bundleOf(CHAT_CHANNEL to chatChannel))
             childFragmentManager.beginTransaction()
@@ -251,10 +250,7 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             isChatFragment = childFragmentManager.backStackEntryCount == 1
             updateNavigation()
             updateChatInputUi()
-            viewModel.setCurrentFocusedUser(null)
-
             updateNecessaryItems()
-
         }
 
         viewModel.replyMessage.observe(viewLifecycleOwner) { replyMessage ->
@@ -310,8 +306,8 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
 
                 val chatDetailFragment = childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)
                 viewModel.getChatChannel(chatChannel.chatChannelId) {
-                    if (it != null) {
-                        requireActivity().runOnUiThread {
+                    requireActivity().runOnUiThread {
+                        if (it != null) {
                             (chatDetailFragment as ChatDetailFragment).setRules(it)
                         }
                     }
@@ -565,9 +561,11 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                 binding.chatsForwardBtn.isEnabled = UserManager.currentUser.chatChannels.size > 1
 
                 if (UserManager.currentUser.chatChannels.size <= 1) {
-                    binding.chatsForwardBtn.text = "No channels to forward"
+                    val f = "No channels to forward"
+                    binding.chatsForwardBtn.text = f
                 } else {
-                    binding.chatsForwardBtn.text = "Forward"
+                    val f = "Forward"
+                    binding.chatsForwardBtn.text = f
                 }
 
                 // setting forward btn
@@ -838,8 +836,6 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         viewModel.multipleDocumentsContainer.postValue(emptyList())
         viewModel.multipleDocumentsContainer.postValue(emptyList())
         viewModel.disableSelectMode(chatChannel.chatChannelId)
-        viewModel.setCurrentFocusedUser(null)
-        viewModel.setCurrentFocusedChatChannel(null)
 
         toolbar.removeView(moreBtn)
         toolbar.removeView(projectIcon)
@@ -1128,17 +1124,19 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
                     viewModel.updateMessage(message)
 
                     viewModel.getChatChannel(message.chatChannelId) { it1 ->
-                        val chatChannel = it1 ?: return@getChatChannel
+                        requireActivity().runOnUiThread {
+                            val chatChannel = it1 ?: return@runOnUiThread
 
-                        if (chatChannel.lastMessage != null && chatChannel.lastMessage!!.messageId == message.messageId) {
-                            // updated chat channel also
-                            val chatChannelChanges = mapOf("lastMessage" to message, "updatedAt" to System.currentTimeMillis())
-                            FireUtility.updateChatChannel(chatChannel.chatChannelId, chatChannelChanges) {  it2 ->
-                                if (!it2.isSuccessful) {
-                                    Log.e(
-                                        TAG,
-                                        "onChangeNeeded: ${it2.exception?.localizedMessage}"
-                                    )
+                            if (chatChannel.lastMessage != null && chatChannel.lastMessage!!.messageId == message.messageId) {
+                                // updated chat channel also
+                                val chatChannelChanges = mapOf("lastMessage" to message, "updatedAt" to System.currentTimeMillis())
+                                FireUtility.updateChatChannel(chatChannel.chatChannelId, chatChannelChanges) {  it2 ->
+                                    if (!it2.isSuccessful) {
+                                        Log.e(
+                                            TAG,
+                                            "onChangeNeeded: ${it2.exception?.localizedMessage}"
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -1149,39 +1147,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
             }
         }
 
-        val cachedUser = viewModel.getCachedUser(message.senderId)
-        if (cachedUser == null) {
-
-            viewModel.getUser(message.senderId) { localUser ->
-                if (localUser != null) {
-                    if (localUser.minify() != message.sender) {
-                        onChangeNeeded(localUser)
-                    }
-                } else {
-                    FireUtility.getUser(message.senderId) {
-                        val userResult = it ?: return@getUser
-
-                        when (userResult) {
-                            is Result.Error -> Log.e(
-                                TAG,
-                                "onCheckForStaleData: ${userResult.exception.localizedMessage}"
-                            )
-                            is Result.Success -> {
-                                val user = userResult.data
-                                viewModel.insertUserToCache(user)
-                                viewModel.insertUsers(user)
-                                if (user.minify() != message.sender) {
-                                    onChangeNeeded(user)
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-        } else {
-            if (cachedUser.minify() != message.sender) {
-                onChangeNeeded(cachedUser)
+        (activity as MainActivity).getUserImpulsive(message.senderId) {
+            if (it.minify() != message.sender) {
+                onChangeNeeded(it)
             }
         }
 
@@ -1200,43 +1168,9 @@ class ChatContainerSample : MessageListenerFragment(), ImageClickListener, Optio
         }
 
         if (message.replyMessage != null) {
-            val cachedUser1 = viewModel.getCachedUser(message.replyMessage!!.senderId)
-            if (cachedUser1 == null) {
-
-                viewModel.getUser(message.replyMessage!!.senderId) { localUser ->
-                    if (localUser != null) {
-
-                        viewModel.insertUserToCache(localUser)
-
-                        if (localUser.name != message.replyMessage!!.name) {
-                            onChangeNeeded1(localUser)
-                        }
-
-                    } else {
-                        FireUtility.getUser(message.senderId) {
-                            val userResult = it ?: return@getUser
-
-                            when (userResult) {
-                                is Result.Error -> Log.e(
-                                    TAG,
-                                    "onCheckForStaleData: ${userResult.exception.localizedMessage}"
-                                )
-                                is Result.Success -> {
-                                    val user = userResult.data
-                                    viewModel.insertUserToCache(user)
-                                    viewModel.insertUsers(user)
-                                    if (user.name != message.replyMessage!!.name) {
-                                        onChangeNeeded1(user)
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                }
-            } else {
-                if (cachedUser1.name != message.replyMessage!!.name) {
-                    onChangeNeeded1(cachedUser1)
+            (activity as MainActivity).getUserImpulsive(message.replyMessage!!.senderId) {
+                if (it.name != message.replyMessage!!.name) {
+                    onChangeNeeded1(it)
                 }
             }
         }

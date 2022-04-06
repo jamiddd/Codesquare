@@ -588,11 +588,6 @@
 
     </fragment>
     <fragment
-        android:id="@+id/updateProjectFragment"
-        android:name="com.jamid.codesquare.ui.UpdateProjectFragment"
-        tools:layout="@layout/fragment_update_project"
-        android:label="Update project" />
-    <fragment
         android:id="@+id/projectLikesFragment"
         android:name="com.jamid.codesquare.ProjectLikesFragment"
         android:label="Liked by" />

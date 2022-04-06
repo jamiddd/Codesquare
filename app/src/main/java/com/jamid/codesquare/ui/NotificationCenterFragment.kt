@@ -16,6 +16,7 @@ import com.jamid.codesquare.adapter.viewpager.NotificationPagerAdapter
 import com.jamid.codesquare.databinding.FragmentNotificationCenterBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class NotificationCenterFragment: Fragment() {
@@ -41,7 +42,7 @@ class NotificationCenterFragment: Fragment() {
         tabLayout = requireActivity().findViewById(R.id.main_tab_layout)
         newTab = tabLayout.newTab()
 
-        (binding.notificationPager.getChildAt(0) as RecyclerView?)?.overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+        OverScrollDecoratorHelper.setUpOverScroll((binding.notificationPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
         tabLayout.addTab(newTab)
 
@@ -57,7 +58,9 @@ class NotificationCenterFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             delay(500)
-            binding.notificationPager.setCurrentItem(type, true)
+            requireActivity().runOnUiThread {
+                binding.notificationPager.setCurrentItem(type, true)
+            }
         }
 
     }

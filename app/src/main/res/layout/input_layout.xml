@@ -4,24 +4,23 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
-    <EditText
-        android:id="@+id/input_text_layout"
-        style="@style/AppTheme.ChatBottomText"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="16sp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16sp"
-        android:layout_marginBottom="8dp"
-        android:background="@drawable/chat_edittext_background"
-        android:ems="10"
-        android:hint="Project Tag"
-        android:inputType="textPersonName"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:textSize="16sp"
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/input_text_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/write_something_here" />
+    </com.google.android.material.textfield.TextInputLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

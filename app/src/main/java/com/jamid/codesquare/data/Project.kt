@@ -77,7 +77,7 @@ data class Project(
         fun newInstance(currentUser: User): Project {
             val newProject = Project()
             newProject.id = randomId()
-            newProject.creator = UserMinimal(currentUser.id, currentUser.name, currentUser.photo, currentUser.username)
+            newProject.creator = UserMinimal(currentUser.id, currentUser.name, currentUser.photo, currentUser.username, currentUser.premiumState)
             val now = System.currentTimeMillis()
             newProject.createdAt = now
             newProject.updatedAt = now

@@ -1,24 +1,18 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.graphics.Color
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.common.callercontext.ContextChain
 import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
 import com.facebook.drawee.generic.RoundingParams
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.button.MaterialButton
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.UserGridItemBinding
 import com.jamid.codesquare.databinding.UserVerticalItemBinding
 import com.jamid.codesquare.listeners.UserClickListener
@@ -187,6 +181,40 @@ class UserViewHolder(
             }
         } else {
             updateUi(user)
+        }
+    }
+
+    fun bind(userMinimal: UserMinimal2) {
+        val binding = UserVerticalItemBinding.bind(view)
+        val transparent = ContextCompat.getColor(view.context, R.color.transparent)
+        binding.userName.setBackgroundColor(transparent)
+        binding.userTag.setBackgroundColor(transparent)
+        binding.userAbout.setBackgroundColor(transparent)
+
+        binding.userImg.setImageURI(userMinimal.photo)
+        binding.userName.text = userMinimal.name
+
+        if (userMinimal.about.isNotBlank()) {
+            binding.userAbout.text = userMinimal.about
+            binding.userAbout.show()
+        } else {
+            binding.userAbout.hide()
+        }
+
+        if (userMinimal.tag.isNotBlank()) {
+            binding.userTag.text = userMinimal.tag
+            binding.userTag.show()
+        } else {
+            binding.userTag.hide()
+        }
+
+        view.setOnClickListener {
+            userClickListener.onUserClick(userMinimal)
+        }
+
+        view.setOnLongClickListener {
+            userClickListener.onUserOptionClick(userMinimal)
+            true
         }
     }
 

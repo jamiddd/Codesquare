@@ -87,7 +87,7 @@ data class User(
 
     @Exclude
     fun minify(): UserMinimal {
-        return UserMinimal(id, name, photo, username)
+        return UserMinimal(id, name, photo, username, premiumState)
     }
 
     @Exclude

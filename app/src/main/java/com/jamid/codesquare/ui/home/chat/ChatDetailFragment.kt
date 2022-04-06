@@ -17,10 +17,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
-import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.Image
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
 import com.jamid.codesquare.listeners.CommonImageListener
 import com.jamid.codesquare.listeners.UserClickListener
@@ -73,8 +70,6 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         project = arguments?.getParcelable(PROJECT) ?: return
 
         val currentUser = UserManager.currentUser
-
-        viewModel.setCurrentFocusedChatChannel(chatChannel)
 
         userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel, userClickListener = this)
 
@@ -178,17 +173,19 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         }
 
         viewModel.getLimitedMediaMessages(chatChannelId, 6) {
-            if (it.isNotEmpty()) {
-                requireActivity().runOnUiThread {
+            requireActivity().runOnUiThread {
+                if (it.isNotEmpty()) {
                     gridAdapter.submitList(it)
-                }
-                onMediaMessagesExists()
-            } else {
-                viewModel.getLimitedMediaMessages(chatChannelId, 3, document) { mediaMessages2 ->
-                    if (mediaMessages2.isEmpty()) {
-                        onMediaMessagesNotFound()
-                    } else {
-                        onMediaMessagesExists()
+                    onMediaMessagesExists()
+                } else {
+                    viewModel.getLimitedMediaMessages(chatChannelId, 3, document) { mediaMessages2 ->
+                        requireActivity().runOnUiThread {
+                            if (mediaMessages2.isEmpty()) {
+                                onMediaMessagesNotFound()
+                            } else {
+                                onMediaMessagesExists()
+                            }
+                        }
                     }
                 }
             }
@@ -246,6 +243,12 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         (activity as MainActivity).onUserClick(user)
     }
 
+    override fun onUserClick(userMinimal: UserMinimal2) {
+        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+            onUserClick(it)
+        }
+    }
+
     override fun onUserOptionClick(user: User) {
         val optionsListPair = getFilteredOptionsList(user)
         if (optionsListPair.first.isNotEmpty()) {
@@ -254,8 +257,20 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         }
     }
 
+    override fun onUserOptionClick(userMinimal: UserMinimal2) {
+        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+            onUserOptionClick(it)
+        }
+    }
+
     override fun onUserLikeClick(user: User) {
         (activity as MainActivity).onUserLikeClick(user)
+    }
+
+    override fun onUserLikeClick(userMinimal: UserMinimal2) {
+        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+            onUserLikeClick(it)
+        }
     }
 
 }

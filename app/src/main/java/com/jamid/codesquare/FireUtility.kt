@@ -572,10 +572,14 @@ object FireUtility {
 
 
         batch.update(projectRef, projectChanges)
-            .update(currentUserRef, userChanges)
-            .delete(projectRequestRef)
-            .delete(requestNotificationRef)
-            .commit()
+
+        batch.update(currentUserRef, userChanges)
+
+        batch.delete(projectRequestRef)
+
+        batch.delete(requestNotificationRef)
+
+        batch.commit()
             .addOnCompleteListener(onComplete)
     }
 
@@ -599,7 +603,6 @@ object FireUtility {
         val senderRef = db.collection(USERS).document(projectRequest.senderId)
         val projectRequestRef = db.collection(PROJECT_REQUESTS).document(projectRequest.requestId)
 
-
         val senderChanges = mapOf(
             COLLABORATIONS to FieldValue.arrayUnion(projectRequest.projectId),
             COLLABORATIONS_COUNT to FieldValue.increment(1),
@@ -612,7 +615,7 @@ object FireUtility {
                 NOTIFICATIONS
             ).document(projectRequest.notificationId)
 
-        batch.addNewUserToProject(project.id, project.chatChannel, projectRequest.senderId, "")
+        batch.addNewUserToProject(project.id, project.chatChannel, projectRequest.senderId, UserManager.currentUser.token)
             .updateParticularDocument(senderRef, senderChanges)
             .deleteParticularDocument(projectRequestRef)
             .deleteParticularDocument(currentUserNotificationRef)
@@ -1898,7 +1901,7 @@ object FireUtility {
      * @param senderId The user who sent the request to current user
      * @param onComplete Callback function for getting existing project request
     * */
-    fun getExistingProjectRequest(
+    fun getProjectRequest(
         projectId: String,
         senderId: String,
         onComplete: (Result<ProjectRequest>?) -> Unit
@@ -2369,13 +2372,14 @@ object FireUtility {
     }
 
     fun getRandomInterests(onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
-        Firebase.firestore.collection("interests").document("interestsCollection")
+        Firebase.firestore.collection("interests")
+            .document("interestsCollection")
             .get()
             .addOnCompleteListener(onComplete)
     }
 
     fun uploadUser(user: User, onComplete: (task: Task<Void>) -> Unit) {
-        Firebase.firestore.collection("users").document(user.id)
+        Firebase.firestore.collection(USERS).document(user.id)
             .set(user)
             .addOnCompleteListener(onComplete)
     }
@@ -2392,7 +2396,8 @@ object FireUtility {
         oldNotification: Notification,
         onComplete: (exists: Boolean, error: Exception?) -> Unit
     ) {
-        Firebase.firestore.collection(USERS).document(oldNotification.receiverId)
+        Firebase.firestore.collection(USERS)
+            .document(oldNotification.receiverId)
             .collection(NOTIFICATIONS)
             .whereEqualTo(TITLE, oldNotification.title)
             .whereEqualTo(CONTENT, oldNotification.content)
@@ -2665,6 +2670,7 @@ object FireUtility {
             CONTENT to project.content,
             IMAGES to newListOfImages,
             TAGS to project.tags,
+            LOCATION to project.location,
             SOURCES to project.sources,
             UPDATED_AT to System.currentTimeMillis()
         )
@@ -2832,6 +2838,23 @@ object FireUtility {
             .document(inviteId)
             .update(changes)
             .addOnCompleteListener(onUpdate)
+    }
+
+    fun getNotification(userId: String, notificationId: String, onComplete: (Result<Notification>?) -> Unit) {
+        Firebase.firestore.collection(USERS).document(userId)
+            .collection(NOTIFICATIONS)
+            .document(notificationId)
+            .get()
+            .addOnSuccessListener {
+                if (it.exists()) {
+                    val notification = it.toObject(Notification::class.java)!!
+                    onComplete(Result.Success(notification))
+                } else {
+                    onComplete(null)
+                }
+            }.addOnFailureListener {
+                onComplete(Result.Error(it))
+            }
     }
 
 

@@ -80,8 +80,6 @@ class ProfileFragment: Fragment(), OptionClickListener {
         val activity = requireActivity()
         userClickListener = activity as UserClickListener
 
-        viewModel.setCurrentFocusedUser(null)
-
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         val user = arguments?.getParcelable<User>(USER)
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, user)
@@ -129,9 +127,12 @@ class ProfileFragment: Fragment(), OptionClickListener {
             userName.text = ""
             userAbout.text = ""
             userTag.text = ""
-            projectsCount.text = "0 Projects"
-            collaborationsCount.text = "0 Collaborations"
-            likesCount.text = "0 Likes"
+            val pText = "0 Projects"
+            projectsCount.text = pText
+            val cText = "0 Collaborations"
+            collaborationsCount.text = cText
+            val lText = "0 Likes"
+            likesCount.text = lText
 
             collaborationsCount.setOnClickListener {
                 binding.profileViewPager.setCurrentItem(1, true)
@@ -147,12 +148,6 @@ class ProfileFragment: Fragment(), OptionClickListener {
             initUser(userLayoutBinding, user)
         }
     }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        viewModel.setCurrentFocusedUser(null)
-    }
-
 
     private fun setUpUser(userInfoLayoutBinding: UserInfoLayoutBinding, user: User) {
 
@@ -206,6 +201,15 @@ class ProfileFragment: Fragment(), OptionClickListener {
             userImg.setImageURI(user.photo)
 
             userName.text = user.name
+
+            when {
+                user.premiumState.toInt() == 1 -> {
+                    premiumIcon.show()
+                }
+                else -> {
+                    premiumIcon.hide()
+                }
+            }
 
             if (user.tag.isBlank()) {
                 userTag.hide()

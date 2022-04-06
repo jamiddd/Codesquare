@@ -33,11 +33,9 @@ class SplashFragment: Fragment() {
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
                         findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
-//                        findNavController().navigate(R.id.userInfoFragment)
                     } else {
                         findNavController().navigate(R.id.action_splashFragment_to_emailVerificationFragment)
                     }
-//                    bypassEmailVerification()
                 } else {
                     findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
                 }
@@ -45,9 +43,9 @@ class SplashFragment: Fragment() {
         }
     }
 
-    private fun bypassEmailVerification() {
+    /*private fun bypassEmailVerification() {
         findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
-    }
+    }*/
 
 
 }

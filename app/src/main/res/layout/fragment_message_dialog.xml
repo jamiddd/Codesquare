@@ -4,18 +4,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/dialog_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:id="@+id/dialog_items_linear_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
         android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/dialog_positive_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintVertical_chainStyle="packed">
 
         <TextView
             android:id="@+id/dialog_title_text"
@@ -42,6 +43,7 @@
             android:gravity="center"
             android:padding="12dp"
             android:text="@string/large_text"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             tools:maxLines="1" />
 
         <ProgressBar
@@ -51,36 +53,31 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/dialog_positive_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:fontFamily="@font/title_semi"
-            android:text="Positive Button"
-            android:textAllCaps="true" />
-
-        <TextView
-            android:id="@+id/dialog_negative_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp"
-            android:background="?selectableItemBackground"
-            android:clickable="true"
-            android:focusable="true"
-            android:fontFamily="@font/title_semi"
-            android:gravity="center"
-            android:minWidth="88dp"
-            android:paddingStart="16dp"
-            android:paddingTop="10dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="10dp"
-            android:text="Cancel"
-            android:textAllCaps="true"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Button" />
-
     </LinearLayout>
+
+    <Button
+        android:id="@+id/dialog_positive_btn"
+        style="@style/AppTheme.ButtonOutlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:text="@string/done"
+        app:cornerRadius="4dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/dialog_items_linear_container" />
+
+    <Button
+        android:id="@+id/dialog_negative_btn"
+        style="@style/AppTheme.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="Cancel"
+        app:cornerRadius="2dp"
+        app:layout_constraintBottom_toBottomOf="@+id/dialog_positive_btn"
+        app:layout_constraintEnd_toStartOf="@+id/dialog_positive_btn"
+        app:layout_constraintTop_toTopOf="@+id/dialog_positive_btn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

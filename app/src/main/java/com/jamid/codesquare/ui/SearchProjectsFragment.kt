@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.adapter.recyclerview.ProjectMinimalAdapter
 import com.jamid.codesquare.adapter.recyclerview.VagueProjectAdapter
 import com.jamid.codesquare.data.QUERY_TYPE_PROJECT
 import com.jamid.codesquare.databinding.FragmentSearchProjectsBinding
@@ -20,8 +21,8 @@ import com.jamid.codesquare.show
 class SearchProjectsFragment: Fragment() {
 
     private lateinit var binding: FragmentSearchProjectsBinding
-    private lateinit var vagueProjectAdapter: VagueProjectAdapter
     private val viewModel: MainViewModel by activityViewModels()
+    private lateinit var projectAdapter: ProjectMinimalAdapter
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -35,7 +36,23 @@ class SearchProjectsFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.recentSearchList.observe(viewLifecycleOwner) {
+        projectAdapter = ProjectMinimalAdapter()
+
+        binding.searchProjectsRecycler.apply {
+            adapter = projectAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
+        viewModel.recentProjectSearchList.observe(viewLifecycleOwner) {
+            if (!it.isNullOrEmpty()) {
+                binding.noSearchedProjects.hide()
+                projectAdapter.submitList(it)
+            } else {
+                binding.noSearchedProjects.show()
+            }
+        }
+
+       /* viewModel.recentSearchList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
 
                 binding.noSearchedProjects.hide()
@@ -59,6 +76,6 @@ class SearchProjectsFragment: Fragment() {
             } else {
                 binding.noSearchedProjects.show()
             }
-        }
+        }*/
     }
 }

@@ -8,25 +8,30 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.ProgressBar
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.jamid.codesquare.*
 import com.jamid.codesquare.LocationProvider.toPlaces
 import com.jamid.codesquare.adapter.recyclerview.LocationAdapter
+import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.databinding.FragmentLocationBinding
+import com.jamid.codesquare.listeners.LocationItemClickListener
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
-class LocationFragment: Fragment() {
+class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickListener {
 
     private lateinit var binding: FragmentLocationBinding
-    private val locationAdapter = LocationAdapter()
     private val viewModel: MainViewModel by activityViewModels()
     private var progressBar: ProgressBar? = null
 
@@ -39,22 +44,38 @@ class LocationFragment: Fragment() {
         return binding.root
     }
 
-    init {
-        Log.d(TAG, this::class.simpleName.orEmpty())
-    }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val activity = requireActivity()
+        val activity = requireActivity() as MainActivity
         progressBar = activity.findViewById(R.id.main_progress_bar)
+
+        val dialog = dialog!!
+        val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+        val behavior = BottomSheetBehavior.from(frame)
+
+        val totalHeight = getWindowHeight()
+        binding.root.updateLayoutParams<ViewGroup.LayoutParams> {
+            height = totalHeight
+        }
+
+        val offset = totalHeight * 0.15
+
+        behavior.maxHeight = totalHeight - offset.toInt()
+        behavior.state = BottomSheetBehavior.STATE_EXPANDED
+
+        val locationAdapter = LocationAdapter(this)
 
         binding.locationRecycler.apply {
             adapter = locationAdapter
             layoutManager = LinearLayoutManager(activity)
         }
 
-        (activity as MainActivity).networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
+        binding.closeLocationChooser.setOnClickListener {
+            dismiss()
+        }
+
+        activity.networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
             if (isNetworkAvailable == true) {
                 progressBar?.show()
 
@@ -71,13 +92,7 @@ class LocationFragment: Fragment() {
                 }
 
                 if (LocationProvider.isLocationPermissionAvailable) {
-
-                    Log.d(TAG, "onViewCreated: Location permission available")
-
                     if (LocationProvider.isLocationEnabled) {
-
-                        Log.d(TAG, "onViewCreated: Location is enabled")
-
                         LocationProvider.getNearbyPlaces {
                             progressBar?.hide()
                             if (it.isSuccessful) {
@@ -91,14 +106,11 @@ class LocationFragment: Fragment() {
                             }
                         }
                     } else {
-
-                        Log.d(TAG, "onViewCreated: Location is not enabled")
-
                         val launcher = activity.locationStateLauncher
                         val fusedLocationProviderClient = activity.fusedLocationProviderClient
                         LocationProvider.checkForLocationSettings(requireContext(), launcher, fusedLocationProviderClient)
 
-                        findNavController().navigateUp()
+                        dismiss()
 
                     }
                 } else {
@@ -107,17 +119,6 @@ class LocationFragment: Fragment() {
 
                     activity.requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
-
-                /*
-                binding.addLocationBtn.setOnClickListener {
-                    val location = binding.locationText.editText?.text
-                    if (!location.isNullOrBlank()) {
-                        viewModel.setCurrentProjectLocation(location.toString())
-                        findNavController().navigateUp()
-                    } else {
-                        toast("Location cannot be empty")
-                    }
-                }*/
 
                 // change progress bar ui changes
                 binding.locationText.editText?.doAfterTextChanged { queryText ->
@@ -129,7 +130,9 @@ class LocationFragment: Fragment() {
                                 val response = task.result.autocompletePredictions
                                 viewLifecycleOwner.lifecycleScope.launch {
                                     val places = response.toPlaces()
-                                    locationAdapter.submitList(places)
+                                    requireActivity().runOnUiThread {
+                                        locationAdapter.submitList(places)
+                                    }
                                 }
                             } else {
                                 viewModel.setCurrentError(task.exception)
@@ -148,6 +151,24 @@ class LocationFragment: Fragment() {
     override fun onDestroy() {
         super.onDestroy()
         progressBar?.hide()
+    }
+
+    override fun onLocationClick(place: Place) {
+        val latLang = place.latLng
+        if (latLang != null) {
+            val formattedAddress = place.address.orEmpty()
+            val hash =
+                GeoFireUtils.getGeoHashForLocation(GeoLocation(latLang.latitude, latLang.longitude))
+            viewModel.setCurrentProjectLocation(
+                Location(
+                    latLang.latitude,
+                    latLang.longitude,
+                    formattedAddress,
+                    hash
+                )
+            )
+            dismiss()
+        }
     }
 
 }

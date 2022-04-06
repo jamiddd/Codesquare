@@ -12,7 +12,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.ads.AdRequest
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -21,7 +20,7 @@ import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 import com.jamid.codesquare.ui.MainActivity
-import com.jamid.codesquare.ui.SubscriptionFragment
+import com.jamid.codesquare.ui.MessageDialogFragment
 
 @ExperimentalPagingApi
 class ChatListFragment2: Fragment() {
@@ -69,7 +68,17 @@ class ChatListFragment2: Fragment() {
             if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
                 findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
             } else {
-                MaterialAlertDialogBuilder(requireContext())
+                val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
+                    .setPositiveButton("Upgrade") { _, _ ->
+                        val act = activity as MainActivity
+                        act.showSubscriptionFragment()
+                    }.setNegativeButton("Cancel") { a, _ ->
+                        a.dismiss()
+                    }.build()
+
+                frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
+
+                /*MaterialAlertDialogBuilder(requireContext())
                     .setTitle("Collab")
                     .setMessage("You have already created 2 projects. To create more, upgrade your subscription plan!")
                     .setPositiveButton("Upgrade") { _, _ ->
@@ -78,19 +87,21 @@ class ChatListFragment2: Fragment() {
                     }.setNegativeButton("Cancel") { a, _ ->
                         a.dismiss()
                     }
-                    .show()
+                    .show()*/
             }
-//            findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment)
         }
 
 
-        if (currentUser.premiumState.toInt() == -1) {
-            binding.chatListAdContainer.show()
-            setAdView()
-        } else {
-            binding.chatListAdContainer.hide()
+        UserManager.currentUserLive.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it.premiumState.toInt() == -1) {
+                    binding.chatListAdContainer.show()
+                    setAdView()
+                } else {
+                    binding.chatListAdContainer.hide()
+                }
+            }
         }
-
 
         binding.chatChannelsRefresher.setOnRefreshListener {
             Firebase.firestore.collection(CHAT_CHANNELS)

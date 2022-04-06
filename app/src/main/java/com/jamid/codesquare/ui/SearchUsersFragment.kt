@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
+import com.jamid.codesquare.adapter.recyclerview.UserMinimalAdapter
 import com.jamid.codesquare.data.QUERY_TYPE_USER
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentSearchUsersBinding
@@ -36,35 +37,17 @@ class SearchUsersFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val userAdapter = UserAdapter(vague = true)
+        val userAdapter = UserMinimalAdapter()
 
         binding.searchUsersRecycler.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = userAdapter
-            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
 
-        viewModel.recentSearchList.observe(viewLifecycleOwner) {
+        viewModel.recentUserSearchList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
-
                 binding.noSearchedUsers.hide()
-
-                val users = it.filter { it1 ->
-                    it1.type == QUERY_TYPE_USER
-                }
-
-                val list = users.map { it1 ->
-                    User.newUser(it1.id, "name", "email").apply {
-                        isCurrentUser = false
-                    }
-                }
-
-                if (list.isNotEmpty()) {
-                    userAdapter.submitList(list)
-                } else {
-                    binding.noSearchedUsers.show()
-                }
-
+                userAdapter.submitList(it)
             } else {
                 binding.noSearchedUsers.show()
             }

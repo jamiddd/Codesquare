@@ -77,22 +77,13 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         }
 
         binding.projectRefresher.setOnRefreshListener {
+            updateProject()
+        }
 
-            // getting new data of the project
-            FireUtility.getProject(project.id) { newProjectResult ->
-
-                // finished process and loading
-                binding.projectRefresher.isRefreshing = false
-
-                // inserting project to local database
-                when (newProjectResult) {
-                    is Result.Error -> viewModel.setCurrentError(newProjectResult.exception)
-                    is Result.Success -> {
-                        project = processProjects(arrayOf(newProjectResult.data))[0]
-                    }
-                    null -> Log.w(TAG, "Something went wrong while trying to get project document with project id: ${project.id}")
-                }
-            }
+        // to remove any issues related to saved project being
+        // out of date and not matching with the original document
+        if (project.isSaved) {
+            updateProject()
         }
 
         // join btn slide for scroll change
@@ -100,6 +91,26 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             (parentFragment as ProjectFragmentContainer).setJoinBtnForChildScroll(binding.projectFragmentScroll)
         }
 
+    }
+
+    private fun updateProject() {
+        // getting new data of the project
+        FireUtility.getProject(project.id) {
+            val newProjectResult = it ?: return@getProject
+
+            // finished process and loading
+            binding.projectRefresher.isRefreshing = false
+
+            // inserting project to local database
+            when (newProjectResult) {
+                is Result.Error -> viewModel.setCurrentError(newProjectResult.exception)
+                is Result.Success -> {
+                    project = processProjects(arrayOf(newProjectResult.data))[0]
+                    viewModel.insertProjects(project)
+                    viewModel.insertProjectToCache(project)
+                }
+            }
+        }
     }
 
     private fun setCreatorRelatedUi(mCreator: UserMinimal) {
@@ -305,6 +316,8 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
     private fun onContributorsFetched(contributors: List<User>) = requireActivity().runOnUiThread {
         userAdapter.submitList(contributors)
 
+        Log.d(TAG, "onContributorsFetched: $contributors")
+
         val list = arrayListOf<User>()
         for (item in contributors) {
             list.add(item)
@@ -340,33 +353,13 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                     val users = it.toObjects(User::class.java)
                     contributors.addAll(users)
 
-                    val creator = viewModel.getCachedUser(project.creator.userId)
-                    if (creator == null) {
-                        viewModel.getUser(project.creator.userId) { localCreator ->
-                            if (localCreator != null) {
-                                contributors.add(localCreator)
-                                viewModel.insertUserToCache(localCreator)
-                                onContributorsFetched(contributors)
-                            } else {
-                                FireUtility.getUser(project.creator.userId) { it1 ->
-                                    val creatorResult = it1 ?: return@getUser
-
-                                    when (creatorResult) {
-                                        is Result.Error -> Log.e(TAG, "setContributors: ${creatorResult.exception.localizedMessage}")
-                                        is Result.Success -> {
-                                            val creator1 = creatorResult.data
-                                            viewModel.insertUsers(creator1)
-                                            viewModel.insertUserToCache(creator1)
-                                            contributors.add(creator1)
-                                            onContributorsFetched(contributors)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        contributors.add(creator)
+                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                        contributors.add(it1)
                         onContributorsFetched(contributors)
+                    }
+                } else {
+                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                        onContributorsFetched(listOf(it1))
                     }
                 }
             }.addOnFailureListener {

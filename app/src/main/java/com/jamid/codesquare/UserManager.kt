@@ -1,21 +1,14 @@
 package com.jamid.codesquare
 
-import android.app.Activity
 import android.content.Context
-import android.util.Log
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.google.firebase.messaging.FirebaseMessaging
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.MessageDialogFragment
-import kotlinx.coroutines.delay
 
 object UserManager {
 
@@ -50,36 +43,19 @@ object UserManager {
     var isEmailVerified = false
 
     fun logOut(context: Context, onPositive: () -> Unit) {
-
         val frag = MessageDialogFragment.builder("Are you sure you want to log out?")
-            .setPositiveButton("Log out", object: MessageDialogFragment.MessageDialogInterface.OnClickListener {
-                override fun onClick(d: MessageDialogFragment, v: View) {
-                    Firebase.auth.signOut()
-                    setAuthStateForceful(false)
-                    onPositive()
-                }
-            })
-            .setNegativeButton("Cancel", object : MessageDialogFragment.MessageDialogInterface.OnClickListener {
-                override fun onClick(d: MessageDialogFragment, v: View) {
-                    d.dismiss()
-                }
-            })
-            .build()
-
-        frag.show((context as AppCompatActivity).supportFragmentManager, MessageDialogFragment.TAG)
-/*
-
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Logging out")
-            .setMessage("Are you sure you want to log out?")
             .setPositiveButton("Log out") { _, _ ->
                 Firebase.auth.signOut()
                 setAuthStateForceful(false)
                 onPositive()
-            }.setNegativeButton("Cancel") { d, _ ->
+            }
+            .setNegativeButton("Cancel") { d, _ ->
                 d.dismiss()
             }
-            .show()*/
+            .build()
+
+        frag.show((context as AppCompatActivity).supportFragmentManager, MessageDialogFragment.TAG)
+
     }
 
     fun updateUser(newUser: User) {

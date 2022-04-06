@@ -1,15 +1,15 @@
 package com.jamid.codesquare.ui
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.jamid.codesquare.databinding.FragmentMessageDialogBinding
-
+import com.jamid.codesquare.listeners.MessageDialogInterface
 
 class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
 
@@ -23,12 +23,7 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
     private var shouldShowProgress: Boolean = false
     private var isDraggable: Boolean = true
     private var isHideable: Boolean = true
-
-    interface MessageDialogInterface {
-        interface OnClickListener {
-            fun onClick(d: MessageDialogFragment, v: View)
-        }
-    }
+    private var isScrimVisible: Boolean = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,6 +37,10 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        if (!isScrimVisible) {
+            setScrimVisibility(false)
+        }
 
         val dialog = dialog!!
         val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
@@ -94,15 +93,23 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
                 return this
             }
 
-            fun setPositiveButton(label: String, a: MessageDialogInterface.OnClickListener): Builder {
+            fun setPositiveButton(label: String, a: (DialogFragment, View) -> Unit): Builder {
                 messageDialogFragment.positiveLabel = label
-                messageDialogFragment.onPositiveClickListener = a
+                messageDialogFragment.onPositiveClickListener = object : MessageDialogInterface.OnClickListener {
+                    override fun onClick(d: DialogFragment, v: View) {
+                        a(d, v)
+                    }
+                }
                 return this
             }
 
-            fun setNegativeButton(label: String, a: MessageDialogInterface.OnClickListener): Builder {
+            fun setNegativeButton(label: String, a: (DialogFragment, View) -> Unit): Builder {
                 messageDialogFragment.negativeLabel = label
-                messageDialogFragment.onNegativeClickListener = a
+                messageDialogFragment.onNegativeClickListener = object : MessageDialogInterface.OnClickListener {
+                    override fun onClick(d: DialogFragment, v: View) {
+                        a(d, v)
+                    }
+                }
                 return this
             }
 
@@ -118,6 +125,11 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
 
             fun setIsDraggable(isDraggable: Boolean): Builder {
                 messageDialogFragment.isDraggable = isDraggable
+                return this
+            }
+
+            fun setScrimVisibility(isVisible: Boolean): Builder {
+                messageDialogFragment.isScrimVisible = isVisible
                 return this
             }
 

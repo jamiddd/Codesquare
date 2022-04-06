@@ -27,8 +27,7 @@
     <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog">
         <item name="colorAccent">@color/darkest_blue</item>
         <item name="colorPrimary">@color/darkest_blue</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@color/transparent</item>
+        <item name="android:statusBarColor">@color/transparent</item>
     </style>
 
     <!-- set the rounded drawable as background to your bottom sheet -->
@@ -390,12 +389,6 @@
         <item name="android:fontFamily">@font/title_semi</item>
     </style>
 
-    <style name="ThemeOverlay.App.TextInputLayout" parent="">
-        <item name="textAppearanceSubtitle1">@style/AppTheme.Subtitle1</item>
-        <item name="textAppearanceCaption">@style/TextAppearance.App.Caption</item>
-        <item name="editTextStyle">@style/Widget.MaterialComponents.TextInputEditText.FilledBox</item>
-    </style>
-
     <style name="ThemeOverlay.App.TextInputLayout.Normal" parent="">
         <item name="textAppearanceSubtitle1">@style/AppTheme.Subtitle1</item>
         <item name="textAppearanceCaption">@style/TextAppearance.App.Caption</item>
@@ -439,10 +432,15 @@
         <item name="android:background">?selectableItemBackground</item>
     </style>
 
-    <style name="AppTheme.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.App.TextInputLayout</item>
-        <item name="shapeAppearance">@style/AppTheme.SmallComponent.TextInputLayout</item>
-        <item name="hintTextAppearance">@style/AppTheme.TextInputLayout.HintText</item>
+    <style name="ThemeOverlay.App.TextInputLayout" parent="">
+        <item name="textAppearanceSubtitle1">@style/AppTheme.Subtitle1</item>
+        <item name="textAppearanceCaption">@style/TextAppearance.App.Caption</item>
+        <item name="editTextStyle">@style/AppTheme.TextInputEditText</item>
+    </style>
+
+    <style name="AppTheme.TextInputEditText" parent="@style/Widget.MaterialComponents.TextInputEditText.FilledBox.Dense">
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:minHeight">44dp</item>
     </style>
 
     <style name="AppTheme.TextInputLayout.Normal" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
@@ -555,6 +553,22 @@
         <item name="rippleColor">@color/transparent</item>
     </style>
 
+    <style name="AppTheme.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.FilledBox">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.TextInputLayout</item>
+        <item name="shapeAppearance">@style/AppTheme.SmallComponent.TextInputLayout</item>
+        <item name="hintTextAppearance">@style/AppTheme.TextInputLayout.HintText</item>
+        <item name="hintAnimationEnabled">false</item>
+        <item name="hintEnabled">false</item>
+        <item name="boxCornerRadiusBottomStart">4dp</item>
+        <item name="boxCornerRadiusBottomEnd">4dp</item>
+        <item name="boxCornerRadiusTopStart">4dp</item>
+        <item name="boxCornerRadiusTopEnd">4dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="boxStrokeColor">@color/transparent</item>
+    </style>
+
+
     <style name="AppTheme.CloseIconBtn" parent="AppTheme.Button.IconOnly">
         <item name="iconTint">@color/white</item>
         <item name="rippleColor">@color/lightest_grey</item>
@@ -563,6 +577,13 @@
     <style name="AppTheme.InfoIcon" parent="AppTheme.Button.IconOnly">
         <item name="iconTint">@color/white</item>
         <item name="rippleColor">@color/lightest_grey</item>
+    </style>
+
+    <style name="AppTheme.BottomSheetInput" parent="BaseBottomSheetDialog">
+        <item name="colorAccent">@color/darkest_blue</item>
+        <item name="colorPrimary">@color/darkest_blue</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
     </style>
 
 </resources>

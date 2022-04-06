@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const algoliasearch = require("algoliasearch");
 
+
 admin.initializeApp();
     
 const ALGOLIA_ID = functions.config().algolia.app_id;
@@ -47,17 +48,30 @@ class Notification {
     
 }
 
-
 exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
     .onCreate(async (snap, context) => {
-        const project = snap.data();
-        project.objectID = context.params.projectId;
-        project.type = "project"
+        
+        const projectDocument = snap.data();
+
+        const projectMinimal = {
+            objectID: context.params.projectId,
+            type: "project",
+            name: projectDocument.get("name"),
+            content: projectDocument.get("content"),
+            createdAt: projectDocument.get("createdAt"),
+            creator: projectDocument.get("creator"),
+            images: projectDocument.get("images"),
+            location: projectDocument.get("location"),
+            tags: projectDocument.get("tags"),
+            updatedAt: projectDocument.get("updatedAt")
+        };
+        
+      
         const index = client.initIndex(ALGOLIA_PROJECTS_INDEX);
         const index1 = client.initIndex("interests");
 
         var tags = [];
-        tags = project.tags;
+        tags = projectMinimal.tags;
         const tagsSize = tags.length;
         var objects = [];
         if (tagsSize != 0) {
@@ -75,7 +89,7 @@ exports.onProjectCreated = functions.firestore.document("projects/{projectId}")
 
         }
 
-        return await index.saveObject(project);
+        return await index.saveObject(projectMinimal);
     });
 
 exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
@@ -87,14 +101,29 @@ exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
 
 exports.onUserCreated = functions.firestore.document("users/{userId}")
     .onCreate(async (snap, context) => {
-        const user = snap.data();
-        user.objectID = context.params.userId;
-        user.type = "user"
+        
+        const userDocument = snap.data();
+
+        const userMinimal = {
+            objectID: context.params.userId,
+            email: userDocument.get("email"),
+            about: userDocument.get("about"),
+            createdAt: userDocument.get("createdAt"),
+            interests: userDocument.get("interests"),
+            location: userDocument.get("location"),
+            name: userDocument.get("name"),
+            photo: userDocument.get("photo"),
+            premiumState: userDocument.get("premiumState"),
+            tag: userDocument.get("tag"),
+            username: userDocument.get("username"),
+            type: "user"
+        };
+
         const index = client.initIndex(ALGOLIA_USERS_INDEX);
         const index1 = client.initIndex("interests");
         
         var interests = [];
-        interests = user.interests;
+        interests = userMinimal.interests;
         const interestsSize = interests.length;
         var objects = [];
         if (interestsSize != 0) {
@@ -112,7 +141,7 @@ exports.onUserCreated = functions.firestore.document("users/{userId}")
 
         }
  
-        return await index.saveObject(user);
+        return await index.saveObject(userMinimal);
     });
 
 
@@ -251,65 +280,54 @@ exports.onNewMessage = functions.firestore.document("chatChannels/{chatChannelId
         const chatChannelSnap = await this.getChatChannelById(chatChannelId);
 
         const senderId = snap.get("senderId");
-
-        const senderSnap = await this.getUserById(senderId);
+        const senderName = snap.get("sender.name");
 
         if (!chatChannelSnap.exists) {
             return {
                 response: `Document with id - ${chatChannelId} doesn\'t exist.`
             };
         } else {
+            const type = snap.get("type");
+            const projectTitle = chatChannelSnap.get("projectTitle");
 
-            if (!senderSnap.exists) {
-                return {
-                    response: `Document with id - ${senderId} doesn\'t exist.`
-                };
-            } else {
-                const type = snap.get("type");
-                const projectTitle = chatChannelSnap.get("projectTitle");
+            var channelRegistrationTokens = [];
+            channelRegistrationTokens = chatChannelSnap.get("tokens");
 
-                const senderName = senderSnap.get("name");
-                const senderRegistrationTokens = senderSnap.get("tokens");
+            console.log("Channel registration tokens => " + channelRegistrationTokens);
 
-                var channelRegistrationTokens = [];
-                channelRegistrationTokens = chatChannelSnap.get("tokens");
-
-                const finalTokens = channelRegistrationTokens.filter(t => senderRegistrationTokens.indexOf(t) === -1);
-
-                var data = {
-                    title: projectTitle,
-                    senderId: senderId,
-                    channelId: chatChannelId,
-                };
+            var data = {
+                title: projectTitle,
+                senderId: senderId,
+                channelId: chatChannelId,
+            };
                 
-                if (type == "image") {
-                    data.content = senderName + ": Image";
-                } else if (type == "document") {
-                    data.content = senderName + ": Document";
-                } else {
-                    data.content = senderName + ": " + snap.get("content");
+            if (type == "image") {
+                data.content = senderName + ": Image";
+            } else if (type == "document") {
+                data.content = senderName + ": Document";
+            } else {
+                data.content = senderName + ": " + snap.get("content");
+            }
+
+            const result = await this.sendNotification(channelRegistrationTokens, data);
+
+            const staleTokens = result.results.reduce((acc, cur, idx) => {
+                if (cur.error && cur.error.code === 'messaging/registration-token-not-registered') {
+                    acc.push(channelRegistrationTokens[idx])
                 }
-
-                const result = await this.sendNotification(finalTokens, data);
-
-                const staleTokens = result.results.reduce((acc, cur, idx) => {
-                    if (cur.error && cur.error.code === 'messaging/registration-token-not-registered') {
-                        acc.push(finalTokens[idx])
-                    }
-                    return acc
-                }, [])
+                return acc
+            }, [])
                    
-                if (staleTokens.length > 0) {
-                    // await deleteSessionForDevices(staleTokens, pgdb)
-                    // debug('deleted sessions for stale firebase device tokens', staleTokens)
+            if (staleTokens.length > 0) {
+                // await deleteSessionForDevices(staleTokens, pgdb)
+                // debug('deleted sessions for stale firebase device tokens', staleTokens)
             
-                    const goodTokens = channelRegistrationTokens.filter(t => staleTokens.indexOf(t) === -1);
-
-                    return await admin.firestore.collection("chatChannels").doc(chatChannelId).update({tokens: goodTokens});
-                } else {
-                    return {
-                        response: "Successfully sent message to chat channel with no stale tokens."
-                    }
+                const goodTokens = channelRegistrationTokens.filter(t => staleTokens.indexOf(t) === -1);
+            
+                return await admin.firestore().collection("chatChannels").doc(chatChannelId).update({tokens: goodTokens});
+            } else {
+                return {
+                    response: "Successfully sent message to chat channel with no stale tokens."
                 }
             }
         }
@@ -408,31 +426,81 @@ exports.onCommentChannelDeleted = functions.firestore.document("commentChannels/
 
 exports.onProjectUpdated = functions.firestore.document("projects/{projectId}")
     .onUpdate(async (change, context) => {
-        const newDocument = change.after;
-        const updatedProject = newDocument.data();
+        const projectDocument = change.after;
+
+        // check if changes are not relevant to algolia
+        if (
+            previousDocument.get("name") == userDocument.get("name") &&
+            previousDocument.get("content") == userDocument.get("content") &&
+            previousDocument.get("tags") == userDocument.get("tags") &&
+            previousDocument.get("images") == userDocument.get("images") &&
+            previousDocument.get("creator") == userDocument.get("creator") && 
+            previousDocument.get("location") == userDocument.get("location")
+        ) {
+            return;
+        }
+
+        const projectMinimal = {
+            objectID: context.params.projectId,
+            type: "project",
+            name: projectDocument.get("name"),
+            content: projectDocument.get("content"),
+            createdAt: projectDocument.get("createdAt"),
+            creator: projectDocument.get("creator"),
+            images: projectDocument.get("images"),
+            location: projectDocument.get("location"),
+            tags: projectDocument.get("tags"),
+            updatedAt: projectDocument.get("updatedAt")
+        };
 
         const index = client.initIndex("projects");
 
-        return await index.partialUpdateObjects([updatedProject], {
+        return await index.partialUpdateObjects([projectMinimal], {
             createIfNotExists: true,
-          });
+        });
 
     });
 
 exports.onUserUpdated = functions.firestore.document("users/{userId}")
     .onUpdate(async (change, context) => {
+        
+        const previousDocument = change.before;
+        
+        const userDocument = change.after;
 
-        const newDocument = change.after;
-        const updatedUser = newDocument.data();
+        // check if changes are not relevant to algolia
+        if (
+            previousDocument.get("name") == userDocument.get("name") &&
+            previousDocument.get("about") == userDocument.get("about") &&
+            previousDocument.get("tag") == userDocument.get("tag") &&
+            previousDocument.get("photo") == userDocument.get("photo") &&
+            previousDocument.get("username") == userDocument.get("username") && 
+            previousDocument.get("interests") == userDocument.get("interests")
+        ) {
+            return;
+        }
 
-        updatedUser.type = "user";
-        updatedUser.objectID = context.params.userId;
+
+        const userMinimal = {
+            objectID: context.params.userId,
+            email: userDocument.get("email"),
+            about: userDocument.get("about"),
+            createdAt: userDocument.get("createdAt"),
+            interests: userDocument.get("interests"),
+            location: userDocument.get("location"),
+            name: userDocument.get("name"),
+            photo: userDocument.get("photo"),
+            premiumState: userDocument.get("premiumState"),
+            tag: userDocument.get("tag"),
+            username: userDocument.get("username"),
+            type: "user"
+        };
 
         const index = client.initIndex("users");
         const index1 = client.initIndex("interests");
 
         var interests = [];
-        interests = updatedUser.interests;
+        interests = userMinimal.interests;
         const interestsSize = interests.length;
         var objects = [];
         if (interestsSize != 0) {
@@ -450,7 +518,7 @@ exports.onUserUpdated = functions.firestore.document("users/{userId}")
 
         }
 
-        return await index.partialUpdateObjects([updatedUser], {
+        return await index.partialUpdateObjects([userMinimal], {
             createIfNotExists: true,
           });
 

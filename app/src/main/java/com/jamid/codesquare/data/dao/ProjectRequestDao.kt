@@ -27,4 +27,7 @@ abstract class ProjectRequestDao: BaseDao<ProjectRequest>() {
     @Query("DELETE FROM project_requests")
     abstract suspend fun clearTable()
 
+    @Query("DELETE FROM project_requests WHERE requestId = :id")
+    abstract suspend fun deleteProjectRequestById(id: String)
+
 }

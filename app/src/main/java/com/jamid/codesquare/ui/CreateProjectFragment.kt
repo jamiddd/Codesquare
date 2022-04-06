@@ -1,9 +1,7 @@
 package com.jamid.codesquare.ui
 
-import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.provider.OpenableColumns
-import android.text.InputType
 import android.util.Log
 import android.view.*
 import android.webkit.URLUtil
@@ -13,8 +11,10 @@ import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -30,8 +30,9 @@ import com.jamid.codesquare.data.ImageSelectType
 import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentCreateProjectBinding
-import com.jamid.codesquare.databinding.InputLayoutBinding
 import com.jamid.codesquare.databinding.LoadingLayoutBinding
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
 class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
@@ -96,19 +97,21 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         .show()
 
                     viewModel.updateProject { newProject, task ->
-                        dialog.dismiss()
-                        if (task.isSuccessful) {
-                            activity.runOnUiThread {
+                        activity.runOnUiThread {
+                            dialog.dismiss()
+                            if (task.isSuccessful) {
                                 val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
                                 Snackbar.make(mainRoot, "Project updated successfully", Snackbar.LENGTH_LONG).show()
 
+                                viewModel.deleteProjectById(newProject.id)
+
                                 // updating local project
-                                viewModel.updateLocalProject(newProject)
+                                viewModel.insertProjects(newProject)
                                 viewModel.setCurrentProject(null)
                                 findNavController().navigateUp()
+                            } else {
+                                viewModel.setCurrentError(task.exception)
                             }
-                        } else {
-                            viewModel.setCurrentError(task.exception)
                         }
                     }
                 } else {
@@ -120,16 +123,18 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         .show()
 
                     viewModel.createProject {
-                        dialog.dismiss()
-                        if (it.isSuccessful) {
-                            findNavController().navigateUp()
-                            viewModel.setCurrentProject(null)
+                        requireActivity().runOnUiThread {
+                            dialog.dismiss()
+                            if (it.isSuccessful) {
+                                findNavController().navigateUp()
+                                viewModel.setCurrentProject(null)
 
-                            val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
-                            Snackbar.make(mainRoot, "Project uploaded successfully.", Snackbar.LENGTH_LONG).show()
+                                val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
+                                Snackbar.make(mainRoot, "Project uploaded successfully.", Snackbar.LENGTH_LONG).show()
 
-                        } else {
-                            viewModel.setCurrentError(it.exception)
+                            } else {
+                                viewModel.setCurrentError(it.exception)
+                            }
                         }
                     }
                 }
@@ -159,8 +164,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             return false
         }
 
-        if (binding.projectTitleText.editText?.text.toString().length !in 6..30) {
-            toast("Title must be longer than 5 characters and shorter than 31 characters.")
+        if (binding.projectTitleText.editText?.text.toString().length !in 6..100) {
+            toast("Title must be longer than 5 characters and shorter than 100 characters.")
             binding.projectTitleText.editText?.requestFocus()
             return false
         }
@@ -196,15 +201,13 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         if (prevProject != null) {
             onUpdateProject(prevProject)
         } else {
-            if (viewModel.currentProject.value == null) {
-                val newProject = Project.newInstance(currentUser)
-                viewModel.setCurrentProject(newProject)
-            }
+            Log.d(TAG, "onViewCreated: Creating new project")
+            val newProject = Project.newInstance(currentUser)
+            viewModel.setCurrentProject(newProject)
         }
 
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
-
 
         imageAdapter = ImageAdapter()
 
@@ -219,6 +222,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         viewModel.currentProject.observe(viewLifecycleOwner) { currentProject ->
+            Log.d(TAG, "onViewCreated: Current project has changed")
             if (currentProject != null) {
                 val images = currentProject.images
                 if (images.isNotEmpty()) {
@@ -254,13 +258,9 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 }
 
 
-                if (currentProject.name.isNotBlank()) {
-                    binding.projectTitleText.editText?.setText(currentProject.name)
-                }
+                binding.projectTitleText.editText?.setText(currentProject.name)
 
-                if (currentProject.content.isNotBlank()) {
-                    binding.projectContentText.editText?.setText(currentProject.content)
-                }
+                binding.projectContentText.editText?.setText(currentProject.content)
 
                 if (currentProject.location.address.isNotBlank()) {
                     binding.projectLocationText.text = currentProject.location.address
@@ -271,15 +271,13 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
                         val frag = MessageDialogFragment.builder("Are you sure you want to remove location attached to this project?")
                             .setTitle("Removing location ...")
-                            .setPositiveButton("Remove", object: MessageDialogFragment.MessageDialogInterface.OnClickListener {
-                                override fun onClick(d: MessageDialogFragment, v: View) {
-                                    viewModel.setCurrentProjectLocation(Location())
-                                }
-                            }).setNegativeButton("Cancel", object : MessageDialogFragment.MessageDialogInterface.OnClickListener {
-                                override fun onClick(d: MessageDialogFragment, v: View) {
-                                    d.dismiss()
-                                }
-                            }).build()
+                            .setPositiveButton("Remove") { _, _ ->
+                                viewModel.setCurrentProjectLocation(Location())
+                            }
+                            .setNegativeButton("Cancel") { d, _ ->
+                                d.dismiss()
+                            }
+                            .build()
 
                         frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
                     }
@@ -294,19 +292,13 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         val tags = getTags()
                         viewModel.setCurrentProjectTags(tags)
 
-                        findNavController().navigate(R.id.action_createProjectFragment_to_locationFragment, null, slideRightNavOptions())
+                        val frag = LocationFragment()
+                        frag.show(requireActivity().supportFragmentManager, "LocationFragment")
                     }
                 }
 
-                if (currentProject.tags.isNotEmpty()) {
-                    addTags(currentProject.tags)
-                }
-
-                if (currentProject.sources.isNotEmpty()) {
-                    for (source in currentProject.sources) {
-                        addLink(source)
-                    }
-                }
+                addTags(currentProject.tags)
+                addLinks(currentProject.sources)
 
             } else {
                 updateBtnOnImageCleared()
@@ -331,7 +323,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         binding.addTagBtn.setOnClickListener {
-            val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+            /*val inputLayout = View.inflate(requireContext(), R.layout.input_layout, null)
             val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
 
             inputLayoutBinding.inputTextLayout.hint = "Add tag .. "
@@ -354,12 +346,31 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     a.dismiss()
                 }.show()
 
-            alertDialog.window?.setGravity(Gravity.BOTTOM)
+            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
+
+            val frag = AddTagFragment()
+            frag.show(requireActivity().supportFragmentManager, "AddTagFragment")
 
         }
 
         binding.addLinkBtn.setOnClickListener {
-            val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+
+            val frag = InputSheetFragment.builder("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
+                .setTitle("Add link to project")
+                .setHint("Ex: https://wwww.google.com")
+                .setPositiveButton("Add link") { a, b, s ->
+                    if (URLUtil.isValidUrl(s)) {
+                        addLink(s)
+                    } else {
+                        toast("Not a proper link.")
+                    }
+                }.setNegativeButton("Cancel") { a, b ->
+                    a.dismiss()
+                }.build()
+
+            frag.show(requireActivity().supportFragmentManager, "InputSheetFrag")
+
+            /*val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
             val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
 
             inputLayoutBinding.inputTextLayout.hint = "Add link .. "
@@ -372,7 +383,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 .setView(inputLayout)
                 .setPositiveButton("Add") { _, _ ->
                     if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
-                        val link = inputLayoutBinding.inputTextLayout.text.trim().toString()
+                        val link = inputLayoutBinding.inputTextLayout.text!!.trim().toString()
                         if (URLUtil.isValidUrl(link)) {
                             addLink(link)
                         } else {
@@ -383,30 +394,9 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                     a.dismiss()
                 }.show()
 
-            alertDialog.window?.setGravity(Gravity.BOTTOM)
+            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
         }
 
-        /*activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-
-            if (binding.projectTitleText.editText?.text.isNullOrBlank() && binding.projectContentText.editText?.text.isNullOrBlank() && imagesCount == 0) {
-                findNavController().navigateUp()
-                viewModel.setCurrentProject(null)
-            } else {
-                val alertDialog = MaterialAlertDialogBuilder(activity)
-                    .setTitle("Save project ...")
-                    .setMessage("Save the content of this unfinished project?")
-                    .setPositiveButton("Save") { _, _ ->
-                        findNavController().navigateUp()
-                    }.setNegativeButton("No") { a, _ ->
-                        viewModel.setCurrentProject(null)
-                        findNavController().navigateUp()
-                        a.dismiss()
-                    }.show()
-
-                alertDialog.window?.setGravity(Gravity.BOTTOM)
-            }
-        }
-*/
         binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
@@ -418,18 +408,24 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             }
         })
 
-        val sharedPref = activity.getSharedPreferences("codesquare_shared", MODE_PRIVATE)
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val isCreatingProjectFirstTime = sharedPref.getBoolean("isCreatingProjectFirstTime", true)
         if (isCreatingProjectFirstTime) {
-              binding.createProjectInfo.root.show()
+            viewLifecycleOwner.lifecycleScope.launch {
+                delay(1000)
+                if (this@CreateProjectFragment.isVisible) {
+                    val frag = MessageDialogFragment.builder(getString(R.string.create_project_info))
+                        .setTitle("Creating your project .. ")
+                        .build()
+
+                    frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
+                    val editor = sharedPref.edit()
+                    editor.putBoolean("isCreatingProjectFirstTime", false)
+                    editor.apply()
+                }
+            }
         }
 
-        binding.createProjectInfo.closeInfoBtn.setOnClickListener {
-            val editor = sharedPref.edit()
-            editor.putBoolean("isCreatingProjectFirstTime", false)
-            editor.apply()
-            binding.createProjectInfo.root.hide()
-        }
     }
 
     private fun checkForSizeIssues(images: List<String>): List<String> {
@@ -486,6 +482,15 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
     }
 
+    private fun addLinks(links: List<String>) {
+        if (binding.projectLinksContainer.childCount != 1) {
+            binding.projectLinksContainer.removeViews(0, binding.projectLinksContainer.childCount - 1)
+        }
+        for (link in links) {
+            addLink(link)
+        }
+    }
+
     private fun addTag(tag: String) {
         tag.trim()
         val chip = Chip(requireContext())
@@ -494,19 +499,11 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         chip.isCloseIconVisible = true
         chip.setOnCloseIconClickListener {
             binding.projectTagsContainer.removeView(chip)
+
+            val tags = getTags()
+            viewModel.setCurrentProjectTags(tags)
         }
         binding.projectTagsContainer.addView(chip, 0)
-    }
-
-    private fun processTagText(tagText: String): List<String> {
-        val re = Regex("[^A-Za-z0-9 ]")
-        val newTagText = re.replace(tagText, "")
-
-        return if (newTagText.contains(' ')) {
-            newTagText.split(' ')
-        } else {
-            listOf(newTagText)
-        }
     }
 
     private fun addLink(link: String) {

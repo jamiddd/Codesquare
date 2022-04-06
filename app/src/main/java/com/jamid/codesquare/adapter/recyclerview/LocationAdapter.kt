@@ -11,11 +11,9 @@ import com.jamid.codesquare.listeners.LocationItemClickListener
 import com.jamid.codesquare.adapter.comparators.PlaceComparator
 import com.jamid.codesquare.databinding.LocationItemBinding
 
-class LocationAdapter: ListAdapter<Place, LocationAdapter.LocationViewHolder>(PlaceComparator()) {
+class LocationAdapter(private val locationClickListener: LocationItemClickListener): ListAdapter<Place, LocationAdapter.LocationViewHolder>(PlaceComparator()) {
 
     inner class LocationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
-
-        private val locationItemClickListener = view.context as LocationItemClickListener
 
         fun bind(place: Place) {
             val binding = LocationItemBinding.bind(view)
@@ -23,7 +21,7 @@ class LocationAdapter: ListAdapter<Place, LocationAdapter.LocationViewHolder>(Pl
             binding.locationAddress.text = place.address
 
             binding.root.setOnClickListener {
-                locationItemClickListener.onLocationClick(place)
+                locationClickListener.onLocationClick(place)
             }
         }
     }

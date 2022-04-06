@@ -34,13 +34,15 @@
 
     <TextView
         android:id="@+id/user_name"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:drawablePadding="8dp"
         android:gravity="center"
         android:text="Jamid Deka"
         android:textAppearance="@style/AppTheme.Headline6"
+        app:drawableTint="@null"
         app:layout_constraintBottom_toTopOf="@+id/user_tag"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -50,13 +52,15 @@
         android:id="@+id/user_tag"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
         android:text="Android Developer"
         app:layout_constraintBottom_toTopOf="@+id/profile_primary_btn"
-        app:layout_constraintEnd_toEndOf="@+id/user_name"
-        app:layout_constraintStart_toStartOf="@+id/user_name"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/user_name"
-        tools:visibility="gone" />
+        tools:visibility="visible" />
 
     <TextView
         android:id="@+id/user_about"
@@ -163,5 +167,19 @@
         app:layout_constraintStart_toEndOf="@+id/profile_primary_btn"
         app:layout_constraintTop_toTopOf="@+id/profile_primary_btn"
         tools:visibility="visible" />
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/premium_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/white_circle"
+        android:elevation="24dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/user_img"
+        app:layout_constraintEnd_toEndOf="@+id/user_img"
+        app:layout_constraintTop_toTopOf="@+id/user_img"
+        app:layout_constraintVertical_bias="0.97"
+        app:placeholderImage="@drawable/ic_medal"
+        app:roundAsCircle="true" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

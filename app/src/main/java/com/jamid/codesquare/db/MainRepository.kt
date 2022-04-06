@@ -347,6 +347,14 @@ class MainRepository(private val db: CodesquareDatabase) {
         return projectRequestDao.getProjectRequestByProject(projectId)
     }
 
+    suspend fun deleteProjectRequestById(id: String) {
+        projectRequestDao.deleteProjectRequestById(id)
+    }
+
+    suspend fun deleteProjectById(projectId: String) {
+        projectDao.deleteProjectById(projectId)
+    }
+
     companion object {
 
         @Volatile private var instance: MainRepository? = null

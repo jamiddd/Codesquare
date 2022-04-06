@@ -19,7 +19,7 @@ import com.jamid.codesquare.data.User
  * was paused in the middle.
  *
  * This class is dependent on the fact that the singleton objects such as
- * [NotificationManager], [UserManager] are
+ * [UserManager] are
  * already initialized and ready for action.
  *
  * */

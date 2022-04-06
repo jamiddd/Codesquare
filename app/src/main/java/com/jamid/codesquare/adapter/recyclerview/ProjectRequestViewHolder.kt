@@ -9,35 +9,32 @@ import androidx.core.view.setMargins
 import androidx.core.view.setPadding
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ProjectRequest
+import com.jamid.codesquare.databinding.RequestItemAltBinding
 import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectRequestListener
 
 class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
-    private lateinit var binding: RequestItemBinding
+    private lateinit var binding: ViewBinding
     private val projectRequestListener = view.context as ProjectRequestListener
     var isMyRequests: Boolean = false
 
     fun bind(projectRequest: ProjectRequest?) {
         if (projectRequest != null) {
-            binding = RequestItemBinding.bind(view)
-            binding.requestTime.text = getTextForTime(projectRequest.createdAt)
-
-            binding.root.setOnClickListener {
-                projectRequestListener.onProjectRequestClick(projectRequest)
-            }
-
             if (isMyRequests) {
-                bindForCurrentUser(projectRequest)
+                binding = RequestItemAltBinding.bind(view)
+                bindForCurrentUser(binding as RequestItemAltBinding, projectRequest)
             } else {
-                bindForOtherUsers(projectRequest)
+                binding = RequestItemBinding.bind(view)
+                bindForOtherUsers(binding as RequestItemBinding, projectRequest)
             }
         }
     }
 
-    private fun bindForOtherUsers(projectRequest: ProjectRequest) {
+    private fun bindForOtherUsers(binding: RequestItemBinding, projectRequest: ProjectRequest) {
         binding.requestProgress.hide()
         binding.requestPrimaryAction.show()
         binding.requestSecondaryAction.show()
@@ -47,25 +44,30 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.requestContent.text = content
 
         binding.requestPrimaryAction.setOnClickListener {
-            onActionStarted()
+            onActionStarted(binding)
             projectRequestListener.onProjectRequestAccept(projectRequest)
         }
 
         binding.requestSecondaryAction.setOnClickListener {
-            onActionStarted()
+            onActionStarted(binding)
             projectRequestListener.onProjectRequestCancel(projectRequest)
+        }
+
+        binding.requestTime.text = getTextForTime(projectRequest.createdAt)
+
+        binding.root.setOnClickListener {
+            projectRequestListener.onProjectRequestClick(projectRequest)
         }
     }
 
-    private fun onActionStarted() {
+    private fun onActionStarted(binding: RequestItemBinding) {
         binding.requestProgress.show()
         binding.requestSecondaryAction.disappear()
         binding.requestPrimaryAction.disappear()
     }
 
-    private fun bindForCurrentUser(projectRequest: ProjectRequest) {
+    private fun bindForCurrentUser(binding: RequestItemAltBinding, projectRequest: ProjectRequest) {
         binding.requestProgress.hide()
-        binding.requestSecondaryAction.hide()
         binding.requestContent.hide()
         binding.requestImg.setImageURI(projectRequest.project.image)
         binding.requestProjectName.text = projectRequest.project.name
@@ -79,58 +81,25 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             }
         }
 
-        val dy = view.context.resources.getDimension(R.dimen.generic_len).toInt()
+        binding.requestTime.text = getTextForTime(projectRequest.createdAt)
 
-        val set = ConstraintSet()
-        set.clone(binding.requestRoot)
-
-        set.clear(binding.requestContentContainer.id)
-        set.clear(binding.requestImg.id)
-        set.clear(binding.requestPrimaryAction.id)
-        set.clear(binding.requestSecondaryAction.id)
-
-        set.applyTo(binding.requestRoot)
-
-        binding.requestContentContainer.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            topToTop = binding.requestImg.id
-            startToEnd = binding.requestImg.id
-            endToStart = binding.requestPrimaryAction.id
-            bottomToBottom = binding.requestImg.id
-
-            width = ConstraintLayout.LayoutParams.MATCH_CONSTRAINT
-            height = ConstraintLayout.LayoutParams.WRAP_CONTENT
-
-            horizontalChainStyle = ConstraintLayout.LayoutParams.CHAIN_PACKED
-
-            setMargins(dy)
+        binding.root.setOnClickListener {
+            projectRequestListener.onProjectRequestClick(projectRequest)
         }
-
-        binding.requestImg.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            startToStart = binding.requestRoot.id
-            topToTop = binding.requestContentContainer.id
-            endToStart = binding.requestContentContainer.id
-            bottomToBottom = binding.requestRoot.id
-            setMargins(dy)
-        }
-
-        binding.requestPrimaryAction.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            startToEnd = binding.requestContentContainer.id
-            topToTop = binding.requestContentContainer.id
-            endToEnd = binding.requestRoot.id
-            bottomToBottom = binding.requestContentContainer.id
-
-            setMargins(dy)
-        }
-
-        binding.requestRoot.setPadding(dy)
 
     }
 
     companion object {
 
         fun newInstance(parent: ViewGroup, ism: Boolean): ProjectRequestViewHolder {
-            return ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false)).apply {
-                isMyRequests = ism
+            return if (ism) {
+                ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item_alt, parent, false)).apply {
+                    isMyRequests = ism
+                }
+            } else {
+                ProjectRequestViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false)).apply {
+                    isMyRequests = ism
+                }
             }
         }
 

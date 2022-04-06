@@ -123,7 +123,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             .document(chatChannelId)
             .collection(MESSAGES)
 
-        // TODO("Currently using paging only for checking old messages, for new messages use a listener")
         getItems {
             viewModel.getPagedMessages(
                 chatChannelId,
@@ -196,14 +195,8 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         binding.pagerItemsRecycler.smoothScrollToPosition(0)
     }
 
-    // TODO("I don't remember this .. need to check again")
     override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder2<Message>> {
-        val chatChannel = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL)
-        return if (chatChannel == null) {
-            MessageAdapter3(parentFragment as MessageListenerFragment)
-        } else {
-            MessageAdapter3(parentFragment as MessageListenerFragment)
-        }
+        return MessageAdapter3(parentFragment as MessageListenerFragment)
     }
 
     companion object {

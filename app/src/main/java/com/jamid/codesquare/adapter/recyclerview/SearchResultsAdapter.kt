@@ -31,22 +31,6 @@ class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickL
 
             searchItemForwardBtn.isVisible = shouldShowRightIcon
 
-           /* if (searchQuery.type == QUERY_TYPE_PROJECT) {
-                val project = searchViewModel.recentProjectSearchCache[searchQuery.id]
-                if (project != null) {
-                    view.setOnClickListener {
-                        searchItemClickListener.onSearchProjectClick(searchQuery, project)
-                    }
-                }
-            } else {
-                val user = searchViewModel.recentUserSearchCache[searchQuery.id]
-                if (user != null) {
-                    view.setOnClickListener {
-                        searchItemClickListener.onSearchUserClick(searchQuery, user)
-                    }
-                }
-            }*/
-
             searchItemForwardBtn.setOnClickListener {
                 searchItemClickListener.onSearchItemForwardClick(searchQuery)
             }

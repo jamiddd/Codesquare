@@ -34,7 +34,7 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
                 binding.inviteBtnProgress.hide()
                 binding.projectMiniInviteBtn.hide()
             } else {
-                FireUtility.getExistingProjectRequest(project.id, receiverIdForInvite) {
+                FireUtility.getProjectRequest(project.id, receiverIdForInvite) {
                     when (it) {
                         is Result.Error -> Log.e(TAG, it.exception.localizedMessage.orEmpty())
                         is Result.Success -> {

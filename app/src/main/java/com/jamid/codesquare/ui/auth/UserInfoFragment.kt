@@ -13,7 +13,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.algolia.search.saas.Client
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.jamid.codesquare.*
@@ -26,7 +25,6 @@ import com.jamid.codesquare.listeners.SearchItemClickListener
 class UserInfoFragment: Fragment(), SearchItemClickListener {
 
     private lateinit var binding: FragmentUserInfoBinding
-    private lateinit var client: Client
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var searchResultsAdapter: SearchResultsAdapter
     private var currentList: List<SearchQuery> = emptyList()
@@ -37,7 +35,6 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentUserInfoBinding.inflate(inflater)
-        client = Client(BuildConfig.ALGOLIA_ID, BuildConfig.ALGOLIA_SECRET)
         return binding.root
     }
 

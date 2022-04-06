@@ -30,6 +30,13 @@
             </intent-filter>
         </service>
 
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_collab_logo_small" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/darkest_blue" />
+
         <activity
             android:name=".ui.MainActivity"
             android:exported="true"

@@ -79,7 +79,8 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
                 if (it.isNotEmpty()) {
                     binding.forwardBtn.isEnabled = true
                     if (it.size > 1) {
-                        binding.forwardInfo.text = "${it.first().projectTitle} and ${it.size - 1} more"
+                        val infoText = "${it.first().projectTitle} and ${it.size - 1} more"
+                        binding.forwardInfo.text = infoText
                     } else {
                         binding.forwardInfo.text = it.first().projectTitle
                     }
@@ -100,11 +101,13 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
                 binding.forwardProgressBar.show()
                 if (imagesDir != null && documentsDir != null) {
                     viewModel.sendForwardsToChatChannels(messages, listOfChannels) { result ->
-                        when (result) {
-                            is Result.Error -> {}
-                            is Result.Success -> {
-                                viewModel.disableSelectMode(chatChannelId)
-                                (parentFragment as ChatContainerSample).navigateUp()
+                        requireActivity().runOnUiThread {
+                            when (result) {
+                                is Result.Error -> {}
+                                is Result.Success -> {
+                                    viewModel.disableSelectMode(chatChannelId)
+                                    (parentFragment as ChatContainerSample).navigateUp()
+                                }
                             }
                         }
                     }
