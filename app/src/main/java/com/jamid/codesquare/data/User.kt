@@ -79,7 +79,7 @@ data class User(
     @Transient
     var isCurrentUser: Boolean = false,
     @Embedded(prefix = "user_")
-    var location: Location? = null,
+    var location: Location = Location(),
     var premiumState: Long = -1,
     var online: Boolean = false
 ): Parcelable {

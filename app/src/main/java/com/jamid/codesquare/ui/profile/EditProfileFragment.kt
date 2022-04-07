@@ -3,7 +3,6 @@ package com.jamid.codesquare.ui.profile
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
@@ -13,14 +12,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.chip.Chip
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
-import com.jamid.codesquare.databinding.InputLayoutBinding
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
+import com.jamid.codesquare.ui.InputSheetFragment
+import com.jamid.codesquare.ui.MessageDialogFragment
 
 @ExperimentalPagingApi
 class EditProfileFragment: Fragment() {
@@ -28,7 +26,7 @@ class EditProfileFragment: Fragment() {
     private lateinit var binding: FragmentEditProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
     private var profileImage: String = userImages.random()
-    private var loadingDialog: AlertDialog? = null
+    private var loadingFragment: MessageDialogFragment? = null
     private lateinit var currentUser: User
     private val needToUpdate = MutableLiveData<Boolean>()
 
@@ -42,19 +40,6 @@ class EditProfileFragment: Fragment() {
         inflater.inflate(R.menu.edit_profle_menu, menu)
     }
 
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-
-        val saveBtn = menu.getItem(0)
-        menu.getItem(0).isVisible = false
-
-        needToUpdate.observe(viewLifecycleOwner) {
-            val shouldUpdate = it ?: return@observe
-            saveBtn.isVisible = shouldUpdate
-        }
-
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
@@ -65,18 +50,15 @@ class EditProfileFragment: Fragment() {
                 }
 
                 val username = binding.usernameText.editText?.text.toString()
-
-                val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-                val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
-
-                loadingLayoutBinding.loadingText.text = getString(R.string.profile_upload_loading_text)
-
                 val updatedUser = currentUser.copy()
 
-                loadingDialog = MaterialAlertDialogBuilder(requireContext())
-                    .setView(loadingLayout)
-                    .setCancelable(false)
-                    .show()
+                loadingFragment = MessageDialogFragment.builder( getString(R.string.profile_upload_loading_text))
+                    .setIsHideable(false)
+                    .setIsDraggable(false)
+                    .shouldShowProgress(true)
+                    .build()
+
+                loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
 
                 val changes = mutableMapOf(
                     "name" to binding.nameText.editText?.text.toString(),
@@ -125,7 +107,7 @@ class EditProfileFragment: Fragment() {
             findNavController().navigateUp()
         } else {
             viewModel.updateUser(updatedUser, changes) { it1 ->
-                loadingDialog?.dismiss()
+                loadingFragment?.dismiss()
                 if (it1.isSuccessful) {
                     Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG).show()
                     viewModel.setCurrentImage(null)
@@ -217,7 +199,6 @@ class EditProfileFragment: Fragment() {
             onNewImageOrNullSet(image)
 
             if (image != null) {
-
                 setProfileImage(image)
 
                 if (image.authority?.contains("googleapis.com") == true) {
@@ -231,7 +212,21 @@ class EditProfileFragment: Fragment() {
 
         binding.addInterestBtn.setOnClickListener {
 
-            val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
+            val inputSheet = InputSheetFragment.builder("Adding interest helps us to search for related projects for you.")
+                .setTitle("Add Interest")
+                .setHint("Add interest ... ")
+                .setPositiveButton("Add") { _, _, s ->
+                    if (s.isNotBlank()) {
+                        addInterest(s)
+                    }
+                }
+                .setNegativeButton("Cancel") { a, _ ->
+                    a.dismiss()
+                }.build()
+
+            inputSheet.show(childFragmentManager, InputSheetFragment.TAG)
+
+            /*val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
             val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
 
             inputLayoutBinding.inputTextLayout.hint = "Add interest .. "
@@ -252,7 +247,7 @@ class EditProfileFragment: Fragment() {
                 }
                 .show()
 
-            alertDialog.window?.setGravity(Gravity.BOTTOM)
+            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
 
         }
 
@@ -350,6 +345,9 @@ class EditProfileFragment: Fragment() {
     }
 
     private fun onNewImageOrNullSet(image: Uri? = null) {
+
+        onChange()
+
         val currentUser = UserManager.currentUser
 
         val colorFilter =  ContextCompat.getColor(

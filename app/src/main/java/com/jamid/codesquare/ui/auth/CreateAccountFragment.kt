@@ -20,13 +20,14 @@ import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
 import com.jamid.codesquare.ui.MainActivity
+import com.jamid.codesquare.ui.MessageDialogFragment
 
 @ExperimentalPagingApi
 class CreateAccountFragment : Fragment() {
 
     private lateinit var binding: FragmentCreateAccountBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var loadingDialog: AlertDialog? = null
+    private var loadingFragment: MessageDialogFragment? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -141,7 +142,7 @@ class CreateAccountFragment : Fragment() {
         }
 
         UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
-            loadingDialog?.dismiss()
+            loadingFragment?.dismiss()
             binding.createBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
                 // Chang here
@@ -155,7 +156,7 @@ class CreateAccountFragment : Fragment() {
 
         viewModel.currentError.observe(viewLifecycleOwner) { exception ->
             if (exception != null) {
-                loadingDialog?.dismiss()
+                loadingFragment?.dismiss()
                 when (exception) {
                     is FirebaseAuthWeakPasswordException -> {
                         Log.d(TAG, "FirebaseAuthWeakPasswordException")
@@ -192,7 +193,13 @@ class CreateAccountFragment : Fragment() {
 
     private fun showDialog() {
         val msg = "Creating account .. Please wait for a while"
-        loadingDialog = (activity as MainActivity).showLoadingDialog(msg)
+        loadingFragment = MessageDialogFragment.builder(msg)
+            .setIsDraggable(false)
+            .setIsHideable(false)
+            .shouldShowProgress(true)
+            .build()
+
+        loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
     }
 
     private fun createAccount(name: String, email: String, password: String) {

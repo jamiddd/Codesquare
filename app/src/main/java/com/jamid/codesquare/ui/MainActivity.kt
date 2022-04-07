@@ -202,7 +202,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         viewModel.currentUser.observe(this) {
             if (it != null) {
                 if (previouslyFetchedLocation != null) {
-                    it.location = previouslyFetchedLocation
+                    it.location = previouslyFetchedLocation!!
                     viewModel.insertCurrentUser(it)
                     return@observe
                 }
@@ -246,7 +246,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 setMessagesListener(it.chatChannels)
 
                 viewModel.checkAndUpdateLocalProjects(it)
-
             }
         }
 
@@ -264,7 +263,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         onReceiveData()
 
-        // TODO("Not actually working, need to do a whole lot of changes for this")
         clearActiveNotifications()
 
 
@@ -580,6 +578,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
     private fun clearActiveNotifications() {
         NotificationManagerCompat.from(this).cancelAll()
+        // TODO("Not actually working, need to do a whole lot of changes for this")
     }
 
     override fun onLocationClick(place: Place) {

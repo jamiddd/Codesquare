@@ -66,6 +66,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     val multipleDocumentsContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
 
 
+    /*private val _currentUpdatedUser = MutableLiveData<User>().apply { value = null }
+    val currentUpdatedUser: LiveData<User> = _currentUpdatedUser
+
+    fun setCurrentUpdatedUser(user: User?) {
+        _currentUpdatedUser.postValue(user)
+    }*/
+
     /**
      * Flag to check whether sound network is available or not
      * */
@@ -173,25 +180,32 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
             val list = response.results as List<ResultMultiSearch<ResponseSearch>>
 
-            /* val usersList = mutableListOf<User>()
-             val projectsList = mutableListOf<Project>()*/
             val usersList = mutableListOf<UserMinimal2>()
             val projectsList = mutableListOf<ProjectMinimal2>()
 
             val searchList = mutableListOf<SearchQuery>()
             for (result in list) {
                 for (hit in result.response.hits) {
+
+
                     val type = hit.json["type"].toString()
+
                     if (type == "\"user\"") {
                         val user = hit.deserialize(UserMinimal2.serializer())
                         val searchQuery = SearchQuery(user.objectID, user.name, System.currentTimeMillis(), QUERY_TYPE_USER)
                         searchList.add(searchQuery)
                         usersList.add(user)
+
+                        Log.d(TAG, "search: $usersList")
+
                     } else {
                         val project = hit.deserialize(ProjectMinimal2.serializer())
                         val searchQuery = SearchQuery(project.objectID, project.name, System.currentTimeMillis(), QUERY_TYPE_PROJECT)
                         searchList.add(searchQuery)
                         projectsList.add(project)
+
+                        Log.d(TAG, "search: $projectsList")
+
                     }
                 }
             }
@@ -204,7 +218,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
             setSearchData(searchList)
         } catch (e: Exception) {
-            setNetworkError(e)
+            Log.e(TAG, "search: ${e.localizedMessage}")
         }
     }
 

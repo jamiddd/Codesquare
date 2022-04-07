@@ -30,6 +30,7 @@ import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.*
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
@@ -341,6 +342,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             adapter = userAdapter
             layoutManager =
                 LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
         }
 
         Firebase.firestore.collection(USERS)

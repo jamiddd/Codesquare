@@ -21,7 +21,6 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.chip.Chip
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.jamid.codesquare.*
@@ -91,14 +90,17 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 if (isUpdateMode) {
                     loadingLayoutBinding.loadingText.text = getString(R.string.update_project_loading)
 
-                    val dialog = MaterialAlertDialogBuilder(requireContext())
-                        .setView(loadingLayoutBinding.root)
-                        .setCancelable(false)
-                        .show()
+                    val dialogFragment = MessageDialogFragment.builder(getString(R.string.update_project_loading))
+                        .setIsHideable(false)
+                        .setIsDraggable(false)
+                        .shouldShowProgress(true)
+                        .build()
+
+                    dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
 
                     viewModel.updateProject { newProject, task ->
                         activity.runOnUiThread {
-                            dialog.dismiss()
+                            dialogFragment.dismiss()
                             if (task.isSuccessful) {
                                 val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
                                 Snackbar.make(mainRoot, "Project updated successfully", Snackbar.LENGTH_LONG).show()
@@ -117,14 +119,17 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 } else {
                     loadingLayoutBinding.loadingText.text = getString(R.string.create_project_loading)
 
-                    val dialog = MaterialAlertDialogBuilder(requireContext())
-                        .setView(loadingLayoutBinding.root)
-                        .setCancelable(false)
-                        .show()
+                    val dialogFragment = MessageDialogFragment.builder(getString(R.string.create_project_loading))
+                        .setIsDraggable(false)
+                        .setIsHideable(false)
+                        .shouldShowProgress(true)
+                        .build()
+
+                    dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
 
                     viewModel.createProject {
                         requireActivity().runOnUiThread {
-                            dialog.dismiss()
+                            dialogFragment.dismiss()
                             if (it.isSuccessful) {
                                 findNavController().navigateUp()
                                 viewModel.setCurrentProject(null)
@@ -323,34 +328,8 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         binding.addTagBtn.setOnClickListener {
-            /*val inputLayout = View.inflate(requireContext(), R.layout.input_layout, null)
-            val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
-
-            inputLayoutBinding.inputTextLayout.hint = "Add tag .. "
-
-            val alertDialog = MaterialAlertDialogBuilder(activity)
-                .setTitle("Add Tag")
-                .setMessage("Tags are helpful in searches and also to make sense of the project as to what category it belongs to. Don't use '#'")
-                .setView(inputLayout)
-                .setPositiveButton("Add") { _, _ ->
-                    if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
-                        val tag = inputLayoutBinding.inputTextLayout.text.trim().toString()
-
-                        val tags = processTagText(tag)
-                        for (t in tags) {
-                            addTag(t)
-                        }
-
-                    }
-                }.setNegativeButton("Cancel") { a, _ ->
-                    a.dismiss()
-                }.show()
-
-            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
-
             val frag = AddTagFragment()
             frag.show(requireActivity().supportFragmentManager, "AddTagFragment")
-
         }
 
         binding.addLinkBtn.setOnClickListener {
@@ -358,43 +337,17 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             val frag = InputSheetFragment.builder("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
                 .setTitle("Add link to project")
                 .setHint("Ex: https://wwww.google.com")
-                .setPositiveButton("Add link") { a, b, s ->
+                .setPositiveButton("Add link") { _, _, s ->
                     if (URLUtil.isValidUrl(s)) {
                         addLink(s)
                     } else {
                         toast("Not a proper link.")
                     }
-                }.setNegativeButton("Cancel") { a, b ->
+                }.setNegativeButton("Cancel") { a, _ ->
                     a.dismiss()
                 }.build()
 
             frag.show(requireActivity().supportFragmentManager, "InputSheetFrag")
-
-            /*val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
-            val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
-
-            inputLayoutBinding.inputTextLayout.hint = "Add link .. "
-            inputLayoutBinding.inputTextLayout.inputType = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            inputLayoutBinding.inputTextLayout.hint = "Ex: https://wwww.google.com"
-
-            val alertDialog = MaterialAlertDialogBuilder(activity)
-                .setTitle("Add Link")
-                .setMessage("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
-                .setView(inputLayout)
-                .setPositiveButton("Add") { _, _ ->
-                    if (!inputLayoutBinding.inputTextLayout.text.isNullOrBlank()) {
-                        val link = inputLayoutBinding.inputTextLayout.text!!.trim().toString()
-                        if (URLUtil.isValidUrl(link)) {
-                            addLink(link)
-                        } else {
-                            toast("Not a proper link.")
-                        }
-                    }
-                }.setNegativeButton("Cancel") { a, _ ->
-                    a.dismiss()
-                }.show()
-
-            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
         }
 
         binding.projectImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {

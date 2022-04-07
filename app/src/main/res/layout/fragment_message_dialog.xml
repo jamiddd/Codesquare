@@ -26,7 +26,6 @@
             android:fontFamily="@font/title_semi"
             android:gravity="center"
             android:padding="8dp"
-            android:text="Dialog Title"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textSize="17sp" />
 
@@ -51,7 +50,9 @@
             style="?android:attr/progressBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:visibility="gone" />
+            android:layout_marginBottom="12dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
     </LinearLayout>
 
@@ -74,7 +75,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:text="Cancel"
+        android:text="@string/cancel"
         app:cornerRadius="2dp"
         app:layout_constraintBottom_toBottomOf="@+id/dialog_positive_btn"
         app:layout_constraintEnd_toStartOf="@+id/dialog_positive_btn"

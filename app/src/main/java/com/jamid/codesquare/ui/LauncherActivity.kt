@@ -136,7 +136,20 @@ abstract class LauncherActivity : AppCompatActivity(){
                     }
                     IMAGE_PROFILE -> {
                         val singleImage = data.data
+
                         if (singleImage != null) {
+//                            val fileData = getFileData(singleImage)
+//
+//                            // if the profile picture
+//                            val sizeInMB: Float = fileData!!.size.toFloat() / (1024 * 1024)
+//                            if (sizeInMB > 1f) {
+//
+//
+//
+//                                toast("The size of the image is larger than 1 MB. Please select an image of size lower than 1 MB.", Toast.LENGTH_LONG)
+//                                return@registerForActivityResult
+//                            }
+
                             viewModel.setCurrentImage(singleImage)
                             val options = CropImageOptions().apply {
                                 fixAspectRatio = true
@@ -202,6 +215,26 @@ abstract class LauncherActivity : AppCompatActivity(){
             }
         }
     }
+
+//    data class FileData(val name: String, val size: Long, val ext: String)
+
+    /*private fun getFileData(item: Uri) : FileData? {
+        val cursor = contentResolver.query(item, null, null, null, null)
+        return try {
+            cursor?.moveToFirst()
+            val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+
+            val name = cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $item is null")
+            val size = (cursor.getLong(sizeIndex ?: 0))
+            cursor.close()
+            val ext = "." + name.split('.').last()
+            FileData(name, size, ext)
+        } catch (e: Exception) {
+            Log.e(TAG, "getFileData: ${e.localizedMessage}")
+            null
+        }
+    }*/
 
     val selectChatDocumentsUploadLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) {

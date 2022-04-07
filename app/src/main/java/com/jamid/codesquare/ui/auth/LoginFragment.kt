@@ -7,11 +7,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.addCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
@@ -20,15 +18,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.Debug
-import com.jamid.codesquare.data.Error
 import com.jamid.codesquare.databinding.FragmentLoginBinding
 import com.jamid.codesquare.ui.MainActivity
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.ui.MessageDialogFragment
 
 @ExperimentalPagingApi
 class LoginFragment : Fragment() {
@@ -36,7 +29,7 @@ class LoginFragment : Fragment() {
     private lateinit var binding: FragmentLoginBinding
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var googleSignInClient: GoogleSignInClient
-    private var loadingDialog: AlertDialog? = null
+    private var loadingFragment: MessageDialogFragment? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -158,8 +151,6 @@ class LoginFragment : Fragment() {
                     slideRightNavOptions()
                 )
             }
-
-            loadingDialog?.delayedDismiss()
         }
 
         binding.forgotPasswordBtn.setOnClickListener {
@@ -171,7 +162,6 @@ class LoginFragment : Fragment() {
         }
 
         binding.signInBtn.isEnabled = false
-
 
     }
 
@@ -186,8 +176,13 @@ class LoginFragment : Fragment() {
     }
 
     private fun showDialog() {
-        loadingDialog =
-            (activity as MainActivity).showLoadingDialog("Signing in .. Please wait for a while")
+        loadingFragment = MessageDialogFragment.builder("Signing in \uD83D\uDD13. Please wait for a while ... ")
+            .shouldShowProgress(true)
+            .setIsDraggable(false)
+            .setIsHideable(false)
+            .build()
+
+        loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
     }
 
     private fun signIn(email: String, password: String) {
@@ -199,7 +194,7 @@ class LoginFragment : Fragment() {
                 Log.d(TAG, "Login successful")
             } else {
                 binding.signInBtn.isEnabled = true
-                loadingDialog?.dismiss()
+                loadingFragment?.dismiss()
                 viewModel.setCurrentError(it.exception)
 
                 when (it.exception) {
@@ -228,12 +223,6 @@ class LoginFragment : Fragment() {
         val signInIntent = googleSignInClient.signInIntent
         (activity as MainActivity).requestGoogleSignInLauncher.launch(signInIntent)
 
-    }
-
-
-    private fun AlertDialog.delayedDismiss() = viewLifecycleOwner.lifecycleScope.launch {
-        delay(500)
-        this@delayedDismiss.dismiss()
     }
 
 }
