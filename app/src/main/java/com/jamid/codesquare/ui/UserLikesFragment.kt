@@ -1,11 +1,11 @@
 package com.jamid.codesquare.ui
 
-import androidx.fragment.app.Fragment
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.LIKED_USERS
+import com.jamid.codesquare.R
 import com.jamid.codesquare.USERS
 import com.jamid.codesquare.USER_ID
 import com.jamid.codesquare.adapter.recyclerview.PagingUserAdapter
@@ -27,7 +27,7 @@ class UserLikesFragment: PagerListFragment<User, UserViewHolder>() {
             viewModel.getUserSupporters(query, userId)
         }
 
-        binding.pagerNoItemsText.text = "No users found"
+        binding.pagerNoItemsText.text = getString(R.string.no_users_found)
 
     }
 

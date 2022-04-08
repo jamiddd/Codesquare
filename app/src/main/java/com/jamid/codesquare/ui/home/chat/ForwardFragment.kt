@@ -19,7 +19,7 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentForwardBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
-import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.ChatContainerFragment
 import java.io.File
 
 @ExperimentalPagingApi
@@ -106,7 +106,7 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
                                 is Result.Error -> {}
                                 is Result.Success -> {
                                     viewModel.disableSelectMode(chatChannelId)
-                                    (parentFragment as ChatContainerSample).navigateUp()
+                                    (parentFragment as ChatContainerFragment).navigateUp()
                                 }
                             }
                         }

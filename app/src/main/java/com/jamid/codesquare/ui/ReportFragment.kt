@@ -2,8 +2,6 @@ package com.jamid.codesquare.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.os.Parcelable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,13 +13,11 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentReportBinding
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.listeners.ImageClickListener
 
 @ExperimentalPagingApi
@@ -48,35 +44,7 @@ class ReportFragment: Fragment(), ImageClickListener {
         binding.contextImg.setImageURI(report.image)
         binding.contextName.text = report.title
 
-
         reportViewModel.setReportContext(report.contextId)
-
-//        val contextObject = arguments?.get("contextObject") ?: return
-
-        /*when (contextObject) {
-            is Project -> {
-                reportViewModel.setReportContext(contextObject.id)
-                setContextUi(contextObject.images.first(), contextObject.name)
-            }
-            is User -> {
-                reportViewModel.setReportContext(contextObject.id)
-                setContextUi(contextObject.photo, contextObject.name)
-            }
-            is Comment -> {
-                reportViewModel.setReportContext(contextObject.commentId)
-                FireUtility.getProject(contextObject.projectId) {
-                    when (it) {
-                        is Result.Error -> viewModel.setCurrentError(it.exception)
-                        is Result.Success -> {
-                            val project = it.data
-                            val commentByText = "Comment by " + project.creator.name
-                            setContextUi(contextObject.sender.photo, commentByText)
-                        }
-                        null -> Log.w(TAG, "Something went wrong while trying to fetch project with id: ${contextObject.projectId}")
-                    }
-                }
-            }
-        }*/
 
         viewModel.reportUploadImages.observe(viewLifecycleOwner) { reportImages ->
             if (!reportImages.isNullOrEmpty()) {
@@ -89,18 +57,17 @@ class ReportFragment: Fragment(), ImageClickListener {
             val reason = binding.reportReasonText.editText?.text.toString()
             reportViewModel.setReportContent(reason)
 
-            val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-            val loadingBinding = LoadingLayoutBinding.bind(loadingLayout)
-            loadingBinding.loadingText.text = "Sending report. Please wait for a while ... "
+            val frag = MessageDialogFragment.builder("Sending report. Please wait for a while ... ")
+                .setIsDraggable(false)
+                .setIsHideable(false)
+                .shouldShowProgress(true)
+                .build()
 
-            val dialog = MaterialAlertDialogBuilder(requireContext())
-                .setView(loadingBinding.root)
-                .setCancelable(false)
-                .show()
+            frag.show(childFragmentManager, MessageDialogFragment.TAG)
 
             reportViewModel.sendReportToFirebase {
 
-                dialog.dismiss()
+                frag.dismiss()
 
                 if (it.isSuccessful) {
                     requireActivity().runOnUiThread {
@@ -166,10 +133,6 @@ class ReportFragment: Fragment(), ImageClickListener {
     override fun onDestroy() {
         super.onDestroy()
         viewModel.setReportUploadImages(emptyList())
-    }
-
-    companion object {
-        private const val TAG = "ReportFragment"
     }
 
     override fun onImageClick(view: View, image: Image) {

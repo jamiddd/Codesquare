@@ -15,7 +15,7 @@ class UserAdapter(
     private val min: Boolean = false,
     private val vague: Boolean = false,
     private val grid: Boolean = false,
-    private val associatedChatChannel: ChatChannel? = null,
+    var associatedChatChannel: ChatChannel? = null,
     private val userClickListener: UserClickListener? = null
 ): ListAdapter<User, UserViewHolder>(UserComparator()){
 

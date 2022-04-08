@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -52,7 +51,9 @@ class SearchFragment: Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             delay(300)
-            binding.searchPager.setCurrentItem(query.type, true)
+            requireActivity().runOnUiThread {
+                binding.searchPager.setCurrentItem(query.type, true)
+            }
         }
 
         hideKeyboard()
@@ -61,10 +62,6 @@ class SearchFragment: Fragment() {
         toolbar?.setOnClickListener {
             findNavController().navigateUp()
         }
-    }
-
-    companion object {
-        private const val TAG = "SearchFragment"
     }
 
 }

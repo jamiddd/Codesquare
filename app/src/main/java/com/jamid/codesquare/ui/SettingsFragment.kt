@@ -67,27 +67,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     }
 
-    private fun removePreference(preference: Preference) {
-        val parent = getParent(preferenceScreen, preference)
-            ?: throw RuntimeException("Couldn't find preference")
-        parent.removePreference(preference)
-    }
-
-    private fun getParent(
-        groupToSearchIn: PreferenceGroup,
-        preference: Preference
-    ): PreferenceGroup? {
-        for (i in 0 until groupToSearchIn.preferenceCount) {
-            val child = groupToSearchIn.getPreference(i)
-            if (child === preference) return groupToSearchIn
-            if (child is PreferenceGroup) {
-                val result = getParent(child, preference)
-                if (result != null) return result
-            }
-        }
-        return null
-    }
-
     private fun setSubscriptionSetting(v: RecyclerView) {
 
         val context = v.context

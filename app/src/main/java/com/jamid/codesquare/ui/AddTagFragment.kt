@@ -14,7 +14,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.jamid.codesquare.*
@@ -23,7 +22,6 @@ import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.databinding.FragmentAddTagBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
-@Suppress("UNCHECKED_CAST")
 @ExperimentalPagingApi
 class AddTagFragment: RoundedBottomSheetDialogFragment(), SearchItemClickListener {
 
@@ -113,12 +111,12 @@ class AddTagFragment: RoundedBottomSheetDialogFragment(), SearchItemClickListene
             }
         }
 
-        val alphabets = "abcdefghijklmnopqrstuvwxyz"
+        val alphabets = getString(R.string.alphabets)
         FireUtility.getRandomInterests {
             if (it.isSuccessful) {
                 val snapshot = it.result
                 for (l in alphabets) {
-                    val tags = snapshot[l.toString()] as List<String>
+                    @Suppress("UNCHECKED_CAST") val tags = snapshot[l.toString()] as List<String>
                     preloadTags(tags)
                 }
             } else {

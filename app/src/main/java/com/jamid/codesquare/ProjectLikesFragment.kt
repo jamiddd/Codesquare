@@ -32,7 +32,7 @@ class ProjectLikesFragment: PagerListFragment<User, UserViewHolder>() {
 
         binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
 
-        binding.pagerNoItemsText.text = "No users found"
+        binding.pagerNoItemsText.text = getString(R.string.no_users_found)
 
     }
 }

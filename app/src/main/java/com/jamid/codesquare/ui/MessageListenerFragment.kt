@@ -2,7 +2,6 @@ package com.jamid.codesquare.ui
 
 import android.view.View
 import androidx.fragment.app.Fragment
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.data.Message
 
 abstract class MessageListenerFragment: Fragment(), MessageListener {
@@ -18,12 +17,6 @@ abstract class MessageListenerFragment: Fragment(), MessageListener {
 
     abstract fun onCheckForStaleData(message: Message)
 
-}
-
-interface MediaMessageListener {
-    fun onMessageImageClick(imageView: View, message: Message)
-    fun onMessageDocumentClick(message: Message)
-    fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit)
 }
 
 interface MessageListener {

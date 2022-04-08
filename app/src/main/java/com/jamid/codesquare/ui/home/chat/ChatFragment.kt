@@ -20,7 +20,7 @@ import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.ChatContainerFragment
 import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
@@ -42,7 +42,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     private fun setNewMessagesListener() {
         viewModel.getReactiveChatChannel(chatChannelId).observe(viewLifecycleOwner) {
-            (parentFragment as ChatContainerSample).isInProgressMode = false
+            (parentFragment as ChatContainerFragment).isInProgressMode = false
             scrollToBottom()
         }
     }

@@ -1,20 +1,15 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
-import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserMinimalAdapter
-import com.jamid.codesquare.data.QUERY_TYPE_USER
-import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentSearchUsersBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
@@ -53,10 +48,6 @@ class SearchUsersFragment: Fragment() {
             }
         }
 
-    }
-
-    companion object {
-        private const val TAG = "SearchUsersFragment"
     }
 
 }

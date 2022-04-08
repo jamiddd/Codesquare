@@ -1,7 +1,6 @@
 package com.jamid.codesquare.listeners
 
 import com.jamid.codesquare.data.Comment
-import com.jamid.codesquare.data.User
 import com.jamid.codesquare.data.UserMinimal
 
 interface CommentListener {

@@ -62,9 +62,9 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         (activity as MainActivity).networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
             if (!isNetworkAvailable) {
-                binding.pagerNoItemsText.text = "There's a problem with the network."
+                binding.pagerNoItemsText.text = getString(R.string.network_problem_warning)
             } else {
-                binding.pagerNoItemsText.text = "No projects to show at this time. Check back later."
+                binding.pagerNoItemsText.text = getString(R.string.no_projects_info)
             }
         }
 
@@ -180,16 +180,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
             } else {
                 val currentUser = UserManager.currentUser
                 val currentUserLocation = currentUser.location
-                if (currentUserLocation != null) {
-                    searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
-                } else {
-                    val tempLocation = LocationProvider.currentLocation
-                    if (tempLocation != null) {
-                        searchBasedOnLocation(GeoLocation(tempLocation.latitude, tempLocation.longitude))
-                    } else {
-                        LocationProvider.getLastLocation(a.fusedLocationProviderClient)
-                    }
-                }
+                searchBasedOnLocation(GeoLocation(currentUserLocation.latitude, currentUserLocation.longitude))
             }
         }
     }

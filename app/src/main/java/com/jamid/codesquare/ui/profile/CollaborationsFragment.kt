@@ -11,7 +11,6 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.PagerListFragment
@@ -65,7 +64,7 @@ class CollaborationsFragment: PagerListFragment<Project, PostViewHolder>() {
                         }
                         binding.pagerNoItemsText.text = getString(R.string.empty_collaborations_greet)
                     } else {
-                        binding.pagerNoItemsText.text = "No collaborations."
+                        binding.pagerNoItemsText.text = getString(R.string.no_collaborations)
                     }
                 }
             } else {

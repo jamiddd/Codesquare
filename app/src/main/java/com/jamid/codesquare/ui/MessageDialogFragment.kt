@@ -128,10 +128,10 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
                 return this
             }
 
-            fun setScrimVisibility(isVisible: Boolean): Builder {
+           /* fun setScrimVisibility(isVisible: Boolean): Builder {
                 messageDialogFragment.isScrimVisible = isVisible
                 return this
-            }
+            }*/
 
             fun build(): MessageDialogFragment {
                 return messageDialogFragment

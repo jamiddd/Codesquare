@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/popup_set_admin" android:title="Set as admin" />
-    <item android:id="@+id/popup_like_user" android:title="Like" />
-    <item android:id="@+id/popup_remove_user" android:title="Remove user" />
-    <item android:id="@+id/popup_report_user" android:title="Report" />
-</menu>

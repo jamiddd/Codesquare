@@ -9,7 +9,6 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.ui.PagerListFragment
 

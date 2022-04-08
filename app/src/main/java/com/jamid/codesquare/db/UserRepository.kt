@@ -15,8 +15,6 @@ import kotlinx.coroutines.*
 class UserRepository(db: CodesquareDatabase, private val scope: CoroutineScope) {
 
     private val _isSignedIn = MutableLiveData<Boolean>().apply { value = false }
-    /*val isSignedIn: LiveData<Boolean> = _isSignedIn*/
-
     var currentUser = User()
 
     private val testEmails = listOf(

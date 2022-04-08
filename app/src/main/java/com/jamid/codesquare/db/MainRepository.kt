@@ -265,10 +265,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         notificationDao.deleteNotification(notification)
     }
 
-    suspend fun insertOtherUser(otherUser: User) {
-        userDao.insert(otherUser)
-    }
-
     suspend fun insertInterests(interests: Array<out Interest>) {
         interestDao.insert(interests.toList())
     }
@@ -303,10 +299,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun getLocalProject(projectId: String): Project? {
-        return projectDao.getProject(projectId)
-    }
-
     suspend fun deleteLocalProject(project: Project) {
         projectDao.deleteProject(project)
     }
@@ -329,10 +321,6 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     fun getReactiveProject(projectId: String): LiveData<Project> {
         return projectDao.getReactiveProject(projectId)
-    }
-
-    fun getReactiveComment(commentId: String): LiveData<Comment> {
-        return commentDao.getReactiveComment(commentId)
     }
 
     suspend fun clearProjectInvites() {

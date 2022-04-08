@@ -20,7 +20,6 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.annotation.ColorInt
-import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.graphics.drawable.DrawableCompat
@@ -32,7 +31,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.NavOptions
 import androidx.navigation.navOptions
 import androidx.paging.ExperimentalPagingApi
-import androidx.viewpager2.widget.ViewPager2
 import com.airbnb.lottie.LottieAnimationView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.IndexQuery
@@ -42,20 +40,15 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
 import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.*
 import com.jamid.codesquare.ui.home.chat.*
-import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
 import kotlin.math.abs
-
-
 
 val colorPalettesDay = mutableListOf(
     Pair(R.color.chip_back_blue_day, R.color.chip_front_blue_day),
@@ -154,10 +147,9 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
         AnchorSide.Top -> {}
         AnchorSide.Right -> {}
         AnchorSide.Bottom -> {
-            val arrowX = anchorCenterX
             val arrowY = anchorY /*+ anchorView.measuredHeight*/ + resources.getDimension(R.dimen.generic_len_2)
 
-            val hb = arrowX.toFloat()/getWindowWidth()
+            val hb = anchorCenterX.toFloat() / getWindowWidth()
             val vb = arrowY/ getWindowHeight()
 
             Log.d(TAG, "showTooltip: hb=$hb, vb=$vb")
@@ -313,6 +305,7 @@ fun Fragment.showKeyboard() {
     view?.let { activity?.showKeyboard() }
 }
 
+@Suppress("DEPRECATION")
 private fun Context.showKeyboard() {
     val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     if (Build.VERSION.SDK_INT > 30) {
@@ -345,7 +338,7 @@ fun Context.isNightMode(): Boolean {
 }
 
 
-fun getExtensionForMime(mime: String): String {
+/*fun getExtensionForMime(mime: String): String {
     return when (mime) {
         "audio/aac" -> ".aac"
         "video/x-msvideo" -> ".avi"
@@ -397,7 +390,7 @@ fun getExtensionForMime(mime: String): String {
         "application/x-7z-compressed" -> ".7z"
         else -> ""
     }
-}
+}*/
 
 fun getTextForSizeInBytes(size: Long): String {
     return when {
@@ -716,24 +709,7 @@ fun LottieAnimationView.doOnAnimationEnd(onAnimationEnd: (p: Animator?) -> Unit)
     })
 }
 
-fun Fragment.showDialog(msg: String, title: String = "Collab", cancelable: Boolean = true, posLabel: String = "Yes", negLabel: String = "Cancel", positiveAction: () -> Unit): AlertDialog {
-    return requireContext().showDialog(msg, title, cancelable, posLabel, negLabel, positiveAction)
-}
-
-fun Context.showDialog(msg: String, title: String = "Collab", cancelable: Boolean = true, posLabel: String = "Yes", negLabel: String = "Cancel", positiveAction: () -> Unit): AlertDialog {
-    return MaterialAlertDialogBuilder(this)
-        .setTitle(title)
-        .setMessage(msg)
-        .setCancelable(cancelable)
-        .setPositiveButton(posLabel) { _, _ ->
-            positiveAction()
-        }.setNegativeButton(negLabel){ a, _ ->
-            a.dismiss()
-        }.show()
-
-}
-
-fun cropToSquare(bitmap: Bitmap): Bitmap? {
+/*fun cropToSquare(bitmap: Bitmap): Bitmap? {
     val width = bitmap.width
     val height = bitmap.height
     val newWidth = if (height > width) width else height
@@ -743,7 +719,7 @@ fun cropToSquare(bitmap: Bitmap): Bitmap? {
     var cropH = (height - width) / 2
     cropH = if (cropH < 0) 0 else cropH
     return Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight)
-}
+}*/
 
 fun downloadBitmapUsingFresco(context: Context, photo: String, onComplete: (bitmap: Bitmap?) -> Unit) {
     val imagePipeline = Fresco.getImagePipeline()

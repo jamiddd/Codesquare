@@ -29,16 +29,6 @@ class MyFirebaseMessagingService: FirebaseMessagingService() {
                     }
                 }
             }
-          /*  if (application != null) {
-
-
-
-                val intent = Intent(TOKEN_INTENT).apply {
-                    putExtra(ARG_TOKEN, token)
-                }
-                LocalBroadcastManager.getInstance(applicationContext)
-                    .sendBroadcast(intent)
-            }*/
         }
     }
 

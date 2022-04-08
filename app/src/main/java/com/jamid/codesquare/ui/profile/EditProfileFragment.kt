@@ -44,10 +44,8 @@ class EditProfileFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.edit_profile_save -> {
-                if (!validateUser()) {
-                    toast("Not valid")
+                if (!validateUser())
                     return true
-                }
 
                 val username = binding.usernameText.editText?.text.toString()
                 val updatedUser = currentUser.copy()
@@ -135,36 +133,42 @@ class EditProfileFragment: Fragment() {
         val nameText = binding.nameText.editText?.text
 
         if (nameText.isNullOrBlank()) {
-            toast("Name cannot be empty")
+            binding.nameText.isErrorEnabled = true
+            binding.nameText.error = "Name cannot be empty"
             return false
         }
 
         if (nameText.toString().length !in 4..30) {
-            toast("Name is either too short or too long")
+            binding.nameText.isErrorEnabled = true
+            binding.nameText.error = "Name is either too short or too long"
             return false
         }
 
         val usernameText = binding.usernameText.editText?.text
 
         if (usernameText.isNullOrBlank()) {
-            toast("Username cannot be empty")
+            binding.usernameText.isErrorEnabled = true
+            binding.usernameText.error = "Username cannot be empty"
             return false
         }
 
         if (usernameText.toString().contains(" ")) {
-            toast("Username cannot contain spaces")
+            binding.usernameText.isErrorEnabled = true
+            binding.usernameText.error = "Username cannot contain spaces"
             return false
         }
 
 
         if (usernameText.toString().length !in 4..16) {
-            toast("Username is either too short or too long")
+            binding.usernameText.isErrorEnabled = true
+            binding.usernameText.error = "Username is either too short or too long"
             return false
         }
 
         val aboutText = binding.aboutText.editText?.text
         if (!aboutText.isNullOrBlank() && aboutText.toString().length > 240) {
-            toast("The about text is too long.")
+            binding.aboutText.isErrorEnabled = true
+            binding.aboutText.error = "The about text is too long."
             return false
         }
 
@@ -226,32 +230,11 @@ class EditProfileFragment: Fragment() {
 
             inputSheet.show(childFragmentManager, InputSheetFragment.TAG)
 
-            /*val inputLayout = layoutInflater.inflate(R.layout.input_layout, null, false)
-            val inputLayoutBinding = InputLayoutBinding.bind(inputLayout)
-
-            inputLayoutBinding.inputTextLayout.hint = "Add interest .. "
-
-            val alertDialog = MaterialAlertDialogBuilder(requireContext())
-                .setView(inputLayout)
-                .setTitle("Add Interest")
-                .setMessage("Adding interest helps us to search for related projects for you.")
-                .setPositiveButton("Add") { _, _ ->
-                    val interestText = inputLayoutBinding.inputTextLayout.text
-                    if (!interestText.isNullOrBlank()) {
-                        val interest = interestText.toString()
-                        addInterest(interest)
-                    }
-                }
-                .setNegativeButton("Cancel") { a, _ ->
-                    a.dismiss()
-                }
-                .show()
-
-            alertDialog.window?.setGravity(Gravity.BOTTOM)*/
-
         }
 
         binding.nameText.editText?.doAfterTextChanged {
+            binding.nameText.isErrorEnabled = false
+            binding.nameText.error = null
             if (!it.isNullOrBlank()) {
                 checkState()
             } else {
@@ -260,6 +243,8 @@ class EditProfileFragment: Fragment() {
         }
 
         binding.usernameText.editText?.doAfterTextChanged {
+            binding.usernameText.isErrorEnabled = false
+            binding.usernameText.error = null
             if (!it.isNullOrBlank()) {
                 checkState()
             } else {
@@ -268,6 +253,8 @@ class EditProfileFragment: Fragment() {
         }
 
         binding.aboutText.editText?.doAfterTextChanged {
+            binding.aboutText.isErrorEnabled = false
+            binding.aboutText.error = null
             if (!it.isNullOrBlank()) {
                 checkState()
             } else {
@@ -280,6 +267,8 @@ class EditProfileFragment: Fragment() {
         }
 
         binding.tagText.editText?.doAfterTextChanged {
+            binding.tagText.isErrorEnabled = false
+            binding.tagText.error = null
             if (!it.isNullOrBlank()) {
                 checkState()
             } else {

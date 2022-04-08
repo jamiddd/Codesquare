@@ -10,6 +10,8 @@ const val ONE = "1"
 const val CREATED_AT = "createdAt"
 const val UPDATED_AT = "updatedAt"
 
+const val SENDER = "sender"
+
 const val FILE_PROV_AUTH = "com.jamid.codesquare.fileprovider"
 const val PURCHASES = "purchases"
 

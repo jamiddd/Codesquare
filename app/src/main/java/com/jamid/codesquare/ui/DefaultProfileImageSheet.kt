@@ -10,14 +10,13 @@ import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ImageSelectType
 import com.jamid.codesquare.databinding.CircleImageLayoutBinding
 import com.jamid.codesquare.databinding.DefaultProfileImageSheetBinding
 
 @ExperimentalPagingApi
-class DefaultProfileImageSheet: BottomSheetDialogFragment() {
+class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
 
     private lateinit var binding: DefaultProfileImageSheetBinding
     private val viewModel: MainViewModel by activityViewModels()

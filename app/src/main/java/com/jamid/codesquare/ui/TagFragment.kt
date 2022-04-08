@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import androidx.core.os.bundleOf
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -12,7 +11,6 @@ import com.jamid.codesquare.PROJECT
 import com.jamid.codesquare.PROJECTS
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import java.util.*
 

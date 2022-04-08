@@ -9,13 +9,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ProgressBar
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.libraries.places.api.model.Place
@@ -33,7 +33,6 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
 
     private lateinit var binding: FragmentLocationBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var progressBar: ProgressBar? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,11 +43,22 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
         return binding.root
     }
 
+    private fun onLocationsAvailable() {
+        binding.locationProgressText.hide()
+        binding.locationProgress.hide()
+        binding.locationRecycler.show()
+    }
+
+    private fun onLocationsBeingFetched() {
+        binding.locationProgressText.show()
+        binding.locationProgress.show()
+        binding.locationRecycler.hide()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val activity = requireActivity() as MainActivity
-        progressBar = activity.findViewById(R.id.main_progress_bar)
 
         val dialog = dialog!!
         val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
@@ -75,9 +85,21 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
             dismiss()
         }
 
+        locationAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
+            override fun onChanged() {
+                super.onChanged()
+                if (locationAdapter.itemCount > 0) {
+                    onLocationsAvailable()
+                } else {
+                    onLocationsBeingFetched()
+                }
+            }
+        })
+
         activity.networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
             if (isNetworkAvailable == true) {
-                progressBar?.show()
+
+                onLocationsBeingFetched()
 
                 val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
                 //should check null because in airplane mode it will be null
@@ -94,7 +116,9 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
                 if (LocationProvider.isLocationPermissionAvailable) {
                     if (LocationProvider.isLocationEnabled) {
                         LocationProvider.getNearbyPlaces {
-                            progressBar?.hide()
+
+                            onLocationsAvailable()
+
                             if (it.isSuccessful) {
                                 Log.d(TAG, "onViewCreated: Got result for nearby places")
 
@@ -102,7 +126,7 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
                                 val places = response.placeLikelihoods.map { it1 -> it1.place }
                                 locationAdapter.submitList(places)
                             } else {
-                                Log.e(TAG, "onViewCreated: ${it.exception?.localizedMessage}", )
+                                Log.e(TAG, "onViewCreated: ${it.exception?.localizedMessage}")
                             }
                         }
                     } else {
@@ -122,10 +146,14 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
 
                 // change progress bar ui changes
                 binding.locationText.editText?.doAfterTextChanged { queryText ->
-                    progressBar?.show()
+
+                    onLocationsBeingFetched()
+
                     if (!queryText.isNullOrBlank()) {
                         LocationProvider.getSearchPredictions(queryText.trim().toString()) { task ->
-                            progressBar?.hide()
+
+                            onLocationsAvailable()
+
                             if (task.isSuccessful) {
                                 val response = task.result.autocompletePredictions
                                 viewLifecycleOwner.lifecycleScope.launch {
@@ -146,11 +174,6 @@ class LocationFragment: RoundedBottomSheetDialogFragment(), LocationItemClickLis
 
     companion object {
         private const val TAG = "LocationFragment"
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        progressBar?.hide()
     }
 
     override fun onLocationClick(place: Place) {

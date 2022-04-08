@@ -1,9 +1,7 @@
 package com.jamid.codesquare.listeners
 
-import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.data.ProjectMinimal2
-import com.jamid.codesquare.data.ProjectRequest
 
 interface ProjectClickListener {
     fun onProjectClick(project: Project)

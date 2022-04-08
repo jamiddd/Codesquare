@@ -16,12 +16,10 @@ import com.jamid.codesquare.data.Message
 import kotlinx.coroutines.*
 import java.io.File
 
-class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, context: Context): BaseRepository(
-    db
-) {
+class ChatRepository(val db: CodesquareDatabase, private val scope: CoroutineScope, context: Context) {
 
-    val messageDao = database.messageDao()
-    private val chatChannelDao = database.chatChannelDao()
+    val messageDao = db.messageDao()
+    private val chatChannelDao = db.chatChannelDao()
     val errors = MutableLiveData<Exception>()
     private var currentUserId: String = ""
 
@@ -71,36 +69,6 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
     private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch (Dispatchers.IO) {
         chatChannelDao.insert(chatChannels)
     }
-
-    /*fun getLatestMessages(chatChannel: ChatChannel, onComplete: () -> Unit) {
-
-        val ref = Firebase.firestore.collection(CHAT_CHANNELS)
-            .document(chatChannel.chatChannelId)
-            .collection(MESSAGES)
-            .document(chatChannel.lastMessage!!.messageId)
-
-        FireUtility.getDocument(ref) {
-            if (it.isSuccessful) {
-                Firebase.firestore.collection(CHAT_CHANNELS)
-                    .document(chatChannel.chatChannelId)
-                    .collection(MESSAGES)
-                    .startAfter(it.result)
-                    .get()
-                    .addOnCompleteListener { it1 ->
-                        if (it1.isSuccessful) {
-                            val querySnapshot = it1.result
-                            val messages = querySnapshot.toObjects(Message::class.java)
-                            insertChannelMessages(messages)
-                        } else {
-                            errors.postValue(it1.exception)
-                        }
-                        onComplete()
-                    }
-            } else {
-                errors.postValue(it.exception)
-            }
-        }
-    }*/
 
     /**
      * To insert messages in the local database
@@ -210,10 +178,6 @@ class ChatRepository(db: CodesquareDatabase, private val scope: CoroutineScope, 
 
     suspend fun getChatChannel(chatChannelId: String): ChatChannel? {
         return chatChannelDao.getChatChannel(chatChannelId)
-    }
-
-    fun getMediaMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
-        return messageDao.getMediaMessages(chatChannelId, limit)
     }
 
     fun clearChatChannels() = scope.launch (Dispatchers.IO) {

@@ -36,7 +36,6 @@
             android:paddingBottom="8dp"
             android:visibility="gone"
             tools:itemCount="1"
-            tools:listitem="@layout/imageview_layout_small"
             tools:visibility="visible" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -62,7 +61,7 @@
             android:paddingTop="4dp"
             android:paddingEnd="12dp"
             android:paddingBottom="4dp"
-            android:text="One or more of the files to be uploaded is too big. Try uploading files of smaller size."
+            android:text="@string/upload_error_sample"
             android:visibility="gone" />
 
         <LinearLayout
@@ -99,14 +98,15 @@
                 android:layout_marginBottom="4dp"
                 android:layout_weight="1"
                 android:ems="10"
-                android:hint="Write something here ..."
+                android:hint="@string/write_something_here"
                 android:inputType="textMultiLine"
                 android:minHeight="48dp"
                 android:paddingStart="12dp"
                 android:paddingTop="8dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="8dp"
-                android:textSize="16sp" />
+                android:textSize="16sp"
+                android:importantForAutofill="no" />
 
             <Button
                 android:id="@+id/chat_send_btn"

@@ -6,7 +6,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
@@ -38,8 +37,6 @@ object LocationProvider {
     var currentLocation: Location? = null
     private var nearbyResults: List<PlaceLikelihood> = emptyList()
     private var errors: List<Exception> = emptyList()
-
-    private val currentLocations = mutableListOf<Za>()
 
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
@@ -276,16 +273,7 @@ object LocationProvider {
         return places
     }
 
-    data class Za(
-        val longitude: Double,
-        val latitude: Double,
-        val name: String,
-        val address: String,
-        val id: String?,
-        val hash: String
-    )
-
-    @SuppressLint("MissingPermission")
+    /*@SuppressLint("MissingPermission")
     fun getCurrentPlace() {
         val placeFields =
             listOf(Place.Field.ID, Place.Field.NAME, Place.Field.ADDRESS, Place.Field.LAT_LNG)
@@ -327,12 +315,7 @@ object LocationProvider {
                 it.exception?.localizedMessage?.toString()?.let { it1 -> Log.e(TAG, it1) }
             }
         }
-    }
-
-    fun requestToEnableLocation() {
-
-    }
-
+    }*/
 
     const val TAG = "LocationProvider"
 

@@ -46,7 +46,7 @@ object UserManager {
         val frag = MessageDialogFragment.builder("Are you sure you want to log out?")
             .setPositiveButton("Log out") { _, _ ->
                 Firebase.auth.signOut()
-                setAuthStateForceful(false)
+                setAuthStateForceful()
                 onPositive()
             }
             .setNegativeButton("Cancel") { d, _ ->
@@ -81,7 +81,7 @@ object UserManager {
         }
     }
 
-    private fun setAuthStateForceful(isSignedIn: Boolean) {
+    private fun setAuthStateForceful(isSignedIn: Boolean = false) {
         authStateData.postValue(isSignedIn)
         if (!isSignedIn) {
             isEmailVerified = false
@@ -104,7 +104,5 @@ object UserManager {
             }
         }
     }
-
-    private const val TAG = "UserManager"
 
 }

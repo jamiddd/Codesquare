@@ -1,7 +1,12 @@
 package com.jamid.codesquare.ui
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
@@ -64,10 +69,6 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         setProjectRelatedUi(project)
 
         binding.projectCommentBtn.setOnClickListener {
-            projectClickListener.onProjectCommentClick(project)
-        }
-
-        binding.projectLikeCommentText.setOnClickListener {
             projectClickListener.onProjectCommentClick(project)
         }
 
@@ -175,10 +176,6 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                 // * Join button
 
                 setMutableProperties(currentProject)
-
-                // setting archive related properties
-//                setArchiveProperties(project)
-
             } else {
                 Log.i(TAG, "Not possible for a project to be absent in local database " +
                         "because it was taken from local database.")
@@ -366,6 +363,9 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                 }
             }.addOnFailureListener {
                 Log.e(TAG, "setContributors: ${it.localizedMessage}")
+                Snackbar.make(binding.root, "Something went wrong while trying to fetch contributors. Try again later ..", Snackbar.LENGTH_LONG)
+                    .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.error_color))
+                    .show()
             }
     }
 
@@ -422,18 +422,95 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             }
 
         } else {
-
-
-            binding.projectsLastComment.root.hide()
-            binding.commentsHeader.hide()
-            binding.seeAllComments.hide()
+            onEmptyComments()
         }
+    }
+
+    private fun getLikesString(size: Int): String {
+        return if (size == 1) {
+            "1 Like"
+        } else {
+            "$size Likes"
+        }
+    }
+
+    private fun getCommentsString(size: Int): String {
+        return if (size == 1) {
+            "1 Comment"
+        } else {
+            "$size Comments"
+        }
+    }
+
+    private fun setLikeText() {
+        // setting like comment text
+
+        val likesString = getLikesString(project.likes.toInt())
+        val commentsString = getCommentsString(project.comments.toInt())
+
+        val likeCommentText =
+            "$likesString • $commentsString"
+
+        val cs1 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                projectClickListener.onProjectSupportersClick(project)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val cs2 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                projectClickListener.onProjectCommentClick(project)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val s1 = 0
+        val e1 = likesString.length
+
+        val s2 = e1 + 3
+        val e2 = s2 + commentsString.length
+
+        val formattedString = SpannableString(likeCommentText)
+        formattedString.setSpan(cs1, s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        formattedString.setSpan(cs2, s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        binding.projectLikeCommentText.movementMethod = LinkMovementMethod.getInstance()
+
+        binding.projectLikeCommentText.text = formattedString
+    }
+
+    private fun onEmptyComments() {
+        binding.projectsLastComment.root.hide()
+        binding.commentsHeader.hide()
+        binding.seeAllComments.hide()
+        binding.commentLayoutProgress.hide()
     }
 
     private fun onCheckForStaleData(comment: Comment) {
 
         fun onChangeNeeded(lastComment: Comment, commentSender: User) {
-            val changes = mapOf<String, Any?>("sender" to commentSender.minify(), "updatedAt" to System.currentTimeMillis())
+            val changes = mapOf(SENDER to commentSender.minify(), UPDATED_AT to System.currentTimeMillis())
 
             lastComment.sender = commentSender.minify()
             lastComment.updatedAt = System.currentTimeMillis()
@@ -441,27 +518,10 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             updateLastComment(lastComment, changes)
         }
 
-        val cachedUser = viewModel.getCachedUser(comment.senderId)
-        if (cachedUser == null) {
-            FireUtility.getUser(comment.senderId) {
-                val senderResult = it ?: return@getUser
 
-                when (senderResult) {
-                    is Result.Error -> Log.e(TAG, "setCommentUi: ${senderResult.exception.localizedMessage}")
-                    is Result.Success -> {
-                        val commentSender = senderResult.data
-                        if (commentSender.updatedAt > comment.updatedAt) {
-                            onChangeNeeded(comment, commentSender)
-                        }
-
-                        viewModel.insertUserToCache(commentSender)
-
-                    }
-                }
-            }
-        } else {
-            if (cachedUser.updatedAt > comment.updatedAt) {
-                onChangeNeeded(comment, cachedUser)
+        (activity as MainActivity).getUserImpulsive(comment.senderId) { commentSender ->
+            if (commentSender.updatedAt > comment.updatedAt) {
+                onChangeNeeded(comment, commentSender)
             }
         }
     }
@@ -473,6 +533,11 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                 
                 if (err != null) {
                     Log.e(TAG, "setCommentRelatedUi: ${err.localizedMessage}")
+                    Snackbar.make(binding.root, "Something went wrong while trying to fetch comments", Snackbar.LENGTH_LONG)
+                        .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.error_color))
+                        .show()
+
+                    onEmptyComments()
                 }
 
                 if (snap != null && snap.exists()) {
@@ -480,6 +545,8 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                     if (commentChannel != null) {
                         setCommentUi(commentChannel)
                     }
+                } else {
+                    onEmptyComments()
                 }
 
             }
@@ -605,14 +672,8 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
      * */
     private fun setMutableProperties(project: Project) {
 
-        // setting like comment text
-        val likeSuffix = if (project.likes.toInt() == 1) "Like" else "Likes"
-        val commentSuffix = if (project.comments.toInt() == 1) "Comment" else "Comments"
 
-        val likeCommentText =
-            "${project.likes} $likeSuffix • ${project.comments} $commentSuffix"
-
-        binding.projectLikeCommentText.text = likeCommentText
+        setLikeText()
 
         // Like button related code
         binding.projectLikeBtn.apply {

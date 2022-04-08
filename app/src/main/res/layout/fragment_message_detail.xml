@@ -32,7 +32,7 @@
             android:paddingTop="8dp"
             android:paddingEnd="12dp"
             android:paddingBottom="8dp"
-            android:text="Read by"
+            android:text="@string/read_by"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="16sp" />
 
@@ -41,8 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            tools:itemCount="2"
-            tools:listitem="@layout/user_item_alt" />
+            tools:itemCount="2" />
 
         <View
             android:id="@+id/divider23"
@@ -58,7 +57,7 @@
             android:paddingTop="8dp"
             android:paddingEnd="12dp"
             android:paddingBottom="8dp"
-            android:text="Delivered to"
+            android:text="@string/delivered_to"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="16sp" />
 
@@ -66,8 +65,7 @@
             android:id="@+id/delivered_to_recycler"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:itemCount="3"
-            tools:listitem="@layout/user_item_alt" />
+            tools:itemCount="3" />
 
         <View
             android:id="@+id/divider24"

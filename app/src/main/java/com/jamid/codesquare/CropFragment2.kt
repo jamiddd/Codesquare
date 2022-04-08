@@ -11,11 +11,9 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
 import com.jamid.codesquare.databinding.FragmentCrop2Binding
 import kotlinx.coroutines.runBlocking
 import java.io.ByteArrayOutputStream
-//import com.steelkiwi.cropiwa.config.CropIwaSaveConfig
 import java.io.File
 import java.io.FileOutputStream
 

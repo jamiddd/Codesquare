@@ -13,7 +13,6 @@ import android.transition.TransitionManager
 import android.util.Log
 import android.view.View
 import androidx.activity.addCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
@@ -43,7 +42,6 @@ import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
@@ -59,7 +57,6 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.data.ImageSelectType.*
 import com.jamid.codesquare.databinding.ActivityMainBinding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import com.jamid.codesquare.listeners.*
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
@@ -166,20 +163,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         val i = Intent(Intent.ACTION_VIEW)
         i.data = Uri.parse(url)
         startActivity(i)
-    }
-
-    fun showLoadingDialog(msg: String): AlertDialog {
-        val loadingLayout = layoutInflater.inflate(R.layout.loading_layout, null, false)
-        val loadingLayoutBinding = LoadingLayoutBinding.bind(loadingLayout)
-
-        loadingLayoutBinding.loadingText.text = msg
-
-        loadingDialog = MaterialAlertDialogBuilder(this)
-            .setView(loadingLayout)
-            .setCancelable(false)
-            .show()
-
-        return loadingDialog!!
     }
 
     @SuppressLint("UnsafeOptInUsageError", "VisibleForTests")
@@ -2192,13 +2175,30 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             OPTION_12 -> {
                 if (project != null) {
                     if (project.isArchived) {
-                        showDialog("Are you sure you want to un-archive this project?", "Un-archiving project ... ") {
-                            unArchiveProject(project)
-                        }
+
+                        val frag = MessageDialogFragment.builder("Are you sure you want to un-archive this project?")
+                            .setTitle("Un-archiving project ... ")
+                            .setPositiveButton("Un-Archive") { _, _ ->
+                                unArchiveProject(project)
+                            }
+                            .setNegativeButton("Cancel") { a, _ ->
+                                a.dismiss()
+                            }
+                            .build()
+
+                        frag.show(supportFragmentManager, MessageDialogFragment.TAG)
+
                     } else {
-                        showDialog("Are you sure you want to archive this project?", "Archiving project ...", posLabel = "Archive") {
-                            archiveProject(project)
-                        }
+
+                        val frag = MessageDialogFragment.builder("Are you sure you want to archive this project?")
+                            .setTitle("Archiving project ...")
+                            .setPositiveButton("Archive") { _, _ ->
+                                archiveProject(project)
+                            }.setNegativeButton("Cancel") { a, _ ->
+                                a.dismiss()
+                            }.build()
+
+                        frag.show(supportFragmentManager, MessageDialogFragment.TAG)
                     }
                 }
             }

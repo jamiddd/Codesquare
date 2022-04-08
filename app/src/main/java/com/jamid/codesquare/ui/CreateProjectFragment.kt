@@ -9,6 +9,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.children
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -29,7 +30,6 @@ import com.jamid.codesquare.data.ImageSelectType
 import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.FragmentCreateProjectBinding
-import com.jamid.codesquare.databinding.LoadingLayoutBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -82,14 +82,9 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                 viewModel.setCurrentProjectContent(getContent())
                 viewModel.setCurrentProjectLinks(getLinks())
 
-                val d = View.inflate(requireContext(), R.layout.loading_layout, null)
-
-                val loadingLayoutBinding = LoadingLayoutBinding.bind(d)
                 val activity = requireActivity()
 
                 if (isUpdateMode) {
-                    loadingLayoutBinding.loadingText.text = getString(R.string.update_project_loading)
-
                     val dialogFragment = MessageDialogFragment.builder(getString(R.string.update_project_loading))
                         .setIsHideable(false)
                         .setIsDraggable(false)
@@ -117,8 +112,6 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
                         }
                     }
                 } else {
-                    loadingLayoutBinding.loadingText.text = getString(R.string.create_project_loading)
-
                     val dialogFragment = MessageDialogFragment.builder(getString(R.string.create_project_loading))
                         .setIsDraggable(false)
                         .setIsHideable(false)
@@ -164,27 +157,27 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
     private fun validateProjectContent(): Boolean {
         if (binding.projectTitleText.editText?.text.isNullOrBlank()) {
-            toast("Title cannot be empty.")
-            binding.projectTitleText.editText?.requestFocus()
+            binding.projectTitleText.isErrorEnabled = true
+            binding.projectTitleText.error = "Title cannot be empty."
             return false
         }
 
         if (binding.projectTitleText.editText?.text.toString().length !in 6..100) {
-            toast("Title must be longer than 5 characters and shorter than 100 characters.")
-            binding.projectTitleText.editText?.requestFocus()
+            binding.projectTitleText.isErrorEnabled = true
+            binding.projectTitleText.error = "Title must be longer than 5 characters and shorter than 100 characters."
             return false
         }
 
         if (binding.projectContentText.editText?.text.isNullOrBlank()) {
-            toast("Content must not be empty.")
-            binding.projectContentText.editText?.requestFocus()
+            binding.projectContentText.isErrorEnabled = true
+            binding.projectContentText.error = "Content must not be empty."
             return false
         }
 
         val currentProject = viewModel.currentProject.value
         return if (currentProject != null) {
             if (currentProject.images.isEmpty()) {
-                toast("Must include at least one image for the project.")
+                Snackbar.make(binding.root, "Must include at least one image for the project.", Snackbar.LENGTH_LONG).show()
                 false
             } else {
                 true
@@ -224,6 +217,16 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             onFlingListener = null
             helper.attachToRecyclerView(this)
             layoutManager = imagesManager
+        }
+
+        binding.projectContentText.editText?.doAfterTextChanged {
+            binding.projectContentText.isErrorEnabled = false
+            binding.projectContentText.error = null
+        }
+
+        binding.projectTitleText.editText?.doAfterTextChanged {
+            binding.projectTitleText.isErrorEnabled = false
+            binding.projectTitleText.error = null
         }
 
         viewModel.currentProject.observe(viewLifecycleOwner) { currentProject ->

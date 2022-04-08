@@ -68,9 +68,9 @@
 
     <fragment
         android:id="@+id/chatContainerSample"
-        android:name="com.jamid.codesquare.ui.ChatContainerSample"
+        android:name="com.jamid.codesquare.ui.ChatContainerFragment"
         android:label=" "
-        tools:layout="@layout/chat_container_sample_layout">
+        tools:layout="@layout/fragment_chat_container">
 
         <argument android:name="title" app:argType="string" android:defaultValue="Title" />
 

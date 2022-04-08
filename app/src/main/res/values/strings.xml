@@ -127,7 +127,6 @@
     <string name="update_password_header">Enter old password to change password …</string>
     <string name="old_password">Old password</string>
     <string name="new_password">New password</string>
-    <string name="verify">Verify</string>
     <string name="cancel">Cancel</string>
     <string name="upgrade_plan">Upgrade plan</string>
     <string name="remove_subscription">Remove subscription</string>
@@ -183,4 +182,21 @@
     <string name="no_projects">No projects</string>
     <string name="choose_your_plan">Choose your <b>Subscription</b></string>
     <string name="update_chat_rules">Update rules of this chat</string>
+
+    <string name="alphabets">abcdefghijklmnopqrstuvwxyz</string>
+    <string name="update">Update</string>
+    <string name="enter_new_password">Enter new password …</string>
+    <string name="verify">Verify</string>
+    <string name="no_users_found">No users found</string>
+    <string name="network_problem_warning">There\'s a problem with the network.</string>
+    <string name="no_projects_info">No projects to show at this time. Check back later.</string>
+    <string name="no_collaborations">No collaborations.</string>
+    <string name="location">Location</string>
+    <string name="location_info">To use location services, enable location and give permission to the app to use your location.</string>
+    <string name="add_location_to_project">Add location to project</string>
+    <string name="fetching_locations_please_wait">Fetching locations … Please wait</string>
+    <string name="read_by">Read by</string>
+    <string name="delivered_to">Delivered to</string>
+    <string name="upload_error_sample">One or more of the files to be uploaded is too big. Try uploading files of smaller size.</string>
+
 </resources>

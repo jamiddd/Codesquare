@@ -12,7 +12,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
-import com.jamid.codesquare.ui.ChatContainerSample
+import com.jamid.codesquare.ui.ChatContainerFragment
 
 @ExperimentalPagingApi
 class ChannelGuidelinesFragment : Fragment() {
@@ -55,7 +55,7 @@ class ChannelGuidelinesFragment : Fragment() {
                     FireUtility.updateChatChannel(chatChannel.chatChannelId, changes) {
                         if (it.isSuccessful) {
                             Snackbar.make(binding.root, "Rules updated", Snackbar.LENGTH_LONG).show()
-                            (parentFragment as ChatContainerSample).navigateUp()
+                            (parentFragment as ChatContainerFragment).navigateUp()
                         } else {
                             viewModel.setCurrentError(it.exception)
                         }

@@ -4,15 +4,19 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
+import androidx.paging.ExperimentalPagingApi
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentUpdatePasswordBinding
 
+@OptIn(ExperimentalPagingApi::class)
 class UpdatePasswordFragment: Fragment() {
 
     private lateinit var binding: FragmentUpdatePasswordBinding
@@ -33,7 +37,14 @@ class UpdatePasswordFragment: Fragment() {
         binding.primaryAction.disable()
 
         binding.oldPasswordText.editText?.doAfterTextChanged {
+            binding.oldPasswordText.isErrorEnabled = false
+            binding.oldPasswordText.error = null
             binding.primaryAction.isEnabled = !it.isNullOrBlank() && it.toString().isValidPassword()
+        }
+
+        binding.newPasswordText.editText?.doAfterTextChanged {
+            binding.newPasswordText.isErrorEnabled = false
+            binding.newPasswordText.error = null
         }
 
         binding.primaryAction.setOnClickListener {
@@ -59,30 +70,34 @@ class UpdatePasswordFragment: Fragment() {
                                         if (it.isSuccessful) {
                                             // verification successful
                                             actionModeDone = true
-                                            binding.primaryAction.text = "Update"
-                                            binding.headerText.text = "Enter new password ... "
+                                            binding.primaryAction.text = getString(R.string.update)
+                                            binding.headerText.text = getString(R.string.enter_new_password)
                                             binding.primaryAction.show()
                                             binding.updatePasswordProgress.hide()
                                             binding.oldPasswordText.hide()
                                             binding.newPasswordText.show()
                                         } else {
                                             // verification gone wrong
-                                            binding.primaryAction.text = "Verify"
+                                            binding.primaryAction.text = getString(R.string.verify)
                                             binding.primaryAction.show()
                                             binding.updatePasswordProgress.hide()
                                             binding.oldPasswordText.editText?.text?.clear()
-                                            toast("The password you entered in wrong.")
+
+                                            binding.oldPasswordText.isErrorEnabled = true
+                                            binding.oldPasswordText.error = "The password you entered in wrong."
                                         }
                                     }
                             }
                         }
                     } else {
-                        toast("Enter a valid password")
+                        binding.oldPasswordText.isErrorEnabled = true
+                        binding.oldPasswordText.error = "Enter a valid password"
                         binding.primaryAction.show()
                         binding.updatePasswordProgress.hide()
                     }
                 } else {
-                    toast("Enter your old password")
+                    binding.oldPasswordText.isErrorEnabled = true
+                    binding.oldPasswordText.error = "Enter your old password"
                 }
             } else {
                 // update
@@ -95,21 +110,26 @@ class UpdatePasswordFragment: Fragment() {
                             binding.primaryAction.show()
                             binding.newPasswordText.editText?.text?.clear()
 
+                            val activity = activity as MainActivity
+
                             if (it1.isSuccessful) {
                                 // password changed
-
-                                toast("Password updated successfully.")
+                                Snackbar.make(activity.binding.root, "Password updated successfully.", Snackbar.LENGTH_LONG).show()
                                 findNavController().navigateUp()
                             } else {
                                 // password didn't change
-                                toast("Something went wrong. Try again later.")
+                                Snackbar.make(activity.binding.root, "Something went wrong. Try again later.", Snackbar.LENGTH_LONG)
+                                    .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.error_color))
+                                    .show()
                             }
                         }
                     } else {
-                        toast("Enter a valid password")
+                        binding.newPasswordText.isErrorEnabled = true
+                        binding.newPasswordText.error = "Enter a valid password"
                     }
                 } else {
-                    toast("Enter a new password")
+                    binding.newPasswordText.isHelperTextEnabled = true
+                    binding.newPasswordText.helperText = "Enter a new password"
                 }
             }
         }

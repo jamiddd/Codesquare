@@ -61,17 +61,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val userCache = mutableMapOf<String, User>()
     private val projectCache = mutableMapOf<String, Project>()
 
-    val multipleImagesContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
-
-    val multipleDocumentsContainer = MutableLiveData<List<Uri>>().apply { value = emptyList() }
-
-
-    /*private val _currentUpdatedUser = MutableLiveData<User>().apply { value = null }
-    val currentUpdatedUser: LiveData<User> = _currentUpdatedUser
-
-    fun setCurrentUpdatedUser(user: User?) {
-        _currentUpdatedUser.postValue(user)
-    }*/
 
     /**
      * Flag to check whether sound network is available or not
@@ -123,17 +112,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     private val client = ClientSearch(ApplicationID(BuildConfig.ALGOLIA_ID), APIKey(BuildConfig.ALGOLIA_SECRET))
 
-    private val _networkError = MutableLiveData<Exception>().apply { value = null }
-   /* val networkError: LiveData<Exception> = _networkError*/
-
-
-
     fun setSearchData(searchList: List<SearchQuery>?) {
         _recentSearchList.postValue(searchList)
-    }
-
-    private fun setNetworkError(exception: Exception?) {
-        _networkError.postValue(exception)
     }
 
     fun searchInterests(query: String) = viewModelScope.launch (Dispatchers.IO) {
@@ -867,7 +847,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.removeUserFromAdmin(chatChannelId, userId, onComplete)
     }
 
-    suspend fun getLocalProject(projectId: String): Project? {
+    private suspend fun getLocalProject(projectId: String): Project? {
         return repo.getProject(projectId)
     }
 
@@ -903,10 +883,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertProjectInvites(newProjectInvites)
     }
 
-    fun insertProjectsWithoutProcessing(vararg projects: Project) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertProjectsWithoutProcessing(projects)
-    }
-
     fun deleteNotificationById(id: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotificationById(id)
     }
@@ -926,10 +902,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun deleteAdProjects() = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteAdProjects()
-    }
-
-    fun getChannelContributorsLive(formattedChannelId: String): LiveData<List<User>> {
-        return repo.getChannelContributorsLive(formattedChannelId)
     }
 
     fun deleteLocalProjectRequest(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
@@ -983,11 +955,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.disableLocationBasedProjects()
     }
 
-    fun getProjectRequest(projectId: String, onComplete: (ProjectRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+    private fun getProjectRequest(projectId: String, onComplete: (ProjectRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         onComplete(repo.getProjectRequest(projectId))
     }
-
-
 
     /* Chat related functions */
 
@@ -1347,10 +1317,6 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun getProject(projectId: String, function: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         function(repo.getProject(projectId))
-    }
-
-    fun deleteProjectRequestById(id: String) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteProjectRequestById(id)
     }
 
     fun deleteProjectById(projectId: String) = viewModelScope.launch (Dispatchers.IO) {

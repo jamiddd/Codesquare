@@ -14,6 +14,8 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.android.material.transition.MaterialSharedAxis
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
@@ -21,10 +23,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
 import com.jamid.codesquare.listeners.CommonImageListener
 import com.jamid.codesquare.listeners.UserClickListener
-import com.jamid.codesquare.ui.ChatContainerSample
-import com.jamid.codesquare.ui.MainActivity
-import com.jamid.codesquare.ui.MessageListenerFragment
-import com.jamid.codesquare.ui.OptionsFragment
+import com.jamid.codesquare.ui.*
 
 @ExperimentalPagingApi
 class ChatDetailFragment: Fragment(), UserClickListener {
@@ -34,8 +33,6 @@ class ChatDetailFragment: Fragment(), UserClickListener {
     private lateinit var userAdapter: UserAdapter
     private lateinit var chatChannel: ChatChannel
     private lateinit var project: Project
-
-    private var prevList = mutableListOf<User>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -81,12 +78,7 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
             if (reactiveChatChannel != null) {
                 chatChannel = reactiveChatChannel
-
-                userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = reactiveChatChannel, userClickListener = this)
-                binding.chatContributorsRecycler.adapter = userAdapter
-
-                userAdapter.submitList(prevList)
-                userAdapter.notifyDataSetChanged()
+                userAdapter.associatedChatChannel = chatChannel
 
                 if (reactiveChatChannel.administrators.contains(currentUser.id)) {
                     binding.updateGuidelinesBtn.show()
@@ -103,12 +95,12 @@ class ChatDetailFragment: Fragment(), UserClickListener {
                 }
 
                 binding.updateGuidelinesBtn.setOnClickListener {
-                    (parentFragment as ChatContainerSample).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
+                    (parentFragment as ChatContainerFragment).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
                         CHAT_CHANNEL to reactiveChatChannel))
                 }
 
                 binding.chatMediaHeader.setOnClickListener {
-                    (parentFragment as ChatContainerSample).navigate(ChatMediaFragment.TAG, bundleOf(
+                    (parentFragment as ChatContainerFragment).navigate(ChatMediaFragment.TAG, bundleOf(
                         CHAT_CHANNEL to reactiveChatChannel))
                 }
 
@@ -117,18 +109,28 @@ class ChatDetailFragment: Fragment(), UserClickListener {
 
         setMediaRecyclerAndData(chatChannel.chatChannelId)
 
+        Firebase.firestore.collection(USERS)
+            .whereArrayContains(COLLABORATIONS, project.id)
+            .addSnapshotListener { querySnapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
+                }
 
-        viewModel.getChannelContributorsLive("%${chatChannel.chatChannelId}%").observe(viewLifecycleOwner) {
-            if (it.isNotEmpty()) {
-                prevList = it.distinctBy { it1 ->
-                    it1.id
-                }.toMutableList()
-                userAdapter.submitList(prevList)
-            } else {
-                toast("Something went wrong")
-                Log.d(TAG, "No contributors ...")
+                if (querySnapshot != null && !querySnapshot.isEmpty) {
+                    val contributors = mutableListOf<User>()
+                    val users = querySnapshot.toObjects(User::class.java)
+                    contributors.addAll(users)
+
+                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                        contributors.add(it1)
+                        onContributorsFetched(contributors)
+                    }
+                } else {
+                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                        onContributorsFetched(listOf(it1))
+                    }
+                }
             }
-        }
 
         val listener = CommonImageListener()
 
@@ -142,6 +144,12 @@ class ChatDetailFragment: Fragment(), UserClickListener {
             (activity as MainActivity).showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
         }
 
+    }
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun onContributorsFetched(contributors: List<User>) {
+        userAdapter.submitList(contributors)
+        userAdapter.notifyDataSetChanged()
     }
 
     fun setRules(chatChannel: ChatChannel) {

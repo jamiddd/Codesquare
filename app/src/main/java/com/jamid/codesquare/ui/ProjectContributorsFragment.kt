@@ -46,9 +46,6 @@ class ProjectContributorsFragment: Fragment() {
 
         project = arguments?.getParcelable(PROJECT) ?: return
         val prefetchedContributors = arguments?.getParcelableArrayList<User>("contributors") ?: arrayListOf()
-
-        var creator = User()
-
         userAdapter = UserAdapter(small = true, grid = true)
 
         binding.contributorsRecycler.apply {
