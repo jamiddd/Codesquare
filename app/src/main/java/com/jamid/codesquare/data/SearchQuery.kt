@@ -1,12 +1,14 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "search_query")
 @Parcelize
+@Keep
 data class SearchQuery(@PrimaryKey val id: String, val queryString: String, val createdAt: Long, val type: Int): Parcelable {
     constructor(): this("", "", System.currentTimeMillis(), QUERY_TYPE_PROJECT)
 }

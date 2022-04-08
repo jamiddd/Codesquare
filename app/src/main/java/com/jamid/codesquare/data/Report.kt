@@ -1,11 +1,13 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
+@Keep
 data class Report(
     var id: String,
     var senderId: String,

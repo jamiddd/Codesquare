@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -29,6 +30,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @IgnoreExtraProperties
 @Entity(tableName = "notifications")
+@Keep
 data class Notification(
     @PrimaryKey
     var id: String,

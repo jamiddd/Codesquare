@@ -1,11 +1,13 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
+import com.google.gson.annotations.SerializedName
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -46,41 +48,71 @@ import kotlinx.serialization.Transient
 @Entity(tableName = "users")
 @Parcelize
 @Serializable
+@Keep
 data class User(
     @PrimaryKey(autoGenerate = false)
-    val id: String,
+    @SerializedName("id")
+    var id: String,
+    @SerializedName("name")
     var name: String,
+    @SerializedName("username")
     var username: String,
+    @SerializedName("tag")
     var tag: String,
+    @SerializedName("email")
     var email: String,
+    @SerializedName("about")
     var about: String,
+    @SerializedName("photo")
     var photo: String,
+    @SerializedName("interests")
     var interests: List<String> = emptyList(),
+    @SerializedName("likedUsers")
     var likedUsers: List<String> = emptyList(),
+    @SerializedName("likedProjects")
     var likedProjects: List<String> = emptyList(),
+    @SerializedName("likedComments")
     var likedComments: List<String> = emptyList(),
+    @SerializedName("savedProjects")
     var savedProjects: List<String> = emptyList(),
+    @SerializedName("archivedProjects")
     var archivedProjects: List<String> = emptyList(),
+    @SerializedName("collaborations")
     var collaborations: List<String> = emptyList(),
+    @SerializedName("projects")
     var projects: List<String> = emptyList(),
+    @SerializedName("projectRequests")
     var projectRequests: List<String> = emptyList(),
+    @SerializedName("projectInvites")
     var projectInvites: List<String> = emptyList(),
+    @SerializedName("chatChannels")
     var chatChannels: List<String> = emptyList(),
+    @SerializedName("token")
     var token: String = "",
+    @SerializedName("projectsCount")
     var projectsCount: Long = 0,
+    @SerializedName("collaborationsCount")
     var collaborationsCount: Long = 0,
+    @SerializedName("likesCount")
     var likesCount: Long = 0,
+    @SerializedName("createdAt")
     var createdAt: Long = -1,
+    @SerializedName("updatedAt")
     var updatedAt: Long = -1,
     @Exclude @set: Exclude @get: Exclude
     @Transient
+    @SerializedName("isLiked")
     var isLiked: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
     @Transient
+    @SerializedName("isCurrentUser")
     var isCurrentUser: Boolean = false,
     @Embedded(prefix = "user_")
+    @SerializedName("location")
     var location: Location = Location(),
+    @SerializedName("premiumState")
     var premiumState: Long = -1,
+    @SerializedName("online")
     var online: Boolean = false
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), "", 0, 0, 0, 0, 0, false, false)

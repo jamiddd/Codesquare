@@ -1,10 +1,12 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
+@Keep
 data class Feedback(
     var id: String,
     var content: String,

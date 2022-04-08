@@ -1,5 +1,8 @@
 package com.jamid.codesquare.data
 
+import androidx.annotation.Keep
+
+@Keep
 sealed class Result<out T : Any> {
 
     data class Success<out T : Any>(val data: T) : Result<T>()

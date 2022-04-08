@@ -1,12 +1,14 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
 @IgnoreExtraProperties
+@Keep
 data class Metadata(
     var size: Long, // in bytes
     var name: String,

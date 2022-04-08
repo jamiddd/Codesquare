@@ -11,7 +11,7 @@ import com.jamid.codesquare.data.dao.*
 
 @Database(
     entities = [Project::class, User::class, Interest::class, ProjectInvite::class, ChatChannel::class, Message::class, ProjectRequest::class, Comment::class, Notification::class, SearchQuery::class],
-    version = 10
+    version = 11
 )
 @TypeConverters(Converters::class)
 abstract class CodesquareDatabase : RoomDatabase() {

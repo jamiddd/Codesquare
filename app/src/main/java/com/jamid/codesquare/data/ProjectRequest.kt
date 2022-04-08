@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -9,6 +10,7 @@ import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "project_requests")
 @Parcelize
+@Keep
 data class ProjectRequest(
     @PrimaryKey(autoGenerate = false)
     var requestId: String,

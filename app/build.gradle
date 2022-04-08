@@ -27,7 +27,7 @@ android {
         applicationId "com.jamid.codesquare"
         minSdk 23
         targetSdk 31
-        versionCode 16
+        versionCode 18
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -59,7 +59,7 @@ android {
 
             initWith debug
 
-            minifyEnabled false // Enables code shrinking for the release build type.
+            minifyEnabled true // Enables code shrinking for the release build type.
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             debuggable false
         }
@@ -102,7 +102,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.4.1'
 
     // navigation
-    def navigation_version = '2.5.0-alpha03'
+    def navigation_version = '2.5.0-alpha04'
     implementation "androidx.navigation:navigation-fragment-ktx:$navigation_version"
     implementation "androidx.navigation:navigation-ui-ktx:$navigation_version"
 
@@ -118,8 +118,8 @@ dependencies {
     implementation "androidx.room:room-paging:2.4.2"
 
     // coroutines
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0-native-mt'
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0-native-mt'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.6.0'
 
     // Firebase
     implementation platform('com.google.firebase:firebase-bom:26.2.0')

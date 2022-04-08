@@ -22,6 +22,8 @@
 
 -keep class androidx.appcompat.widget.** { *; }
 
+-keep public class com.jamid.codesquare.data.**
+
 # Keep `Companion` object fields of serializable classes.
 # This avoids serializer lookup through `getDeclaredClasses` as done for named companion objects.
 -if @kotlinx.serialization.Serializable class **
