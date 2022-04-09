@@ -158,7 +158,9 @@
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
-                    app:icon="@drawable/ic_round_add_24" />
+                    android:contentDescription="@string/add_media_to_chat"
+                    app:icon="@drawable/ic_round_add_24"
+                    tools:ignore="TouchTargetSizeCheck" />
 
                 <EditText
                     android:id="@+id/chat_input_layout"
@@ -172,6 +174,7 @@
                     android:layout_weight="1"
                     android:ems="10"
                     android:hint="@string/write_something_here"
+                    android:importantForAutofill="no"
                     android:inputType="textMultiLine"
                     android:minHeight="48dp"
                     android:paddingStart="12dp"
@@ -179,7 +182,7 @@
                     android:paddingEnd="12dp"
                     android:paddingBottom="8dp"
                     android:textSize="16sp"
-                    android:importantForAutofill="no" />
+                    tools:ignore="TextContrastCheck" />
 
                 <Button
                     android:id="@+id/chat_send_btn"
@@ -189,9 +192,11 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginEnd="8dp"
                     android:layout_marginBottom="4dp"
+                    android:contentDescription="@string/send_message"
                     android:paddingStart="8dp"
                     android:paddingEnd="0dp"
-                    app:icon="@drawable/ic_round_arrow_forward_24" />
+                    app:icon="@drawable/ic_round_arrow_forward_24"
+                    tools:ignore="TouchTargetSizeCheck" />
             </LinearLayout>
 
         </LinearLayout>

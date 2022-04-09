@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?selectableItemBackground"
+    android:contentDescription="@string/the_whole_layout_of_location_item"
     android:clickable="true"
     android:focusable="true"
     android:paddingTop="4dp"

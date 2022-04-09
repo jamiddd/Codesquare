@@ -31,8 +31,9 @@
             android:layout_height="wrap_content"
             android:drawablePadding="16dp"
             android:gravity="center_vertical"
-            android:text="Select from gallery"
-            app:drawableStartCompat="@drawable/ic_image_coloured" />
+            android:text="@string/select_from_gallery"
+            app:drawableStartCompat="@drawable/ic_image_coloured"
+            tools:ignore="TextContrastCheck" />
 
         <TextView
             android:id="@+id/remove_selected_image_btn"
@@ -41,8 +42,9 @@
             android:layout_height="wrap_content"
             android:drawablePadding="16dp"
             android:gravity="center_vertical"
-            android:text="Remove selected image"
-            app:drawableStartCompat="@drawable/ic_remove" />
+            android:text="@string/remove_selected_image"
+            app:drawableStartCompat="@drawable/ic_remove"
+            tools:ignore="TextContrastCheck" />
 
         <View
             android:id="@+id/divider7"
@@ -55,7 +57,7 @@
             style="@style/AppTheme.ListItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Select from default"
+            android:text="@string/select_from_default"
             app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_down_24" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -63,8 +65,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:clipToPadding="false"
+            android:contentDescription="@string/images_for_profile_picture"
             android:paddingStart="12dp"
             android:paddingTop="12dp"
+            android:paddingEnd="0dp"
             tools:itemCount="1"
             tools:listitem="@layout/circle_image_layout" />
     </LinearLayout>

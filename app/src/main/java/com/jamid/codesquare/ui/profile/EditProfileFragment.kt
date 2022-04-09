@@ -42,6 +42,7 @@ class EditProfileFragment: Fragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
+
         return when (item.itemId) {
             R.id.edit_profile_save -> {
                 if (!validateUser())

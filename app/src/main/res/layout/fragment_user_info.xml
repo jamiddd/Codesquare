@@ -31,7 +31,7 @@
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16sp"
                 android:fontFamily="@font/rubik_medium"
-                android:text="... And what are you interested in?,"
+                android:text="@string/and_what_are_you_interested_in"
                 android:textAppearance="@style/TextAppearance.AppCompat.Display1"
                 android:textSize="30sp"
                 app:layout_constraintBottom_toTopOf="@+id/interest_search_recycler"
@@ -48,7 +48,7 @@
                 android:layout_marginTop="100dp"
                 android:layout_marginEnd="16sp"
                 android:fontFamily="@font/rubik_medium"
-                android:text="Tell us about you,"
+                android:text="@string/tell_us_about_you"
                 android:textAppearance="@style/TextAppearance.AppCompat.Display1"
                 android:textSize="30sp"
                 app:layout_constraintBottom_toTopOf="@+id/about_text"
@@ -70,7 +70,7 @@
                 android:background="@drawable/chat_edittext_background"
                 android:ems="10"
                 android:gravity="start|top"
-                android:hint="Write about yourself ...."
+                android:hint="@string/write_about_yourself"
                 android:inputType="textMultiLine"
                 android:minHeight="120dp"
                 android:padding="16dp"
@@ -78,7 +78,9 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/about_header" />
+                app:layout_constraintTop_toBottomOf="@+id/about_header"
+                tools:ignore="TextContrastCheck"
+                android:importantForAutofill="no" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/interests_container"
@@ -125,7 +127,7 @@
                 android:background="@drawable/chat_edittext_background"
                 android:drawablePadding="12dp"
                 android:ems="10"
-                android:hint="Search for topics ..."
+                android:hint="@string/search_for_topics"
                 android:imeActionLabel="Add"
                 android:imeOptions="actionDone"
                 android:inputType="textPersonName"
@@ -134,7 +136,9 @@
                 android:paddingEnd="12dp"
                 app:layout_constraintEnd_toEndOf="@+id/interest_search_recycler"
                 app:layout_constraintStart_toStartOf="@+id/interest_search_recycler"
-                app:layout_constraintTop_toTopOf="@+id/interest_search_recycler" />
+                app:layout_constraintTop_toTopOf="@+id/interest_search_recycler"
+                tools:ignore="TextContrastCheck"
+                android:importantForAutofill="no" />
 
 
             <com.google.android.material.button.MaterialButton
@@ -143,6 +147,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:enabled="false"
+                android:contentDescription="@string/search_for_interests"
                 app:icon="@drawable/ic_round_search_24"
                 app:layout_constraintBottom_toBottomOf="@+id/interest_search_text"
                 app:layout_constraintEnd_toEndOf="@+id/interest_search_recycler"
@@ -152,14 +157,14 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/back_btn"
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="Back"
+        android:text="@string/back"
         app:icon="@drawable/ic_round_arrow_back_24"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
         app:layout_constraintStart_toStartOf="parent"
@@ -171,7 +176,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
-        android:text="Done"
+        android:text="@string/done"
         app:icon="@drawable/ic_round_done_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

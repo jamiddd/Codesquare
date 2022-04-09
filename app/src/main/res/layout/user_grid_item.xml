@@ -21,7 +21,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:placeholderImage="@color/normal_grey"
-        app:roundAsCircle="true" />
+        app:roundAsCircle="true"
+        tools:ignore="ImageContrastCheck" />
 
     <TextView
         android:id="@+id/user_name_small"

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -45,7 +46,8 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/name"
                 android:imeOptions="actionNext"
-                android:inputType="textPersonName" />
+                android:inputType="textPersonName"
+                tools:ignore="TextContrastCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -66,7 +68,8 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/username"
                 android:imeOptions="actionNext"
-                android:inputType="textPersonName" />
+                android:inputType="textPersonName"
+                tools:ignore="TextContrastCheck" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -86,7 +89,8 @@
                 android:layout_height="wrap_content"
                 android:hint="@string/tag"
                 android:imeOptions="actionNext"
-                android:inputType="textPersonName" />
+                android:inputType="textPersonName"
+                tools:ignore="TextContrastCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -106,7 +110,8 @@
                 android:hint="@string/about"
                 android:imeOptions="actionDone"
                 android:inputType="textMultiLine"
-                android:minHeight="100dp" />
+                android:minHeight="100dp"
+                tools:ignore="TextContrastCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.chip.ChipGroup

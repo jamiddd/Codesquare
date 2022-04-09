@@ -9,11 +9,12 @@
         android:id="@+id/no_images_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="No images"
+        android:text="@string/no_images"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="TextContrastCheck" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chat_images_recycler"

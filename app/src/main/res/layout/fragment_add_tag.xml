@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?actionBarSize"
         android:gravity="center"
-        android:text="Add tag to Project"
+        android:text="@string/add_tag_to_project"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintBottom_toTopOf="@id/add_tag_scroll"
         app:layout_constraintEnd_toEndOf="parent"
@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="Close"
+        android:text="@string/close"
         app:layout_constraintBottom_toBottomOf="@id/add_tags_header"
         app:layout_constraintStart_toStartOf="@id/add_tags_header"
         app:layout_constraintTop_toTopOf="@id/add_tags_header" />
@@ -36,7 +36,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:text="Add"
+        android:text="@string/add"
         app:icon="@drawable/ic_round_add_24"
         app:layout_constraintBottom_toBottomOf="@id/add_tags_header"
         app:layout_constraintEnd_toEndOf="@id/add_tags_header"
@@ -73,7 +73,8 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="@string/write_something_here" />
+                    android:hint="@string/write_something_here"
+                    tools:ignore="TextContrastCheck" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <androidx.recyclerview.widget.RecyclerView

@@ -24,7 +24,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:placeholderImage="@color/normal_grey"
-        app:roundAsCircle="true" />
+        app:roundAsCircle="true"
+        tools:ignore="ImageContrastCheck" />
 
     <LinearLayout
         android:id="@+id/request_content_container"
@@ -61,7 +62,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:text="Accept"
+        android:text="@string/accept"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

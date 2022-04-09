@@ -186,7 +186,8 @@
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintHorizontal_chainStyle="packed"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/project_like_comment_text" />
+                app:layout_constraintTop_toBottomOf="@id/project_like_comment_text"
+                tools:ignore="TouchTargetSizeCheck" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/project_comment_btn"
@@ -203,7 +204,7 @@
                 app:layout_constraintEnd_toStartOf="@id/project_save_btn"
                 app:layout_constraintStart_toEndOf="@id/project_like_btn"
                 app:layout_constraintTop_toTopOf="@id/project_like_btn"
-                tools:layout_editor_absoluteX="52dp" />
+                tools:ignore="TouchTargetSizeCheck" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/project_save_btn"
@@ -217,7 +218,7 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/project_comment_btn"
                 app:layout_constraintTop_toTopOf="@id/project_comment_btn"
-                tools:layout_editor_absoluteX="92dp" />
+                tools:ignore="TouchTargetSizeCheck" />
 
 
             <com.google.android.gms.ads.AdView

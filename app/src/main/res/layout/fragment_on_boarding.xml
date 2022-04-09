@@ -25,7 +25,7 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="48dp"
             android:orientation="horizontal">
 
             <Button
@@ -37,8 +37,8 @@
                 android:layout_marginEnd="0dp"
                 android:text="@string/previous" />
 
-            <Space
-                android:layout_width="wrap_content"
+            <View
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1" />
 
@@ -65,9 +65,9 @@
                     android:layout_height="wrap_content" />
             </com.google.android.material.tabs.TabLayout>
 
-            <Space
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            <View
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
                 android:layout_weight="1" />
 
             <Button

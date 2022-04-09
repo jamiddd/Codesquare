@@ -19,14 +19,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/notification_title"
         app:placeholderImage="@color/normal_grey"
-        app:roundAsCircle="true" />
+        app:roundAsCircle="true"
+        tools:ignore="ImageContrastCheck" />
 
     <TextView
         android:id="@+id/notification_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Notification Title"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/notification_body"
@@ -54,7 +54,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        android:text="12:35 pm, Today"
         android:textSize="12sp"
         app:layout_constraintBottom_toTopOf="@+id/notification_stub"
         app:layout_constraintStart_toStartOf="@+id/notification_body"

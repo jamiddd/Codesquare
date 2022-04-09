@@ -20,7 +20,8 @@
         app:layout_constraintStart_toStartOf="@+id/mini_project_thumbnail"
         app:layout_constraintTop_toBottomOf="@+id/mini_project_thumbnail"
         app:placeholderImage="@color/light_grey"
-        app:roundAsCircle="true" />
+        app:roundAsCircle="true"
+        tools:ignore="ImageContrastCheck" />
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/mini_project_thumbnail"
@@ -37,7 +38,8 @@
         app:layout_constraintVertical_bias="0.0"
         app:layout_constraintVertical_chainStyle="packed"
         app:placeholderImage="@color/light_grey"
-        app:roundedCornerRadius="8dp" />
+        app:roundedCornerRadius="8dp"
+        tools:ignore="ImageContrastCheck" />
 
     <TextView
         android:id="@+id/mini_project_name"
@@ -76,17 +78,19 @@
         app:layout_constraintStart_toStartOf="@+id/mini_project_user_img"
         app:layout_constraintTop_toBottomOf="@+id/mini_project_user_img" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/mini_project_option"
         style="@style/AppTheme.ProjectItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/options_for_this_project"
         app:icon="@drawable/ic_round_more_horiz_24"
         app:layout_constraintBottom_toBottomOf="@+id/mini_project_user_img"
         app:layout_constraintEnd_toEndOf="@+id/mini_project_name"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/mini_project_info"
-        app:layout_constraintTop_toTopOf="@+id/mini_project_user_img" />
+        app:layout_constraintTop_toTopOf="@+id/mini_project_user_img"
+        tools:ignore="TouchTargetSizeCheck" />
 
     <TextView
         android:id="@+id/mini_project_info"

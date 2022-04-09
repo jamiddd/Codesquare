@@ -29,7 +29,7 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:padding="12dp"
-            android:text="Send invites"
+            android:text="@string/send_invites"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textSize="18sp"
             app:layout_constraintBottom_toTopOf="@+id/projects_list"

@@ -30,7 +30,7 @@
                 android:id="@+id/random"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Random"
+                android:text="@string/random"
                 app:chipIcon="@drawable/ic_round_shuffle_24"
                 app:chipStrokeWidth="1dp" />
 
@@ -38,13 +38,13 @@
                 android:id="@+id/near_me"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Near me"
+                android:text="@string/near_me"
                 app:chipIcon="@drawable/ic_round_location_on_18"
                 app:chipStrokeWidth="1dp" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/prev_tag_btn"
         style="@style/AppTheme.TagPrevBtn"
         android:layout_width="wrap_content"
@@ -57,13 +57,14 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/next_tag_btn"
         style="@style/AppTheme.TagNextBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:elevation="8dp"
         app:cornerRadius="0dp"
+        android:contentDescription="@string/scroll_right_in_tags_container"
         app:icon="@drawable/ic_round_keyboard_arrow_right_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

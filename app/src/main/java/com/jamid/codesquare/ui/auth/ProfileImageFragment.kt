@@ -23,7 +23,7 @@ class ProfileImageFragment : Fragment() {
 
     private lateinit var binding: FragmentProfileImageBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private var profileImage: String? = null
+    private var profileImage: String? = userImages.random()
 
     private var listener: BaseControllerListener<ImageInfo>? = null
 

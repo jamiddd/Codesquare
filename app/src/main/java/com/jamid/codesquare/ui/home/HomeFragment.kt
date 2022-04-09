@@ -80,7 +80,6 @@ class HomeFragment: Fragment() {
     }
 
     private fun setCurrentUserPhotoAsDrawable(menu: Menu, photo: String) {
-
         if (this@HomeFragment.isDetached)
             return
 

@@ -42,7 +42,8 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Project Title" />
+                    android:hint="@string/project_title"
+                    tools:ignore="TextContrastCheck,TouchTargetSizeCheck" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
@@ -56,8 +57,9 @@
                 <com.google.android.material.textfield.TextInputEditText
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Project Content"
-                    android:minHeight="100dp" />
+                    android:hint="@string/project_content"
+                    android:minHeight="100dp"
+                    tools:ignore="TextContrastCheck" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.chip.ChipGroup
@@ -70,7 +72,7 @@
                     android:id="@+id/add_link_btn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Add link"
+                    android:text="@string/add_link"
                     app:chipIcon="@drawable/ic_round_add_link_24" />
             </com.google.android.material.chip.ChipGroup>
 
@@ -90,7 +92,7 @@
                     android:id="@+id/add_tag_btn"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Add tag"
+                    android:text="@string/add_tag"
                     app:chipIcon="@drawable/ic_round_add_24" />
             </com.google.android.material.chip.ChipGroup>
 
@@ -148,7 +150,7 @@
                 android:paddingTop="4dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="4dp"
-                android:text="1/2"
+                android:text="@string/_1_2"
                 android:textColor="@color/white" />
 
             <com.google.android.material.button.MaterialButton
@@ -159,10 +161,13 @@
                 android:layout_gravity="end"
                 android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/darkest_transparent"
-                android:paddingLeft="6dp"
+                android:contentDescription="@string/remove_current_image"
+                android:paddingStart="6dp"
+                android:paddingEnd="0dp"
                 app:icon="@drawable/ic_round_close_24"
                 app:iconSize="18dp"
-                app:iconTint="@color/white" />
+                app:iconTint="@color/white"
+                tools:ignore="TouchTargetSizeCheck" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/clear_all_images_btn"
@@ -171,10 +176,13 @@
                 android:layout_height="30dp"
                 android:layout_gravity="end"
                 android:backgroundTint="@color/darkest_transparent"
-                android:paddingLeft="6dp"
+                android:contentDescription="@string/clear_all_selection"
+                android:paddingStart="6dp"
+                android:paddingEnd="0dp"
                 app:icon="@drawable/ic_round_clear_all_24"
                 app:iconSize="18dp"
-                app:iconTint="@color/white" />
+                app:iconTint="@color/white"
+                tools:ignore="TouchTargetSizeCheck" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>

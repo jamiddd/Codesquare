@@ -102,7 +102,7 @@ dependencies {
     implementation 'androidx.fragment:fragment-ktx:1.4.1'
 
     // navigation
-    def navigation_version = '2.5.0-alpha04'
+    def navigation_version = '2.5.0-alpha03'
     implementation "androidx.navigation:navigation-fragment-ktx:$navigation_version"
     implementation "androidx.navigation:navigation-ui-ktx:$navigation_version"
 

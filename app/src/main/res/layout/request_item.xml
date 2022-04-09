@@ -56,25 +56,25 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/request_secondary_action"
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:text="Cancel"
+        android:text="@string/cancel"
         android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="@+id/request_primary_action"
         app:layout_constraintEnd_toStartOf="@+id/request_primary_action"
         app:layout_constraintTop_toTopOf="@+id/request_primary_action"
         tools:visibility="visible" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/request_primary_action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Accept"
+        android:text="@string/accept"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/request_content_container"

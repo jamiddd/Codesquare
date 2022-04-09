@@ -41,7 +41,6 @@
             android:layout_marginStart="32dp"
             android:layout_marginEnd="24dp"
             android:gravity="center"
-            android:text="Document Name"
             android:textSize="16sp"
             app:layout_constraintBottom_toTopOf="@+id/document_size"
             app:layout_constraintEnd_toEndOf="parent"
@@ -55,11 +54,11 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:gravity="center"
-            android:text="123 KB"
             app:layout_constraintBottom_toTopOf="@+id/document_download_btn"
             app:layout_constraintEnd_toEndOf="@+id/document_name"
             app:layout_constraintStart_toStartOf="@+id/document_name"
-            app:layout_constraintTop_toBottomOf="@+id/document_name" />
+            app:layout_constraintTop_toBottomOf="@+id/document_name"
+            tools:ignore="TextContrastCheck" />
 
         <Button
             android:id="@+id/document_download_btn"
@@ -67,7 +66,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
-            android:text="Download"
+            android:text="@string/download"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

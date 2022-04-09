@@ -12,11 +12,12 @@
         style="@style/AppTheme.ProjectItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:contentDescription="@string/save_this_project_for_later"
         app:icon="@drawable/save_selector"
         app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
         app:layout_constraintStart_toEndOf="@+id/project_comment_btn"
         app:layout_constraintTop_toTopOf="@+id/project_comment_btn"
-        tools:ignore="SpeakableTextPresentCheck" />
+        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/project_user_img"
@@ -77,7 +78,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/linearLayout5"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/linearLayout5"
-        tools:ignore="SpeakableTextPresentCheck" />
+        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
 
     <View
         android:id="@+id/divider5"
@@ -129,7 +130,8 @@
         android:contentDescription="@string/like_btn_desc"
         app:layout_constraintBottom_toTopOf="@+id/project_time"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/project_like_comment_text" />
+        app:layout_constraintTop_toBottomOf="@+id/project_like_comment_text"
+        tools:ignore="TouchTargetSizeCheck" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_comment_btn"
@@ -140,7 +142,8 @@
         app:icon="@drawable/ic_round_chat_bubble_outline_24"
         app:layout_constraintBottom_toBottomOf="@+id/project_like_btn"
         app:layout_constraintStart_toEndOf="@+id/project_like_btn"
-        app:layout_constraintTop_toTopOf="@+id/project_like_btn" />
+        app:layout_constraintTop_toTopOf="@+id/project_like_btn"
+        tools:ignore="TouchTargetSizeCheck" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_join_btn"

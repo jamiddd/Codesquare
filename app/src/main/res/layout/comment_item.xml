@@ -43,12 +43,15 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="8dp"
-        android:paddingLeft="10dp"
+        android:contentDescription="@string/options_for_this_comment"
+        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
         app:icon="@drawable/ic_round_more_horiz_24"
         app:iconSize="16dp"
         app:layout_constraintBottom_toBottomOf="@+id/linearLayout6"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/linearLayout6"
+        tools:ignore="TouchTargetSizeCheck,TextContrastCheck"
         tools:text=" " />
 
     <Button
@@ -58,12 +61,15 @@
         android:layout_height="36dp"
         android:layout_marginStart="16dp"
         android:layout_marginBottom="4dp"
-        android:paddingLeft="10dp"
+        android:contentDescription="@string/like_this_comment"
+        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
         app:iconSize="16sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/comment_content"
         app:rippleColor="@color/lightest_primary_color"
+        tools:ignore="TouchTargetSizeCheck"
         tools:text=" " />
 
     <Button
@@ -72,12 +78,15 @@
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginStart="4dp"
-        android:paddingLeft="10dp"
+        android:contentDescription="@string/reply_to_this_comment"
+        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
         app:icon="@drawable/ic_round_reply_24"
         app:iconSize="16sp"
         app:layout_constraintBottom_toBottomOf="@+id/comment_like_btn"
         app:layout_constraintStart_toEndOf="@+id/comment_like_btn"
         app:layout_constraintTop_toTopOf="@+id/comment_like_btn"
+        tools:ignore="TouchTargetSizeCheck"
         tools:text=" " />
 
     <LinearLayout
