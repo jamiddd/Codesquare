@@ -135,7 +135,7 @@ object FireUtility {
             tokens
         )
 
-        val commentChannelRef = Firebase.firestore.collection("commentChannels").document()
+        val commentChannelRef = Firebase.firestore.collection(COMMENT_CHANNELS).document()
         val commentChannelId = commentChannelRef.id
         project.commentChannel = commentChannelId
 
@@ -156,12 +156,12 @@ object FireUtility {
         batch.set(ref, project)
 
         val userChanges = mapOf<String, Any?>(
-            "projectsCount" to FieldValue.increment(1),
-            "projects" to FieldValue.arrayUnion(project.id),
-            "chatChannels" to FieldValue.arrayUnion(project.chatChannel)
+            PROJECTS_COUNT to FieldValue.increment(1),
+            PROJECTS to FieldValue.arrayUnion(project.id),
+            CHAT_CHANNELS to FieldValue.arrayUnion(project.chatChannel)
         )
 
-        batch.update(Firebase.firestore.collection("users").document(currentUser.id), userChanges)
+        batch.update(Firebase.firestore.collection(USERS).document(currentUser.id), userChanges)
 
         batch.commit().addOnCompleteListener(onComplete)
     }
@@ -219,11 +219,6 @@ object FireUtility {
             }
     }
 
-    /*fun updateUser(userId: String, changes: Map<String, Any?>, onComplete: (task: Task<Void>) -> Unit) {
-        val ref = Firebase.firestore.collection("users").document(userId)
-        updateDocument(ref, changes, onComplete)
-    }*/
-
     fun updateUser2(
         changes: Map<String, Any?>,
         shouldUpdateProjects: Boolean = true,
@@ -246,7 +241,7 @@ object FireUtility {
                     val ref = db.collection(PROJECTS).document(project)
                     val miniUser = currentUser.minify()
                     Log.d(TAG, miniUser.toString())
-                    batch.update(ref, "creator", miniUser)
+                    batch.update(ref, CREATOR, miniUser)
                 }
             }
 
@@ -256,8 +251,8 @@ object FireUtility {
     }
 
     fun checkIfUserNameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        val query = Firebase.firestore.collection("users")
-            .whereEqualTo("username", username)
+        val query = Firebase.firestore.collection(USERS)
+            .whereEqualTo(USERNAME, username)
 
         getQuerySnapshot(query, onComplete)
     }
@@ -272,51 +267,11 @@ object FireUtility {
         val userRef = Firebase.firestore.collection(USERS)
             .document(currentUser.id)
 
-        batch.update(projectRef, "likes", FieldValue.increment(1))
-        batch.update(userRef, "likedProjects", FieldValue.arrayUnion(project.id))
+        batch.update(projectRef, LIKES, FieldValue.increment(1))
+        batch.update(userRef, LIKED_PROJECTS, FieldValue.arrayUnion(project.id))
 
         batch.commit().addOnCompleteListener(onComplete)
     }
-
-    /*suspend fun likeProject(currentUser: User, project: Project, notification: Notification): Result<Project> {
-        return try {
-            val projectRef = Firebase.firestore.collection("projects")
-                .document(project.id)
-
-            val userRef = Firebase.firestore.collection("users")
-                .document(currentUser.id)
-
-            val notificationRef = Firebase.firestore.collection("users")
-                .document(project.creator.userId)
-                .collection("notifications")
-                .document(notification.id)
-
-            val batch = Firebase.firestore.batch()
-
-            if (notification.senderId != notification.receiverId) {
-                Firebase.firestore.collection("users").document(currentUser.id)
-                    .collection("notifications")
-                    .whereEqualTo("content", notification.content)
-                    .get()
-                    .addOnSuccessListener {
-                        if (it.isEmpty) {
-                            notificationRef.set(notification)
-                        }
-                    }
-//                batch.set(notificationRef, notification)
-            }
-
-            batch.update(projectRef, "likes", FieldValue.increment(1))
-            batch.update(userRef, "likedProjects", FieldValue.arrayUnion(project.id))
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(project)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-
-    }*/
 
     fun dislikeProject(project: Project, onComplete: (task: Task<Void>) -> Unit) {
         val currentUser = UserManager.currentUser
@@ -329,140 +284,37 @@ object FireUtility {
 
         val batch = Firebase.firestore.batch()
 
-        batch.update(projectRef, "likes", FieldValue.increment(-1))
-        batch.update(currentUserRef, "likedProjects", FieldValue.arrayRemove(project.id))
+        batch.update(projectRef, LIKES, FieldValue.increment(-1))
+        batch.update(currentUserRef, LIKED_PROJECTS, FieldValue.arrayRemove(project.id))
 
         batch.commit().addOnCompleteListener(onComplete)
     }
-
-    /*suspend fun dislikeProject(userId: String, project: Project): Result<Project> {
-        return try {
-            val projectRef = Firebase.firestore.collection("projects")
-                .document(project.id)
-
-            val userRef = Firebase.firestore.collection("users")
-                .document(userId)
-
-            val batch = Firebase.firestore.batch()
-
-            batch.update(projectRef, "likes", FieldValue.increment(-1))
-            batch.update(userRef, "likedProjects", FieldValue.arrayRemove(project.id))
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(project)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
 
     fun saveProject(project: Project, onComplete: (task: Task<Void>) -> Unit) {
         val currentUserRef =
             Firebase.firestore.collection(USERS).document(UserManager.currentUserId)
 
         val batch = Firebase.firestore.batch()
-        batch.update(currentUserRef, "savedProjects", FieldValue.arrayUnion(project.id))
-        val savedProjectRef = currentUserRef.collection("savedProjects").document(project.id)
+        batch.update(currentUserRef, SAVED_PROJECTS, FieldValue.arrayUnion(project.id))
+        val savedProjectRef = currentUserRef.collection(SAVED_PROJECTS).document(project.id)
 
         batch.set(savedProjectRef, project)
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    /*suspend fun saveProject(userId: String, project: Project): Result<Project> {
-        return try {
-            val userRef = Firebase.firestore.collection("users")
-                .document(userId)
-
-            val batch = Firebase.firestore.batch()
-
-            batch.update(userRef, "savedProjects", FieldValue.arrayUnion(project.id))
-
-            val savedProjectRef = userRef.collection("savedProjects").document(project.id)
-
-            batch.set(savedProjectRef, project)
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(project)
-
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
-
     fun unSaveProject(project: Project, onComplete: (task: Task<Void>) -> Unit) {
-        val currentUserRef = Firebase.firestore.collection("users")
+        val currentUserRef = Firebase.firestore.collection(USERS)
             .document(UserManager.currentUserId)
 
         val batch = Firebase.firestore.batch()
 
-        batch.update(currentUserRef, "savedProjects", FieldValue.arrayRemove(project.id))
+        batch.update(currentUserRef, SAVED_PROJECTS, FieldValue.arrayRemove(project.id))
 
-        batch.delete(currentUserRef.collection("savedProjects").document(project.id))
+        batch.delete(currentUserRef.collection(SAVED_PROJECTS).document(project.id))
 
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    /*suspend fun unSaveProject(userId: String, project: Project): Result<Project> {
-        return try {
-            val userRef = Firebase.firestore.collection("users")
-                .document(userId)
-
-            val batch = Firebase.firestore.batch()
-
-            batch.update(userRef, "savedProjects", FieldValue.arrayRemove(project.id))
-
-            batch.delete(userRef.collection("savedProjects").document(project.id))
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(project)
-
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
-
-    /*fun inviteUserToProjectAlt(project: Project, userId: String, notification: Notification) {
-        val db = Firebase.firestore
-        db.runTransaction {
-            val projectInviteRef = Firebase.firestore.collection("users")
-                .document(userId).collection("invites")
-                .document()
-
-            val projectInvite = ProjectInvite(projectInviteRef.id, project.id, userId, project.creator.userId, System.currentTimeMillis())
-
-            val notificationRef = Firebase.firestore
-                .collection("users")
-                .document(userId)
-                .collection("notifications")
-                .document(notification.id)
-
-
-            val prevNotificationRef = Firebase.firestore.collection("users")
-                .document(userId)
-                .collection("notifications")
-                .whereEqualTo("content", notification.content)
-
-
-
-        }
-    }*/
-
-    /*suspend fun checkIfNotificationAlreadyExists(notification: Notification, userId: String): Result<Pair<QuerySnapshot, Boolean>> {
-        return try {
-            val task = Firebase.firestore.collection("users")
-                .document(userId)
-                .collection("notifications")
-                .whereEqualTo("content", notification.content)
-                .get()
-
-            val result = task.await()
-            Result.Success((result to result.isEmpty))
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
 
     /**
      * @param notificationId A notification to send along with the action of sending a
@@ -654,11 +506,11 @@ object FireUtility {
         val db = Firebase.firestore
         val batch = db.batch()
 
-        val ref1 = db.collection("users").document(userId)
-        batch.update(ref1, mapOf("likesCount" to FieldValue.increment(-1)))
+        val ref1 = db.collection(USERS).document(userId)
+        batch.update(ref1, mapOf(LIKES_COUNT to FieldValue.increment(-1)))
 
-        val ref2 = db.collection("users").document(currentUser.id)
-        batch.update(ref2, mapOf("likedUsers" to FieldValue.arrayRemove(userId)))
+        val ref2 = db.collection(USERS).document(currentUser.id)
+        batch.update(ref2, mapOf(LIKED_USERS to FieldValue.arrayRemove(userId)))
 
         val existingList = currentUser.likedUsers.toMutableList()
         existingList.remove(userId)
@@ -674,9 +526,11 @@ object FireUtility {
     ) {
         val db = Firebase.firestore
         val batch = db.batch()
-        val commentRef = db.collection("commentChannels")
-            .document(comment.commentChannelId)
-            .collection("comments")
+
+        val commentCollectionRef = db.collection(COMMENT_CHANNELS)
+
+        val commentRef = commentCollectionRef.document(comment.commentChannelId)
+            .collection(COMMENTS)
             .document(comment.commentId)
 
         val newCommentChannel = CommentChannel(
@@ -687,253 +541,91 @@ object FireUtility {
             System.currentTimeMillis(),
             null
         )
-        val newCommentChannelRef =
-            db.collection("commentChannels").document(newCommentChannel.commentChannelId)
+        val newCommentChannelRef = commentCollectionRef
+            .document(newCommentChannel.commentChannelId)
+
         batch.set(newCommentChannelRef, newCommentChannel)
         comment.threadChannelId = newCommentChannel.commentChannelId
         batch.set(commentRef, comment)
 
-        val parentCommentChannelRef =
-            db.collection("commentChannels").document(comment.commentChannelId)
-        val parentCommentChannelChanges = mapOf("lastComment" to comment)
+        val parentCommentChannelRef = commentCollectionRef
+            .document(comment.commentChannelId)
+
+        val parentCommentChannelChanges = mapOf(LAST_COMMENT to comment)
         batch.update(parentCommentChannelRef, parentCommentChannelChanges)
 
-        val projectRef = db.collection("projects").document(comment.projectId)
-        val projectChanges = mapOf("comments" to FieldValue.increment(1))
+        val projectRef = db.collection(PROJECTS).document(comment.projectId)
+        val projectChanges = mapOf(COMMENTS to FieldValue.increment(1))
         batch.update(projectRef, projectChanges)
 
         // update the parent comment replies count
         if (comment.commentLevel.toInt() != 0) {
-            val parentRef = db.collection("commentChannels")
-                .document(parentCommentChannelId!!).collection("comments")
+            val parentRef = commentCollectionRef
+                .document(parentCommentChannelId!!).collection(COMMENTS)
                 .document(comment.parentId)
 
-            batch.update(parentRef, mapOf("repliesCount" to FieldValue.increment(1)))
+            batch.update(parentRef, mapOf(REPLIES_COUNT to FieldValue.increment(1)))
         }
 
         batch.commit().addOnCompleteListener(onComplete)
 
     }
-
-    /*suspend fun sendComment(comment: Comment, parentCommentChannelId: String? = null): Result<Comment> {
-        // - create new comment
-        // - create a new channel for that comment
-        // - the project comment's channel needs to contain this new comment
-        // - the project needs to update comments count
-        // - if it is a reply then update the parent comment
-
-        return try {
-            val db = Firebase.firestore
-            val batch = db.batch()
-            val commentRef = db.collection("commentChannels")
-                .document(comment.commentChannelId)
-                .collection("comments")
-                .document(comment.commentId)
-
-            val newCommentChannel = CommentChannel(randomId(), comment.commentId, comment.projectId, comment.postTitle, System.currentTimeMillis(), null)
-            val newCommentChannelRef = db.collection("commentChannels").document(newCommentChannel.commentChannelId)
-            batch.set(newCommentChannelRef, newCommentChannel)
-            comment.threadChannelId = newCommentChannel.commentChannelId
-            batch.set(commentRef, comment)
-
-            val parentCommentChannelRef = db.collection("commentChannels").document(comment.commentChannelId)
-            val parentCommentChannelChanges = mapOf("lastComment" to comment)
-            batch.update(parentCommentChannelRef, parentCommentChannelChanges)
-
-            val projectRef = db.collection("projects").document(comment.projectId)
-            val projectChanges = mapOf("comments" to FieldValue.increment(1))
-            batch.update(projectRef, projectChanges)
-
-
-
-            // update the parent comment replies count
-            if (comment.commentLevel.toInt() != 0) {
-                val parentRef = db.collection("commentChannels")
-                    .document(parentCommentChannelId!!).collection("comments")
-                    .document(comment.parentId)
-
-                batch.update(parentRef, mapOf("repliesCount" to FieldValue.increment(1)))
-            }
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(comment)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-
-
-    }*/
 
     fun dislikeComment(comment: Comment, onComplete: (task: Task<Void>) -> Unit) {
         val db = Firebase.firestore
 
         val batch = db.batch()
 
-        val commentRef = Firebase.firestore.collection("commentChannels")
+        val commentRef = Firebase.firestore.collection(COMMENT_CHANNELS)
             .document(comment.commentChannelId)
-            .collection("comments")
+            .collection(COMMENTS)
             .document(comment.commentId)
 
         batch.update(
             commentRef,
             mapOf(
-                "likesCount" to FieldValue.increment(-1),
-                "likes" to FieldValue.arrayRemove(UserManager.currentUserId)
+                LIKES_COUNT to FieldValue.increment(-1),
+                LIKES to FieldValue.arrayRemove(UserManager.currentUserId)
             )
         )
 
-        val currentUserRef = db.collection("users").document(UserManager.currentUserId)
+        val currentUserRef = db.collection(USERS).document(UserManager.currentUserId)
 
         batch.update(
             currentUserRef,
-            mapOf("likedComments" to FieldValue.arrayRemove(comment.commentId))
+            mapOf(LIKED_COMMENTS to FieldValue.arrayRemove(comment.commentId))
         )
 
         batch.commit().addOnCompleteListener(onComplete)
     }
-
-    /*suspend fun dislikeComment(currentUserId: String, comment: Comment): Result<Comment> {
-        return try {
-            val db = Firebase.firestore
-
-            val batch = db.batch()
-
-            val commentRef = Firebase.firestore.collection("commentChannels")
-                .document(comment.commentChannelId)
-                .collection("comments")
-                .document(comment.commentId)
-
-            batch.update(
-                commentRef,
-                mapOf(
-                    "likesCount" to FieldValue.increment(-1),
-                    "likes" to FieldValue.arrayRemove(currentUserId)
-                )
-            )
-
-            val currentUserRef = db.collection("users").document(currentUserId)
-
-            batch.update(
-                currentUserRef,
-                mapOf("likedComments" to FieldValue.arrayRemove(comment.commentId))
-            )
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(comment)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
 
     fun likeComment(comment: Comment, onComplete: (task: Task<Void>) -> Unit) {
         val db = Firebase.firestore
         val currentUserId = UserManager.currentUserId
         val batch = db.batch()
 
-        val commentRef = Firebase.firestore.collection("commentChannels")
+        val commentRef = Firebase.firestore.collection(COMMENT_CHANNELS)
             .document(comment.commentChannelId)
-            .collection("comments")
+            .collection(COMMENTS)
             .document(comment.commentId)
 
         batch.update(
             commentRef,
             mapOf(
-                "likesCount" to FieldValue.increment(1),
-                "likes" to FieldValue.arrayUnion(currentUserId)
+                LIKES_COUNT to FieldValue.increment(1),
+                LIKES to FieldValue.arrayUnion(currentUserId)
             )
         )
 
-        val currentUserRef = db.collection("users").document(currentUserId)
+        val currentUserRef = db.collection(USERS).document(currentUserId)
 
         batch.update(
             currentUserRef,
-            mapOf("likedComments" to FieldValue.arrayUnion(comment.commentId))
+            mapOf(LIKED_COMMENTS to FieldValue.arrayUnion(comment.commentId))
         )
 
         batch.commit().addOnCompleteListener(onComplete)
     }
-
-    /*suspend fun likeComment(
-        currentUserId: String,
-        comment: Comment,
-        notification: Notification
-    ): Result<Comment> {
-        return try {
-            val db = Firebase.firestore
-
-            val batch = db.batch()
-
-            val commentRef = Firebase.firestore.collection("commentChannels")
-                .document(comment.commentChannelId)
-                .collection("comments")
-                .document(comment.commentId)
-
-            batch.update(
-                commentRef,
-                mapOf(
-                    "likesCount" to FieldValue.increment(1),
-                    "likes" to FieldValue.arrayUnion(currentUserId)
-                )
-            )
-
-            if (notification.senderId != notification.receiverId) {
-                batch.set(
-                    Firebase.firestore.collection("users")
-                        .document(notification.receiverId)
-                        .collection("notifications")
-                        .document(notification.id), notification
-                )
-            }
-
-            val currentUserRef = db.collection("users").document(currentUserId)
-
-            batch.update(
-                currentUserRef,
-                mapOf("likedComments" to FieldValue.arrayUnion(comment.commentId))
-            )
-
-            val task = batch.commit()
-            task.await()
-            Result.Success(comment)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
-
-    /*fun getChannelUsers(channel: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        val db = Firebase.firestore
-        val ref = db.collection("users")
-            .whereArrayContains("chatChannels", channel)
-
-        ref.get().addOnCompleteListener(onComplete)
-    }*/
-
-    /*suspend fun getChannelUsers(chatChannels: List<String>): Result<List<User>> {
-        return try {
-            val listOfReferences = mutableListOf<Query>()
-            val users = mutableListOf<User>()
-
-            for (channel in chatChannels) {
-                val ref = Firebase.firestore.collection("users")
-                    .whereArrayContains("chatChannels", channel)
-                listOfReferences.add(ref)
-            }
-
-            for (ref in listOfReferences) {
-                val task = ref.get()
-                val querySnapshot = task.await()
-                val usersList = querySnapshot.toObjects(User::class.java)
-                users.addAll(usersList)
-            }
-
-            Result.Success(users)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-
-    }*/
 
     suspend fun sendTextMessage(
         chatChannelId: String,
@@ -941,7 +633,6 @@ object FireUtility {
         replyTo: String? = null,
         replyMessage: MessageMinimal? = null
     ): Result<Message> {
-
         return try {
             val currentUser = UserManager.currentUser
             val db = Firebase.firestore
@@ -960,8 +651,8 @@ object FireUtility {
                 currentUser.id,
                 currentUser.minify(),
                 null,
-                emptyList(),
-                emptyList(),
+                listOf(currentUser.id),
+                listOf(currentUser.id),
                 System.currentTimeMillis(),
                 System.currentTimeMillis(),
                 replyTo,
@@ -974,8 +665,8 @@ object FireUtility {
             batch.set(ref, message)
 
             val chatChannelChanges = mapOf(
-                "lastMessage" to message,
-                "updatedAt" to message.createdAt
+                LAST_MESSAGE to message,
+                UPDATED_AT to message.createdAt
             )
 
             batch.update(chatChannelRef, chatChannelChanges)
@@ -1048,14 +739,14 @@ object FireUtility {
             val batch = Firebase.firestore.batch()
 
             for (message in updatedList) {
-                val ref = chatChannelRef.collection("messages").document()
+                val ref = chatChannelRef.collection(MESSAGES).document()
                 message.messageId = ref.id
                 batch.set(ref, message)
             }
 
             val chatChannelChanges = mapOf(
-                "lastMessage" to updatedList.last(),
-                "updatedAt" to System.currentTimeMillis()
+                LAST_MESSAGE to updatedList.last(),
+                UPDATED_AT to System.currentTimeMillis()
             )
 
             batch.update(chatChannelRef, chatChannelChanges)
@@ -1088,9 +779,9 @@ object FireUtility {
 
     fun deleteComment(comment: Comment, onComplete: (task: Task<Void>) -> Unit) {
         val commentRef = Firebase.firestore
-            .collection("commentChannels")
+            .collection(COMMENT_CHANNELS)
             .document(comment.commentChannelId)
-            .collection("comments")
+            .collection(COMMENTS)
             .document(comment.commentId)
         commentRef.delete().addOnCompleteListener(onComplete)
     }
@@ -1173,9 +864,9 @@ object FireUtility {
                         }
                     }
 
-                    val ref = db.collection("chatChannels")
+                    val ref = db.collection(CHAT_CHANNELS)
                         .document(it.chatChannelId)
-                        .collection("messages")
+                        .collection(MESSAGES)
                         .document()
 
                     val newMessage = Message(
@@ -1204,8 +895,8 @@ object FireUtility {
 
                     if (i == messages.size - 1) {
                         batch.update(
-                            db.collection("chatChannels").document(it.chatChannelId),
-                            mapOf("lastMessage" to newMessage, "updatedAt" to now)
+                            db.collection(CHAT_CHANNELS).document(it.chatChannelId),
+                            mapOf(LAST_MESSAGE to newMessage, UPDATED_AT to now)
                         )
                     }
 
@@ -1223,64 +914,9 @@ object FireUtility {
         } catch (e: Exception) {
 
             Result.Error(e)
-
         }
-
     }
 
-    /*suspend fun sendSingleMediaMessageToMultipleChannels(
-        uri: Uri,
-        currentUser: User,
-        message: Message,
-        channels: List<ChatChannel>
-    ): Result<List<Message>> {
-
-        val db = Firebase.firestore
-
-        val now = System.currentTimeMillis()
-
-        return try {
-
-            val batch = db.batch()
-
-            val messages = mutableListOf<Message>()
-
-            for (channel in channels) {
-                val newMessage = Message(randomId(), channel.chatChannelId, message.type, randomId(), currentUser.id, message.metadata, emptyList(), emptyList(), now, null, null, currentUser,
-                    isDownloaded = false,
-                    isCurrentUserMessage = true
-                )
-
-                val chatChannelRef = db.collection("chatChannels").document(channel.chatChannelId)
-
-                val downloadedContents = if (newMessage.type == image) {
-                    uploadItems("${channel.chatChannelId}/images", listOf(newMessage.content), listOf(uri)).map { it.toString() }
-                } else {
-                    uploadItems("${channel.chatChannelId}/documents", listOf(newMessage.content), listOf(uri)).map { it.toString() }
-                }
-
-                newMessage.metadata?.url = downloadedContents.first()
-
-                val ref = chatChannelRef.collection("messages").document()
-                newMessage.messageId = ref.id
-
-                messages.add(newMessage)
-
-                batch.set(ref, newMessage)
-                val changes = mapOf(
-                    "lastMessage" to newMessage,
-                    "updatedAt" to now
-                )
-
-                batch.update(chatChannelRef, changes)
-            }
-
-            batch.commit().await()
-            Result.Success(messages)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }*/
 
     fun updateDeliveryListOfMessages(
         currentUserId: String,
@@ -1291,12 +927,12 @@ object FireUtility {
 
         for (message in messages) {
             if (message.senderId != currentUserId) {
-                val messageRef = Firebase.firestore.collection("chatChannels")
+                val messageRef = Firebase.firestore.collection(CHAT_CHANNELS)
                     .document(message.chatChannelId)
-                    .collection("messages")
+                    .collection(MESSAGES)
                     .document(message.messageId)
 
-                val changes = mapOf("deliveryList" to FieldValue.arrayUnion(currentUserId))
+                val changes = mapOf(DELIVERY_LIST to FieldValue.arrayUnion(currentUserId))
                 val newList = message.deliveryList.addItemToList(currentUserId)
                 message.deliveryList = newList
 
@@ -1307,14 +943,6 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    /*fun getAllChatChannels(userId: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        Firebase.firestore.collection("chatChannels")
-            .whereArrayContains("contributors", userId)
-            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-            .get()
-            .addOnCompleteListener(onComplete)
-    }*/
-
     fun updateReadList(
         chatChannel: ChatChannel,
         message: Message,
@@ -1323,9 +951,9 @@ object FireUtility {
         val currentUserId = UserManager.currentUserId
         val db = Firebase.firestore
         val batch = db.batch()
-        val ref = db.collection("chatChannels")
+        val ref = db.collection(CHAT_CHANNELS)
             .document(message.chatChannelId)
-            .collection("messages")
+            .collection(MESSAGES)
             .document(message.messageId)
 
         val newList = message.readList.addItemToList(currentUserId)
@@ -1333,15 +961,15 @@ object FireUtility {
 
         if (chatChannel.lastMessage!!.messageId == message.messageId) {
             batch.update(
-                Firebase.firestore.collection("chatChannels")
+                Firebase.firestore.collection(CHAT_CHANNELS)
                     .document(chatChannel.chatChannelId),
                 mapOf(
-                    "lastMessage.readList" to FieldValue.arrayUnion(currentUserId)
+                    "$LAST_MESSAGE.$READ_LIST" to FieldValue.arrayUnion(currentUserId)
                 )
             )
         }
 
-        batch.update(ref, mapOf("readList" to FieldValue.arrayUnion(currentUserId)))
+        batch.update(ref, mapOf(READ_LIST to FieldValue.arrayUnion(currentUserId)))
 
         batch.commit().addOnCompleteListener(onComplete)
     }
@@ -1349,7 +977,7 @@ object FireUtility {
     fun sendRegistrationTokenToServer(token: String, onComplete: (task: Task<Void>) -> Unit) {
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null) {
-            updateUser2(mapOf("token" to token), false, onComplete)
+            updateUser2(mapOf(TOKEN to token), false, onComplete)
         }
     }
 
@@ -1370,7 +998,7 @@ object FireUtility {
     }
 
     fun sendFeedback(feedback: Feedback, onComplete: (task: Task<Void>) -> Unit) {
-        Firebase.firestore.collection("feedbacks")
+        Firebase.firestore.collection(FEEDBACKS)
             .document(feedback.id)
             .set(feedback)
             .addOnCompleteListener(onComplete)
@@ -1383,8 +1011,8 @@ object FireUtility {
         userId: String,
         onComplete: (task: Task<Void>) -> Unit
     ) {
-        Firebase.firestore.collection("chatChannels").document(chatChannelId)
-            .update("administrators", FieldValue.arrayUnion(userId))
+        Firebase.firestore.collection(CHAT_CHANNELS).document(chatChannelId)
+            .update(ADMINISTRATORS, FieldValue.arrayUnion(userId))
             .addOnCompleteListener(onComplete)
     }
 
@@ -1744,8 +1372,8 @@ object FireUtility {
         batch.update(chatChannelRef, changes)
 
         val currentUserChanges = mapOf(
-            "archivedProjects" to FieldValue.arrayUnion(project.id),
-            "projects" to FieldValue.arrayRemove(project.id)
+            ARCHIVED_PROJECTS to FieldValue.arrayUnion(project.id),
+            PROJECTS to FieldValue.arrayRemove(project.id)
         )
 
         batch.update(currentUserRef, currentUserChanges)
@@ -1782,8 +1410,8 @@ object FireUtility {
         batch.update(chatChannelRef, changes)
 
         val currentUserChanges = mapOf(
-            "archivedProjects" to FieldValue.arrayRemove(project.id),
-            "projects" to FieldValue.arrayUnion(project.id)
+            ARCHIVED_PROJECTS to FieldValue.arrayRemove(project.id),
+            PROJECTS to FieldValue.arrayUnion(project.id)
         )
 
         batch.update(currentUserRef, currentUserChanges)
@@ -2045,8 +1673,8 @@ object FireUtility {
     }
 
     fun getRandomInterests(onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
-        Firebase.firestore.collection("interests")
-            .document("interestsCollection")
+        Firebase.firestore.collection(INTERESTS)
+            .document(INTERESTS_COLLECTION)
             .get()
             .addOnCompleteListener(onComplete)
     }
@@ -2119,8 +1747,8 @@ object FireUtility {
     fun downloadAllUserProjects(onComplete: (result: Result<List<Project>>?) -> Unit) {
         val currentUser = UserManager.currentUser
         Firebase.firestore.collection(PROJECTS)
-            .whereEqualTo("creator.userId", currentUser.id)
-            .whereEqualTo("expiredAt", -1)
+            .whereEqualTo("$CREATOR.$USER_ID", currentUser.id)
+            .whereEqualTo(EXPIRED_AT, -1)
             .get()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
@@ -2153,7 +1781,7 @@ object FireUtility {
             .document(notification.receiverId)
             .collection(NOTIFICATIONS)
             .document(notification.id)
-            .update(mapOf("read" to true))
+            .update(mapOf(READ to true))
             .addOnCompleteListener(onComplete)
     }
 
@@ -2265,15 +1893,6 @@ object FireUtility {
     }
 
 
-
-    /*fun removeSubscriptions(onComplete: (task: Task<Void>) -> Unit) {
-
-        val currentUserRef = Firebase.firestore.collection(USERS)
-            .document(UserManager.currentUserId)
-
-        currentUserRef.update("premiumState", -1).addOnCompleteListener(onComplete)
-    }*/
-
     fun removeSubscriptions(onComplete: (task: Task<Void>) -> Unit) {
         Firebase.firestore.collection(USERS)
             .document(UserManager.currentUserId)
@@ -2308,13 +1927,13 @@ object FireUtility {
         val newListOfImages = mutableListOf<String>()
 
         val alreadyUploadedImages = project.images.filter {
-            it.contains("https")
+            it.contains(HTTPS)
         }
 
         newListOfImages.addAll(alreadyUploadedImages)
 
         val toBeUploadedImages = project.images.filter {
-            !it.contains("https")
+            !it.contains(HTTPS)
         }
 
         val downloadedUris = uploadItems("${project.id}/images", names, toBeUploadedImages.map { it.toUri() })

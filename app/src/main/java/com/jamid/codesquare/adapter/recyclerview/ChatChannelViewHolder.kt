@@ -1,15 +1,12 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.graphics.Typeface
-import android.graphics.drawable.Animatable
 import android.text.SpannableString
 import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.drawee.controller.BaseControllerListener
-import com.facebook.imagepipeline.image.ImageInfo
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.ChatChannelItemBinding

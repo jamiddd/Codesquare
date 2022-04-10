@@ -3,7 +3,6 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
@@ -16,7 +15,6 @@ import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.*
 import com.jamid.codesquare.ui.MessageListenerFragment
 import java.io.File
@@ -162,25 +160,6 @@ class MessageViewHolder2<T: Any>(
             binding.replyComponent.replyText.text = replyMessage.content
         }
     }
-
-    /*private fun getReplyMessage(message: Message, onMessageFetched: (newMessage: Message) -> Unit) {
-        val replyMessageId = message.replyTo
-        if (replyMessageId != null) {
-            FireUtility.getMessage(message.chatChannelId, replyMessageId) {
-                val result = it ?: return@getMessage
-                when (result) {
-                    is Result.Error -> {
-                        result.exception.localizedMessage?.toString()
-                            ?.let { it1 -> Log.e(TAG, it1) }
-                        view.hide()
-                    }
-                    is Result.Success -> {
-                        onMessageFetched(result.data)
-                    }
-                }
-            }
-        }
-    }*/
 
     private fun setMessageMiddleDocumentRightItem(message: Message) {
         val binding = MessageMiddleDocumentRightItemBinding.bind(view)
@@ -457,27 +436,17 @@ class MessageViewHolder2<T: Any>(
             binding.documentDownloadBtn.hide()
             binding.documentDownloadProgress.hide()
         } else {
-            /*binding.documentDownloadBtn.show()
-            binding.documentDownloadProgress.hide()*/
 
-            binding.documentDownloadBtn.disappear()
-            binding.documentDownloadProgress.show()
+            binding.documentDownloadBtn.show()
+            binding.documentDownloadProgress.hide()
 
-            fragment?.onMessageNotDownloaded(message) {
-                bind(it)
-            }
-
-            /*val sharedPreference = PreferenceManager.getDefaultSharedPreferences(view.context)
-            val automaticDownload = sharedPreference?.getBoolean("chat_download", false)
-            if (automaticDownload != null && automaticDownload) {
+            binding.documentDownloadBtn.setOnClickListener {
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
-
                 fragment?.onMessageNotDownloaded(message) {
                     bind(it)
                 }
-            }*/
-
+            }
 
             binding.documentDownloadBtn.setOnClickListener {
                 binding.documentDownloadBtn.disappear()
@@ -623,7 +592,6 @@ class MessageViewHolder2<T: Any>(
     }
 
     companion object {
-        private const val TAG = "MessageViewHolder2"
         const val MESSAGE_IDLE = -1
         const val MESSAGE_READY = 0
         const val MESSAGE_SELECTED = 1

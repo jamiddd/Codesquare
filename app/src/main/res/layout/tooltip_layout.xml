@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/tooltip_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,12 +14,12 @@
         android:background="@drawable/tooltip_body"
         android:maxWidth="200dp"
         android:padding="8dp"
+        android:text="@string/this_is_a_text_for_people_who_don_t_know"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/tooltip_tail"
         app:layout_constraintHorizontal_bias="0.83"
         app:layout_constraintStart_toStartOf="@+id/tooltip_tail"
-        app:layout_constraintTop_toTopOf="parent" />
+        tools:layout_editor_absoluteY="393dp" />
 
     <View
         android:id="@+id/tooltip_tail"

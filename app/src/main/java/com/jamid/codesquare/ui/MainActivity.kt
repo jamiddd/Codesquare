@@ -174,7 +174,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         setSupportActionBar(binding.mainToolbar)
 
         // initialize all nodes
-        MobileAds.initialize(this)
+        MobileAds.initialize(this) {}
 
         fusedLocationProviderClient = FusedLocationProviderClient(this)
 
@@ -214,7 +214,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 }
             }
         }
-
 
 
         UserManager.currentUserLive.observe(this) {

@@ -69,7 +69,7 @@
         android:layout_marginBottom="16dp"
         android:minWidth="150dp"
         android:minHeight="56dp"
-        android:text="Get started"
+        android:text="@string/get_started"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/no_chat_channels_text"
         app:layout_constraintEnd_toEndOf="parent"
@@ -83,7 +83,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Explore projects"
+        android:text="@string/explore_projects"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/no_chat_channels_text"
         app:layout_constraintStart_toStartOf="@+id/no_chat_channels_text"
@@ -115,7 +115,7 @@
                 android:paddingTop="4dp"
                 android:paddingEnd="12dp"
                 android:paddingBottom="4dp"
-                android:text="Tired of seeing ads?" />
+                android:text="@string/tired_of_seeing_ads" />
 
             <TextView
                 android:id="@+id/remove_ad_btn"

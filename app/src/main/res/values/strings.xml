@@ -259,5 +259,8 @@
     <string name="options_for_this_comment">Options for this comment</string>
     <string name="like_this_comment">Like this comment</string>
     <string name="reply_to_this_comment">Reply to this comment</string>
+    <string name="this_is_a_text_for_people_who_don_t_know">This is a text for people who don\'t know</string>
+    <string name="explore_projects">Explore projects</string>
+    <string name="tired_of_seeing_ads">Tired of seeing ads?</string>
 
 </resources>
