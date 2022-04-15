@@ -29,6 +29,7 @@ class EditProfileFragment: Fragment() {
     private var loadingFragment: MessageDialogFragment? = null
     private lateinit var currentUser: User
     private val needToUpdate = MutableLiveData<Boolean>()
+    private var isUsernameErrorEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,14 +52,6 @@ class EditProfileFragment: Fragment() {
                 val username = binding.usernameText.editText?.text.toString()
                 val updatedUser = currentUser.copy()
 
-                loadingFragment = MessageDialogFragment.builder( getString(R.string.profile_upload_loading_text))
-                    .setIsHideable(false)
-                    .setIsDraggable(false)
-                    .shouldShowProgress(true)
-                    .build()
-
-                loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
-
                 val changes = mutableMapOf(
                     "name" to binding.nameText.editText?.text.toString(),
                     "about" to binding.aboutText.editText?.text.toString(),
@@ -78,6 +71,14 @@ class EditProfileFragment: Fragment() {
                         if (it.isSuccessful) {
                             val snapshot = it.result
                             if (snapshot.isEmpty) {
+                                loadingFragment = MessageDialogFragment.builder( getString(R.string.profile_upload_loading_text))
+                                    .setIsHideable(false)
+                                    .setIsDraggable(false)
+                                    .shouldShowProgress(true)
+                                    .build()
+
+                                loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
+
                                 // no username .. good to go
                                 changes["username"] = username
                                 updatedUser.username = username

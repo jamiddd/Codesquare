@@ -11,7 +11,6 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.gms.ads.AdRequest
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -66,42 +65,21 @@ class ChatListFragment2: Fragment() {
 
         binding.getStartedBtn.setOnClickListener {
             if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
-                findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.createProjectFragment, null, slideRightNavOptions())
             } else {
                 val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
                     .setPositiveButton("Upgrade") { _, _ ->
-                        val act = activity as MainActivity
-                        act.showSubscriptionFragment()
+                        (activity as MainActivity?)?.showSubscriptionFragment()
                     }.setNegativeButton("Cancel") { a, _ ->
                         a.dismiss()
                     }.build()
 
                 frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
-
-                /*MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("Collab")
-                    .setMessage("You have already created 2 projects. To create more, upgrade your subscription plan!")
-                    .setPositiveButton("Upgrade") { _, _ ->
-                        val act = activity as MainActivity
-                        act.showSubscriptionFragment()
-                    }.setNegativeButton("Cancel") { a, _ ->
-                        a.dismiss()
-                    }
-                    .show()*/
             }
         }
 
 
-        UserManager.currentUserLive.observe(viewLifecycleOwner) {
-            if (it != null) {
-                if (it.premiumState.toInt() == -1) {
-                    binding.chatListAdContainer.show()
-                    setAdView()
-                } else {
-                    binding.chatListAdContainer.hide()
-                }
-            }
-        }
+
 
         binding.chatChannelsRefresher.setOnRefreshListener {
             Firebase.firestore.collection(CHAT_CHANNELS)
@@ -124,15 +102,6 @@ class ChatListFragment2: Fragment() {
 
         }
 
-        binding.removeAdBtn.setOnClickListener {
-            (activity as MainActivity).onAdInfoClick()
-        }
-
-
-    }
-
-    private fun setAdView() {
-        binding.adView.loadAd(AdRequest.Builder().build())
     }
 
     private fun onChatChannelExists() {

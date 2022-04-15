@@ -3,19 +3,26 @@ package com.jamid.codesquare.ui.home
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.util.Log
 import android.view.*
 import androidx.activity.addCallback
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -27,7 +34,6 @@ import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.databinding.FragmentHomeBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageDialogFragment
-import com.jamid.codesquare.ui.SubscriptionFragment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
@@ -117,9 +123,6 @@ class HomeFragment: Fragment() {
 
     override fun onPrepareOptionsMenu(menu: Menu) {
         super.onPrepareOptionsMenu(menu)
-
-        Log.d(TAG, "onPrepareOptionsMenu: ${menu.size()} ${menu.size}")
-
         setProfileImage(menu)
         viewLifecycleOwner.lifecycleScope.launch {
             delay(2000)
@@ -136,7 +139,7 @@ class HomeFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.notifications -> {
-                findNavController().navigate(R.id.action_homeFragment_to_notificationCenterFragment, bundleOf("type" to 0), slideRightNavOptions())
+                findNavController().navigate(R.id.action_homeFragment_to_notificationCenterFragment, bundleOf(TYPE to 0), slideRightNavOptions())
                 true
             }
             R.id.search -> {
@@ -147,13 +150,11 @@ class HomeFragment: Fragment() {
 
                 val currentUser = UserManager.currentUser
                 if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
-                    findNavController().navigate(R.id.action_homeFragment_to_createProjectFragment, null, slideRightNavOptions())
+                    findNavController().navigate(R.id.createProjectFragment, null, slideRightNavOptions())
                 } else {
                     val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
                         .setPositiveButton("Upgrade") { _, _ ->
-                            val act = activity as MainActivity
-                            act.subscriptionFragment = SubscriptionFragment()
-                            act.subscriptionFragment?.show(act.supportFragmentManager, "SubscriptionFragment")
+                            (activity as MainActivity?)?.showSubscriptionFragment()
                         }.setNegativeButton("Cancel") { a, _ ->
                             a.dismiss()
                         }.build()
@@ -185,7 +186,7 @@ class HomeFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val activity = requireActivity()
+        val activity = requireActivity() as MainActivity
 
         binding.homeViewPager.offscreenPageLimit = 2
 
@@ -201,13 +202,33 @@ class HomeFragment: Fragment() {
             }
         }.attach()
 
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+        val appBar = requireActivity().findViewById<AppBarLayout>(R.id.main_appbar)
+        val container = requireActivity().findViewById<FragmentContainerView>(R.id.nav_host_fragment)
+
+        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             if (binding.homeViewPager.currentItem == 0) {
-                requireActivity().finish()
+                activity.finish()
             } else {
                 binding.homeViewPager.setCurrentItem(0, true)
+
             }
         }
+
+        binding.homeViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                if (position == 1) {
+                    if (!appBar.isVisible) {
+                        appBar.show()
+
+                        val params = container.layoutParams as CoordinatorLayout.LayoutParams
+                        params.behavior = AppBarLayout.ScrollingViewBehavior()
+                        container.layoutParams = params
+                    }
+                }
+            }
+        })
+
 
         (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
@@ -215,6 +236,64 @@ class HomeFragment: Fragment() {
         if (mAuth.currentUser == null) {
             findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
         }
+
+        UserManager.currentUserLive.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it.premiumState.toInt() == -1) {
+                    binding.chatListAdContainer.show()
+                    setAdView()
+                } else {
+                    binding.chatListAdContainer.hide()
+                }
+            }
+        }
+
+        binding.removeAdBtn.setOnClickListener {
+            activity.onAdInfoClick()
+        }
+
+        activity.networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
+            if (isNetworkAvailable) {
+                if (!binding.adView.isVisible) {
+                    setAdView()
+                }
+            }
+        }
+
+    }
+
+    private fun setAdView() {
+        val adRequest = AdRequest.Builder().build()
+
+        binding.adView.loadAd(adRequest)
+
+        binding.adView.adListener = object: AdListener() {
+            override fun onAdFailedToLoad(p0: LoadAdError) {
+                super.onAdFailedToLoad(p0)
+                binding.adView.hide()
+                binding.removeAdBtn.hide()
+            }
+
+            override fun onAdLoaded() {
+                super.onAdLoaded()
+                binding.adView.show()
+                binding.removeAdBtn.show()
+            }
+
+            override fun onAdOpened() {
+                super.onAdOpened()
+                binding.adView.show()
+                binding.removeAdBtn.show()
+            }
+
+            override fun onAdClosed() {
+                super.onAdClosed()
+                binding.adView.hide()
+                binding.removeAdBtn.hide()
+            }
+
+        }
+
     }
 
 }

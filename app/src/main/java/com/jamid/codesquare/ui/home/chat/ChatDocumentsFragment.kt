@@ -132,7 +132,7 @@ class ChatDocumentsFragment: MessageListenerFragment() {
         }
     }
 
-    override fun onCheckForStaleData(message: Message) {
+    override fun onCheckForStaleData(message: Message, onUpdate: (newMessage: Message) -> Unit) {
 
     }
 

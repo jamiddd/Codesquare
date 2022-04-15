@@ -6,6 +6,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.common.api.ApiException
@@ -34,14 +36,45 @@ object LocationProvider {
     private lateinit var placesClient: PlacesClient
     var isLocationEnabled = false
     var isLocationPermissionAvailable = false
-    var currentLocation: Location? = null
-    private var nearbyResults: List<PlaceLikelihood> = emptyList()
     private var errors: List<Exception> = emptyList()
 
+    private lateinit var geocoder: Geocoder
+
+    val locationObserver = MutableLiveData<Location>()
+
+    // this will be invoked only once, because once location is available we are stopping location updates
     private val mLocationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
-            Log.d(TAG, "Location Result -> ${locationResult.lastLocation}")
-            currentLocation = locationResult.lastLocation
+            Log.d(TAG, "onLocationResult: Received location = Location(${locationResult.lastLocation.latitude}, ${locationResult.lastLocation.longitude})")
+            locationObserver.postValue(locationResult.lastLocation)
+            onCurrentLocationUpdated(locationResult.lastLocation)
+        }
+    }
+
+    private fun onCurrentLocationUpdated(location: Location) {
+
+        // getting geo hash for the current location
+        val hash =
+            GeoFireUtils.getGeoHashForLocation(GeoLocation(location.latitude, location.longitude))
+
+        // Getting vague name of the location, not very important anyways
+        var firstAddress = ""
+        val places = geocoder.getFromLocation(location.latitude, location.longitude, 2)
+        if (places.isNotEmpty()) {
+            firstAddress = places.first().getAddressLine(0)
+        }
+
+        if (Firebase.auth.currentUser != null) {
+
+            // updating the current users location
+            FireUtility.updateUser2(mapOf(
+                LOCATION to com.jamid.codesquare.data.Location(
+                    location.latitude, location.longitude, firstAddress, hash)), false) { it1 ->
+                if (!it1.isSuccessful) {
+                    it1.exception?.localizedMessage?.toString()
+                        ?.let { it2 -> Log.e(TAG, it2) }
+                }
+            }
         }
     }
 
@@ -133,6 +166,7 @@ object LocationProvider {
         isLocationEnabled = isLocationEnabled(context)
         requestNewLocationData(fusedLocationProviderClient)
         getLastLocation(fusedLocationProviderClient)
+        geocoder = Geocoder(context)
     }
 
     fun updateData(
@@ -158,31 +192,12 @@ object LocationProvider {
             fusedLocationProviderClient.lastLocation
                 .addOnCompleteListener {
                     if (it.isSuccessful) {
-                        currentLocation = it.result
 
-                        val hash =
-                            GeoFireUtils.getGeoHashForLocation(GeoLocation(currentLocation?.latitude ?: 0.0, currentLocation?.longitude ?: 0.0))
-
-                        if (Firebase.auth.currentUser != null) {
-                            FireUtility.updateUser2(mapOf("location" to com.jamid.codesquare.data.Location(
-                                currentLocation?.latitude ?: 0.0, currentLocation?.longitude ?: 0.0, "", hash)), false) { it1 ->
-                                if (it1.isSuccessful) {
-                                    Log.d(TAG, "Updated users location")
-                                } else {
-                                    it1.exception?.localizedMessage?.toString()
-                                        ?.let { it2 -> Log.e(TAG, it2) }
-                                }
-                            }
-                        }
-
-
-                        getNearbyPlaces { it1 ->
-                            if (it1.isSuccessful) {
-                                val response = it1.result
-                                nearbyResults = response.placeLikelihoods
-                            } else {
-                                Log.d(TAG, it1.exception?.localizedMessage.orEmpty())
-                            }
+                        val location = it.result
+                        if (location != null) {
+                            Log.d(TAG, "onLocationResult: Received location = Location(${location.latitude}, ${location.longitude})")
+                            locationObserver.postValue(it.result)
+                            onCurrentLocationUpdated(it.result)
                         }
                     } else {
                         it.exception?.let { it1 -> error(it1) }
@@ -237,7 +252,7 @@ object LocationProvider {
     }
 
     fun stopLocationUpdates(fusedLocationProviderClient: FusedLocationProviderClient) {
-        Log.d(TAG, "Stopping location updates")
+        Log.d(TAG, "stopLocationUpdates: Stopping location updates")
         fusedLocationProviderClient.removeLocationUpdates(mLocationCallback)
     }
 
@@ -246,7 +261,7 @@ object LocationProvider {
         onComplete: (task: Task<FindAutocompletePredictionsResponse>) -> Unit
     ) {
         val token = AutocompleteSessionToken.newInstance()
-        val currentLocation = currentLocation
+        val currentLocation = locationObserver.value
         if (currentLocation != null) {
             val request = FindAutocompletePredictionsRequest.builder()
                 .setOrigin(LatLng(currentLocation.latitude, currentLocation.longitude))

@@ -146,7 +146,7 @@ class LoginFragment : Fragment() {
                 findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
             } else {
                 findNavController().navigate(
-                    R.id.action_loginFragment_to_homeFragment,
+                    R.id.homeFragment,
                     null,
                     slideRightNavOptions()
                 )

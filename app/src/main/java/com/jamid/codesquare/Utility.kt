@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.Rect
 import android.os.Build
 import android.os.Bundle
 import android.text.format.DateUtils
@@ -91,6 +92,16 @@ fun View.showWithAnimations() {
         }
     }
 
+}
+
+fun View.isVisibleOnScreen(): Boolean {
+    if (!this.isShown) {
+        return false
+    }
+    val actualPosition = Rect()
+    this.getGlobalVisibleRect(actualPosition)
+    val screen = Rect(0, 0, getWindowWidth(), getWindowHeight())
+    return actualPosition.intersect(screen)
 }
 
 fun View.hide() {

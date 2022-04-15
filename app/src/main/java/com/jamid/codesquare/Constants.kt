@@ -84,7 +84,6 @@ const val INVITES = "invites"
 const val REPORTS = "reports"
 const val INTERESTS = "interests"
 const val NOTIFICATION_ID = "notificationId"
-const val RECEIVER_ID = "receiverId"
 const val TYPE = "type"
 const val USER_ID = "userId"
 const val USERNAME = "username"
@@ -100,16 +99,8 @@ const val USER_IMG_5 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.a
 const val USER_IMG_6 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa6.jpg?alt=media&token=c5a58dc9-8bb8-41ed-9f9d-c4a4b69238cd"
 const val USER_IMG_7 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa7.jpg?alt=media&token=54a70f7f-1d3b-4f56-a5c9-3f42c4f51dec"
 const val USER_IMG_8 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa8.jpg?alt=media&token=90013468-bc6c-4867-9dd8-4ecbeea480a0"
-const val USER_IMG_9 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa9.jpg?alt=media&token=18141416-e5f6-463c-b7e1-cd1f37b8d165"
-const val USER_IMG_10 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa10.jpg?alt=media&token=f0b22ec2-6b1e-47ac-a9cb-c1eefa2c4d98"
-const val USER_IMG_11 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa11.jpg?alt=media&token=3e7ae8cb-b844-4b64-96b3-005c7ea0657f"
-const val USER_IMG_12 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa12.jpg?alt=media&token=50b82ee8-5ec2-4c1d-92bd-9b4120b86024"
-const val USER_IMG_13 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa13.jpg?alt=media&token=0df4abc9-a085-4b7f-8a0a-49ed14b07754"
-const val USER_IMG_14 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa14.jpg?alt=media&token=50beec53-ffdb-4cd7-b279-ef85a429c497"
-const val USER_IMG_15 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa15.jpg?alt=media&token=f66c2084-2810-4195-9246-9ab9d1bb3ab0"
-const val USER_IMG_16 = "https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fdefault%2Fa16.jpg?alt=media&token=7d7a3291-56ef-4194-be3c-8aedc221bff9"
 
-val userImages = listOf(USER_IMG_1, USER_IMG_2, USER_IMG_3, USER_IMG_4, USER_IMG_5, USER_IMG_6, USER_IMG_7, USER_IMG_8, USER_IMG_9, USER_IMG_10, USER_IMG_11, USER_IMG_12, USER_IMG_13, USER_IMG_14, USER_IMG_15, USER_IMG_16)
+val userImages = listOf(USER_IMG_1, USER_IMG_2, USER_IMG_3, USER_IMG_4, USER_IMG_5, USER_IMG_6, USER_IMG_7, USER_IMG_8)
 
 // options
 const val OPTION_1 = "Set as admin"
@@ -142,6 +133,7 @@ const val OPTION_27 = "Settings"
 const val OPTION_28 = "Add to your interests"
 const val OPTION_29 = "Report comment"
 const val OPTION_30 = "Delete comment"
+const val OPTION_31 = "Sent invites"
 const val PREVIOUS_PROJECT = "prev_project"
 
 const val HTTPS = "https"
@@ -155,3 +147,5 @@ const val READ = "read"
 
 const val PREF_CREATE_TOOLTIP = "PREF_CREATE_TOOLTIP"
 const val PREF_PROJECT_TAGS = "PREF_PROJECT_TAGS"
+const val PREF_SCROLL_TOP = "PREF_SCROLL_TOP"
+const val PREF_SCROLL_TOP_ALT = "PREF_SCROLL_TOP_ALT"

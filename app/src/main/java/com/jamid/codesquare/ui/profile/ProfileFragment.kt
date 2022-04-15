@@ -27,6 +27,7 @@ import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.OptionsFragment
 import com.jamid.codesquare.ui.ProjectListFragment
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+import java.util.*
 
 @ExperimentalPagingApi
 class ProfileFragment: Fragment(), OptionClickListener {
@@ -47,12 +48,12 @@ class ProfileFragment: Fragment(), OptionClickListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         super.onOptionsItemSelected(item)
-        val user = arguments?.getParcelable<User>("user")
+        val user = arguments?.getParcelable<User>(USER)
 
         return when (item.itemId) {
             R.id.profile_option -> {
                 val (choices, icons) = if (user == null || user.id == UserManager.currentUserId) {
-                    arrayListOf(OPTION_24, OPTION_25, OPTION_26, OPTION_27, OPTION_23) to arrayListOf(R.drawable.ic_saved_projects, R.drawable.ic_archives, R.drawable.ic_request, R.drawable.ic_setting, R.drawable.ic_signout)
+                    arrayListOf(OPTION_24, OPTION_25, OPTION_26, OPTION_31, OPTION_27, OPTION_23) to arrayListOf(R.drawable.ic_saved_projects, R.drawable.ic_archives, R.drawable.ic_request, R.drawable.ic_invite, R.drawable.ic_setting, R.drawable.ic_signout)
                 } else {
                     arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_report)
                 }
@@ -89,9 +90,13 @@ class ProfileFragment: Fragment(), OptionClickListener {
 
         TabLayoutMediator(tabLayout, binding.profileViewPager) { tab, pos ->
             if (pos == 0) {
-                tab.text = "Projects"
+                tab.text = PROJECTS.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
             } else {
-                tab.text = "Collaborations"
+                tab.text = COLLABORATIONS.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.getDefault()
+                    ) else it.toString()
+                }
             }
         }.attach()
 
@@ -174,7 +179,7 @@ class ProfileFragment: Fragment(), OptionClickListener {
 
             secondaryBtn.setOnClickListener {
                 val projectListFragment = ProjectListFragment.newInstance(user)
-                projectListFragment.show(requireActivity().supportFragmentManager, "ProjectListFragment")
+                projectListFragment.show(requireActivity().supportFragmentManager, ProjectListFragment.TAG)
             }
         } else {
             // current user doesn't require secondary btn
@@ -353,6 +358,9 @@ class ProfileFragment: Fragment(), OptionClickListener {
             OPTION_27 -> {
                 // settings
                 findNavController().navigate(R.id.settingsFragment, null, slideRightNavOptions())
+            }
+            OPTION_31 -> {
+                findNavController().navigate(R.id.invitesFragment, null, slideRightNavOptions())
             }
         }
     }

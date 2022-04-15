@@ -9,8 +9,6 @@ import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.databinding.CommentItemBinding
 import com.jamid.codesquare.getTextForTime
 import com.jamid.codesquare.listeners.CommentListener
-import java.text.SimpleDateFormat
-import java.util.*
 
 class CommentViewHolder(val view: View, private val commentListener: CommentListener): RecyclerView.ViewHolder(view) {
 
@@ -57,6 +55,11 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
             binding.commentOptionBtn.setOnClickListener {
                 commentListener.onOptionClick(comment)
             }
+
+            commentListener.onCheckForStaleData(comment) {
+                bind(it)
+            }
+
         }
     }
 

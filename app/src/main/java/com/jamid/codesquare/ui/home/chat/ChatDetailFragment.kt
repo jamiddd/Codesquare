@@ -1,6 +1,7 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.Gravity
@@ -14,6 +15,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.android.material.transition.MaterialSharedAxis
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -33,6 +35,15 @@ class ChatDetailFragment: Fragment(), UserClickListener {
     private lateinit var userAdapter: UserAdapter
     private lateinit var chatChannel: ChatChannel
     private lateinit var project: Project
+    private var contributorsListener: ListenerRegistration? = null
+
+    private var act: MainActivity? = null
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (context is MainActivity)
+            act = context
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,7 +120,7 @@ class ChatDetailFragment: Fragment(), UserClickListener {
 
         setMediaRecyclerAndData(chatChannel.chatChannelId)
 
-        Firebase.firestore.collection(USERS)
+        contributorsListener = Firebase.firestore.collection(USERS)
             .whereArrayContains(COLLABORATIONS, project.id)
             .addSnapshotListener { querySnapshot, error ->
                 if (error != null) {
@@ -121,12 +132,12 @@ class ChatDetailFragment: Fragment(), UserClickListener {
                     val users = querySnapshot.toObjects(User::class.java)
                     contributors.addAll(users)
 
-                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                    act?.getUserImpulsive(project.creator.userId) { it1 ->
                         contributors.add(it1)
                         onContributorsFetched(contributors)
                     }
                 } else {
-                    (activity as MainActivity).getUserImpulsive(project.creator.userId) { it1 ->
+                    act?.getUserImpulsive(project.creator.userId) { it1 ->
                         onContributorsFetched(listOf(it1))
                     }
                 }
@@ -141,7 +152,7 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         binding.chatProjectImage.controller = builder.build()
 
         binding.chatProjectImage.setOnClickListener {
-            (activity as MainActivity).showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
+            act?.showImageViewFragment(binding.chatProjectImage, Image(project.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
         }
 
     }
@@ -160,16 +171,21 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         }
     }
 
-    private fun onMediaMessagesExists() = requireActivity().runOnUiThread {
+    private fun onMediaMessagesExists() {
         binding.divider13.show()
         binding.chatMediaRecycler.show()
         binding.chatMediaHeader.show()
     }
 
-    private fun onMediaMessagesNotFound()  = requireActivity().runOnUiThread {
+    private fun onMediaMessagesNotFound() {
         binding.divider13.hide()
         binding.chatMediaRecycler.hide()
         binding.chatMediaHeader.hide()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        contributorsListener?.remove()
     }
 
     private fun setMediaRecyclerAndData(chatChannelId: String) {
@@ -181,13 +197,13 @@ class ChatDetailFragment: Fragment(), UserClickListener {
         }
 
         viewModel.getLimitedMediaMessages(chatChannelId, 6) {
-            requireActivity().runOnUiThread {
+            act?.runOnUiThread {
                 if (it.isNotEmpty()) {
                     gridAdapter.submitList(it)
                     onMediaMessagesExists()
                 } else {
                     viewModel.getLimitedMediaMessages(chatChannelId, 3, document) { mediaMessages2 ->
-                        requireActivity().runOnUiThread {
+                        act?.runOnUiThread {
                             if (mediaMessages2.isEmpty()) {
                                 onMediaMessagesNotFound()
                             } else {
@@ -248,11 +264,11 @@ class ChatDetailFragment: Fragment(), UserClickListener {
     }
 
     override fun onUserClick(user: User) {
-        (activity as MainActivity).onUserClick(user)
+        act?.onUserClick(user)
     }
 
     override fun onUserClick(userMinimal: UserMinimal2) {
-        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+        act?.getUserImpulsive(userMinimal.objectID) {
             onUserClick(it)
         }
     }
@@ -260,23 +276,23 @@ class ChatDetailFragment: Fragment(), UserClickListener {
     override fun onUserOptionClick(user: User) {
         val optionsListPair = getFilteredOptionsList(user)
         if (optionsListPair.first.isNotEmpty()) {
-            (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second, chatChannel = chatChannel)
-            (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+            act?.optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second, chatChannel = chatChannel, user = user)
+            act?.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
         }
     }
 
     override fun onUserOptionClick(userMinimal: UserMinimal2) {
-        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+        act?.getUserImpulsive(userMinimal.objectID) {
             onUserOptionClick(it)
         }
     }
 
     override fun onUserLikeClick(user: User) {
-        (activity as MainActivity).onUserLikeClick(user)
+        act?.onUserLikeClick(user)
     }
 
     override fun onUserLikeClick(userMinimal: UserMinimal2) {
-        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
+        act?.getUserImpulsive(userMinimal.objectID) {
             onUserLikeClick(it)
         }
     }

@@ -2,19 +2,28 @@ package com.jamid.codesquare.ui.home.feed
 
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
+import android.graphics.Rect
+import android.util.Log
 import android.view.View
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.text.isDigitsOnly
 import androidx.core.view.updateLayoutParams
+import androidx.fragment.app.FragmentContainerView
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.preference.PreferenceManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.android.material.appbar.AppBarLayout
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.snackbar.Snackbar
@@ -106,8 +115,8 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         }
 
         val touchLength = resources.getDimension(R.dimen.touch_len).toInt()
-        val genericLength = resources.getDimension(R.dimen.generic_len).toInt()
-        binding.pagerItemsRecycler.setPadding(0, touchLength, 0, genericLength)
+        val bottomPadding = resources.getDimension(R.dimen.generic_len).toInt() * 10
+        binding.pagerItemsRecycler.setPadding(0, touchLength, 0, bottomPadding)
 
         setRandomButton(query, tagsContainerBinding.random)
 
@@ -139,30 +148,129 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         showFilterTagsTooltip(tagsContainerView)
 
+        var y = 0
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+        val appbar = requireActivity().findViewById<AppBarLayout>(R.id.main_appbar)
+        val container = requireActivity().findViewById<FragmentContainerView>(R.id.nav_host_fragment)
+
+        val screenWidth = getWindowWidth()
+
+        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    val layoutManager = (recyclerView.layoutManager as LinearLayoutManager)
+                    val pos = layoutManager.findFirstCompletelyVisibleItemPosition()
+
+                    if (pos > 4) {
+                        // that means the user has scrolled way bottom for the first time
+                        if (toolbar != null)
+                            showToolbarClickTooltip(toolbar)
+
+                    }
+
+                    val checkedId = tagsContainerBinding.tagsHolder.checkedChipId
+                    val v = tagsContainerBinding.tagsHolder.findViewById<View>(checkedId)
+                    if (v != null) {
+                        val location = intArrayOf(0, 0)
+                        v.getLocationInWindow(location)
+
+                        val x1 = location[0]
+                        val y1 = location[1]
+                        when {
+                            x1 < 0 -> {
+                                // left side of the screen
+                                tagsContainerBinding.tagsContainer.smoothScrollTo(x1, y1)
+                            }
+                            x1 > screenWidth -> {
+                                // right side of the screen
+                                tagsContainerBinding.tagsContainer.smoothScrollTo(x1, y1)
+                            }
+                            else -> {
+                                // on the screen
+                            }
+                        }
+
+                    }
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+
+                val newY = y + dy
+
+                val a = resources.getDimension(R.dimen.generic_len) * 5
+
+                if (newY > y && newY - y > a) {
+                    // scrolling down significantly
+                    appbar?.hide()
+
+                    val params = container.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = null
+                    container.layoutParams = params
+
+                }
+
+                if (newY < y && y - newY > a) {
+                    // scrolling up significantly
+                    appbar?.show()
+
+                    val params = container.layoutParams as CoordinatorLayout.LayoutParams
+                    params.behavior = AppBarLayout.ScrollingViewBehavior()
+                    container.layoutParams = params
+
+                }
+
+                y = newY
+            }
+
+        })
+
     }
 
-    private fun showFilterTagsTooltip(tagsContainer: View) = viewLifecycleOwner.lifecycleScope.launch {
+    private fun showToolbarClickTooltip(toolbar: View) {
+
         val container = (activity as MainActivity).binding.root
-
-        delay(1500)
-
         container.removeView(tooltipView)
 
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val feedTagsDialogFlag = sharedPref.getBoolean(PREF_PROJECT_TAGS, true)
-        if (feedTagsDialogFlag) {
-            tooltipView = showTooltip("Filter projects by tags", container, tagsContainer, AnchorSide.Bottom)
+        val scrollToTopDialogFlag = sharedPref.getBoolean(PREF_SCROLL_TOP, true)
+
+        if (scrollToTopDialogFlag) {
+            tooltipView = showTooltip("Click on toolbar to scroll to top again", container, toolbar, AnchorSide.Bottom)
 
             val editor = sharedPref.edit()
-            editor.putBoolean(PREF_PROJECT_TAGS, false)
+            editor.putBoolean(PREF_SCROLL_TOP, false)
             editor.apply()
+        }
+
+    }
+
+    private fun showFilterTagsTooltip(tagsContainer: View) = viewLifecycleOwner.lifecycleScope.launch {
+
+        delay(1500)
+
+        requireActivity().runOnUiThread {
+            val container = (activity as MainActivity).binding.root
+            container.removeView(tooltipView)
+
+            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val feedTagsDialogFlag = sharedPref.getBoolean(PREF_PROJECT_TAGS, true)
+            if (feedTagsDialogFlag) {
+                tooltipView = showTooltip("Filter projects by tags", container, tagsContainer, AnchorSide.Bottom)
+
+                val editor = sharedPref.edit()
+                editor.putBoolean(PREF_PROJECT_TAGS, false)
+                editor.apply()
+            }
         }
     }
 
     private fun setLocationButton(locationBtn: Chip) {
 
         locationBtn.apply {
-            isCheckable = false
             isCloseIconVisible = false
         }
 
@@ -198,7 +306,6 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         }
 
         random.apply {
-            isCheckable = false
             isCloseIconVisible = false
         }
 
@@ -278,7 +385,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
         tag.trim()
         val lContext = requireContext()
-        val chip = Chip(lContext)
+        val chip = View.inflate(lContext, R.layout.choice_chip, null) as Chip
 
         val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
         val t2 = tag.uppercase()
@@ -306,8 +413,10 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
         }
     }
 
-
     companion object {
+
+        private const val TAG = "FeedFragment"
+
         @JvmStatic
         fun newInstance() = FeedFragment()
     }

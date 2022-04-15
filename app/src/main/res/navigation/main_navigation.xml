@@ -627,5 +627,15 @@
             android:defaultValue="Project" />
 
     </fragment>
+    <fragment
+        android:id="@+id/invitesFragment"
+        android:name="com.jamid.codesquare.ui.InvitesFragment"
+        tools:layout="@layout/fragment_invites"
+        android:label="My Invites" />
+    <fragment
+        android:id="@+id/testFragment"
+        android:name="com.jamid.codesquare.ui.TestFragment"
+        tools:layout="@layout/fragment_test"
+        android:label="Compression Test" />
 
 </navigation>

@@ -24,8 +24,6 @@
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
     </style>
 
-
-
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
 
     <style name="AppTheme.TooltipBottom" parent="TextAppearance.AppCompat.Body1">
@@ -527,11 +525,14 @@
     </style>
 
     <style name="ThemeOverlay.App.YoutubeChip" parent="">
-        <item name="colorOnSurface">@color/darker_grey</item>
+        <item name="colorOnSurface">?colorAccent</item>
+        <item name="colorPrimary">@color/darkest_blue</item>
+        <item name="colorAccent">@color/darkest_blue</item>
+<!--        <item name="chipBackgroundColor">@color/primary_chip</item>-->
         <item name="chipIconTint">@color/black</item>
     </style>
 
-    <style name="AppTheme.YoutubeChip" parent="Widget.MaterialComponents.Chip.Entry">
+    <style name="AppTheme.YoutubeChip" parent="Widget.MaterialComponents.Chip.Choice">
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.YoutubeChip</item>
         <item name="android:textAppearance">@style/Chip.Text</item>
         <item name="checkedIconTint">?colorPrimary</item>
@@ -542,8 +543,9 @@
         <item name="closeIcon">@drawable/ic_round_close_24</item>
         <item name="closeIconTint">#5A5A5A</item>
         <item name="chipStrokeWidth">1dp</item>
+        <item name="chipIconVisible">false</item>
         <item name="checkedIconVisible">false</item>
-        <item name="chipStrokeColor">#D3D2D2</item>
+<!--        <item name="chipStrokeColor">#D3D2D2</item>-->
     </style>
 
     <style name="Chip.Text" parent="TextAppearance.MaterialComponents.Body2">
@@ -609,6 +611,19 @@
         <item name="colorPrimary">@color/darkest_blue</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="AppTheme.ThemeOverlay.MaterialChip" parent="">
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="colorOnSurface">@color/black</item>
+    </style>
+
+    <style name="AppTheme.MyChip" parent="@style/Widget.MaterialComponents.Chip.Choice">
+        <item name="materialThemeOverlay">@style/AppTheme.ThemeOverlay.MaterialChip</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeColor">@color/choice_chip_stroke_color</item>
+        <item name="chipBackgroundColor">@color/choice_chip_background_color</item>
+        <item name="chipIconTint">@color/choice_chip_icon_color</item>
     </style>
 
 </resources>

@@ -15,6 +15,7 @@ import com.jamid.codesquare.CHAT_CHANNEL
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class ChatMediaFragment : Fragment() {
@@ -40,8 +41,7 @@ class ChatMediaFragment : Fragment() {
 
         binding.chatMediaPager.adapter = ChatMediaAdapter(chatChannel.chatChannelId, activity)
 
-        (binding.chatMediaPager.getChildAt(0) as RecyclerView).overScrollMode =
-            RecyclerView.OVER_SCROLL_NEVER
+        OverScrollDecoratorHelper.setUpOverScroll(binding.chatMediaPager.getChildAt(0) as RecyclerView, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
         TabLayoutMediator(tabLayout, binding.chatMediaPager) { tab, pos ->
             when (pos) {
@@ -55,6 +55,7 @@ class ChatMediaFragment : Fragment() {
     @ExperimentalPagingApi
     private inner class ChatMediaAdapter(val chatChannelId: String, activity: FragmentActivity) :
         FragmentStateAdapter(activity) {
+
         override fun getItemCount() = 2
 
         override fun createFragment(position: Int): Fragment {
@@ -73,7 +74,7 @@ class ChatMediaFragment : Fragment() {
         fun newInstance(bundle: Bundle)
             = ChatMediaFragment().apply {
                 arguments = bundle
-        }
+            }
 
     }
 

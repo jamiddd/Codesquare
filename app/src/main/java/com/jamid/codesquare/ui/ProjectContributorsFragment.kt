@@ -45,15 +45,18 @@ class ProjectContributorsFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         project = arguments?.getParcelable(PROJECT) ?: return
-        val prefetchedContributors = arguments?.getParcelableArrayList<User>("contributors") ?: arrayListOf()
+        val title = arguments?.getString(TITLE)
+        val subtitle = arguments?.getString(SUB_TITLE)
+
+        (activity as MainActivity?)?.binding?.mainToolbar?.title = title
+        (activity as MainActivity?)?.binding?.mainToolbar?.subtitle = subtitle
+
         userAdapter = UserAdapter(small = true, grid = true)
 
         binding.contributorsRecycler.apply {
             adapter = userAdapter
             layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
         }
-
-        userAdapter.submitList(prefetchedContributors)
 
         getContributors()
 

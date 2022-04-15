@@ -16,7 +16,7 @@
     <color name="darkest_grey_2">#333</color>
     <color name="dank_grey">#1a1a1a</color>
     <color name="darkest_grey">#111111</color>
-    <color name="very_dark_grey">#555555</color>
+    <color name="very_dark_grey">#444</color>
     <color name="lightest_grey">#F5F5F5</color>
     <color name="error_color">#E80505</color>
     <color name="error_color_background">#33E80505</color>

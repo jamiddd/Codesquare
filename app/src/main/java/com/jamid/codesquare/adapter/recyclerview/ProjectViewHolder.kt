@@ -189,7 +189,9 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
     }
 
     private fun checkForStaleData(project: Project) {
-        projectClickListener.onCheckForStaleData(project)
+        projectClickListener.onCheckForStaleData(project) {
+            bind(it)
+        }
     }
 
     /**

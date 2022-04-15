@@ -81,4 +81,7 @@ abstract class MessageDao: BaseDao<Message>() {
     @Query("SELECT * FROM messages WHERE chatChannelId = :chatChannelId AND type != :type ORDER BY createdAt DESC LIMIT :limit")
     abstract fun getMediaMessages(chatChannelId: String, limit: Int = 6, type: String = text): LiveData<List<Message>>
 
+    @Query("SELECT * FROM messages WHERE senderId = :id")
+    abstract suspend fun getCurrentUserMessages(id: String): List<Message>
+
 }

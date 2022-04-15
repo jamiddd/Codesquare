@@ -262,5 +262,6 @@
     <string name="this_is_a_text_for_people_who_don_t_know">This is a text for people who don\'t know</string>
     <string name="explore_projects">Explore projects</string>
     <string name="tired_of_seeing_ads">Tired of seeing ads?</string>
+    <string name="no_invites_sent_by_you">No invites sent by you</string>
 
 </resources>

@@ -14,12 +14,12 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.ProjectListItemBinding
 import com.jamid.codesquare.listeners.ProjectMiniItemClickListener
 
-class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniItemClickListener): ListAdapter<Project, ProjectListAdapter.ProjectListItemViewHolder>(ProjectComparator()){
+class ProjectListAdapter(
+    private val receiverId: String,
+    private val projectMiniItemClickListener: ProjectMiniItemClickListener
+) : ListAdapter<Project, ProjectListAdapter.ProjectListItemViewHolder>(ProjectComparator()) {
 
-    var receiverIdForInvite: String = ""
-    var currentUserId: String = ""
-
-    inner class ProjectListItemViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+    inner class ProjectListItemViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
 
         fun bind(project: Project) {
             val binding = ProjectListItemBinding.bind(view)
@@ -29,12 +29,14 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
             binding.inviteBtnProgress.show()
             binding.projectMiniInviteBtn.disappear()
 
-            if (project.contributors.contains(receiverIdForInvite)) {
+            // checking if the user is already a contributor
+            if (project.contributors.contains(receiverId)) {
                 // hide invite button
                 binding.inviteBtnProgress.hide()
                 binding.projectMiniInviteBtn.hide()
             } else {
-                FireUtility.getProjectRequest(project.id, receiverIdForInvite) {
+                // if the user is not already a contributor, check if the user has sent request to the current user
+                FireUtility.getProjectRequest(project.id, receiverId) {
                     when (it) {
                         is Result.Error -> Log.e(TAG, it.exception.localizedMessage.orEmpty())
                         is Result.Success -> {
@@ -44,28 +46,58 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
                             binding.projectMiniInviteBtn.hide()
                         }
                         null -> {
-                            // there is no project request
-                            FireUtility.getExistingInvite(project.id, receiverIdForInvite, currentUserId) { it1 ->
+                            // there is no existing project request by this user, check if we have already sent invite to this user
+                            FireUtility.getExistingInvite(
+                                project.id,
+                                receiverId,
+                                UserManager.currentUserId
+                            ) { it1 ->
 
                                 binding.inviteBtnProgress.hide()
                                 binding.projectMiniInviteBtn.show()
 
                                 when (it1) {
-                                    is Result.Error -> Log.e(TAG, it1.exception.localizedMessage.orEmpty())
+                                    is Result.Error -> Log.e(
+                                        TAG,
+                                        it1.exception.localizedMessage.orEmpty()
+                                    )
                                     is Result.Success -> {
+                                        // yes, we have already sent invite to this user
                                         val invite = it1.data
-                                        binding.projectMiniInviteBtn.text = view.context.getString(R.string.revoke)
+                                        binding.projectMiniInviteBtn.text =
+                                            view.context.getString(R.string.revoke)
                                         binding.projectMiniInviteBtn.icon = null
+
+                                        // setting the button to revoke this invite on click
                                         binding.projectMiniInviteBtn.setOnClickListener {
-                                            projectMiniItemClickListener.onRevokeInviteClick(invite, receiverIdForInvite)
+                                            projectMiniItemClickListener.onRevokeInviteClick(
+                                                invite
+                                            ) {
+                                                binding.inviteBtnProgress.hide()
+                                                binding.projectMiniInviteBtn.show()
+                                            }
                                             bind(project)
                                         }
                                     }
                                     null -> {
-                                        binding.projectMiniInviteBtn.text = view.context.getString(R.string.invite)
-                                        binding.projectMiniInviteBtn.icon = ContextCompat.getDrawable(view.context, R.drawable.ic_round_how_to_reg_24)
+                                        // no existing invite found, this is the only condition when we can send invite
+                                        binding.projectMiniInviteBtn.text =
+                                            view.context.getString(R.string.invite)
+                                        binding.projectMiniInviteBtn.icon =
+                                            ContextCompat.getDrawable(
+                                                view.context,
+                                                R.drawable.ic_round_how_to_reg_24
+                                            )
+
+                                        // setting the button to invite this user on click
                                         binding.projectMiniInviteBtn.setOnClickListener {
-                                            projectMiniItemClickListener.onInviteClick(project, receiverIdForInvite)
+                                            projectMiniItemClickListener.onInviteClick(
+                                                project,
+                                                receiverId
+                                            ) {
+                                                binding.inviteBtnProgress.hide()
+                                                binding.projectMiniInviteBtn.show()
+                                            }
                                             bind(project)
                                         }
                                     }
@@ -79,7 +111,9 @@ class ProjectListAdapter(private val projectMiniItemClickListener: ProjectMiniIt
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProjectListItemViewHolder {
-        return ProjectListItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.project_list_item, parent, false))
+        return ProjectListItemViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.project_list_item, parent, false)
+        )
     }
 
     override fun onBindViewHolder(holder: ProjectListItemViewHolder, position: Int) {

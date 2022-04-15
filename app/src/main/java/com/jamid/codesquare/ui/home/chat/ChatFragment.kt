@@ -1,26 +1,25 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.os.Bundle
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
-import androidx.core.view.updateLayoutParams
+import android.view.View
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton.SIZE_MINI
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
+import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.ui.ChatContainerFragment
+import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
@@ -33,7 +32,10 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
     private val mContext: Context by lazy { requireContext() }
-    private var fab: FloatingActionButton? = null
+//    private var fab: FloatingActionButton? = null
+
+    private var tooltipView: View? = null
+
 
     private fun getScrollPosition(): Int {
         val layoutManager = binding.pagerItemsRecycler.layoutManager as LinearLayoutManager?
@@ -73,11 +75,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
                     binding.pagerNoItemsText.hide()
                 } else {
 
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        delay(300)
-                        fab?.hide()
-                    }
-
                     // hide info and show recyclerview
                     binding.pagerItemsRecycler.hide()
                     binding.pagerNoItemsText.show()
@@ -102,9 +99,32 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     super.onScrollStateChanged(recyclerView, newState)
                     val scrollPosition = getScrollPosition()
-                    updateFabUi(scrollPosition)
+
+                    val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
+                    if (scrollPosition > 15 && newState == RecyclerView.SCROLL_STATE_IDLE) {
+                        showToolbarClickTooltip(toolbar)
+                    }
+
                 }
             })
+        }
+
+    }
+
+    private fun showToolbarClickTooltip(toolbar: View) {
+
+        val container = (activity as MainActivity).binding.root
+        container.removeView(tooltipView)
+
+        val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+        val scrollToTopDialogFlag = sharedPref.getBoolean(PREF_SCROLL_TOP_ALT, true)
+
+        if (scrollToTopDialogFlag) {
+            tooltipView = showTooltip("Click on toolbar to scroll to bottom", container, toolbar, AnchorSide.Bottom)
+
+            val editor = sharedPref.edit()
+            editor.putBoolean(PREF_SCROLL_TOP_ALT, false)
+            editor.apply()
         }
 
     }
@@ -130,13 +150,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             )
         }
 
-        setFabLayout()
+//        setFabLayout()
 
         setNewMessagesListener()
 
     }
 
-    private fun updateFabUi(scrollPosition: Int) {
+    /*private fun updateFabUi(scrollPosition: Int) {
         if (scrollPosition != 0) {
             // if the scroll position is not the bottom most check if it is way above or not
             if (scrollPosition > MESSAGE_SCROLL_THRESHOLD) {
@@ -152,13 +172,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         } else {
             fab?.hide()
             // if the scroll position is exactly bottom, check if there are actually any messages
-            /*if (pagingAdapter.itemCount != 0) {
+            *//*if (pagingAdapter.itemCount != 0) {
                 fab?.hide()
-            }*/
+            }*//*
         }
-    }
+    }*/
 
-    private fun setFabLayout() {
+   /* private fun setFabLayout() {
         fab = FloatingActionButton(requireContext())
         fab?.apply {
             size = SIZE_MINI
@@ -188,7 +208,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             it.hide()
         }
 
-    }
+    }*/
 
     private fun scrollToBottom() = viewLifecycleOwner.lifecycleScope.launch {
         delay(300)
@@ -202,7 +222,6 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     companion object {
 
         const val TAG = "ChatFragment"
-        private const val MESSAGE_SCROLL_THRESHOLD = 10
 
         fun newInstance(bundle: Bundle) =
             ChatFragment().apply {

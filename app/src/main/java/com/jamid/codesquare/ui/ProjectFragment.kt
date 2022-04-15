@@ -9,6 +9,9 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.*
+import android.widget.Button
+import android.widget.RatingBar
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
@@ -19,10 +22,9 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.AdView
-import com.google.android.gms.ads.LoadAdError
+import com.facebook.drawee.view.SimpleDraweeView
+import com.google.android.gms.ads.*
+import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.FieldValue
@@ -30,6 +32,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
+import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
@@ -73,9 +76,9 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         }
 
         if (currentUser.premiumState.toInt() == -1) {
-            setAdView()
+            setCustomAd()
         } else {
-            binding.adView.hide()
+            binding.adContainer.root.hide()
         }
 
         binding.projectRefresher.setOnRefreshListener {
@@ -95,6 +98,108 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
 
     }
 
+    private fun setCustomAd() {
+        val adBinding = binding.adContainer
+
+        if (isNightMode()) {
+            adBinding.root.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.darkest_grey_2))
+        } else {
+            adBinding.root.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.ios_grey))
+        }
+
+        val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
+        val adOptions = NativeAdOptions.Builder()
+            .setVideoOptions(videoOptions)
+            .setAdChoicesPlacement(NativeAdOptions.ADCHOICES_BOTTOM_RIGHT)
+            .build()
+
+        val nativeAdView = adBinding.root
+
+        adBinding.adInfoIcon.setOnClickListener {
+            projectClickListener.onAdInfoClick()
+        }
+
+        val adLoader = AdLoader.Builder(requireContext(), "ca-app-pub-3940256099942544/2247696110")
+            .forNativeAd { nativeAd ->
+
+                nativeAdView.headlineView = adBinding.adHeadline
+                nativeAdView.bodyView = adBinding.adSecondaryText
+                nativeAdView.mediaView = adBinding.adMediaView
+                nativeAdView.callToActionView = adBinding.adPrimaryAction
+                nativeAdView.iconView = adBinding.adAppIcon
+                nativeAdView.priceView = adBinding.adPriceText
+                nativeAdView.starRatingView = adBinding.adRating
+                nativeAdView.advertiserView = adBinding.adAdvertiser
+
+                (nativeAdView.headlineView as TextView).text = nativeAd.headline
+                nativeAd.mediaContent?.let {
+                    nativeAdView.mediaView?.setMediaContent(it)
+                }
+
+                if (nativeAd.icon != null) {
+                    (nativeAdView.iconView as SimpleDraweeView).setImageURI(nativeAd.icon?.uri.toString())
+                }
+
+                if (nativeAd.body == null) {
+                    nativeAdView.bodyView?.hide()
+                } else {
+                    nativeAdView.bodyView?.show()
+                    (nativeAdView.bodyView as TextView).text = nativeAd.body
+                }
+
+                if (nativeAd.callToAction == null) {
+                    nativeAdView.callToActionView?.hide()
+                } else {
+                    nativeAdView.callToActionView?.show()
+                    (nativeAdView.callToActionView as Button).text = nativeAd.callToAction
+                }
+
+                if (nativeAd.price == null) {
+                    nativeAdView.priceView?.hide()
+                } else {
+                    nativeAdView.priceView?.show()
+                    (nativeAdView.priceView as TextView).text = nativeAd.price
+                }
+
+                if (nativeAd.starRating == null) {
+                    nativeAdView.starRatingView?.hide()
+                } else {
+                    nativeAdView.starRatingView?.show()
+                    (nativeAdView.starRatingView as RatingBar).rating = nativeAd.starRating!!.toFloat()
+                }
+
+                if (nativeAd.advertiser == null) {
+                    nativeAdView.advertiserView?.hide()
+                } else {
+                    (nativeAdView.advertiserView as TextView).text = nativeAd.advertiser
+                    nativeAdView.advertiserView?.show()
+                }
+
+                nativeAdView.setNativeAd(nativeAd)
+
+            }
+            .withAdListener(object: AdListener() {
+                override fun onAdFailedToLoad(loadAdError: LoadAdError) {
+                    super.onAdFailedToLoad(loadAdError)
+                    projectClickListener.onAdError(project)
+                }
+
+                override fun onAdLoaded() {
+                    super.onAdLoaded()
+                    adBinding.loadingAdText.hide()
+                    adBinding.adPrimaryAction.show()
+                }
+            })
+            .withNativeAdOptions(adOptions)
+            .build()
+
+        binding.removeAdBtn.setOnClickListener {
+            projectClickListener.onAdInfoClick()
+        }
+
+        adLoader.loadAd(AdRequest.Builder().build())
+    }
+
     private fun updateProject() {
         // getting new data of the project
         FireUtility.getProject(project.id) {
@@ -110,6 +215,12 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                     project = processProjects(arrayOf(newProjectResult.data))[0]
                     viewModel.insertProjects(project)
                     viewModel.insertProjectToCache(project)
+
+                    // Contributors related
+                    setContributors()
+
+                    // Comments related
+                    setCommentUi()
                 }
             }
         }
@@ -122,7 +233,9 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         binding.userName.text = mCreator.name
 
         // checking for changes in the user data
-        projectClickListener.onCheckForStaleData(project)
+        projectClickListener.onCheckForStaleData(project) {
+            project = it
+        }
 
         // set mutable content
         viewModel.getReactiveUser(mCreator.userId).observe(viewLifecycleOwner) { creator ->
@@ -181,43 +294,6 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
                         "because it was taken from local database.")
             }
         }
-    }
-
-    private fun setAdView() {
-        val adView = requireActivity().findViewById<AdView>(R.id.adView)
-        adView.loadAd(AdRequest.Builder().build())
-        adView.adListener = object: AdListener() {
-            override fun onAdFailedToLoad(p0: LoadAdError) {
-                super.onAdFailedToLoad(p0)
-                Log.e(TAG, p0.message)
-                adView.hide()
-                binding.removeAdBtn.hide()
-            }
-
-            override fun onAdLoaded() {
-                super.onAdLoaded()
-                adView.show()
-                binding.removeAdBtn.show()
-            }
-
-            override fun onAdOpened() {
-                super.onAdOpened()
-                adView.show()
-                binding.removeAdBtn.show()
-            }
-
-            override fun onAdClosed() {
-                super.onAdClosed()
-                adView.hide()
-                binding.removeAdBtn.hide()
-            }
-
-        }
-
-        binding.removeAdBtn.setOnClickListener {
-            projectClickListener.onAdInfoClick()
-        }
-
     }
 
     private fun addLinks(links: List<String>) {
@@ -290,6 +366,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             isCloseIconVisible = false
             binding.projectTags.addView(this)
             chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
+            chipStrokeColor = ColorStateList.valueOf(textColor)
 
             setTextColor(textColor)
 
@@ -376,7 +453,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         val lastComment = commentChannel.lastComment
         if (lastComment != null) {
 
-            onCheckForStaleData(lastComment)
+            onCheckForStaleData(commentChannel, lastComment)
 
             binding.projectsLastComment.root.show()
             binding.commentsHeader.show()
@@ -507,7 +584,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         binding.commentLayoutProgress.hide()
     }
 
-    private fun onCheckForStaleData(comment: Comment) {
+    private fun onCheckForStaleData(commentChannel: CommentChannel, comment: Comment) {
 
         fun onChangeNeeded(lastComment: Comment, commentSender: User) {
             val changes = mapOf(SENDER to commentSender.minify(), UPDATED_AT to System.currentTimeMillis())
@@ -515,19 +592,22 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             lastComment.sender = commentSender.minify()
             lastComment.updatedAt = System.currentTimeMillis()
 
+            commentChannel.lastComment = lastComment
+            setCommentUi(commentChannel)
+
             updateLastComment(lastComment, changes)
         }
 
 
         (activity as MainActivity).getUserImpulsive(comment.senderId) { commentSender ->
-            if (commentSender.updatedAt > comment.updatedAt) {
+            if (comment.sender != commentSender.minify()) {
                 onChangeNeeded(comment, commentSender)
             }
         }
     }
 
-    private fun setCommentUi(project: Project) {
-        Firebase.firestore.collection(COMMENT_CHANNELS)
+    private fun setCommentUi() {
+        lr = Firebase.firestore.collection(COMMENT_CHANNELS)
             .document(project.commentChannel)
             .addSnapshotListener { snap, err ->
                 
@@ -624,8 +704,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         setContributors()
 
         // Comments related
-//        setCommentLayout()
-        setCommentUi(project)
+        setCommentUi()
     }
 
     /**
@@ -641,6 +720,8 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             adapter = imageAdapter
             layoutManager = manager
             onFlingListener = null
+            OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
+
             helper.attachToRecyclerView(this)
         }
 

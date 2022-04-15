@@ -360,10 +360,15 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             if (it.isSuccessful) {
                 insertCurrentUser(updatedUser)
                 updateLocalProjects(updatedUser, updatedUser.projects)
+                updateLocalMessages(updatedUser)
             } else {
                 setCurrentError(it.exception)
             }
         }
+    }
+
+    private fun updateLocalMessages(updatedUser: User) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateLocalMessages(updatedUser)
     }
 
     private fun updateLocalProjects(updatedUser: User, projects: List<String>) = viewModelScope.launch (Dispatchers.IO) {
@@ -710,6 +715,16 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             repo.notificationDao.getNotifications(currentUserId, type)
         }.flow.cachedIn(viewModelScope)
     }
+
+    fun insertProjects(projects: List<Project>) = viewModelScope.launch (Dispatchers.IO) {
+        for (project in projects) {
+            projectCache[project.id] = project
+        }
+        repo.insertProjects(projects.toTypedArray())
+    }
+
+
+    val testImage = MutableLiveData<Uri>().apply { value = null }
 
     fun insertProjects(vararg projects: Project) = viewModelScope.launch (Dispatchers.IO) {
         for (project in projects) {

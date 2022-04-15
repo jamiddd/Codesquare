@@ -290,17 +290,17 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     private fun updateNecessaryItems() {
         when {
             childFragmentManager.findFragmentByTag(ChannelGuidelinesFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems()
+                updateToolbarItems("Project Rules")
                 hideTabLayout()
                 hideOptionsLayout()
             }
             childFragmentManager.findFragmentByTag(ChatMediaFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems()
+                updateToolbarItems("Media")
                 showTabLayout()
                 hideOptionsLayout()
             }
             childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems(true)
+                updateToolbarItems(isMoreBtnVisible = true)
                 hideTabLayout()
                 hideOptionsLayout()
 
@@ -320,7 +320,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                 hideOptionsLayout()
             }
             childFragmentManager.findFragmentByTag(ForwardFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems()
+                updateToolbarItems("Forward")
                 hideTabLayout()
                 hideOptionsLayout()
             }
@@ -412,9 +412,10 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
     }
 
-    private fun updateToolbarItems(isMoreBtnVisible: Boolean = false, isProjectIconVisible: Boolean = false) {
+    private fun updateToolbarItems(title: String = chatChannel.projectTitle, isMoreBtnVisible: Boolean = false, isProjectIconVisible: Boolean = false) {
         moreBtn.isVisible = isMoreBtnVisible
         projectIcon.isVisible = isProjectIconVisible
+        (activity as MainActivity?)?.binding?.mainToolbar?.title = title
     }
 
     private fun setNavigation(onNavigation: () -> Unit) {
@@ -969,8 +970,15 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
                 if (message.senderId == UserManager.currentUserId) {
                     options.removeAt(3)
+                    icons.removeAt(3)
                 } else {
                     options.removeAt(2)
+                    icons.removeAt(2)
+                }
+
+                if (UserManager.currentUser.chatChannels.size <= 1) {
+                    options.removeAt(1)
+                    icons.removeAt(1)
                 }
 
                 (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, listener = this)
@@ -1108,7 +1116,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     }
 
     @Suppress("LABEL_NAME_CLASH")
-    override fun onCheckForStaleData(message: Message) {
+    override fun onCheckForStaleData(message: Message, onUpdate: (Message) -> Unit) {
 
         fun onChangeNeeded(user: User) {
 
@@ -1118,6 +1126,9 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             val change = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
             FireUtility.updateMessage(message.chatChannelId, message.messageId, change) {
                 if (it.isSuccessful) {
+
+                    onUpdate(message)
+
                     viewModel.updateMessage(message)
 
                     viewModel.getChatChannel(message.chatChannelId) { it1 ->
@@ -1144,7 +1155,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             }
         }
 
-        (activity as MainActivity).getUserImpulsive(message.senderId) {
+        (activity as MainActivity?)?.getUserImpulsive(message.senderId) {
             if (it.minify() != message.sender) {
                 onChangeNeeded(it)
             }
@@ -1165,7 +1176,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
         }
 
         if (message.replyMessage != null) {
-            (activity as MainActivity).getUserImpulsive(message.replyMessage!!.senderId) {
+            (activity as MainActivity?)?.getUserImpulsive(message.replyMessage!!.senderId) {
                 if (it.name != message.replyMessage!!.name) {
                     onChangeNeeded1(it)
                 }

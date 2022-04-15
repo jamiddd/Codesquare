@@ -86,6 +86,7 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/projects_count"
+        style="@style/AppTheme.MyChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:checkable="false"
@@ -99,14 +100,15 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/collaborations_count"
+        style="@style/AppTheme.MyChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:contentDescription="@string/total_number_of_collaborations"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
         android:checkable="false"
+        android:contentDescription="@string/total_number_of_collaborations"
         app:closeIconEnabled="false"
         app:layout_constraintBottom_toTopOf="@+id/divider4"
         app:layout_constraintEnd_toStartOf="@+id/likes_count"
@@ -116,11 +118,12 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/likes_count"
+        style="@style/AppTheme.MyChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:checkable="false"
-        app:closeIconEnabled="false"
         android:contentDescription="@string/total_number_of_likes"
+        app:closeIconEnabled="false"
         app:layout_constraintBottom_toBottomOf="@+id/collaborations_count"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

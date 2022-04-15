@@ -1,6 +1,5 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,6 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.ProjectInviteComparator
 import com.jamid.codesquare.adapter.recyclerview.ProjectInviteAdapter.ProjectInviteViewHolder
 import com.jamid.codesquare.data.ProjectInvite
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.RequestItemBinding
 import com.jamid.codesquare.listeners.ProjectInviteListener
 
@@ -32,6 +30,12 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
 
             binding.requestTime.text = getTextForTime(projectInvite.createdAt)
 
+            binding.requestProjectName.text = projectInvite.project.name
+            binding.requestImg.setImageURI(projectInvite.sender.photo)
+
+            val contentText = "${projectInvite.sender.name} has invited you to join their project."
+            binding.requestContent.text = contentText
+
             binding.requestProgress.hide()
             binding.requestPrimaryAction.show()
             binding.requestSecondaryAction.show()
@@ -39,7 +43,10 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
             binding.requestPrimaryAction.setOnClickListener {
                 binding.requestProgress.show()
                 binding.requestPrimaryAction.disappear()
-                projectInviteListener.onProjectInviteAccept(projectInvite)
+                projectInviteListener.onProjectInviteAccept(projectInvite) {
+                    binding.requestProgress.hide()
+                    binding.requestPrimaryAction.show()
+                }
             }
 
             binding.requestSecondaryAction.setOnClickListener {
@@ -60,8 +67,5 @@ class ProjectInviteAdapter : PagingDataAdapter<ProjectInvite, ProjectInviteViewH
         return ProjectInviteViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.request_item, parent, false))
     }
 
-    companion object {
-        private const val TAG = "ProjectInviteAdapter"
-    }
 
 }

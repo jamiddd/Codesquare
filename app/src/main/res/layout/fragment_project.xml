@@ -181,7 +181,7 @@
                 android:fontFamily="@font/title_semi"
                 android:textAllCaps="false"
                 android:textAppearance="@style/TextAppearance.AppCompat.Small"
-                app:layout_constraintBottom_toTopOf="@id/adView"
+                app:layout_constraintBottom_toTopOf="@id/ad_container"
                 app:layout_constraintEnd_toStartOf="@id/project_comment_btn"
                 app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintHorizontal_chainStyle="packed"
@@ -220,18 +220,17 @@
                 app:layout_constraintTop_toTopOf="@id/project_comment_btn"
                 tools:ignore="TouchTargetSizeCheck" />
 
-
-            <com.google.android.gms.ads.AdView
-                android:id="@+id/adView"
+            <include
+                android:id="@+id/ad_container"
+                layout="@layout/custom_post_ad"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:adSize="BANNER"
-                app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+                android:layout_marginTop="8dp"
                 app:layout_constraintBottom_toTopOf="@id/links_header"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/project_like_btn" />
+                app:layout_constraintTop_toBottomOf="@id/project_like_btn"
+                tools:visibility="visible" />
 
             <TextView
                 android:id="@+id/links_header"
@@ -247,7 +246,7 @@
                 android:textSize="16sp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@id/project_links"
-                app:layout_constraintTop_toBottomOf="@id/adView"
+                app:layout_constraintTop_toBottomOf="@id/ad_container"
                 tools:visibility="visible" />
 
             <com.google.android.material.chip.ChipGroup
@@ -409,12 +408,11 @@
                 android:text="@string/remove_ad"
                 android:textColor="@color/white"
                 android:textSize="10sp"
-                android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@id/adView"
-                app:layout_constraintEnd_toEndOf="@id/adView"
+                app:layout_constraintBottom_toTopOf="@id/ad_container"
+                app:layout_constraintEnd_toEndOf="@id/ad_container"
                 app:layout_constraintHorizontal_bias="1"
-                app:layout_constraintStart_toStartOf="@id/adView"
-                app:layout_constraintTop_toTopOf="@id/adView"
+                app:layout_constraintStart_toStartOf="@id/ad_container"
+                app:layout_constraintTop_toTopOf="@id/ad_container"
                 tools:ignore="SmallSp" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

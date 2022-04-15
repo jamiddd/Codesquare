@@ -31,16 +31,19 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/random"
+                android:checked="true"
+                app:chipIconEnabled="true"
                 app:chipIcon="@drawable/ic_round_shuffle_24"
-                app:chipStrokeWidth="1dp" />
+                style="@style/AppTheme.MyChip" />
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/near_me"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/near_me"
+                app:chipIconEnabled="true"
                 app:chipIcon="@drawable/ic_round_location_on_18"
-                app:chipStrokeWidth="1dp" />
+                style="@style/AppTheme.MyChip" />
         </com.google.android.material.chip.ChipGroup>
     </HorizontalScrollView>
 

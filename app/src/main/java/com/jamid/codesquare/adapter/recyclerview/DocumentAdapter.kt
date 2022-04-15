@@ -51,13 +51,13 @@ class DocumentAdapter(private val fragment: MessageListenerFragment): ListAdapte
                 }
             } else {
 
+                binding.downloadProgressBar.hide()
+                binding.downloadDocumentBtn.hide()
+
                 view.setOnClickListener {
                     fragment.onMessageDocumentClick(message)
                 }
-
-                binding.downloadDocumentBtn.hide()
             }
-
         }
     }
 

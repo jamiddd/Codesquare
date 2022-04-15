@@ -3,11 +3,6 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.view.setMargins
-import androidx.core.view.setPadding
-import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.*
@@ -45,7 +40,9 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         binding.requestPrimaryAction.setOnClickListener {
             onActionStarted(binding)
-            projectRequestListener.onProjectRequestAccept(projectRequest)
+            projectRequestListener.onProjectRequestAccept(projectRequest) {
+                onActionEnded(binding)
+            }
         }
 
         binding.requestSecondaryAction.setOnClickListener {
@@ -58,6 +55,12 @@ class ProjectRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         binding.root.setOnClickListener {
             projectRequestListener.onProjectRequestClick(projectRequest)
         }
+    }
+
+    private fun onActionEnded(binding: RequestItemBinding) {
+        binding.requestProgress.hide()
+        binding.requestSecondaryAction.show()
+        binding.requestPrimaryAction.show()
     }
 
     private fun onActionStarted(binding: RequestItemBinding) {

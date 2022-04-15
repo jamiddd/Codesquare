@@ -1360,6 +1360,7 @@ object FireUtility {
         val chatChannelRef = db.collection(CHAT_CHANNELS).document(project.chatChannel)
 
         val batch = db.batch()
+
         // move the project from project directory to archive directory
         batch.delete(projectRef)
 
@@ -1368,14 +1369,30 @@ object FireUtility {
 
         // changing the status of the CommentChannel and ChatChannel to archived
         val changes = mapOf(ARCHIVED to true)
+
+        // updating comment channel
         batch.update(commentChannelRef, changes)
+
+        // updating chat channel
         batch.update(chatChannelRef, changes)
 
+        // updating all contributors that they aren't actually contributing now
+        for (contributor in project.contributors) {
+            val ref = db.collection(USERS).document(contributor)
+            val changes1 = mapOf(
+                COLLABORATIONS to FieldValue.arrayRemove(project.id),
+                COLLABORATIONS_COUNT to FieldValue.increment(-1),
+                UPDATED_AT to System.currentTimeMillis()
+            )
+            batch.update(ref, changes1)
+        }
+
+        // updating current user
         val currentUserChanges = mapOf(
             ARCHIVED_PROJECTS to FieldValue.arrayUnion(project.id),
-            PROJECTS to FieldValue.arrayRemove(project.id)
+            PROJECTS to FieldValue.arrayRemove(project.id),
+            UPDATED_AT to System.currentTimeMillis()
         )
-
         batch.update(currentUserRef, currentUserChanges)
 
         // committing the changes
@@ -1399,21 +1416,38 @@ object FireUtility {
         val chatChannelRef = db.collection(CHAT_CHANNELS).document(project.chatChannel)
 
         val batch = db.batch()
+
         project.expiredAt = -1
         batch.set(projectRef, project)
 
         batch.delete(archivedProjectRef)
 
+        // updating all contributors that they aren't actually contributing now
+        for (contributor in project.contributors) {
+            val ref = db.collection(USERS).document(contributor)
+            val changes1 = mapOf(
+                COLLABORATIONS to FieldValue.arrayUnion(project.id),
+                COLLABORATIONS_COUNT to FieldValue.increment(1),
+                UPDATED_AT to System.currentTimeMillis()
+            )
+            batch.update(ref, changes1)
+        }
+
         // changing the status of the CommentChannel and ChatChannel to archived
         val changes = mapOf(ARCHIVED to false)
+
+        // updating comment channel
         batch.update(commentChannelRef, changes)
+
+        // updating  chat channel
         batch.update(chatChannelRef, changes)
 
+        // updating current user
         val currentUserChanges = mapOf(
             ARCHIVED_PROJECTS to FieldValue.arrayRemove(project.id),
-            PROJECTS to FieldValue.arrayUnion(project.id)
+            PROJECTS to FieldValue.arrayUnion(project.id),
+            UPDATED_AT to System.currentTimeMillis()
         )
-
         batch.update(currentUserRef, currentUserChanges)
 
         batch.commit().addOnCompleteListener(onComplete)
@@ -1748,6 +1782,7 @@ object FireUtility {
         val currentUser = UserManager.currentUser
         Firebase.firestore.collection(PROJECTS)
             .whereEqualTo("$CREATOR.$USER_ID", currentUser.id)
+            // TODO(".whereEqualTo("archived", false)")
             .whereEqualTo(EXPIRED_AT, -1)
             .get()
             .addOnCompleteListener {

@@ -137,7 +137,9 @@ class MessageViewHolder2<T: Any>(
 
         fragment?.onMessageRead(message)
 
-        fragment?.onCheckForStaleData(message)
+        fragment?.onCheckForStaleData(message) {
+            bind(it)
+        }
 
     }
 

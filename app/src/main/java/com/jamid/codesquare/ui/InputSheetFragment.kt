@@ -20,15 +20,7 @@ class InputSheetFragment: BottomSheetDialogFragment() {
     override fun getTheme(): Int = R.style.AppTheme_BottomSheetInput
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val dialog = BottomSheetDialog(requireContext(), theme)
-
-        val window = dialog.window
-        window?.setFlags(
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-        )
-        window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-        return dialog
+        return BottomSheetDialog(requireContext(), theme)
     }
 
     private lateinit var binding: FragmentInputSheetBinding
@@ -39,6 +31,7 @@ class InputSheetFragment: BottomSheetDialogFragment() {
     private var hint: String = "Write something here ..."
     private var onSubmitListener: MessageDialogInterface.OnInputSubmitListener? = null
     private var onNegativeClickListener: MessageDialogInterface.OnClickListener? = null
+    private var isScrimVisible: Boolean = true
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,6 +66,17 @@ class InputSheetFragment: BottomSheetDialogFragment() {
             onNegativeClickListener?.onClick(this, it)
             dismiss()
         }
+
+
+        if (!isScrimVisible) {
+            val window = dialog?.window
+            window?.setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            )
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        }
+
 
     }
 
@@ -117,6 +121,10 @@ class InputSheetFragment: BottomSheetDialogFragment() {
                 return this
             }
 
+            fun setScrimVisibility(isVisible: Boolean): Builder {
+                fragment.isScrimVisible = isVisible
+                return this
+            }
 
             fun build(): InputSheetFragment {
                 return fragment

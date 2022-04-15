@@ -220,14 +220,7 @@ exports.onNewNotification = functions.firestore.document("users/{userId}/notific
 
         var notification = new Notification(snap);
 
-        var notificationType = ""
-        if (notification.type > 0) {
-            notificationType = "request"
-        } else if(notification.type < 0) {
-            notificationType = "invite"
-        } else {
-            notificationType = "general"
-        }
+        var notificationType = notification.type.toString();
 
         var data = {
             title: notification.title,

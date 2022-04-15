@@ -14,7 +14,7 @@ class MainRepository(private val db: CodesquareDatabase) {
     val projectDao = db.projectDao()
 
     val userDao = db.userDao()
-    val messageDao = db.messageDao()
+    private val messageDao = db.messageDao()
     val projectRequestDao = db.projectRequestDao()
     val commentDao = db.commentDao()
     val notificationDao = db.notificationDao()
@@ -132,10 +132,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
 
         return messages
-    }
-
-    suspend fun insertProjectsWithoutProcessing(projects: Array<out Project>) {
-        insertProjects(projects, false)
     }
 
     suspend fun insertProjectRequests(requests: List<ProjectRequest>) {
@@ -307,10 +303,6 @@ class MainRepository(private val db: CodesquareDatabase) {
         projectDao.deleteAdProjects()
     }
 
-    fun getChannelContributorsLive(formattedChannelId: String): LiveData<List<User>> {
-        return userDao.getChannelContributorsLive(formattedChannelId)
-    }
-
     suspend fun deleteLocalChatChannelById(chatChannelId: String) {
         chatChannelDao.deleteChatChannelById(chatChannelId)
     }
@@ -335,12 +327,16 @@ class MainRepository(private val db: CodesquareDatabase) {
         return projectRequestDao.getProjectRequestByProject(projectId)
     }
 
-    suspend fun deleteProjectRequestById(id: String) {
-        projectRequestDao.deleteProjectRequestById(id)
-    }
-
     suspend fun deleteProjectById(projectId: String) {
         projectDao.deleteProjectById(projectId)
+    }
+
+    suspend fun updateLocalMessages(updatedUser: User) {
+        val currentUserMessages = messageDao.getCurrentUserMessages(updatedUser.id)
+        for (message in currentUserMessages) {
+            message.sender = updatedUser.minify()
+        }
+        messageDao.insertMessages(currentUserMessages)
     }
 
     companion object {

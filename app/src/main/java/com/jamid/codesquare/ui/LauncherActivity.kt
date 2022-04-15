@@ -4,13 +4,18 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ClipData
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
+import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.navigation.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -26,6 +31,10 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ImageSelectType.*
 import com.jamid.codesquare.data.User
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 @ExperimentalPagingApi
 abstract class LauncherActivity : AppCompatActivity(){
@@ -33,6 +42,10 @@ abstract class LauncherActivity : AppCompatActivity(){
     var loadingDialog: AlertDialog? = null
     var imageSelectType = IMAGE_PROFILE
 
+    private val imagesDir: File by lazy {
+        getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+            ?: throw NullPointerException("Couldn't get images directory.")
+    }
 
     companion object {
         private const val TAG = "LauncherActivity"
@@ -74,8 +87,6 @@ abstract class LauncherActivity : AppCompatActivity(){
         if (it.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
             try {
-
-
                 // Google Sign In was successful, authenticate with Firebase
                 val account = task.getResult(ApiException::class.java)
 
@@ -113,6 +124,47 @@ abstract class LauncherActivity : AppCompatActivity(){
         return items
     }
 
+
+    @Throws(IOException::class)
+    private fun compressAndSaveLocally(images: List<Uri>): List<Uri> {
+        val compressedImages = mutableListOf<Uri>()
+
+        for (image in images) {
+            try {
+                val inputStream = contentResolver.openInputStream(image)
+                val imageBitmap = BitmapFactory.decodeStream(inputStream)
+                val mWidth = imageBitmap.width.toFloat()
+                val mHeight = imageBitmap.height.toFloat()
+
+                val fWidth = minOf(mWidth, 600f).toInt()
+                val fHeight = ((mHeight / mWidth) * fWidth).toInt()
+
+                val scaledBitmap = Bitmap.createScaledBitmap(imageBitmap, fWidth, fHeight, true)
+                val file = File(imagesDir, "${randomId()}.jpg")
+
+                file.createNewFile()
+
+                val byteArrayOutputStream = ByteArrayOutputStream()
+                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+
+                val data = byteArrayOutputStream.toByteArray()
+
+                val stream = FileOutputStream(file)
+                stream.write(data)
+                stream.flush()
+                stream.close()
+
+                val uri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
+
+                compressedImages.add(uri)
+            } catch (e: Exception) {
+                toast(e.localizedMessage!!)
+            }
+        }
+
+       return compressedImages
+    }
+
     val sil = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         var images: List<Uri> = emptyList()
         when (it.resultCode) {
@@ -122,34 +174,36 @@ abstract class LauncherActivity : AppCompatActivity(){
 
                 when (imageSelectType) {
                     IMAGE_CHAT -> {
-
-                        if (clipData != null) {
-                            images = getImagesFromClipData(clipData).toMutableList()
-                        } else {
-                            val singleImage = data.data
-                            if (singleImage != null) {
-                                images = listOf(singleImage)
+                        try {
+                            if (clipData != null) {
+                                images = getImagesFromClipData(clipData).toMutableList()
+                                images = compressAndSaveLocally(images)
+                            } else {
+                                val singleImage = data.data
+                                if (singleImage != null) {
+                                    images = listOf(singleImage)
+                                    images = compressAndSaveLocally(images)
+                                }
                             }
+
+                            if (images.size > 10) {
+                                toast("Select only up to 10 images at once.")
+                                return@registerForActivityResult
+                            }
+
+                            if (images.isEmpty())
+                                return@registerForActivityResult
+
+                            viewModel.setChatUploadImages(images)
+                        } catch (e: Exception) {
+                            toast(e.localizedMessage!!)
                         }
 
-                        viewModel.setChatUploadImages(images)
                     }
                     IMAGE_PROFILE -> {
                         val singleImage = data.data
 
                         if (singleImage != null) {
-//                            val fileData = getFileData(singleImage)
-//
-//                            // if the profile picture
-//                            val sizeInMB: Float = fileData!!.size.toFloat() / (1024 * 1024)
-//                            if (sizeInMB > 1f) {
-//
-//
-//
-//                                toast("The size of the image is larger than 1 MB. Please select an image of size lower than 1 MB.", Toast.LENGTH_LONG)
-//                                return@registerForActivityResult
-//                            }
-
                             viewModel.setCurrentImage(singleImage)
                             val options = CropImageOptions().apply {
                                 fixAspectRatio = true
@@ -164,33 +218,60 @@ abstract class LauncherActivity : AppCompatActivity(){
                     }
                     IMAGE_PROJECT -> {
 
-                        val isProjectImagesEmpty = viewModel.currentProject.value?.images?.isNullOrEmpty() == true
+                        val currentProject = viewModel.currentProject.value
+                        if (currentProject != null) {
+                            val isProjectImagesEmpty = currentProject.images.isNullOrEmpty()
+                            try {
+                                if (clipData != null) {
+                                    images = getImagesFromClipData(clipData)
+                                    images = compressAndSaveLocally(images)
 
-                        if (clipData != null) {
-                            images = getImagesFromClipData(clipData)
+                                    if (images.size > 10) {
+                                        toast("Select only up to 10 images")
+                                        return@registerForActivityResult
+                                    }
 
-                            val formattedImages = images.map {it1 -> it1.toString() }
+                                    val formattedImages = images.map {it1 -> it1.toString() }
 
-                            if (isProjectImagesEmpty) {
-                                viewModel.setCurrentProjectImages(formattedImages)
-                            } else {
-                                viewModel.addToExistingProjectImages(formattedImages)
-                            }
+                                    if (isProjectImagesEmpty) {
+                                        viewModel.setCurrentProjectImages(formattedImages)
+                                    } else {
 
-                        } else {
-                            val singleImage = data.data
-                            if (singleImage != null) {
+                                        if (currentProject.images.size + images.size > 10) {
+                                            toast("Cannot add more images")
+                                            return@registerForActivityResult
+                                        }
 
-                                val formattedImages = listOf(singleImage.toString())
+                                        viewModel.addToExistingProjectImages(formattedImages)
+                                    }
 
-                                if (isProjectImagesEmpty) {
-                                    viewModel.setCurrentProjectImages(formattedImages)
                                 } else {
-                                    viewModel.addToExistingProjectImages(formattedImages)
-                                }
 
+                                    val singleImage = data.data
+                                    if (singleImage != null) {
+                                        images = listOf(singleImage)
+                                        images = compressAndSaveLocally(images)
+
+                                        val formattedImages = images.map {it1 -> it1.toString() }
+
+                                        if (isProjectImagesEmpty) {
+                                            viewModel.setCurrentProjectImages(formattedImages)
+                                        } else {
+
+                                            if (currentProject.images.size + images.size > 10) {
+                                                toast("Cannot add more images")
+                                                return@registerForActivityResult
+                                            }
+
+                                            viewModel.addToExistingProjectImages(formattedImages)
+                                        }
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, e.localizedMessage!!)
                             }
                         }
+
                     }
                     IMAGE_REPORT -> {
 
@@ -205,6 +286,9 @@ abstract class LauncherActivity : AppCompatActivity(){
                         }
 
                     }
+                    IMAGE_TEST -> {
+                        viewModel.testImage.postValue(data.data)
+                    }
                 }
             }
             Activity.RESULT_CANCELED -> {
@@ -216,26 +300,6 @@ abstract class LauncherActivity : AppCompatActivity(){
         }
     }
 
-//    data class FileData(val name: String, val size: Long, val ext: String)
-
-    /*private fun getFileData(item: Uri) : FileData? {
-        val cursor = contentResolver.query(item, null, null, null, null)
-        return try {
-            cursor?.moveToFirst()
-            val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
-
-            val name = cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $item is null")
-            val size = (cursor.getLong(sizeIndex ?: 0))
-            cursor.close()
-            val ext = "." + name.split('.').last()
-            FileData(name, size, ext)
-        } catch (e: Exception) {
-            Log.e(TAG, "getFileData: ${e.localizedMessage}")
-            null
-        }
-    }*/
-
     val selectChatDocumentsUploadLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
@@ -245,17 +309,76 @@ abstract class LauncherActivity : AppCompatActivity(){
             val clipData = it.data?.clipData
 
             if (clipData != null) {
-               documents.addAll(getDocumentsFromClipData(clipData))
+                val d = getDocumentsFromClipData(clipData)
+                val newD = checkDocumentsForSize(d)
+
+                if (newD.size != d.size) {
+                    if (newD.isEmpty()) {
+                        if (d.size > 1) {
+                            toast("Documents were not selected because some of the sizes were larger than 20 MB")
+                        } else {
+                            toast("Document was not selected because the size was larger than 20 MB")
+                        }
+                    } else {
+                        toast("Some documents were not selected because the size was larger than 20 MB")
+                    }
+                }
+                if (newD.isNotEmpty()) {
+                    documents.addAll(newD)
+                }
             } else {
                 it.data?.data?.let { it1 ->
-                    documents.add(it1)
+                    val d = checkDocumentsForSize(listOf(it1))
+
+                    if (d.isEmpty()) {
+                        toast("Document size must be less than or equal to 20 MB")
+                    } else {
+                        documents.addAll(d)
+                    }
                 }
+            }
+
+            if (documents.isEmpty())
+                return@registerForActivityResult
+
+            if (documents.size > 5) {
+                toast("Select only up to 5 documents at once")
+                return@registerForActivityResult
             }
 
             viewModel.setChatUploadDocuments(documents)
 
         }
     }
+
+    private fun checkDocumentsForSize(documents: List<Uri>): List<Uri> {
+        val goodDocuments = mutableListOf<Uri>()
+
+        for (document in documents) {
+            try {
+                val cursor = contentResolver.query(document, null, null, null, null) ?: throw NullPointerException("Cursor is null")
+                cursor.moveToFirst()
+                val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                val size = (cursor.getLong(sizeIndex))
+                cursor.close()
+
+                // if document size is greater than 20 mb
+                if (size / (1024 * 1024) > 20) {
+                    Log.d(TAG, "checkDocumentsForSize: ${size/(1024*1024)}")
+                    continue
+                } else {
+                    Log.d(TAG, "checkDocumentsForSize: ${size/(1024*1024)}")
+                    goodDocuments.add(document)
+                }
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
+            }
+
+        }
+
+        return goodDocuments
+    }
+
 
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)

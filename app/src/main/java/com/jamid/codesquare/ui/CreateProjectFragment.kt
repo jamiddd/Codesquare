@@ -148,7 +148,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         for (child in binding.projectLinksContainer.children) {
             val chip = child as Chip
             val link = chip.text.toString()
-            if (link != "Add Link") {
+            if (link != getString(R.string.add_link)) {
                 links.add(link)
             }
         }
@@ -422,7 +422,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         for (child in binding.projectTagsContainer.children) {
             val chip = child as Chip
             val tag = chip.text.toString()
-            if (tag != "Add Tag") {
+            if (tag != getString(R.string.add_tag)) {
                 tags.add(tag)
             }
         }
@@ -491,6 +491,16 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
         }
 
         binding.projectLinksContainer.addView(chip, 0)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.projectTitleText.editText?.text?.toString()
+            ?.let { viewModel.setCurrentProjectTitle(it) }
+
+        binding.projectContentText.editText?.text?.toString()?.let {
+            viewModel.setCurrentProjectContent(it)
+        }
     }
 
     private fun updateLayoutOnImagesLoaded() {
