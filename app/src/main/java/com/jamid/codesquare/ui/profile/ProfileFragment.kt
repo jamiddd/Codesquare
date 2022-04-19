@@ -1,18 +1,18 @@
 package com.jamid.codesquare.ui.profile
 
+import android.animation.AnimatorInflater
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
-import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.appbar.CollapsingToolbarLayout
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -81,14 +81,12 @@ class ProfileFragment: Fragment(), OptionClickListener {
         val activity = requireActivity()
         userClickListener = activity as UserClickListener
 
-        val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         val user = arguments?.getParcelable<User>(USER)
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, user)
 
-
         OverScrollDecoratorHelper.setUpOverScroll((binding.profileViewPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
-        TabLayoutMediator(tabLayout, binding.profileViewPager) { tab, pos ->
+        TabLayoutMediator(binding.profileTabs, binding.profileViewPager) { tab, pos ->
             if (pos == 0) {
                 tab.text = PROJECTS.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
             } else {
@@ -100,28 +98,22 @@ class ProfileFragment: Fragment(), OptionClickListener {
             }
         }.attach()
 
-        val userProfileView = activity.findViewById<View>(R.id.user_info)
-        if (userProfileView == null) {
-            val userStub = activity.findViewById<ViewStub>(R.id.user_profile_view_stub)
-            val newView = userStub.inflate()
+        onViewGenerated(user)
 
-            val actionLength = resources.getDimension(R.dimen.action_height)
-            newView.updateLayoutParams<CollapsingToolbarLayout.LayoutParams> {
-                setMargins(0, actionLength.toInt(), 0, 0)
+        binding.profileAppBar.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
+            if (verticalOffset == 0) {
+                (activity as MainActivity).binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(requireContext(),
+                    R.animator.app_bar_elevation)
+            } else {
+                (activity as MainActivity).binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(requireContext(),
+                    R.animator.app_bar_elevation_reverse)
             }
-
-            onViewGenerated(newView, user)
-        } else {
-            onViewGenerated(userProfileView, user)
-        }
+        })
 
     }
 
-    private fun onViewGenerated(view: View, user: User? = null) {
-        val userLayoutBinding = UserInfoLayoutBinding.bind(view)
-
-        userLayoutBinding.apply {
-
+    private fun onViewGenerated(user: User? = null) {
+        binding.userInfoLayout.apply {
             if (isNightMode()) {
                 userImg.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.normal_grey))
             } else {
@@ -148,9 +140,9 @@ class ProfileFragment: Fragment(), OptionClickListener {
             }
 
             // setting up things that won't change
-            setUpStaticContents(userLayoutBinding, user)
+            setUpStaticContents(this, user)
 
-            initUser(userLayoutBinding, user)
+            initUser(this, user)
         }
     }
 

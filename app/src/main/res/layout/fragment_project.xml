@@ -26,7 +26,6 @@
                 android:layout_marginStart="8dp"
                 android:fontFamily="sans-serif-medium"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@id/project_time"
                 app:layout_constraintEnd_toStartOf="@id/user_like_btn"
                 app:layout_constraintStart_toEndOf="@id/user_img"
@@ -98,7 +97,7 @@
                 tools:ignore="SpeakableTextPresentCheck"
                 tools:itemCount="1"
                 tools:listitem="@layout/imageview_layout"
-                tools:visibility="gone">
+                tools:visibility="visible">
 
             </androidx.recyclerview.widget.RecyclerView>
 
@@ -123,7 +122,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="?android:attr/listDivider"
-                app:layout_constraintBottom_toTopOf="@id/project_content"
+                app:layout_constraintBottom_toTopOf="@+id/project_name"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/project_images_recycler" />
 
             <TextView
@@ -131,9 +132,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:padding="16dp"
-                android:textAppearance="@style/TextAppearance.MaterialComponents.Body1"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body1"
                 app:layout_constraintBottom_toTopOf="@id/project_location"
-                app:layout_constraintTop_toBottomOf="@id/images_project_divider"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/project_name"
                 tools:maxLines="1"
                 tools:text="Hello World" />
 
@@ -234,18 +237,14 @@
 
             <TextView
                 android:id="@+id/links_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
                 android:text="@string/links"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@id/project_links"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/ad_container"
                 tools:visibility="visible" />
 
@@ -263,16 +262,10 @@
 
             <TextView
                 android:id="@+id/tags_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
                 android:text="@string/tags"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@id/project_tags"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -293,18 +286,11 @@
 
             <TextView
                 android:id="@+id/contributors_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:layout_weight="1"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
                 android:text="@string/contributors"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@id/project_contributors_recycler"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -338,17 +324,10 @@
 
             <TextView
                 android:id="@+id/comments_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
                 android:text="@string/comments"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp"
                 app:layout_constraintBottom_toTopOf="@id/projects_last_comment"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -396,24 +375,15 @@
                 tools:layout_editor_absoluteY="243dp" />
 
             <TextView
-                android:id="@+id/remove_ad_btn"
-                android:layout_width="wrap_content"
+                android:id="@+id/project_name"
+                style="@style/AppTheme.ContentHeading"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:background="@drawable/dark_translucent_round"
-                android:paddingStart="8dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="4dp"
-                android:text="@string/remove_ad"
-                android:textColor="@color/white"
-                android:textSize="10sp"
-                app:layout_constraintBottom_toTopOf="@id/ad_container"
-                app:layout_constraintEnd_toEndOf="@id/ad_container"
-                app:layout_constraintHorizontal_bias="1"
-                app:layout_constraintStart_toStartOf="@id/ad_container"
-                app:layout_constraintTop_toTopOf="@id/ad_container"
-                tools:ignore="SmallSp" />
+                android:text="Project Name"
+                app:layout_constraintBottom_toTopOf="@id/project_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/images_project_divider" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

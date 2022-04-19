@@ -11,55 +11,28 @@
         style="@style/AppTheme.AppBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:animateLayoutChanges="true"
         android:visibility="gone"
         tools:visibility="visible">
 
-        <com.google.android.material.appbar.CollapsingToolbarLayout
-            android:id="@+id/main_collapse"
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/main_toolbar"
+            style="@style/AppTheme.Toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:animateLayoutChanges="true"
-            app:contentScrim="@color/transparent"
-            app:layout_scrollFlags="exitUntilCollapsed|scroll|snap|snapMargins"
-            app:statusBarScrim="@color/transparent"
-            app:titleEnabled="false">
+            android:layout_height="?actionBarSize"
+            android:elevation="0dp"
+            app:logo="@drawable/ic_logo_xy"
+            app:menu="@menu/generic_menu"
+            app:subtitleCentered="true" />
 
-
-            <ViewStub
-                android:id="@+id/user_profile_view_stub"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inflatedId="@+id/user_info"
-                android:layout="@layout/user_info_layout"
-                app:layout_collapseMode="parallax"
-                app:layout_collapseParallaxMultiplier="0.6" />
-
-
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/main_toolbar"
-                style="@style/AppTheme.Toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?actionBarSize"
-                android:elevation="0dp"
-                app:layout_collapseMode="pin"
-                app:logo="@drawable/ic_collab_logo_small"
-                app:menu="@menu/generic_menu"
-                app:subtitleCentered="true"
-                app:titleCentered="true" />
-
-            <com.google.android.material.appbar.MaterialToolbar
-                android:id="@+id/secondary_toolbar"
-                style="@style/AppTheme.Toolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?actionBarSize"
-                android:elevation="0dp"
-                android:translationY="-100dp"
-                app:layout_collapseMode="pin"
-                app:navigationIcon="@drawable/ic_round_close_24" />
-
-
-        </com.google.android.material.appbar.CollapsingToolbarLayout>
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/secondary_toolbar"
+            style="@style/AppTheme.Toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?actionBarSize"
+            android:elevation="0dp"
+            android:translationY="-200dp"
+            android:visibility="gone"
+            app:navigationIcon="@drawable/ic_round_close_24" />
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/main_tab_layout"
@@ -128,7 +101,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone"
-                app:adSize="BANNER"
+                app:adSize="FULL_BANNER"
                 app:adUnitId="ca-app-pub-3940256099942544/6300978111"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -212,5 +185,39 @@
 
 
     </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.gms.ads.AdView
+        android:id="@+id/adView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        app:adSize="FULL_BANNER"
+        app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+        app:layout_behavior=".ui.SnackBarAwareBehavior" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/hide_ad_btn"
+        style="@style/AppTheme.Button"
+        app:layout_anchor="@id/adView2"
+        app:layout_anchorGravity="top|end"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="4dp"
+        android:backgroundTint="?colorPrimaryVariant"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingStart="8dp"
+        android:paddingTop="2dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="2dp"
+        android:text="Hide ads"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:iconTint="@color/white"
+        tools:visibility="visible" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

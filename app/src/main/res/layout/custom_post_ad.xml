@@ -43,7 +43,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="15sp"
                 tools:text="Headline or Title of the Ad" />
 
             <RatingBar
@@ -93,7 +92,7 @@
                 android:id="@+id/ad_media_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="200dp">
+                android:minHeight="100dp">
 
             </com.google.android.gms.ads.nativead.MediaView>
         </FrameLayout>
@@ -105,7 +104,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:icon="@drawable/ic_outline_info_24"
+            app:icon="@drawable/ic_round_more_horiz_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/ad_title_container"
             app:layout_constraintTop_toTopOf="@+id/ad_title_container"
@@ -116,11 +115,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            tools:maxLines="2"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             app:layout_constraintBottom_toTopOf="@+id/ad_divider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ad_primary_action"
+            tools:maxLines="2"
             tools:text="@string/large_text" />
 
         <Button
@@ -131,18 +131,15 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="12dp"
-            android:fontFamily="sans-serif-medium"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
             android:text="@string/install"
-            android:textSize="16sp"
             android:visibility="gone"
             app:cornerRadius="4dp"
             app:layout_constraintBottom_toTopOf="@+id/ad_secondary_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/ad_media_container" />
+            app:layout_constraintTop_toBottomOf="@+id/ad_media_container"
+            tools:visibility="visible" />
 
         <ProgressBar
             android:id="@+id/ad_progress"
@@ -159,8 +156,6 @@
             android:id="@+id/ad_divider"
             android:layout_width="0dp"
             android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -208,8 +203,6 @@
             android:id="@+id/divider28"
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
             android:background="?android:attr/listDivider"
             app:layout_constraintBottom_toTopOf="@+id/ad_title_container"
             app:layout_constraintEnd_toEndOf="parent"

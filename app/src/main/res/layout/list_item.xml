@@ -12,6 +12,5 @@
     android:gravity="center_vertical"
     android:padding="12dp"
     android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-    android:textSize="16sp"
     tools:drawableStartCompat="@drawable/ic_image_coloured"
     tools:ignore="TextContrastCheck" />

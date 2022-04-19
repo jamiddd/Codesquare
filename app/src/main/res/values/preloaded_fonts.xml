@@ -3,6 +3,7 @@
     <array name="preloaded_fonts" translatable="false">
         <item>@font/abril_fatface</item>
         <item>@font/anton</item>
+        <item>@font/lobster</item>
         <item>@font/rubik_medium</item>
         <item>@font/shadows_into_light</item>
     </array>

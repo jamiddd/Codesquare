@@ -22,4 +22,7 @@
     <dimen name="image_info_translation">150dp</dimen>
     <dimen name="join_btn_translation">100dp</dimen>
     <dimen name="comment_layout_translation">250dp</dimen>
+
+
+    <dimen name="medium_text_size">16sp</dimen>
 </resources>

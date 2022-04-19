@@ -10,6 +10,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.R
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.databinding.FragmentSplashBinding
+import com.jamid.codesquare.slideRightNavOptions
 
 @ExperimentalPagingApi
 class SplashFragment: Fragment() {
@@ -32,7 +33,13 @@ class SplashFragment: Fragment() {
             if (isSignedIn != null) {
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
-                        findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+
+                        if (UserManager.currentUser.interests.isEmpty()) {
+                            findNavController().navigate(R.id.userInfoFragment, null, slideRightNavOptions())
+                        } else {
+                            findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+                        }
+
                     } else {
                         findNavController().navigate(R.id.action_splashFragment_to_emailVerificationFragment)
                     }

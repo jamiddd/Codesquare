@@ -178,5 +178,7 @@ dependencies {
 //    implementation 'com.github.the-super-toys.glimpse-android:glimpse-core:0.0.5'
 
     implementation 'io.github.everythingme:overscroll-decor-android:1.1.1'
+
+    implementation 'com.google.android.flexbox:flexbox:3.0.0'
     
 }

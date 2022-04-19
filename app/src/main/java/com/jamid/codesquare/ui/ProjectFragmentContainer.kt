@@ -81,7 +81,7 @@ class ProjectFragmentContainer: Fragment() {
         }
 
         if (childFragmentManager.backStackEntryCount == 0) {
-            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project, TITLE to project.name, "image_pos" to 0))
+            val frag = ProjectFragment.newInstance(bundleOf(PROJECT to project, "image_pos" to 0))
             childFragmentManager.beginTransaction()
                 .add(binding.projectFragContainer.id, frag, ProjectFragment.TAG)
                 .addToBackStack(ProjectFragment.TAG)
@@ -225,8 +225,14 @@ class ProjectFragmentContainer: Fragment() {
             val title = args.getString(TITLE)
             val subtitle = args.getString(SUB_TITLE)
 
-            toolbar.title = title
-            toolbar.subtitle = subtitle
+            if (fragment !is ProjectFragment) {
+                toolbar.title = title
+                toolbar.subtitle = subtitle
+            } else {
+                toolbar.title = "Project"
+                toolbar.subtitle = ""
+            }
+
         }
 
     }

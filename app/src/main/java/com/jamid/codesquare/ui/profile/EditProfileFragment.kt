@@ -1,16 +1,19 @@
 package com.jamid.codesquare.ui.profile
 
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
@@ -221,6 +224,7 @@ class EditProfileFragment: Fragment() {
             val inputSheet = InputSheetFragment.builder("Adding interest helps us to search for related projects for you.")
                 .setTitle("Add Interest")
                 .setHint("Add interest ... ")
+//                .setMessage("You can add multiple interests at once by separating with a space.")
                 .setPositiveButton("Add") { _, _, s ->
                     if (s.isNotBlank()) {
                         addInterest(s)
@@ -281,7 +285,6 @@ class EditProfileFragment: Fragment() {
                 }
             }
         }
-
 
     }
 
@@ -387,7 +390,7 @@ class EditProfileFragment: Fragment() {
 
     private fun addInterest(interest: String) {
         interest.trim()
-        val chip = Chip(requireContext())
+        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
 
         chip.apply {
             text = interest
@@ -401,6 +404,10 @@ class EditProfileFragment: Fragment() {
         }
 
         binding.interestsGroup.addView(chip, 0)
+
+        chip.updateLayoutParams<FlexboxLayout.LayoutParams> {
+            marginEnd = resources.getDimension(R.dimen.generic_len).toInt()
+        }
 
         onChange()
 

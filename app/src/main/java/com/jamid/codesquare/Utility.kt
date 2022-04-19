@@ -23,6 +23,7 @@ import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
@@ -41,6 +42,10 @@ import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.datasource.BaseBitmapDataSubscriber
 import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.*
@@ -765,6 +770,67 @@ fun getFragmentByTag(tag: String, bundle: Bundle): Fragment {
         TagFragment.TAG -> TagFragment.newInstance(bundle)
         ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
         else -> ChatFragment.newInstance(bundle)
+    }
+}
+
+
+fun shouldShowAd(currentDestinationId: Int, isInternetAvailable: Boolean): Boolean {
+    val currentUser = UserManager.currentUser
+    val eligibleFragments = listOf(R.id.homeFragment, R.id.commentsFragment)
+
+    if (currentUser.premiumState.toInt() != -1) {
+        return false
+    }
+
+    if (!eligibleFragments.contains(currentDestinationId)) {
+        return false
+    }
+
+    if (!isInternetAvailable) {
+        return false
+    }
+
+    return true
+}
+
+fun Context.getColorResource(id: Int): Int {
+    return ContextCompat.getColor(this, id)
+}
+
+fun Fragment.getColorResource(id: Int): Int {
+    return requireContext().getColorResource(id)
+}
+
+fun Fragment.attachAdToFragment(adView: AdView, removeBtn: View?) {
+    val adRequest = AdRequest.Builder().build()
+
+    adView.loadAd(adRequest)
+
+    adView.adListener = object: AdListener() {
+        override fun onAdFailedToLoad(p0: LoadAdError) {
+            super.onAdFailedToLoad(p0)
+            adView.hide()
+            removeBtn?.hide()
+        }
+
+        override fun onAdLoaded() {
+            super.onAdLoaded()
+            adView.show()
+            removeBtn?.show()
+        }
+
+        override fun onAdOpened() {
+            super.onAdOpened()
+            adView.show()
+            removeBtn?.show()
+        }
+
+        override fun onAdClosed() {
+            super.onAdClosed()
+            adView.hide()
+            removeBtn?.hide()
+        }
+
     }
 }
 

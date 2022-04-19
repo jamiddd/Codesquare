@@ -202,11 +202,8 @@
         android:id="@+id/projectFragment"
         android:name="com.jamid.codesquare.ui.ProjectFragment"
         tools:layout="@layout/fragment_project"
-        android:label="{title}" >
-        <argument
-            android:name="title"
-            app:argType="string"
-            android:defaultValue="Project" />
+        android:label=" " >
+
         <action
             android:id="@+id/action_projectFragment_to_updateProjectFragment"
             app:destination="@+id/updateProjectFragment"/>

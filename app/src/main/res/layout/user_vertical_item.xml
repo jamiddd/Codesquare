@@ -13,6 +13,7 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="8dp"
+        android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/user_name"
         app:layout_constraintHorizontal_bias="0.0"
@@ -20,7 +21,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
-        app:placeholderImage="@color/ios_grey"
         app:roundAsCircle="true"
         tools:ignore="ImageContrastCheck" />
 

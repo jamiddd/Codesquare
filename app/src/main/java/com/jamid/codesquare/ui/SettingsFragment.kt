@@ -230,6 +230,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        val sentInvites = findPreference<Preference>("profile_sent_invites")
+        sentInvites?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.invitesFragment, null, slideRightNavOptions())
+            true
+        }
+
     }
 
     @SuppressLint("InflateParams")

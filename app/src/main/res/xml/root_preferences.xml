@@ -24,6 +24,10 @@
             app:key="my_requests"
             app:title="My requests" />
 
+        <Preference
+            app:key="profile_sent_invites"
+            app:title="Sent invites" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Location">

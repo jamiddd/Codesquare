@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.DocumentAdapter
 import com.jamid.codesquare.data.Message
@@ -151,7 +152,11 @@ class ChatDocumentsFragment: MessageListenerFragment() {
                     FireUtility.downloadMedia(file, message.content, message) {
                         message.isDownloaded = true
                         onComplete(message)
+
                         if (it.isSuccessful) {
+
+                            Snackbar.make(binding.root, "Downloaded file", Snackbar.LENGTH_LONG).show()
+
                             viewModel.updateMessage(message)
                         } else {
                             file.delete()

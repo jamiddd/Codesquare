@@ -4,9 +4,7 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.*
-import android.webkit.URLUtil
 import androidx.coordinatorlayout.widget.CoordinatorLayout
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
@@ -340,12 +338,22 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             val frag = InputSheetFragment.builder("Add links to your existing project sources or files. Ex. Github, Google drive, etc.")
                 .setTitle("Add link to project")
                 .setHint("Ex: https://wwww.google.com")
+                .setMessage("Make sure to give a proper email.")
                 .setPositiveButton("Add link") { _, _, s ->
-                    if (URLUtil.isValidUrl(s)) {
-                        addLink(s)
-                    } else {
-                        toast("Not a proper link.")
+
+                    // this cannot be an url
+                    if (!s.contains('.')) {
+                        Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG).show()
+                        return@setPositiveButton
                     }
+
+                    if (s.startsWith('.') || s.endsWith('.')) {
+                        Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG).show()
+                        return@setPositiveButton
+                    }
+
+                    addLink(s)
+
                 }.setNegativeButton("Cancel") { a, _ ->
                     a.dismiss()
                 }.build()
@@ -449,7 +457,7 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
     private fun addTag(tag: String) {
         tag.trim()
-        val chip = Chip(requireContext())
+        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
         chip.text = tag
         chip.isCheckable = false
         chip.isCloseIconVisible = true
@@ -458,13 +466,16 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
 
             val tags = getTags()
             viewModel.setCurrentProjectTags(tags)
+
+            val links = getLinks()
+            viewModel.setCurrentProjectLinks(links)
         }
         binding.projectTagsContainer.addView(chip, 0)
     }
 
     private fun addLink(link: String) {
         link.trim()
-        val chip = Chip(requireContext())
+        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
 
         chip.isCloseIconVisible = true
 
@@ -481,13 +492,19 @@ class CreateProjectFragment: Fragment(R.layout.fragment_create_project) {
             chip.text = link
         }
 
-        if (link.contains("github.com")) {
-            chip.chipIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_github)
-        }
+//        if (link.contains("github.com")) {
+//            chip.chipIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_github)
+//        }
 
         chip.isCheckable = false
         chip.setOnCloseIconClickListener {
             binding.projectLinksContainer.removeView(chip)
+
+            val tags = getTags()
+            viewModel.setCurrentProjectTags(tags)
+
+            val links = getLinks()
+            viewModel.setCurrentProjectLinks(links)
         }
 
         binding.projectLinksContainer.addView(chip, 0)

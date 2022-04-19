@@ -232,6 +232,8 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             val dy = resources.getDimension(R.dimen.appbar_slide_translation)
             if (viewModel.isSelectModeOn) {
                 toolbar.slideUp(dy)
+                toolbar.hide()
+                secondaryToolbar?.show()
                 secondaryToolbar.slideReset()
                 secondaryToolbar.title = "${selectedMessages.size} Selected"
 
@@ -241,7 +243,9 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
             } else {
                 toolbar.slideReset()
+                toolbar.show()
                 secondaryToolbar.slideUp(dy)
+                secondaryToolbar?.hide()
             }
 
         }

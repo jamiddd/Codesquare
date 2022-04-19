@@ -56,6 +56,8 @@ data class Project(
     var updatedAt: Long = 0,
     @SerializedName("expiredAt")
     var expiredAt: Long = -1,
+    @SerializedName("viewsCount")
+    var viewsCount: Long = 0,
     @SerializedName("blockedList")
     var blockedList: List<String> = emptyList(),
     @Exclude @set: Exclude @get: Exclude
@@ -95,7 +97,7 @@ data class Project(
     @SerializedName("isAd")
     var isAd: Boolean = false,
 ): Parcelable {
-    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, emptyList(), false, false, false, false, false, false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), 0, 0, emptyList(),  emptyList(), emptyList(), emptyList(), emptyList(), Location(), 0, 0, -1, 0, emptyList(), false, false, false, false, false, false, false)
 
     @Exclude
     fun minify(): ProjectMinimal {

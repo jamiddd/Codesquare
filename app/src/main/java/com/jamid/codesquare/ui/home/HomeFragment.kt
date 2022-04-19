@@ -5,24 +5,16 @@ import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.*
 import androidx.activity.addCallback
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
-import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.viewpager2.widget.ViewPager2
-import com.google.android.gms.ads.AdListener
-import com.google.android.gms.ads.AdRequest
-import com.google.android.gms.ads.LoadAdError
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -202,9 +194,6 @@ class HomeFragment: Fragment() {
             }
         }.attach()
 
-        val appBar = requireActivity().findViewById<AppBarLayout>(R.id.main_appbar)
-        val container = requireActivity().findViewById<FragmentContainerView>(R.id.nav_host_fragment)
-
         activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
             if (binding.homeViewPager.currentItem == 0) {
                 activity.finish()
@@ -214,86 +203,17 @@ class HomeFragment: Fragment() {
             }
         }
 
-        binding.homeViewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                super.onPageSelected(position)
-                if (position == 1) {
-                    if (!appBar.isVisible) {
-                        appBar.show()
-
-                        val params = container.layoutParams as CoordinatorLayout.LayoutParams
-                        params.behavior = AppBarLayout.ScrollingViewBehavior()
-                        container.layoutParams = params
-                    }
-                }
-            }
-        })
-
-
         (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
         val mAuth = Firebase.auth
         if (mAuth.currentUser == null) {
             findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
-        }
-
-        UserManager.currentUserLive.observe(viewLifecycleOwner) {
-            if (it != null) {
-                if (it.premiumState.toInt() == -1) {
-                    binding.chatListAdContainer.show()
-                    setAdView()
-                } else {
-                    binding.chatListAdContainer.hide()
-                }
-            }
-        }
-
-        binding.removeAdBtn.setOnClickListener {
-            activity.onAdInfoClick()
-        }
-
-        activity.networkManager.networkAvailability.observe(viewLifecycleOwner) { isNetworkAvailable ->
-            if (isNetworkAvailable) {
-                if (!binding.adView.isVisible) {
-                    setAdView()
-                }
-            }
+        } else {
+            activity.setBottomAdView()
         }
 
     }
 
-    private fun setAdView() {
-        val adRequest = AdRequest.Builder().build()
 
-        binding.adView.loadAd(adRequest)
-
-        binding.adView.adListener = object: AdListener() {
-            override fun onAdFailedToLoad(p0: LoadAdError) {
-                super.onAdFailedToLoad(p0)
-                binding.adView.hide()
-                binding.removeAdBtn.hide()
-            }
-
-            override fun onAdLoaded() {
-                super.onAdLoaded()
-                binding.adView.show()
-                binding.removeAdBtn.show()
-            }
-
-            override fun onAdOpened() {
-                super.onAdOpened()
-                binding.adView.show()
-                binding.removeAdBtn.show()
-            }
-
-            override fun onAdClosed() {
-                super.onAdClosed()
-                binding.adView.hide()
-                binding.removeAdBtn.hide()
-            }
-
-        }
-
-    }
 
 }

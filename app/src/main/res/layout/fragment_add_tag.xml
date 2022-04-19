@@ -46,6 +46,8 @@
         android:id="@+id/add_tag_scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="100dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -61,6 +63,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginEnd="16dp"
+                android:elevation="3dp"
                 app:endIconDrawable="@drawable/ic_round_search_24"
                 app:endIconMode="custom"
                 app:layout_constraintBottom_toTopOf="@+id/project_tag_search_recycler"
@@ -81,18 +84,29 @@
                 android:id="@+id/project_tag_search_recycler"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:background="@drawable/search_recycler_background"
+                android:translationY="-4dp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@+id/project_tags"
                 app:layout_constraintEnd_toEndOf="@+id/project_tag_search_input"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="@+id/project_tag_search_input"
-                app:layout_constraintTop_toBottomOf="@+id/project_tag_search_input" />
+                app:layout_constraintTop_toBottomOf="@+id/project_tag_search_input"
+                tools:visibility="visible" />
 
-            <com.google.android.material.chip.ChipGroup
+            <com.google.android.flexbox.FlexboxLayout
                 android:id="@+id/project_tags"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="24dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:flexDirection="row"
+                app:flexWrap="wrap"
+                app:justifyContent="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="@+id/project_tag_search_input"
                 app:layout_constraintHeight_min="100dp"
@@ -100,7 +114,8 @@
                 app:layout_constraintStart_toStartOf="@+id/project_tag_search_input"
                 app:layout_constraintTop_toBottomOf="@+id/project_tag_search_recycler">
 
-            </com.google.android.material.chip.ChipGroup>
+
+            </com.google.android.flexbox.FlexboxLayout>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

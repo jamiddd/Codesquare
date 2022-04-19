@@ -6,16 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.core.content.ContextCompat
 import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
 import com.jamid.codesquare.data.SearchQuery
@@ -149,19 +148,20 @@ class AddTagFragment: RoundedBottomSheetDialogFragment(), SearchItemClickListene
         }
     }
 
-    private fun ChipGroup.addTag(s: String, checked: Boolean = false) {
+    private fun FlexboxLayout.addTag(s: String, checked: Boolean = false) {
         s.trim()
-        val chip = Chip(requireContext())
+        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
         chip.text = s
         chip.isCheckable = true
         chip.isChecked = checked
-        chip.isCheckedIconVisible = true
-        chip.checkedIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_done_24)
+        chip.isCheckedIconVisible = false
         chip.isCloseIconVisible = false
         chip.tag = s
 
+
         if (currentList.find { it.queryString == s } == null) {
             this.addView(chip, 0)
+
         } else {
             val oldChip = this.findViewWithTag<Chip>(s)
             if (oldChip != null) {
@@ -169,6 +169,11 @@ class AddTagFragment: RoundedBottomSheetDialogFragment(), SearchItemClickListene
             } else {
                 this.addView(chip, 0)
             }
+        }
+
+        chip.updateLayoutParams<FlexboxLayout.LayoutParams> {
+            marginEnd = resources.getDimension(R.dimen.generic_len).toInt()
+            marginStart = resources.getDimension(R.dimen.zero).toInt()
         }
 
         chip.setOnClickListener {

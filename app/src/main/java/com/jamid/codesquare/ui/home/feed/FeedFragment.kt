@@ -199,7 +199,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
 
-                val newY = y + dy
+               /* val newY = y + dy
 
                 val a = resources.getDimension(R.dimen.generic_len) * 5
 
@@ -223,7 +223,7 @@ class FeedFragment: PagerListFragment<Project, PostViewHolder>() {
 
                 }
 
-                y = newY
+                y = newY*/
             }
 
         })

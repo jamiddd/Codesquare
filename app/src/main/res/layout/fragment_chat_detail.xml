@@ -25,6 +25,17 @@
             app:layout_constraintVertical_bias="0.0"
             app:layout_constraintVertical_chainStyle="packed" />
 
+        <TextView
+            android:id="@+id/chat_title"
+            style="@style/AppTheme.ChatDetailHeading"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:paddingTop="60dp"
+            android:text="Project Name"
+            app:layout_constraintBottom_toBottomOf="@+id/chat_project_image"
+            app:layout_constraintEnd_toEndOf="@+id/chat_project_image"
+            app:layout_constraintStart_toStartOf="parent" />
+
         <LinearLayout
             android:id="@+id/linearLayout10"
             android:layout_width="match_parent"
@@ -39,25 +50,10 @@
 
             <TextView
                 android:id="@+id/chat_project_guidelines_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
-                android:text="Project Guidelines"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp" />
-
-            <View
-                android:id="@+id/divider11"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="12dp"
-                android:background="?android:attr/listDivider" />
+                android:text="Project Guidelines" />
 
             <TextView
                 android:id="@+id/chat_project_guidelines"
@@ -81,32 +77,17 @@
 
             <TextView
                 android:id="@+id/chat_media_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="?selectableItemBackground"
                 android:clickable="true"
                 android:focusable="true"
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
                 android:text="Media"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp"
                 app:drawableEndCompat="@drawable/ic_round_keyboard_arrow_right_24" />
-
-            <View
-                android:id="@+id/divider13"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:background="?android:attr/listDivider" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/chat_media_recycler"
-                style="@style/AppTheme.GenericBackground2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:overScrollMode="never"
@@ -119,24 +100,10 @@
 
             <TextView
                 android:id="@+id/chat_contributors_header"
+                style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="8dp"
-                android:text="Contributors"
-                android:textAllCaps="true"
-                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                android:textSize="16sp" />
-
-            <View
-                android:id="@+id/divider12"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
-                android:background="?android:attr/listDivider" />
+                android:text="Contributors" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/chat_contributors_recycler"

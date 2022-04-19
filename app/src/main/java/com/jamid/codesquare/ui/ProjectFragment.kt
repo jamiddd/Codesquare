@@ -17,6 +17,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -38,7 +39,10 @@ import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProjectBinding
 import com.jamid.codesquare.listeners.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+import java.util.*
 
 @ExperimentalPagingApi
 class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
@@ -95,17 +99,12 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         if (parentFragment is ProjectFragmentContainer) {
             (parentFragment as ProjectFragmentContainer).setJoinBtnForChildScroll(binding.projectFragmentScroll)
         }
+        
 
     }
 
     private fun setCustomAd() {
         val adBinding = binding.adContainer
-
-        if (isNightMode()) {
-            adBinding.root.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.darkest_grey_2))
-        } else {
-            adBinding.root.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.ios_grey))
-        }
 
         val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
         val adOptions = NativeAdOptions.Builder()
@@ -177,6 +176,11 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
 
                 nativeAdView.setNativeAd(nativeAd)
 
+                val newText = adBinding.adPrimaryAction.text.toString().lowercase()
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+
+                adBinding.adPrimaryAction.text = newText
+
             }
             .withAdListener(object: AdListener() {
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
@@ -192,10 +196,6 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             })
             .withNativeAdOptions(adOptions)
             .build()
-
-        binding.removeAdBtn.setOnClickListener {
-            projectClickListener.onAdInfoClick()
-        }
 
         adLoader.loadAd(AdRequest.Builder().build())
     }
@@ -306,7 +306,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
         val lContext = requireContext()
         val mActivity = activity as MainActivity
 
-        val chip = Chip(lContext)
+        val chip = View.inflate(lContext, R.layout.choice_chip, null) as Chip
 
         val darkGreenColor = ContextCompat.getColor(lContext, R.color.green_dark)
         val darkGreenNightColor = ContextCompat.getColor(lContext, R.color.green_dark_night)
@@ -318,7 +318,9 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             chipIconTint = ColorStateList.valueOf(darkGreenColor)
             chipIcon = ContextCompat.getDrawable(lContext, R.drawable.forward_icon)
             chipIconSize = resources.getDimension(R.dimen.large_len)
+            isChipIconVisible = true
             isCheckable = false
+            chipStrokeWidth = 0f
             isCloseIconVisible = false
             chipBackgroundColor = ColorStateList.valueOf(textColor)
             binding.projectLinks.addView(this)
@@ -366,7 +368,8 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
             isCloseIconVisible = false
             binding.projectTags.addView(this)
             chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
-            chipStrokeColor = ColorStateList.valueOf(textColor)
+
+            chipStrokeWidth = 0f
 
             setTextColor(textColor)
 
@@ -665,7 +668,7 @@ class ProjectFragment : Fragment(), ImageClickListener, CommentMiniListener {
     private fun setImmutableProperties(project: Project) {
 
         binding.projectTime.text = getTextForTime(project.createdAt)
-
+        binding.projectName.text = project.name
         binding.projectContent.text = project.content
 
         if (project.location.address.isNotBlank()) {

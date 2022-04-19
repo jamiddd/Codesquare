@@ -6,6 +6,7 @@
         <item name="colorPrimary">@color/darkest_blue</item>
         <item name="colorAccent">@color/darkest_blue</item>
         <item name="colorPrimaryVariant">@color/dark_pink</item>
+        <item name="colorPrimarySurface">@color/lightest_blue</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="android:forceDarkAllowed">false</item>
         <!-- Secondary brand color. -->

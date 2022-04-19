@@ -4,8 +4,9 @@
     <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/darkest_blue</item>
-        <item name="colorPrimaryVariant">@color/darkest_blue</item>
+        <item name="colorPrimaryVariant">@color/dark_pink</item>
         <item name="colorOnPrimary">@color/darkest_blue</item>
+        <item name="colorPrimarySurface">@color/chip_back_blue_night</item>
         <item name="android:forceDarkAllowed">false</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/darkest_blue</item>

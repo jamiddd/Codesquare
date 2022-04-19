@@ -58,7 +58,15 @@ class InputSheetFragment: BottomSheetDialogFragment() {
         binding.inputText.editText?.hint = hint
 
         binding.positiveBtn.setOnClickListener {
-            onSubmitListener?.onSubmit(this, it, binding.inputText.editText?.text?.toString() ?: "")
+            // must trim the text so that
+            val text = binding.inputText.editText?.text
+
+            // checking whether the text is empty
+            if (!text.isNullOrBlank()) {
+                // need to check if the url doesn't have spaces at the start or end
+                val trimmedString = text.trim().toString()
+                onSubmitListener?.onSubmit(this, it, trimmedString)
+            }
             dismiss()
         }
 
@@ -98,6 +106,11 @@ class InputSheetFragment: BottomSheetDialogFragment() {
 
             fun setHint(hint: String): Builder {
                 fragment.hint = hint
+                return this
+            }
+
+            fun setMessage(msg: String): Builder {
+                fragment.message = msg
                 return this
             }
 

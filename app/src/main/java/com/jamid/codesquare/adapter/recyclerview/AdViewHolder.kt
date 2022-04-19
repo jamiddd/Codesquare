@@ -5,17 +5,15 @@ import android.view.View
 import android.widget.Button
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.nativead.NativeAdOptions
-import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Project
 import com.jamid.codesquare.databinding.CustomPostAdBinding
 import com.jamid.codesquare.hide
-import com.jamid.codesquare.isNightMode
 import com.jamid.codesquare.listeners.ProjectClickListener
 import com.jamid.codesquare.show
+import java.util.*
 
 class AdViewHolder(v: View): PostViewHolder(v) {
 
@@ -26,12 +24,6 @@ class AdViewHolder(v: View): PostViewHolder(v) {
         Log.d(TAG, project?.isAd.toString())
 
         binding = CustomPostAdBinding.bind(view)
-
-        if (view.context.isNightMode()) {
-            binding.root.setBackgroundColor(ContextCompat.getColor(view.context, R.color.darkest_grey_2))
-        } else {
-            binding.root.setBackgroundColor(ContextCompat.getColor(view.context, R.color.ios_grey))
-        }
 
         val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
         val adOptions = NativeAdOptions.Builder()
@@ -102,6 +94,11 @@ class AdViewHolder(v: View): PostViewHolder(v) {
                 }
 
                 nativeAdView.setNativeAd(nativeAd)
+
+                val newText = binding.adPrimaryAction.text.toString().lowercase()
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+
+                binding.adPrimaryAction.text = newText
 
             }
             .withAdListener(object: AdListener() {

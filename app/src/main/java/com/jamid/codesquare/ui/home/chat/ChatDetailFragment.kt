@@ -86,6 +86,8 @@ class ChatDetailFragment: Fragment(), UserClickListener {
             layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
         }
 
+        binding.chatTitle.text = chatChannel.projectTitle
+
         viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
             if (reactiveChatChannel != null) {
                 chatChannel = reactiveChatChannel
@@ -97,13 +99,13 @@ class ChatDetailFragment: Fragment(), UserClickListener {
                     binding.updateGuidelinesBtn.hide()
                 }
 
-                if (reactiveChatChannel.rules.isEmpty()) {
+                /*if (reactiveChatChannel.rules.isEmpty()) {
                     binding.chatProjectGuidelines.gravity = Gravity.CENTER_HORIZONTAL
                     binding.chatProjectGuidelines.text = getString(R.string.update_chat_rules)
                 } else {
                     binding.chatProjectGuidelines.gravity = Gravity.START
-                    setRules(reactiveChatChannel)
-                }
+                }*/
+                setRules(reactiveChatChannel)
 
                 binding.updateGuidelinesBtn.setOnClickListener {
                     (parentFragment as ChatContainerFragment).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
@@ -165,20 +167,22 @@ class ChatDetailFragment: Fragment(), UserClickListener {
 
     fun setRules(chatChannel: ChatChannel) {
         if (chatChannel.rules.isBlank()) {
+            binding.chatProjectGuidelines.hide()
+            binding.chatProjectGuidelinesHeader.hide()
             binding.chatProjectGuidelines.text = getString(R.string.update_chat_rules)
         } else {
+            binding.chatProjectGuidelines.show()
+            binding.chatProjectGuidelinesHeader.show()
             binding.chatProjectGuidelines.text = chatChannel.rules
         }
     }
 
     private fun onMediaMessagesExists() {
-        binding.divider13.show()
         binding.chatMediaRecycler.show()
         binding.chatMediaHeader.show()
     }
 
     private fun onMediaMessagesNotFound() {
-        binding.divider13.hide()
         binding.chatMediaRecycler.hide()
         binding.chatMediaHeader.hide()
     }

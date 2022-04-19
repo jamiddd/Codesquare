@@ -13,7 +13,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.facebook.drawee.view.SimpleDraweeView
-import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
@@ -147,7 +146,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
         }
 
         if (currentUser.premiumState.toInt() == -1) {
-            adView.loadAd(AdRequest.Builder().build())
+            attachAdToFragment(adView, null)
             adView.show()
         } else {
             adView.hide()

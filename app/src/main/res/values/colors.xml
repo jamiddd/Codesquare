@@ -7,11 +7,16 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFF</color>
+
     <color name="lightest_pink">#1AE91E63</color>
     <color name="lightest_red">#F8DCDC</color>
     <color name="lightest_red_night">#B33636</color>
     <color name="pink">#E91E63</color>
+    <color name="variant_pink">#701635</color>
     <color name="dark_pink">#D3064C</color>
+
+
+
     <color name="darker_white">#AAA9AA</color>
     <color name="darkest_grey_2">#333</color>
     <color name="dank_grey">#1a1a1a</color>
@@ -42,6 +47,7 @@
     <color name="amber">#FF5722</color>
     <color name="amber_night">#833218</color>
 
+    <color name="variant_blue">#2196F3</color>
 
 
     <color name="chip_back_blue_day">#332196F3</color>

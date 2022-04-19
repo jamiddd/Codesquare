@@ -104,10 +104,10 @@ class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
                     myInvitesAdapter.submitList(invitesList)
                     myInvitesAdapter.notifyDataSetChanged()
                 } else {
-                    binding.noInvitesText.hide()
+                    binding.noInvitesText.show()
                 }
             }.addOnFailureListener {
-                binding.noInvitesText.hide()
+                binding.noInvitesText.show()
                 Log.e(TAG, "getInvitesSentByMe: ${it.localizedMessage}")
             }
     }

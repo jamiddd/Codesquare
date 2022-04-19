@@ -27,6 +27,7 @@ class ChatListFragment2: Fragment() {
     private lateinit var binding: FragmentChatList2Binding
     private lateinit var chatChannelAdapter2: ChatChannelAdapter2
     private val viewModel: MainViewModel by activityViewModels()
+    private var hasTriedOnce = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,6 +57,10 @@ class ChatListFragment2: Fragment() {
                 chatChannelAdapter2.submitList(it)
             } else {
                 onChatChannelNotFound()
+
+                if (currentUser.chatChannels.isNotEmpty()) {
+                    tryToFix()
+                }
             }
         }
 
@@ -82,26 +87,39 @@ class ChatListFragment2: Fragment() {
 
 
         binding.chatChannelsRefresher.setOnRefreshListener {
-            Firebase.firestore.collection(CHAT_CHANNELS)
-                .whereArrayContains(CONTRIBUTORS, currentUser.id)
-                .get()
-                .addOnCompleteListener {
-                    binding.chatChannelsRefresher.isRefreshing = false
-                    Log.d(TAG, "Got some results")
-                    if (it.isSuccessful) {
-                        if (!it.result.isEmpty) {
-                            val chatChannels = it.result.toObjects(ChatChannel::class.java)
-                            viewModel.insertChatChannels(chatChannels)
-                        } else {
-                            viewModel.clearAllChannels()
-                        }
-                    } else {
-                        viewModel.setCurrentError(it.exception)
-                    }
-                }
-
+            getChannels()
         }
 
+    }
+
+    private fun getChannels() {
+
+        val currentUserId = UserManager.currentUserId
+
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
+            .get()
+            .addOnCompleteListener {
+                binding.chatChannelsRefresher.isRefreshing = false
+                Log.d(TAG, "Got some results")
+                if (it.isSuccessful) {
+                    if (!it.result.isEmpty) {
+                        val chatChannels = it.result.toObjects(ChatChannel::class.java)
+                        viewModel.insertChatChannels(chatChannels)
+                    } else {
+                        viewModel.clearAllChannels()
+                    }
+                } else {
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+    }
+
+    private fun tryToFix() {
+        if (!hasTriedOnce) {
+            hasTriedOnce = true
+            getChannels()
+        }
     }
 
     private fun onChatChannelExists() {

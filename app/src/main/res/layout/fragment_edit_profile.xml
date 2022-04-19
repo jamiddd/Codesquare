@@ -78,6 +78,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginBottom="16dp"
             app:helperText="Add a tag that is visible directly below your name that corresponds to your work"
             app:layout_constraintBottom_toTopOf="@+id/about_text"
             app:layout_constraintEnd_toEndOf="@+id/username_text"
@@ -114,10 +115,14 @@
                 tools:ignore="TextContrastCheck" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <com.google.android.material.chip.ChipGroup
+        <com.google.android.flexbox.FlexboxLayout
             android:id="@+id/interests_group"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            android:padding="8dp"
+            app:justifyContent="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/about_text"
             app:layout_constraintStart_toStartOf="@+id/about_text"
@@ -125,13 +130,16 @@
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/add_interest_btn"
+                style="@style/AppTheme.PrimaryChipBtn"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:checkable="false"
                 android:text="@string/add_interest"
                 app:chipIcon="@drawable/ic_round_add_24"
-                app:closeIconEnabled="false" />
-        </com.google.android.material.chip.ChipGroup>
+                app:closeIconEnabled="false"
+                tools:layout_editor_absoluteX="126dp"
+                tools:layout_editor_absoluteY="8dp" />
+        </com.google.android.flexbox.FlexboxLayout>
 
         <ProgressBar
             android:id="@+id/user_image_progress"

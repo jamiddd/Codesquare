@@ -7,29 +7,19 @@
     android:layout_height="wrap_content"
     app:layout_collapseMode="parallax">
 
-    <View
-        android:id="@+id/divider16"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="?android:attr/listDivider"
-        app:layout_constraintBottom_toTopOf="@+id/user_img"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/user_img"
         android:layout_width="70dp"
         android:layout_height="70dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
+        android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toTopOf="@+id/user_name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider16"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.100000024"
         app:layout_constraintVertical_chainStyle="packed"
-        app:placeholderImage="@color/darker_grey"
         app:roundAsCircle="true" />
 
     <TextView
@@ -78,6 +68,7 @@
         android:id="@+id/divider4"
         android:layout_width="match_parent"
         android:layout_height="1dp"
+        android:layout_marginTop="48dp"
         android:background="?android:attr/listDivider"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

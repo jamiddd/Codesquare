@@ -82,18 +82,20 @@
                 tools:ignore="TextContrastCheck"
                 android:importantForAutofill="no" />
 
-            <com.google.android.material.chip.ChipGroup
+            <com.google.android.flexbox.FlexboxLayout
                 android:id="@+id/interests_container"
                 style="@style/AppTheme.ChatBottomText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:flexDirection="row"
+                app:flexWrap="wrap"
+                app:justifyContent="center"
                 android:layout_marginEnd="16dp"
                 android:layout_marginBottom="16dp"
-                android:background="@drawable/chat_edittext_background"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHeight_min="200dp"
@@ -103,12 +105,12 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/interest_search_recycler"
+                style="@style/AppTheme.ChatBottomText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="16dp"
-                android:background="@drawable/chat_edittext_background"
                 android:paddingTop="48dp"
                 app:layout_constraintBottom_toTopOf="@+id/interests_container"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -124,12 +126,12 @@
                 style="@style/AppTheme.ChatBottomText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/chat_edittext_background"
                 android:drawablePadding="12dp"
                 android:ems="10"
                 android:hint="@string/search_for_topics"
                 android:imeActionLabel="Add"
                 android:imeOptions="actionDone"
+                android:importantForAutofill="no"
                 android:inputType="textPersonName"
                 android:minHeight="48dp"
                 android:paddingStart="12dp"
@@ -137,8 +139,7 @@
                 app:layout_constraintEnd_toEndOf="@+id/interest_search_recycler"
                 app:layout_constraintStart_toStartOf="@+id/interest_search_recycler"
                 app:layout_constraintTop_toTopOf="@+id/interest_search_recycler"
-                tools:ignore="TextContrastCheck"
-                android:importantForAutofill="no" />
+                tools:ignore="TextContrastCheck" />
 
 
             <com.google.android.material.button.MaterialButton
@@ -170,7 +171,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/done_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

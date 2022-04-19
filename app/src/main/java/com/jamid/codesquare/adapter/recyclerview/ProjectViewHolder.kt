@@ -2,14 +2,13 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.annotation.SuppressLint
 import android.graphics.Color
-import android.graphics.Typeface
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
-import android.text.style.StyleSpan
 import android.view.*
+import androidx.core.content.ContextCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.coroutineScope
@@ -280,7 +279,8 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
                     override fun updateDrawState(ds: TextPaint) {
                         super.updateDrawState(ds)
                         ds.isUnderlineText = false
-                        ds.color = view.context.accentColor()
+                        val greyColor = ContextCompat.getColor(view.context, R.color.darker_grey)
+                        ds.color = greyColor
                     }
 
                 }
@@ -295,7 +295,7 @@ class ProjectViewHolder(val v: View): PostViewHolder(v), ImageClickListener {
                     startIndex + moreString.length,
                     Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
 
-                truncatedSpannableString.setSpan(StyleSpan(Typeface.BOLD), startIndex, startIndex + moreString.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+//                truncatedSpannableString.setSpan(StyleSpan(Typeface.BOLD), startIndex, startIndex + moreString.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
 
                 binding.projectContent.movementMethod = LinkMovementMethod.getInstance()
 

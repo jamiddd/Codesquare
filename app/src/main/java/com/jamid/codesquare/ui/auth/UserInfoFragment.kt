@@ -7,12 +7,14 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
+import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.jamid.codesquare.*
@@ -156,14 +158,12 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
         }
     }
 
-    private fun ChipGroup.addTag(s: String, checked: Boolean = false) {
+    private fun FlexboxLayout.addTag(s: String, checked: Boolean = false) {
         s.trim()
-        val chip = Chip(requireContext())
+        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
         chip.text = s
         chip.isCheckable = true
         chip.isChecked = checked
-        chip.isCheckedIconVisible = true
-        chip.checkedIcon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_done_24)
         chip.isCloseIconVisible = false
         chip.tag = s
 
@@ -185,6 +185,10 @@ class UserInfoFragment: Fragment(), SearchItemClickListener {
             }
         }
 
+        chip.updateLayoutParams<FlexboxLayout.LayoutParams> {
+            marginEnd = resources.getDimension(R.dimen.generic_len).toInt()
+            marginStart = resources.getDimension(R.dimen.zero).toInt()
+        }
 
     }
 

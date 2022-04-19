@@ -54,9 +54,7 @@
             android:layout_height="wrap_content"
             android:drawablePadding="8dp"
             android:fontFamily="sans-serif-medium"
-            android:text="@string/sample_name"
-            android:textSize="16sp"
-            app:drawableTint="?colorAccent" />
+            android:text="@string/sample_name" />
 
         <TextView
             android:id="@+id/project_location"
@@ -147,10 +145,15 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/project_join_btn"
+        style="@style/AppTheme.ButtonOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="12dp"
+        android:fontFamily="@font/title_semi"
+        android:minHeight="44dp"
         android:text="@string/join"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_constraintBottom_toBottomOf="@+id/project_comment_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/project_comment_btn" />
@@ -159,14 +162,13 @@
         android:id="@+id/project_like_comment_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="12dp"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
         android:maxWidth="330dp"
         android:paddingStart="0dp"
         android:paddingEnd="4dp"
-        app:drawableStartCompat="@drawable/ic_likes_comment_contributors"
         app:layout_constraintBottom_toTopOf="@+id/project_like_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
@@ -185,7 +187,6 @@
         android:paddingBottom="8dp"
         android:text="@string/sample_project_title"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/project_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

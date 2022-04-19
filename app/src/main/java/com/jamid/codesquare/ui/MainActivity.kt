@@ -1,6 +1,7 @@
 package com.jamid.codesquare.ui
 
 import android.Manifest
+import android.animation.AnimatorInflater
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -33,11 +34,13 @@ import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
 import com.google.android.material.button.MaterialButton
@@ -49,6 +52,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import com.jamid.codesquare.*
 import com.jamid.codesquare.PlayBillingController.PremiumState.*
 import com.jamid.codesquare.adapter.recyclerview.ProjectViewHolder
@@ -80,10 +84,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     private var currentIndefiniteSnackbar: Snackbar? = null
     lateinit var networkManager: MainNetworkManager
     lateinit var playBillingController: PlayBillingController
-
     var subscriptionFragment: SubscriptionFragment? = null
     var optionsFragment: OptionsFragment? = null
 
+    private var isBottomAdSet = false
 
     private val chatReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
@@ -212,14 +216,46 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             }
         }
 
-
         UserManager.currentUserLive.observe(this) {
             if (it != null) {
+                /*FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
+                    if (token != it.token) {
+                        Firebase.auth.signOut()
+                        viewModel.signOut {
+                            runOnUiThread {
+                                navController.navigate(R.id.loginFragment, null, slideRightNavOptions())
+
+                                val frag = MessageDialogFragment.builder("You've been logged out as you're signed in on another device.")
+                                    .setPositiveButton("OK") { a, _ ->
+                                        a.dismiss()
+                                    }
+                                    .setNegativeButton("Dismiss") { a, _ ->
+                                        a.dismiss()
+                                    }
+                                    .build()
+
+                                frag.show(supportFragmentManager, MessageDialogFragment.TAG)
+                            }
+                        }
+                    }
+                }.addOnFailureListener { it1 ->
+                    Log.e(TAG, "onCreate: ${it1.localizedMessage}")
+                }*/
+
+
                 viewModel.currentUserBitmap = null
                 viewModel.insertCurrentUser(it)
 
                 if (it.premiumState.toInt() != -1) {
                     viewModel.deleteAdProjects()
+                }
+
+                if (isBottomAdSet && shouldShowAd(navController.currentDestination!!.id, networkManager.networkAvailability.value == true)) {
+                    binding.adView2.show()
+                    binding.hideAdBtn.show()
+                } else {
+                    binding.adView2.hide()
+                    binding.hideAdBtn.hide()
                 }
 
                 setMessagesListener(it.chatChannels)
@@ -288,6 +324,53 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         setBroadcastReceivers()
 
+        binding.hideAdBtn.setOnClickListener {
+            onAdInfoClick()
+        }
+
+    }
+
+    fun setBottomAdView() = runOnUiThread {
+        if (!isBottomAdSet) {
+            isBottomAdSet = true
+            val adRequest = AdRequest.Builder().build()
+
+            binding.adView2.loadAd(adRequest)
+
+            binding.adView2.adListener = object: AdListener() {
+                override fun onAdFailedToLoad(p0: LoadAdError) {
+                    super.onAdFailedToLoad(p0)
+                    binding.adView2.hide()
+                    binding.hideAdBtn.hide()
+                }
+
+                override fun onAdLoaded() {
+                    super.onAdLoaded()
+                    if (shouldShowAd(navController.currentDestination!!.id, networkManager.networkAvailability.value == true)) {
+                        binding.adView2.show()
+                        binding.hideAdBtn.show()
+                    }
+                }
+
+                override fun onAdOpened() {
+                    super.onAdOpened()
+                    if (shouldShowAd(navController.currentDestination!!.id, networkManager.networkAvailability.value == true)) {
+                        binding.adView2.show()
+                        binding.hideAdBtn.show()
+                    }
+                }
+
+                override fun onAdClosed() {
+                    super.onAdClosed()
+                    binding.adView2.hide()
+                    binding.hideAdBtn.hide()
+                }
+
+            }
+
+        }
+
+
     }
 
     private fun setBroadcastReceivers() {
@@ -329,7 +412,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         }
     }
 
-
     private fun setupNavigation() {
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
@@ -340,17 +422,20 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
 
         updateUi(
             shouldShowAppBar = false,
-            baseFragmentBehavior = null
+            baseFragmentBehavior = null,
+            shouldShowAd = false
         )
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
 
-            val userInfoLayout = findViewById<View>(R.id.user_info)
             invalidateOptionsMenu()
 
             binding.mainToolbar.setNavigationOnClickListener {
                 navController.navigateUp()
             }
+
+            binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(this,
+                R.animator.app_bar_elevation)
 
             val dy = resources.getDimension(R.dimen.comment_layout_translation)
             binding.commentBottomRoot.slideDown(dy)
@@ -374,7 +459,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
             binding.mainToolbar.logo = if (destination.id != R.id.homeFragment) {
                 null
             } else {
-                ContextCompat.getDrawable(this, R.drawable.ic_collab_logo_small)
+                if (isNightMode()) {
+                    ContextCompat.getDrawable(this, R.drawable.ic_logo_xy_night)
+                } else {
+                    ContextCompat.getDrawable(this, R.drawable.ic_logo_xy)
+                }
             }
 
             val authFragments = arrayOf(
@@ -395,20 +484,17 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
                 )
                 R.id.homeFragment -> {
                     hideKeyboard(binding.root)
-                    updateUi(
-                        shouldShowTabLayout = true
-                    )
+                    lifecycleScope.launch {
+                        delay(300)
+                        updateUi(
+                            shouldShowTabLayout = true,
+                            shouldShowAd = true
+                        )
+                    }
                 }
                 R.id.profileFragment -> {
-                    val actionBarHeight = resources.getDimension(R.dimen.action_bar_height)
-                    userInfoLayout?.updateLayoutParams<CollapsingToolbarLayout.LayoutParams> {
-                        setMargins(0, actionBarHeight.toInt(), 0, 0)
-                    }
                     hideKeyboard(binding.root)
-                    updateUi(
-                        shouldShowTabLayout = true,
-                        shouldShowUserInfo = true
-                    )
+                    updateUi()
                 }
                 R.id.chatMediaFragment -> updateUi(shouldShowTabLayout = true)
                 R.id.imageViewFragment -> updateUi(baseFragmentBehavior = null)
@@ -492,8 +578,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         shouldShowTabLayout: Boolean = false,
         baseFragmentBehavior: CoordinatorLayout.Behavior<View>? = AppBarLayout.ScrollingViewBehavior(),
         toolbarAdjustment: ToolbarAdjustment = ToolbarAdjustment(),
-        shouldShowUserInfo: Boolean = false
-    ) {
+        shouldShowAd: Boolean = false
+    ) = runOnUiThread {
 
         binding.mainAppbar.isVisible = shouldShowAppBar
         binding.mainToolbar.isVisible = shouldShowToolbar
@@ -547,13 +633,30 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
         params.behavior = baseFragmentBehavior
         binding.navHostFragment.layoutParams = params
 
-        val userInfoLayout = findViewById<View>(R.id.user_info)
-        userInfoLayout?.isVisible = shouldShowUserInfo
-
         if (!toolbarAdjustment.shouldShowSubTitle) {
             binding.mainToolbar.subtitle = null
         }
 
+        if (shouldShowAd) {
+
+            if (shouldShowAd(navController.currentDestination!!.id,
+                    networkManager.networkAvailability.value == true
+                )
+            ) {
+                binding.adView2.show()
+                binding.hideAdBtn.show()
+            }
+            /*
+            if (UserManager.currentUser.premiumState.toInt() != -1) {
+                return
+            } else {
+                binding.adView2.show()
+                binding.hideAdBtn.show()
+            }*/
+        } else {
+            binding.adView2.hide()
+            binding.hideAdBtn.hide()
+        }
     }
 
 
@@ -582,7 +685,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, ProjectInvit
     }
 
     override fun onProjectClick(project: Project) {
-        val bundle = bundleOf(TITLE to project.name, PROJECT to project, "image_pos" to 0)
+        val bundle = bundleOf(PROJECT to project, "image_pos" to 0)
         navController.navigate(R.id.projectFragmentContainer, bundle, slideRightNavOptions())
     }
 
