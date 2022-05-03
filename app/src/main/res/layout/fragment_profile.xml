@@ -46,6 +46,13 @@
 
             </com.google.android.material.tabs.TabLayout>
 
+            <View
+                android:id="@+id/divider6"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_gravity="bottom"
+                android:background="?android:attr/listDivider" />
+
         </com.google.android.material.appbar.CollapsingToolbarLayout>
 
     </com.google.android.material.appbar.AppBarLayout>

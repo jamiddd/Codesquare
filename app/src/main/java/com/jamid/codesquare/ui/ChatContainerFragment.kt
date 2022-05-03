@@ -1,8 +1,7 @@
 package com.jamid.codesquare.ui
 
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -10,26 +9,23 @@ import android.provider.OpenableColumns
 import android.util.Log
 import android.view.*
 import androidx.activity.addCallback
-import androidx.appcompat.widget.Toolbar
-import androidx.core.content.ContextCompat
+import androidx.core.animation.doOnEnd
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
 import androidx.core.view.*
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
-import com.facebook.drawee.generic.RoundingParams
-import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -37,12 +33,13 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallDocumentsAdapter
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
 import com.jamid.codesquare.data.*
-import com.jamid.codesquare.databinding.FragmentChatContainerBinding
-import com.jamid.codesquare.databinding.NewChatGreetingBinding
+import com.jamid.codesquare.databinding.*
 import com.jamid.codesquare.listeners.DocumentClickListener
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.ui.home.chat.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
 
@@ -59,25 +56,27 @@ import kotlin.math.abs
  * 4. Toolbar navigation for child fragments
  *         a) back navigation
  *         b) navigation inside this fragment
- *         c) Control projectIcon and optionBtn
+ *         c) Control postIcon and optionBtn
  *
  * */
 @ExperimentalPagingApi
-class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, OptionClickListener, DocumentClickListener {
+class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>(), ImageClickListener, OptionClickListener, DocumentClickListener {
 
-    private lateinit var binding: FragmentChatContainerBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var chatChannel: ChatChannel
-    private lateinit var project: Project
-    private lateinit var moreBtn: MaterialButton
-    private lateinit var projectIcon: SimpleDraweeView
+    private lateinit var post: Post
     private lateinit var toolbar: MaterialToolbar
     private var isSingleSelectedMessage = false
     private var currentMessage: Message? = null
     var isInProgressMode = false
 
+    private val menuObservable = MutableLiveData<Menu>()
     private var chatListener: ListenerRegistration? = null
-    
+
+    override fun getViewBinding(): FragmentChatContainerBinding {
+        return FragmentChatContainerBinding.inflate(layoutInflater)
+    }
+
     private val imagesDir: File by lazy {
         requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
@@ -97,18 +96,59 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
         toolbar = requireActivity().findViewById(R.id.main_toolbar)
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChatContainerBinding.inflate(inflater)
-        return binding.root
+   /* override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        inflater.inflate(R.menu.chat_detail_menu, menu)
     }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        menuObservable.postValue(menu)
+        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
+        setChannelIcon(menu, chatChannel.chatChannelId, chatChannel.postImage)
+        updateNecessaryItems()
+    }*/
+
+    /*private fun onMenuReady(z: Z) {
+        when (z.fragmentTag) {
+            ChatFragment.TAG -> {
+                updateUi(isPostOptionVisible = true)
+            }
+            ChatDetailFragment.TAG -> {
+                updateUi(isPostOptionVisible = true)
+            }
+            ChatMediaFragment.TAG -> {
+                updateUi(title="Media", isTabLayoutVisible = true)
+            }
+            MessageDetailFragment.TAG -> {
+                updateUi()
+            }
+            ChannelGuidelinesFragment.TAG -> {
+                updateUi("Post rules")
+            }
+            else -> updateUi()
+        }
+    }*/
+
+    /*override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.channel_icon -> {
+                val bundle = bundleOf(POST to post, CHAT_CHANNEL to chatChannel)
+                navigate(ChatDetailFragment.TAG, bundle)
+            }
+            R.id.channel_option -> {
+                val options = arrayListOf(OPTION_16, OPTION_15)
+                val icons = arrayListOf(R.drawable.ic_round_sticky_note_2_24, R.drawable.ic_round_edit_note_24)
+
+                activity.optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, post = post)
+                activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }*/
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
         viewModel.isSelectModeOn = false
 
@@ -168,10 +208,10 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
         }
 
 
-        toolbar.title = chatChannel.projectTitle
+        toolbar.title = chatChannel.postTitle
 
-        (activity as MainActivity).getProjectImpulsive(chatChannel.projectId) {
-            project = it
+        activity.getPostImpulsive(chatChannel.postId) {
+            post = it
             init()
         }
 
@@ -188,8 +228,48 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                 }
             }
 
+        /*menuObservable.observe(viewLifecycleOwner) { menu ->
+            if (menu != null && menu.size == 2) {
+                updateNecessaryItems(menu)
+            }
+        }*/
+
+//        getCurrentFragmentInfo()
 
     }
+
+    fun getCurrentFragmentTag(): String {
+        val lastFragment = childFragmentManager.fragments.lastOrNull()
+        return if (lastFragment != null) {
+            when (lastFragment) {
+                is ChatFragment -> {
+                    ChatFragment.TAG
+                }
+                is ChatDetailFragment -> {
+                    ChatDetailFragment.TAG
+                }
+                is MessageDetailFragment -> {
+                    MessageDetailFragment.TAG
+                }
+                is ChannelGuidelinesFragment -> {
+                    ChannelGuidelinesFragment.TAG
+                }
+                is ChatMediaFragment -> {
+                    ChatMediaFragment.TAG
+                }
+                is ForwardFragment -> {
+                    ForwardFragment.TAG
+                }
+                else -> {
+                    lastFragment::class.java.simpleName
+                }
+            }
+        } else {
+            Log.d(TAG, "onViewCreated: Last fragment is null")
+            "NULL"
+        }
+    }
+
 
     fun init() {
         if (childFragmentManager.backStackEntryCount == 0) {
@@ -225,8 +305,8 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             updateChatInputUi(viewModel.isSelectModeOn, selectedMessages = newList)
             updateNavigation()
 
-            if (::projectIcon.isInitialized && ::moreBtn.isInitialized)
-                updateToolbarItems(isProjectIconVisible = projectIcon.isVisible, isMoreBtnVisible = moreBtn.isVisible)
+//            updateToolbarItems()
+            activity.binding.mainToolbar.title = chatChannel.postTitle
 
             val secondaryToolbar = requireActivity().findViewById<MaterialToolbar>(R.id.secondary_toolbar)
             val dy = resources.getDimension(R.dimen.appbar_slide_translation)
@@ -252,6 +332,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
         childFragmentManager.addOnBackStackChangedListener {
             isChatFragment = childFragmentManager.backStackEntryCount == 1
+
             updateNavigation()
             updateChatInputUi()
             updateNecessaryItems()
@@ -266,8 +347,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             if (documents.isNullOrEmpty()) {
                 // hiding progress after upload
                 binding.uploadProgress.hide()
-            } else {
-                Log.d(TAG, "Images: ${documents.size}")
             }
         }
 
@@ -276,8 +355,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             if (images.isNullOrEmpty()) {
                 // hiding progress after upload
                 binding.uploadProgress.hide()
-            } else {
-                Log.d(TAG, "Images: ${images.size}")
             }
         }
 
@@ -287,27 +364,21 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             shouldShowCloseBtn = true
         }
 
-        addNecessaryTools()
-
     }
+
 
     private fun updateNecessaryItems() {
         when {
             childFragmentManager.findFragmentByTag(ChannelGuidelinesFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems("Project Rules")
-                hideTabLayout()
-                hideOptionsLayout()
+                updateUi("Project rules")
             }
             childFragmentManager.findFragmentByTag(ChatMediaFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems("Media")
-                showTabLayout()
-                hideOptionsLayout()
+                updateUi(title = "Media", isTabLayoutVisible = true)
             }
             childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems(isMoreBtnVisible = true)
-                hideTabLayout()
-                hideOptionsLayout()
+                updateUi(isPostOptionVisible = true)
 
+                // TODO("need to do something about this")
                 val chatDetailFragment = childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)
                 viewModel.getChatChannel(chatChannel.chatChannelId) {
                     requireActivity().runOnUiThread {
@@ -316,118 +387,70 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                         }
                     }
                 }
-
             }
             childFragmentManager.findFragmentByTag(MessageDetailFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems()
-                hideTabLayout()
-                hideOptionsLayout()
+                updateUi()
             }
             childFragmentManager.findFragmentByTag(ForwardFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems("Forward")
-                hideTabLayout()
-                hideOptionsLayout()
+                updateUi(title = "Forward")
             }
             childFragmentManager.findFragmentByTag(ChatFragment.TAG)?.isVisible == true -> {
-                updateToolbarItems(isProjectIconVisible = true)
-                hideTabLayout()
+                updateUi(isPostIconVisible = true)
             }
         }
     }
 
-    private fun hideOptionsLayout() {
+    private fun updateUi(
+        title: String = chatChannel.postTitle,
+        isPostIconVisible: Boolean = false,
+        isPostOptionVisible: Boolean = false,
+        isTabLayoutVisible: Boolean = false,
+        isChatOptionRootEnabled: Boolean = false
+    ) {
+        activity.binding.mainToolbar.title = title
+//        val size = activity.binding.mainToolbar.menu.size
+
+        Log.d(TAG, "updateUi")
+        
+
+       /* viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+            val ci = activity.findViewById<View>(R.id.channel_icon)
+            while (ci == null) {
+                Log.d(TAG, "updateUi: ci")
+            }
+            activity.runOnUiThread {
+                ci.isVisible = isPostIconVisible
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
+            val co = activity.findViewById<View>(R.id.channel_option)
+            while (co == null) {
+                Log.d(TAG, "updateUi: co")
+            }
+            activity.runOnUiThread {
+                co.isVisible = isPostOptionVisible
+            }
+        }*/
+
+        activity.binding.mainTabLayout.isVisible = isTabLayoutVisible
+
         val dy = resources.getDimension(R.dimen.chat_bottom_offset)
-        binding.chatOptionRoot.slideDown(dy)
-    }
 
-    /*private fun showOptionsLayout() {
-        binding.chatBottomRoot.slideReset()
-    }*/
-
-    private fun hideTabLayout() {
-        val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
-        tabLayout?.hide()
-    }
-
-    private fun showTabLayout() {
-        val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
-        tabLayout?.show()
-    }
-
-    private fun addNecessaryTools() {
-        val projectIcon1 = toolbar.findViewWithTag<SimpleDraweeView>("project_icon")
-        val projectOption = toolbar.findViewWithTag<MaterialButton>("project_option")
-        val unit = resources.getDimension(R.dimen.unit_len).toInt()
-
-        if (projectOption == null) {
-            val btn = View.inflate(requireContext(), R.layout.custom_btn, null) as MaterialButton
-            btn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_more_horiz_24)
-            toolbar.addView(btn)
-            btn.tag = "project_option"
-
-            if (isNightMode()) {
-                btn.iconTint = ColorStateList.valueOf(Color.WHITE)
-            } else {
-                btn.iconTint = ColorStateList.valueOf(Color.BLACK)
+        if (!isChatOptionRootEnabled) {
+            binding.chatOptionRoot.slideDown(dy).doOnEnd {
+                binding.chatOptionRoot.hide()
             }
-
-            if (isChatFragment) {
-                btn.visibility = View.GONE
-            }
-
-            btn.updateLayoutParams<Toolbar.LayoutParams> {
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                setMargins(unit * 2)
-            }
-
-            moreBtn = btn
-
-            setMoreBtnAction {
-                val options = arrayListOf(OPTION_16, OPTION_15)
-                val icons = arrayListOf(R.drawable.ic_project1, R.drawable.ic_edit)
-
-                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, project = project)
-                (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
-            }
+        } else {
+            binding.chatOptionRoot.show()
+            binding.chatOptionRoot.slideReset()
         }
-
-        if (projectIcon1 == null) {
-            val rp = RoundingParams().setRoundAsCircle(true)
-            val gdh = GenericDraweeHierarchyBuilder(resources).setRoundingParams(rp).build()
-            val pi = SimpleDraweeView(requireContext(), gdh)
-
-            val s = (unit * 9)
-            pi.tag = "project_icon"
-
-            toolbar.addView(pi, s, s)
-            pi.setImageURI(chatChannel.projectImage)
-
-            pi.updateLayoutParams<Toolbar.LayoutParams> {
-                gravity = Gravity.END or Gravity.CENTER_VERTICAL
-                setMargins(unit * 2)
-            }
-
-            projectIcon = pi
-
-            setProjectIconAction {
-                navigate(ChatDetailFragment.TAG, bundleOf(PROJECT to project, CHAT_CHANNEL to chatChannel))
-            }
-        }
-
-    }
-
-    private fun updateToolbarItems(title: String = chatChannel.projectTitle, isMoreBtnVisible: Boolean = false, isProjectIconVisible: Boolean = false) {
-        moreBtn.isVisible = isMoreBtnVisible
-        projectIcon.isVisible = isProjectIconVisible
-        (activity as MainActivity?)?.binding?.mainToolbar?.title = title
     }
 
     private fun setNavigation(onNavigation: () -> Unit) {
-
         requireActivity().onBackPressedDispatcher.addCallback {
            /* if (viewModel.chatFragmentStack.size != 1)
                 viewModel.chatFragmentStack.pop()*/
-
             onNavigation()
         }
 
@@ -509,7 +532,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
             setChatOptionsLayout(isSelectModeOn, isChatFragment, selectedMessages)
         } else {
-
             binding.chatBottomRoot.hide()
 
             binding.chatBottomRoot.slideDown(dy)
@@ -518,11 +540,11 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
     private fun setAddMediaBtn() {
         val options = arrayListOf(OPTION_8, OPTION_9)
-        val icons = arrayListOf(R.drawable.ic_image_coloured, R.drawable.ic_file)
+        val icons = arrayListOf(R.drawable.ic_round_image_24, R.drawable.ic_round_insert_drive_file_24)
 
         binding.addMediaBtn.setOnClickListener {
-            (activity as MainActivity).optionsFragment = OptionsFragment.newInstance("Upload", options, icons)
-            (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+            activity.optionsFragment = OptionsFragment.newInstance("Upload", options, icons)
+            activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
         }
 
     }
@@ -551,6 +573,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
         if (isChatFragment) {
             if (isSelectModeOn) {
+
                 binding.chatOptionRoot.slideReset()
 
                 // setting reply button
@@ -600,7 +623,23 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                 binding.replyName.text = replyMessage.sender.name
             }
 
-            binding.replyText.text = replyMessage.content
+
+            if (replyMessage.type == text) {
+                binding.replyText.text = replyMessage.content
+            } else {
+                binding.replyText.text = replyMessage.type
+
+                if (replyMessage.type == image) {
+                    binding.replyImage.show()
+                    binding.replyImage.setImageURI(getImageUriFromMessage(replyMessage).toString())
+                }
+
+                if (replyMessage.type == document) {
+                    binding.replyImage.show()
+                    binding.replyImage.background = getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                }
+            }
+
 
             binding.replyCloseBtn.setOnClickListener {
                 viewModel.setReplyMessage(null)
@@ -839,8 +878,8 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
      * */
     private fun cleanUp() {
         viewModel.disableSelectMode(chatChannel.chatChannelId)
-        toolbar.removeView(moreBtn)
-        toolbar.removeView(projectIcon)
+//        toolbar.removeView(moreBtn)
+//        toolbar.removeView(postIcon)
     }
 
     override fun onPause() {
@@ -889,10 +928,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                             }
                         }
                     }
-                    Log.d(
-                        TAG,
-                        "Probably file already exists. Or some other problem for which we are not being able to "
-                    )
                 }
             } catch (e: Exception) {
                 viewModel.setCurrentError(e)
@@ -905,7 +940,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
             if (destination.mkdir()) {
                 download(destination)
             } else {
-                Log.d(TAG, "Probably directory already exists")
                 if (destination.exists()) {
                     download(destination)
                 } else {
@@ -922,7 +956,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     private fun openFile(file: File) {
         // Get URI and MIME type of file
         try {
-            Log.d(TAG, file.path)
             val uri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, file)
             val mime = requireActivity().contentResolver.getType(uri)
 
@@ -949,8 +982,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
         if (!message.isDownloaded) {
             return
         }
-
-        Log.d(TAG, "onMessageClick: Pressed")
 
         if (viewModel.isSelectModeOn) {
             // if select mode is on, we simply need to toggle the state of this message
@@ -985,8 +1016,8 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                     icons.removeAt(1)
                 }
 
-                (activity as MainActivity).optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, listener = this)
-                (activity as MainActivity).optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+                activity.optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, listener = this)
+                activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
 
                 isReadyForDoubleClick = false
 
@@ -1001,9 +1032,6 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     }
 
     override fun onMessageContextClick(message: Message) {
-
-        Log.d(TAG, "onMessageContextClick: Pressed")
-
         // if the message is not downloaded, it cannot be selected
         if (!message.isDownloaded) {
             Snackbar.make(binding.root, "To select this message, please download first.", Snackbar.LENGTH_LONG)
@@ -1097,13 +1125,13 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
                     is Result.Success -> {
                         val user = userResult.data
                         viewModel.insertUserToCache(user)
-                        (activity as MainActivity).onUserClick(user)
+                        activity.onUserClick(user)
                     }
                 }
 
             }
         } else {
-            (activity as MainActivity).onUserClick(cachedUser)
+            activity.onUserClick(cachedUser)
         }
 
     }
@@ -1189,6 +1217,159 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
 
     }
 
+
+    override fun onReplyMessageClick(message: Message) {
+
+        fun onLeftMessageReceived(container: ViewGroup, message: Message) {
+
+            val binding = when (message.type) {
+                image -> {
+                    val v = View.inflate(requireContext(), R.layout.message_default_image_item, null)
+                    MessageDefaultImageItemBinding.bind(v)
+                }
+                document -> {
+                    val v = View.inflate(requireContext(), R.layout.message_default_document_item, null)
+                    MessageDefaultDocumentItemBinding.bind(v)
+                }
+                else -> {
+                    val v = View.inflate(requireContext(), R.layout.message_item_default, null)
+                    MessageItemDefaultBinding.bind(v)
+                }
+            }
+
+            container.addView(binding.root)
+
+            when (binding) {
+                is MessageDefaultImageItemBinding -> {
+                    binding.messageImage.setImageURI(message.metadata!!.url)
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                    binding.messageSenderImg.setImageURI(message.sender.photo)
+                }
+                is MessageDefaultDocumentItemBinding -> {
+                    binding.documentName.text = message.metadata!!.name
+                    binding.documentSize.text = getTextForSizeInBytes(message.metadata!!.size)
+                    val icon = when (message.metadata!!.ext) {
+                        ".pdf" -> getImageResource(R.drawable.ic_pdf)
+                        ".docx" -> getImageResource(R.drawable.ic_docx)
+                        ".pptx" -> getImageResource(R.drawable.ic_pptx)
+                        else -> getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    }
+                    binding.documentIcon.background = icon
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                    binding.messageSenderImg.setImageURI(message.sender.photo)
+                }
+                is MessageItemDefaultBinding -> {
+                    binding.messageContent.text = message.content
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                    binding.messageSenderImg.setImageURI(message.sender.photo)
+                }
+            }
+        }
+
+        fun onRightMessageReceived(container: ViewGroup, message: Message) {
+
+            val binding = when (message.type) {
+                image -> {
+                    val v = View.inflate(requireContext(), R.layout.message_default_image_right_item, null)
+                    MessageDefaultImageRightItemBinding.bind(v)
+                }
+                document -> {
+                    val v = View.inflate(requireContext(), R.layout.message_default_document_right_item, null)
+                    MessageDefaultDocumentRightItemBinding.bind(v)
+                }
+                else -> {
+                    val v = View.inflate(requireContext(), R.layout.message_item_default_right, null)
+                    MessageItemDefaultRightBinding.bind(v)
+                }
+            }
+
+            container.addView(binding.root)
+
+            when (binding) {
+                is MessageDefaultImageRightItemBinding -> {
+                    binding.messageImage.setImageURI(message.content)
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                }
+                is MessageDefaultDocumentRightItemBinding -> {
+                    binding.documentName.text = message.metadata!!.name
+                    binding.documentSize.text = getTextForSizeInBytes(message.metadata!!.size)
+                    val icon = when (message.metadata!!.ext) {
+                        ".pdf" -> getImageResource(R.drawable.ic_pdf)
+                        ".docx" -> getImageResource(R.drawable.ic_docx)
+                        ".pptx" -> getImageResource(R.drawable.ic_pptx)
+                        else -> getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    }
+                    binding.documentIcon.background = icon
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                }
+                is MessageItemDefaultRightBinding -> {
+                    binding.messageContent.text = message.content
+                    binding.messageCreatedAt.text = getTextForChatTime(message.createdAt)
+                }
+            }
+
+        }
+
+        fun onReplyMessageReceived(replyMessage: Message) {
+            val frag = MessageDialogFragment.builder("")
+                .setTitle("")
+                .setCustomView(R.layout.message_reply_view_layout) { _, v ->
+                    val messageReplyViewBinding = MessageReplyViewLayoutBinding.bind(v)
+
+                    val container = messageReplyViewBinding.messageContainer
+
+                    if (message.senderId == UserManager.currentUserId) {
+                        if (replyMessage.senderId == UserManager.currentUserId) {
+                            // reply message first on right
+                            onRightMessageReceived(container, replyMessage)
+
+                            // current message second on right
+                            onRightMessageReceived(container, message)
+                        } else {
+                            // reply message first on left
+                            onLeftMessageReceived(container, replyMessage)
+
+                            // current message second on right
+                            onRightMessageReceived(container, message)
+                        }
+                    } else {
+                        if (replyMessage.senderId == UserManager.currentUserId) {
+                            // reply message first on right
+                            onRightMessageReceived(container, replyMessage)
+
+                            // current message second on left
+                            onLeftMessageReceived(container, message)
+                        } else {
+                            // reply message first on left
+                            onLeftMessageReceived(container, replyMessage)
+
+                            // current message second on left
+                            onLeftMessageReceived(container, message)
+                        }
+                    }
+                }
+                .build()
+
+            frag.show(childFragmentManager, "Something")
+        }
+
+        FireUtility.getMessage(message.replyMessage!!.chatChannelId, message.replyMessage!!.messageId) {
+            val messageResult = it ?: return@getMessage
+
+            when (messageResult) {
+                is Result.Error -> {
+                    Log.e(TAG, "onReplyMessageClick: ${messageResult.exception.localizedMessage}")
+                }
+                is Result.Success -> {
+                    val replyMessage = messageResult.data
+                    onReplyMessageReceived(replyMessage)
+                }
+            }
+
+        }
+
+    }
+
     fun navigate(tag: String, bundle: Bundle) {
         isInProgressMode = false
         val fragment = getFragmentByTag(tag, bundle)
@@ -1203,20 +1384,20 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     /**
      * later make it public so that child fragments can access this
      * */
-    private fun setProjectIconAction(action: () -> Unit) {
-        projectIcon.setOnClickListener {
+    /*private fun setProjectIconAction(action: () -> Unit) {
+        postIcon.setOnClickListener {
             action()
         }
-    }
+    }*/
 
     /**
      * later make it public so that child fragments can access this
      * */
-    private fun setMoreBtnAction(action: () -> Unit) {
+    /*private fun setMoreBtnAction(action: () -> Unit) {
         moreBtn.setOnClickListener {
             action()
         }
-    }
+    }*/
 
     fun navigateUp() {
         childFragmentManager.popBackStack()
@@ -1227,7 +1408,7 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     }
 
     override fun onImageClick(view: View, image: Image) {
-        (activity as MainActivity).showImageViewFragment(view, image)
+        activity.showImageViewFragment(view, image)
     }
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
@@ -1249,12 +1430,12 @@ class ChatContainerFragment : MessageListenerFragment(), ImageClickListener, Opt
     override fun onOptionClick(
         option: Option,
         user: User?,
-        project: Project?,
+        post: Post?,
         chatChannel: ChatChannel?,
         comment: Comment?,
         tag: String?
     ) {
-        (activity as MainActivity).optionsFragment?.dismiss()
+        activity.optionsFragment?.dismiss()
         when (option.item) {
             OPTION_19 -> {
                 viewModel.setReplyMessage(currentMessage)

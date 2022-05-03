@@ -20,13 +20,15 @@ import com.jamid.codesquare.databinding.FragmentPreSearchBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
 @ExperimentalPagingApi
-class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQueryTextListener {
+class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>(), SearchItemClickListener, SearchView.OnQueryTextListener {
 
-    private lateinit var binding: FragmentPreSearchBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var previousQueryAdapter: PreviousQueryAdapter
     private var searchView: SearchView? = null
 
+    override fun getViewBinding(): FragmentPreSearchBinding {
+        return FragmentPreSearchBinding.inflate(layoutInflater)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,15 +71,6 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
             }
         }
         return super.onOptionsItemSelected(item)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentPreSearchBinding.inflate(inflater)
-        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -149,7 +142,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
     }
 
     override fun onSearchItemClick(searchQuery: SearchQuery) {
-        findNavController().navigate(R.id.action_preSearchFragment_to_searchFragment, bundleOf("query" to searchQuery), slideRightNavOptions())
+        findNavController().navigate(R.id.searchFragment, bundleOf("query" to searchQuery), slideRightNavOptions())
         viewModel.insertSearchQuery(searchQuery)
     }
 
@@ -170,7 +163,7 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
-        findNavController().navigate(R.id.action_preSearchFragment_to_searchFragment, bundleOf("query" to SearchQuery()), slideRightNavOptions())
+        findNavController().navigate(R.id.searchFragment, bundleOf("query" to SearchQuery()), slideRightNavOptions())
         return true
     }
 
@@ -189,6 +182,9 @@ class PreSearchFragment: Fragment(), SearchItemClickListener, SearchView.OnQuery
         return true
     }
 
-
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewModel.setSearchData(emptyList())
+    }
 
 }

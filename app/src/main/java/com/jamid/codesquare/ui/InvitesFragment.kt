@@ -15,18 +15,18 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.MyInviteAdapter
-import com.jamid.codesquare.data.Project
-import com.jamid.codesquare.data.ProjectInvite
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.PostInvite
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentInvitesBinding
-import com.jamid.codesquare.listeners.ProjectMiniItemClickListener
+import com.jamid.codesquare.listeners.PostMiniItemClickListener
 
 @OptIn(ExperimentalPagingApi::class)
-class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
+class InvitesFragment: Fragment(), PostMiniItemClickListener {
 
     private lateinit var binding: FragmentInvitesBinding
     private val viewModel: MainViewModel by activityViewModels()
-    private val invitesList = mutableListOf<ProjectInvite>()
+    private val invitesList = mutableListOf<PostInvite>()
     private lateinit var myInvitesAdapter: MyInviteAdapter
 
     override fun onCreateView(
@@ -54,16 +54,16 @@ class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
 
         getInvitesSentByMe()
 
-        viewModel.getCurrentUserProjects().observe(viewLifecycleOwner) {
+        viewModel.getCurrentUserPosts().observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
-                if (it.size != UserManager.currentUser.projects.size) {
+                if (it.size != UserManager.currentUser.posts.size) {
                     // get all projects
-                    FireUtility.downloadAllUserProjects { it1 ->
-                        val allProjectsResult = it1 ?: return@downloadAllUserProjects
+                    FireUtility.downloadAllUserPosts { it1 ->
+                        val allProjectsResult = it1 ?: return@downloadAllUserPosts
                         when (allProjectsResult) {
                             is Result.Error -> viewModel.setCurrentError(allProjectsResult.exception)
                             is Result.Success -> {
-                                viewModel.insertProjects(allProjectsResult.data)
+                                viewModel.insertPosts(allProjectsResult.data)
                             }
                         }
                     }
@@ -71,12 +71,12 @@ class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
                     // we have all projects
                 }
             } else {
-                FireUtility.downloadAllUserProjects { it1 ->
-                    val allProjectsResult = it1 ?: return@downloadAllUserProjects
+                FireUtility.downloadAllUserPosts { it1 ->
+                    val allProjectsResult = it1 ?: return@downloadAllUserPosts
                     when (allProjectsResult) {
                         is Result.Error -> viewModel.setCurrentError(allProjectsResult.exception)
                         is Result.Success -> {
-                            viewModel.insertProjects(allProjectsResult.data)
+                            viewModel.insertPosts(allProjectsResult.data)
                         }
                     }
                 }
@@ -98,7 +98,7 @@ class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
 
                     binding.noInvitesText.hide()
 
-                    val invites = invitesSnapshot.toObjects(ProjectInvite::class.java)
+                    val invites = invitesSnapshot.toObjects(PostInvite::class.java)
                     invitesList.clear()
                     invitesList.addAll(invites)
                     myInvitesAdapter.submitList(invitesList)
@@ -112,12 +112,12 @@ class InvitesFragment: Fragment(), ProjectMiniItemClickListener {
             }
     }
 
-    override fun onInviteClick(project: Project, receiverId: String, onFailure: () -> Unit) {
+    override fun onInviteClick(post: Post, receiverId: String, onFailure: () -> Unit) {
 
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    override fun onRevokeInviteClick(invite: ProjectInvite, onFailure: () -> Unit) {
+    override fun onRevokeInviteClick(invite: PostInvite, onFailure: () -> Unit) {
         FireUtility.revokeInvite(invite) {
             if (!it.isSuccessful) {
                 Snackbar.make(binding.root, "Something went wrong while trying to revoke project invite", Snackbar.LENGTH_LONG).show()

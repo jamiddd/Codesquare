@@ -14,7 +14,7 @@
         android:layout_height="wrap_content">
 
         <com.facebook.drawee.view.SimpleDraweeView
-            android:id="@+id/chat_project_image"
+            android:id="@+id/chat_post_image"
             style="@style/AppTheme.DraweeViewBackground"
             android:layout_width="match_parent"
             android:layout_height="250dp"
@@ -31,9 +31,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:paddingTop="60dp"
-            android:text="Project Name"
-            app:layout_constraintBottom_toBottomOf="@+id/chat_project_image"
-            app:layout_constraintEnd_toEndOf="@+id/chat_project_image"
+            android:text="Post Name"
+            app:layout_constraintBottom_toBottomOf="@+id/chat_post_image"
+            app:layout_constraintEnd_toEndOf="@+id/chat_post_image"
             app:layout_constraintStart_toStartOf="parent" />
 
         <LinearLayout
@@ -46,22 +46,22 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/chat_project_image">
+            app:layout_constraintTop_toBottomOf="@+id/chat_post_image">
 
             <TextView
-                android:id="@+id/chat_project_guidelines_header"
+                android:id="@+id/chat_post_guidelines_header"
                 style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Project Guidelines" />
+                android:text="Post Guidelines" />
 
             <TextView
-                android:id="@+id/chat_project_guidelines"
+                android:id="@+id/chat_post_guidelines"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:maxLines="10"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:paddingBottom="12dp"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
 

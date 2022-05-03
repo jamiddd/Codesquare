@@ -2,9 +2,7 @@ package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -20,26 +18,26 @@ import com.jamid.codesquare.databinding.FragmentMessageDetailBinding
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
-class MessageDetailFragment: Fragment() {
+class MessageDetailFragment: BaseFragment<FragmentMessageDetailBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentMessageDetailBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private val readListAdapter = UserAdapter(min = true)
     private val deliveryListAdapter = UserAdapter(min = true)
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentMessageDetailBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentMessageDetailBinding {
+        return FragmentMessageDetailBinding.inflate(layoutInflater)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
         returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        activity.binding.mainToolbar.menu.clear()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

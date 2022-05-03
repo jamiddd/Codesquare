@@ -2,11 +2,8 @@ package com.jamid.codesquare.ui.auth
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.activity.addCallback
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -17,19 +14,9 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentEmailVerificationBinding
 
 @ExperimentalPagingApi
-class EmailVerificationFragment: Fragment() {
+class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentEmailVerificationBinding
-    private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentEmailVerificationBinding.inflate(inflater)
-        return binding.root
-    }
+    override val viewModel: MainViewModel by activityViewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -74,7 +61,7 @@ class EmailVerificationFragment: Fragment() {
                 is Result.Success -> {
                     val isEmailVerified = result.data
                     if (isEmailVerified) {
-                        findNavController().navigate(R.id.action_emailVerificationFragment_to_profileImageFragment, null, slideRightNavOptions())
+                        findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
                     } else {
                         Log.d(TAG, "onViewCreated: Waiting for email to be verified")
                     }
@@ -85,6 +72,10 @@ class EmailVerificationFragment: Fragment() {
 
     companion object {
         private const val TAG = "EmailVerification"
+    }
+
+    override fun getViewBinding(): FragmentEmailVerificationBinding {
+        return FragmentEmailVerificationBinding.inflate(layoutInflater)
     }
 
 }

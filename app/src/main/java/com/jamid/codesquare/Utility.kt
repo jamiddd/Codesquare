@@ -9,8 +9,11 @@ import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Rect
+import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.Patterns
@@ -18,7 +21,9 @@ import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -50,6 +55,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.TooltipLayoutBinding
 import com.jamid.codesquare.ui.*
 import com.jamid.codesquare.ui.home.chat.*
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
@@ -62,6 +68,35 @@ val colorPalettesDay = mutableListOf(
     Pair(R.color.chip_back_purple_day, R.color.chip_front_purple_day),
     Pair(R.color.chip_back_teal_day, R.color.chip_front_teal_day)
 )
+
+fun Context.getOrderFromString(s: String?): FeedOrder {
+    return when (s) {
+        null -> FeedOrder.DESC
+        "desc" -> FeedOrder.DESC
+        "asc" -> FeedOrder.ASC
+        else -> FeedOrder.DESC
+    }
+}
+
+fun Fragment.getOrderFromString(s: String?): FeedOrder {
+    return requireContext().getOrderFromString(s)
+}
+
+fun Fragment.getSortFromString(s: String?): FeedSort {
+    return requireContext().getSortFromString(s)
+}
+
+fun Context.getSortFromString(s: String?): FeedSort {
+    return when (s) {
+        null -> FeedSort.MOST_RECENT
+        getString(R.string.sort_time) -> FeedSort.MOST_RECENT
+        getString(R.string.sort_location) -> FeedSort.LOCATION
+        getString(R.string.sort_relevance) -> FeedSort.MOST_VIEWED
+        getString(R.string.sort_likes) -> FeedSort.LIKES
+        else -> FeedSort.CONTRIBUTORS
+    }
+}
+
 
 val colorPalettesNight = mutableListOf(
     Pair(R.color.chip_back_blue_night, R.color.chip_front_blue_night),
@@ -296,25 +331,28 @@ fun <T: Any> List<T>.removeItemFromList(item: T): List<T> {
     }
 }
 
-fun View.slideReset() {
+fun View.slideReset(): Animator {
     val animator = ObjectAnimator.ofFloat(this, View.TRANSLATION_Y, 0f)
     animator.duration = 300
     animator.interpolator = AccelerateDecelerateInterpolator()
     animator.start()
+    return animator
 }
 
-fun View.slideUp(offset: Float) {
+fun View.slideUp(offset: Float): Animator {
     val animator = ObjectAnimator.ofFloat(this, View.TRANSLATION_Y, -offset)
     animator.duration = 300
     animator.interpolator = AccelerateDecelerateInterpolator()
     animator.start()
+    return animator
 }
 
-fun View.slideDown(offset: Float) {
+fun View.slideDown(offset: Float): Animator {
     val animator = ObjectAnimator.ofFloat(this, View.TRANSLATION_Y, offset)
     animator.duration = 300
     animator.interpolator = AccelerateDecelerateInterpolator()
     animator.start()
+    return animator
 }
 
 fun Fragment.showKeyboard() {
@@ -593,8 +631,8 @@ fun Context.accentColor(): Int {
 }*/
 
 /*
-fun Fragment.search(index: Index, query: String, isProject: Boolean = true, progressBar: ProgressBar? = null, onComplete: (Result<List<SearchQuery>>) -> Unit) {
-    search(index, query, isProject, progressBar, onComplete)
+fun Fragment.search(index: Index, query: String, isPost: Boolean = true, progressBar: ProgressBar? = null, onComplete: (Result<List<SearchQuery>>) -> Unit) {
+    search(index, query, isPost, progressBar, onComplete)
 }*/
 
 fun search() {
@@ -626,7 +664,7 @@ fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<S
 
             for (i in ids.indices) {
                 val t = when (type[i]) {
-                    "project" -> 0
+                    "post" -> 0
                     "user" -> 1
                     else -> -1
                 }
@@ -664,36 +702,41 @@ private fun findValuesForKey(key: String, jsonString: String): List<String> {
     return result
 }
 
+fun EditText.onDone(callback: () -> Unit) {
+    setOnEditorActionListener { _, actionId, _ ->
+        if (actionId == EditorInfo.IME_ACTION_DONE) {
+            callback.invoke()
+            return@setOnEditorActionListener true
+        }
+        false
+    }
+}
+
 fun processUsers(vararg users: User): Array<out User> {
     val currentUser = UserManager.currentUser
     val usersList = mutableListOf<User>()
     for (user in users) {
         user.isCurrentUser = currentUser.id == user.id
-        user.isLiked = currentUser.likedUsers.contains(user.id)
         usersList.add(user)
     }
     return usersList.toTypedArray()
 }
 
-fun processProjects(projects: Array<out Project>): Array<out Project> {
+fun processPosts(posts: Array<out Post>): Array<out Post> {
     val currentUser = UserManager.currentUser
-    for (project in projects) {
-        project.isMadeByMe = project.creator.userId == currentUser.id
-        project.isBlocked = project.blockedList.contains(currentUser.id)
-        project.isLiked = currentUser.likedProjects.contains(project.id)
-        project.isSaved = currentUser.savedProjects.contains(project.id)
+    for (post in posts) {
+        post.isMadeByMe = post.creator.userId == currentUser.id
+        post.isBlocked = post.blockedList.contains(currentUser.id)
 
-        val set1 = project.requests.toSet()
-        val set2 = currentUser.projectRequests.toSet()
+        val set1 = post.requests.toSet()
+        val set2 = currentUser.postRequests.toSet()
         val intersection = set1.intersect(set2)
 
-        project.isRequested = intersection.isNotEmpty()
-        project.isCollaboration = currentUser.collaborations.contains(project.id)
-
-        project.isArchived = currentUser.archivedProjects.contains(project.id)
+        post.isRequested = intersection.isNotEmpty()
+        post.isCollaboration = currentUser.collaborations.contains(post.id)
     }
 
-    return projects
+    return posts
 }
 
 fun View.enable() {
@@ -763,9 +806,9 @@ fun getFragmentByTag(tag: String, bundle: Bundle): Fragment {
         ChatDetailFragment.TAG -> ChatDetailFragment.newInstance(bundle)
         ChatMediaFragment.TAG -> ChatMediaFragment.newInstance(bundle)
         ChannelGuidelinesFragment.TAG -> ChannelGuidelinesFragment.newInstance(bundle)
-        ProjectContributorsFragment.TAG -> ProjectContributorsFragment.newInstance(bundle)
+        PostContributorsFragment.TAG -> PostContributorsFragment.newInstance(bundle)
         MessageDetailFragment.TAG -> MessageDetailFragment.newInstance(bundle)
-        ProjectFragment.TAG -> ProjectFragment.newInstance(bundle)
+        PostFragment.TAG -> PostFragment.newInstance(bundle)
         CommentsFragment.TAG -> CommentsFragment.newInstance(bundle)
         TagFragment.TAG -> TagFragment.newInstance(bundle)
         ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
@@ -793,6 +836,19 @@ fun shouldShowAd(currentDestinationId: Int, isInternetAvailable: Boolean): Boole
     return true
 }
 
+fun Context.getImageUriFromMessage(message: Message): Uri {
+    val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+    val name = message.content + message.metadata!!.ext
+    val destination = File(imagesDir, message.chatChannelId)
+    val file = File(destination, name)
+    return Uri.fromFile(file)
+}
+
+fun Fragment.getImageUriFromMessage(message: Message): Uri {
+    return requireContext().getImageUriFromMessage(message)
+}
+
+
 fun Context.getColorResource(id: Int): Int {
     return ContextCompat.getColor(this, id)
 }
@@ -801,7 +857,15 @@ fun Fragment.getColorResource(id: Int): Int {
     return requireContext().getColorResource(id)
 }
 
-fun Fragment.attachAdToFragment(adView: AdView, removeBtn: View?) {
+fun Context.getImageResource(id: Int): Drawable? {
+    return ContextCompat.getDrawable(this, id)
+}
+
+fun Fragment.getImageResource(id: Int): Drawable? {
+    return requireContext().getImageResource(id)
+}
+
+fun Context.attachAd(adView: AdView, removeBtn: View?) {
     val adRequest = AdRequest.Builder().build()
 
     adView.loadAd(adRequest)
@@ -832,6 +896,10 @@ fun Fragment.attachAdToFragment(adView: AdView, removeBtn: View?) {
         }
 
     }
+}
+
+fun Fragment.attachAd(adView: AdView, removeBtn: View?) {
+    requireContext().attachAd(adView, removeBtn)
 }
 
 const val TAG = "CodesquareLog"

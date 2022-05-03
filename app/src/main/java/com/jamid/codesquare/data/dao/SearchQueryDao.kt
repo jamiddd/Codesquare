@@ -4,14 +4,14 @@ import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
-import com.jamid.codesquare.data.QUERY_TYPE_PROJECT
+import com.jamid.codesquare.data.QUERY_TYPE_POST
 import com.jamid.codesquare.data.SearchQuery
 
 @Dao
 abstract class SearchQueryDao: BaseDao<SearchQuery>() {
 
     @Query("SELECT * FROM search_query WHERE type = :type ORDER BY createdAt DESC LIMIT 5")
-    abstract fun previousQueries(type: Int = QUERY_TYPE_PROJECT): LiveData<List<SearchQuery>>
+    abstract fun previousQueries(type: Int = QUERY_TYPE_POST): LiveData<List<SearchQuery>>
 
     @Query("SELECT * FROM search_query ORDER BY createdAt DESC LIMIT 10")
     abstract fun prevQueries(): LiveData<List<SearchQuery>>

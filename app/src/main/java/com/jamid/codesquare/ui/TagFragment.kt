@@ -7,15 +7,15 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.PROJECT
-import com.jamid.codesquare.PROJECTS
-import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
-import com.jamid.codesquare.adapter.recyclerview.ProjectAdapter
-import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.POST
+import com.jamid.codesquare.POSTS
+import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
+import com.jamid.codesquare.adapter.recyclerview.PostAdapter
+import com.jamid.codesquare.data.Post
 import java.util.*
 
 @ExperimentalPagingApi
-class TagFragment: PagerListFragment<Project, PostViewHolder>() {
+class TagFragment: PagerListFragment<Post, SuperPostViewHolder>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,17 +25,17 @@ class TagFragment: PagerListFragment<Project, PostViewHolder>() {
 
     override fun onViewLaidOut() {
         super.onViewLaidOut()
-        val tag = arguments?.getString("tag", PROJECT).orEmpty()
+        val tag = arguments?.getString("tag", POST).orEmpty()
 
         val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
         val t2 = tag.uppercase()
         val t3 = tag.lowercase()
 
-        val query = Firebase.firestore.collection(PROJECTS)
+        val query = Firebase.firestore.collection(POSTS)
             .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
 
         getItems {
-            viewModel.getTagProjects(tag, query)
+            viewModel.getTagPosts(tag, query)
         }
 
         binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
@@ -43,8 +43,8 @@ class TagFragment: PagerListFragment<Project, PostViewHolder>() {
 
     }
 
-    override fun getAdapter(): PagingDataAdapter<Project, PostViewHolder> {
-        return ProjectAdapter()
+    override fun getAdapter(): PagingDataAdapter<Post, SuperPostViewHolder> {
+        return PostAdapter()
     }
 
     companion object {

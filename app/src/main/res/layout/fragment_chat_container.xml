@@ -17,189 +17,218 @@
         android:id="@+id/chat_bottom_root"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/transparent"
+        app:cardBackgroundColor="@color/transparent"
         android:layout_gravity="bottom"
         app:layout_behavior=".ui.SnackBarAwareBehavior">
 
-        <LinearLayout
-            style="@style/AppTheme.GenericBackground"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:animateLayoutChanges="true"
-            android:orientation="vertical">
+            android:layout_height="match_parent">
 
-            <ProgressBar
-                android:id="@+id/upload_progress"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:indeterminate="true"
-                android:indeterminateTint="?colorAccent"
-                android:translationY="-6dp"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-            <LinearLayout
-                android:id="@+id/reply_layout_root"
-                style="@style/AppTheme.ReplyLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_margin="8dp"
-                android:orientation="horizontal"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:paddingTop="8dp"
-                    android:paddingBottom="8dp">
-
-                    <TextView
-                        android:id="@+id/reply_name"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
-                        tools:text="Jamid Deka" />
-
-                    <TextView
-                        android:id="@+id/reply_text"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="2"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        tools:text="Something is always something no matter what." />
-                </LinearLayout>
-
-                <com.facebook.drawee.view.SimpleDraweeView
-                    android:id="@+id/reply_image"
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:layout_gravity="center_vertical"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:visibility="gone"
-                    app:placeholderImage="@color/normal_grey"
-                    app:roundedCornerRadius="16dp" />
-
-                <Button
-                    android:id="@+id/reply_close_btn"
-                    style="@style/AppTheme.Button.IconOnly"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_vertical"
-                    app:icon="@drawable/ic_round_close_24" />
-
-            </LinearLayout>
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/uploading_images_recycler"
-                style="@style/AppTheme.GenericBackground2"
-                android:layout_width="match_parent"
-                android:layout_height="116dp"
-                android:clipToPadding="false"
-                android:paddingStart="8dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="8dp"
-                android:visibility="gone"
-                tools:itemCount="1"
-                tools:visibility="visible" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/uploading_documents_recycler"
-                style="@style/AppTheme.GenericBackground2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clipToPadding="false"
-                android:paddingStart="8dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="0dp"
-                android:paddingBottom="8dp"
-                android:visibility="gone"
-                tools:itemCount="1"
-                tools:listitem="@layout/document_layout_small"
-                tools:visibility="visible" />
-
-            <TextView
-                android:id="@+id/chat_upload_helper_text"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:id="@+id/chat_input_container"
-                style="@style/AppTheme.ChatInputContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:elevation="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
+            <com.github.mmin18.widget.RealtimeBlurView
+                android:id="@+id/realtimeBlurView"
+                style="@style/AppTheme.DefaultBlur"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/divider10">
+                app:layout_constraintTop_toTopOf="parent" />
 
-                <Button
-                    android:id="@+id/add_media_btn"
-                    style="@style/AppTheme.ChatAddMediaBtn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:contentDescription="@string/add_media_to_chat"
-                    app:icon="@drawable/ic_round_add_24"
-                    tools:ignore="TouchTargetSizeCheck" />
+            <LinearLayout
+                android:id="@+id/linearLayout5"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <EditText
-                    android:id="@+id/chat_input_layout"
-                    style="@style/AppTheme.ChatBottomText"
-                    android:layout_width="0dp"
+                <ProgressBar
+                    android:id="@+id/upload_progress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:layout_weight="1"
-                    android:ems="10"
-                    android:hint="@string/write_something_here"
-                    android:importantForAutofill="no"
-                    android:inputType="textMultiLine"
-                    android:minHeight="48dp"
-                    android:paddingStart="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="8dp"
-                    android:textSize="16sp"
-                    tools:ignore="TextContrastCheck" />
+                    android:indeterminate="true"
+                    android:indeterminateTint="?colorAccent"
+                    android:translationY="-6dp"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
-                <Button
-                    android:id="@+id/chat_send_btn"
-                    style="@style/AppTheme.ChatSendButton"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:contentDescription="@string/send_message"
+                <LinearLayout
+                    android:id="@+id/reply_layout_root"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:id="@+id/imageView2"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        app:srcCompat="@drawable/ic_round_reply_24" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp">
+
+                        <TextView
+                            android:id="@+id/reply_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                            tools:text="Jamid Deka" />
+
+                        <TextView
+                            android:id="@+id/reply_text"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:paddingStart="12dp"
+                            android:paddingEnd="12dp"
+                            tools:text="Something is always something no matter what." />
+                    </LinearLayout>
+
+                    <com.facebook.drawee.view.SimpleDraweeView
+                        android:id="@+id/reply_image"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="4dp"
+                        android:visibility="gone"
+                        app:roundedCornerRadius="16dp"
+                        tools:visibility="visible" />
+
+                    <Button
+                        android:id="@+id/reply_close_btn"
+                        style="@style/AppTheme.PostItemStyledBtn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="0dp"
+                        android:layout_marginEnd="8dp"
+                        app:icon="@drawable/ic_round_close_24" />
+
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/uploading_images_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="116dp"
+                    android:clipToPadding="false"
                     android:paddingStart="8dp"
+                    android:paddingTop="8dp"
                     android:paddingEnd="0dp"
-                    app:icon="@drawable/ic_round_arrow_forward_24"
-                    tools:ignore="TouchTargetSizeCheck" />
-            </LinearLayout>
+                    android:paddingBottom="8dp"
+                    android:visibility="gone"
+                    tools:itemCount="1"
+                    tools:visibility="visible" />
 
-        </LinearLayout>
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/uploading_documents_recycler"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:clipToPadding="false"
+                    android:paddingStart="8dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="8dp"
+                    android:visibility="gone"
+                    tools:itemCount="1"
+                    tools:listitem="@layout/document_layout_small"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/chat_upload_helper_text"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="12dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="4dp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/chat_input_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:elevation="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/divider10">
+
+                    <Button
+                        android:id="@+id/add_media_btn"
+                        style="@style/AppTheme.ChatAddMediaBtn"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginBottom="4dp"
+                        android:contentDescription="@string/add_media_to_chat"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="12dp"
+                        app:icon="@drawable/ic_round_add_24"
+                        tools:ignore="TouchTargetSizeCheck" />
+
+                    <EditText
+                        android:id="@+id/chat_input_layout"
+                        style="@style/AppTheme.ChatText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="4dp"
+                        android:layout_weight="1"
+                        android:ems="10"
+                        android:hint="@string/write_something_here"
+                        android:importantForAutofill="no"
+                        android:inputType="textMultiLine"
+                        android:minHeight="40dp"
+                        android:paddingStart="12dp"
+                        android:paddingTop="8dp"
+                        android:paddingEnd="12dp"
+                        android:paddingBottom="8dp"
+                        android:textSize="16sp"
+                        tools:ignore="TextContrastCheck" />
+
+                    <Button
+                        android:id="@+id/chat_send_btn"
+                        style="@style/AppTheme.ChatSendButton"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:layout_marginTop="4dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="4dp"
+                        android:contentDescription="@string/send_message"
+                        android:paddingStart="6dp"
+                        android:paddingEnd="0dp"
+                        app:icon="@drawable/ic_round_arrow_forward_24"
+                        tools:ignore="TouchTargetSizeCheck" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </com.google.android.material.card.MaterialCardView>
 
@@ -208,12 +237,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:background="@color/transparent"
         android:translationY="@dimen/chat_bottom_offset"
+        app:cardBackgroundColor="@color/transparent"
         app:layout_behavior=".ui.SnackBarAwareBehavior">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
+
+            <com.github.mmin18.widget.RealtimeBlurView
+                android:id="@+id/realtimeBlurView2"
+                style="@style/AppTheme.DefaultBlur"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/chats_reply_btn"

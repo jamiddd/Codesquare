@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape>
+            <size android:width="300dp" android:height="100dp" />
+            <solid android:color="@color/white" />
+        </shape>
+    </item>
+
+    <item android:gravity="start" android:width="40dp" android:bottom="10dp" android:top="10dp">
+        <shape>
+            <corners android:bottomRightRadius="20dp" android:topRightRadius="20dp" />
+            <gradient android:startColor="@color/transparent" android:endColor="@color/light_pink"/>
+        </shape>
+    </item>
+
+    <item android:gravity="end" android:width="40dp" android:bottom="10dp" android:top="10dp">
+        <shape>
+            <corners android:bottomLeftRadius="20dp" android:topLeftRadius="20dp" />
+
+            <gradient android:startColor="@color/light_pink" android:endColor="@color/transparent"/>
+        </shape>
+    </item>
+
+    <item android:gravity="top" android:start="10dp" android:width="280dp" android:height="40dp" >
+        <shape>
+            <corners android:bottomLeftRadius="20dp" android:bottomRightRadius="20dp"/>
+            <gradient android:angle="90" android:startColor="@color/light_pink" android:endColor="@color/transparent"/>
+        </shape>
+    </item>
+
+    <item android:start="10dp" android:gravity="bottom" android:width="280dp" android:height="40dp" >
+        <shape>
+            <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"/>
+            <gradient android:angle="90" android:startColor="@color/transparent" android:endColor="@color/light_pink"/>
+        </shape>
+    </item>
+
+</layer-list>

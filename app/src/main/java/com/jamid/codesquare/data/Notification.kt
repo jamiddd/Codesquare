@@ -19,11 +19,11 @@ import kotlinx.parcelize.Parcelize
  * @param senderId The user id of the user who sent this notification
  * @param receiverId The user id of the user who received this notification
  * @param image Any associated image along with the notification, if there's any #url
- * @param projectId If the notification is based on a project, there must be a project Id
+ * @param postId If the notification is based on a post, there must be a post Id
  * @param commentChannelId If the notification is based on a thread, there must be commentChannel Id
  * @param commentId If the notification is based on a comment, there must be comment Id
  * @param userId If the notification is based on a user, there must be a user Id
- * @param type [0: For general notifications, -1: For project invite notification, 1: For project request notification]
+ * @param type [0: For general notifications, -1: For post invite notification, 1: For post request notification]
  * @param read Status of the notification, if the receiver has read the notification or not
  * @param isReceived [Deprecated] Must remove in future migrations
 * */
@@ -43,7 +43,7 @@ data class Notification(
     var createdAt: Long = System.currentTimeMillis(),
     var updatedAt: Long = System.currentTimeMillis(),
     var image: String? = null,
-    var projectId: String? = null,
+    var postId: String? = null,
     var commentChannelId: String? = null,
     var commentId: String? = null,
     var userId: String? = null,
@@ -61,7 +61,7 @@ data class Notification(
             receiverId: String,
             type: Int = 0,
             userId: String? = null,
-            projectId: String? = null,
+            postId: String? = null,
             commentId: String? = null,
             commentChannelId: String? = null,
             id: String? = null,
@@ -71,7 +71,7 @@ data class Notification(
             val mId = id ?: randomId()
             val currentUser = UserManager.currentUser
             val mTitle = title ?: "Codesquare"
-            return Notification(mId, mTitle, content, currentUser.id, receiverId, currentUser.minify(), System.currentTimeMillis(), System.currentTimeMillis(), image, projectId, commentChannelId, commentId, userId, type)
+            return Notification(mId, mTitle, content, currentUser.id, receiverId, currentUser.minify(), System.currentTimeMillis(), System.currentTimeMillis(), image, postId, commentChannelId, commentId, userId, type)
         }
     }
 

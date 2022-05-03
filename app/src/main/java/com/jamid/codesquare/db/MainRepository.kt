@@ -7,19 +7,22 @@ import com.jamid.codesquare.data.*
 import java.io.File
 import kotlin.random.Random
 
-class MainRepository(private val db: CodesquareDatabase) {
+class MainRepository(private val db: CollabDatabase) {
 
     private val interestDao = db.interestDao()
     private val chatChannelDao = db.chatChannelDao()
-    val projectDao = db.projectDao()
+    val postDao = db.postDao()
 
     val userDao = db.userDao()
     private val messageDao = db.messageDao()
-    val projectRequestDao = db.projectRequestDao()
+    val postRequestDao = db.postRequestDao()
     val commentDao = db.commentDao()
     val notificationDao = db.notificationDao()
     private val searchQueryDao = db.searchQueryDao()
-    val projectInviteDao = db.projectInviteDao()
+    val postInviteDao = db.postInviteDao()
+    val likedByDao = db.likedByDao()
+    val referenceItemDao = db.referenceItemDao()
+    val interestItemDao = db.interestItemDao()
 
     val currentUser: LiveData<User> = userDao.currentUser()
 
@@ -31,31 +34,35 @@ class MainRepository(private val db: CodesquareDatabase) {
 
     val errors = MutableLiveData<Exception>()
 
-    suspend fun insertProjects(projects: Array<out Project>, shouldProcess: Boolean = true) {
+    suspend fun clearLikedByTable() {
+        likedByDao.clearTable()
+    }
+
+    suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
 
         val currentUser = UserManager.currentUser
-        val newProjects = projects.toMutableList()
+        val newPosts = posts.toMutableList()
 
         if (currentUser.premiumState.toInt() == -1) {
-            val numberOfAds = (projects.size / 3)
+            val numberOfAds = (posts.size / 3)
 
             val indexes = mutableListOf<Int>()
             for (i in 0 until numberOfAds) {
-                indexes.add(Random.nextInt(1, projects.size - 1))
+                indexes.add(Random.nextInt(1, posts.size - 1))
             }
 
             for (i in indexes) {
-                val newProject = Project()
-                newProject.isAd = true
-                newProject.createdAt = projects[i].createdAt
-                newProjects.add(i, newProject)
+                val newPost = Post()
+                newPost.isAd = true
+                newPost.createdAt = posts[i].createdAt
+                newPosts.add(i, newPost)
             }
         }
 
         if (shouldProcess) {
-            projectDao.insert(processProjects(newProjects.toTypedArray()).toList())
+            postDao.insert(processPosts(newPosts.toTypedArray()).toList())
         } else {
-            projectDao.insert(newProjects.toList())
+            postDao.insert(newPosts.toList())
         }
     }
 
@@ -76,26 +83,22 @@ class MainRepository(private val db: CodesquareDatabase) {
     fun clearDatabases(onComplete: () -> Unit) {
         db.clearAllTables()
         /*userDao.clearTable()
-        projectDao.clearTable()
+        postDao.clearTable()
         chatChannelDao.clearTable()
         messageDao.clearTable()
-        projectRequestDao.clearTable()
+        postRequestDao.clearTable()
         notificationDao.clearTable()
         commentDao.clearTable()
         searchQueryDao.clearTable()*/
         onComplete()
     }
 
-    suspend fun insertProjectInvites(invites: Array<out ProjectInvite>) {
-        projectInviteDao.insert(invites.toList())
+    suspend fun insertPostInvites(invites: Array<out PostInvite>) {
+        postInviteDao.insert(invites.toList())
     }
 
-    suspend fun deleteProjectInvite(invite: ProjectInvite) {
-        projectInviteDao.deleteProjectInvite(invite)
-    }
-
-    suspend fun insertChatChannelsWithoutProcessing(channels: List<ChatChannel>) {
-        chatChannelDao.insert(channels)
+    suspend fun deletePostInvite(invite: PostInvite) {
+        postInviteDao.deletePostInvite(invite)
     }
 
     // the contributors must be downloaded before the channels
@@ -134,16 +137,16 @@ class MainRepository(private val db: CodesquareDatabase) {
         return messages
     }
 
-    suspend fun insertProjectRequests(requests: List<ProjectRequest>) {
-        projectRequestDao.insert(requests)
+    suspend fun insertPostRequests(requests: List<PostRequest>) {
+        postRequestDao.insert(requests)
     }
 
-    suspend fun insertProjectRequests(projectRequests: Array<out ProjectRequest>) {
-        projectRequestDao.insert(projectRequests.toList())
+    suspend fun insertPostRequests(postRequests: Array<out PostRequest>) {
+        postRequestDao.insert(postRequests.toList())
     }
 
-    suspend fun getProject(projectId: String): Project? {
-        return projectDao.getProject(projectId)
+    suspend fun getPost(postId: String): Post? {
+        return postDao.getPost(postId)
     }
 
     suspend fun getUser(userId: String): User? {
@@ -154,8 +157,8 @@ class MainRepository(private val db: CodesquareDatabase) {
         return chatChannelDao.getChatChannel(chatChannel)
     }
 
-    suspend fun deleteProjectRequest(projectRequest: ProjectRequest) {
-        projectRequestDao.deleteProjectRequest(projectRequest)
+    suspend fun deletePostRequest(postRequest: PostRequest) {
+        postRequestDao.deletePostRequest(postRequest)
     }
 
     suspend fun getComment(parentId: String): Comment? {
@@ -163,10 +166,6 @@ class MainRepository(private val db: CodesquareDatabase) {
     }
 
     suspend fun insertComments(comments: List<Comment>) {
-        val currentUser = UserManager.currentUser
-        for (comment in comments) {
-            comment.isLiked = currentUser.likedComments.contains(comment.commentId)
-        }
         commentDao.insert(comments)
     }
 
@@ -184,8 +183,8 @@ class MainRepository(private val db: CodesquareDatabase) {
         return userDao.getChannelContributors(chatChannel) ?: emptyList()
     }
 
-    suspend fun updateLocalProject(project: Project) {
-        projectDao.update(project)
+    suspend fun updateLocalPost(post: Post) {
+        postDao.update(post)
     }
 
     suspend fun getLimitedMediaMessages(channelId:String, limit: Int, type: String = image): List<Message> {
@@ -221,19 +220,19 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun updateLocalProjects(updatedUser: User, projects: List<String>) {
+    suspend fun updateLocalPosts(updatedUser: User, posts: List<String>) {
 
-        val updatedProjects = mutableListOf<Project>()
+        val updatedPosts = mutableListOf<Post>()
 
-        for (projectId in projects) {
-            val project = projectDao.getProject(projectId)
-            if (project != null) {
-                project.creator = updatedUser.minify()
-                updatedProjects.add(project)
+        for (postId in posts) {
+            val post = postDao.getPost(postId)
+            if (post != null) {
+                post.creator = updatedUser.minify()
+                updatedPosts.add(post)
             }
         }
 
-        insertProjects(updatedProjects.toTypedArray())
+        insertPosts(updatedPosts.toTypedArray())
     }
 
     suspend fun insertNotifications(notifications: List<Notification>) {
@@ -244,8 +243,8 @@ class MainRepository(private val db: CodesquareDatabase) {
         notificationDao.insertNotifications(notifications.toList())
     }
 
-    suspend fun clearProjects() {
-        projectDao.clearTable()
+    suspend fun clearPosts() {
+        postDao.clearTable()
     }
 
     suspend fun insertSearchQuery(searchQuery: SearchQuery) {
@@ -253,8 +252,8 @@ class MainRepository(private val db: CodesquareDatabase) {
     }
 
 
-    fun getCurrentUserProjects(): LiveData<List<Project>> {
-        return projectDao.getCurrentUserProjects()
+    fun getCurrentUserPosts(): LiveData<List<Post>> {
+        return postDao.getCurrentUserPosts()
     }
 
     suspend fun deleteNotification(notification: Notification) {
@@ -295,12 +294,12 @@ class MainRepository(private val db: CodesquareDatabase) {
         }
     }
 
-    suspend fun deleteLocalProject(project: Project) {
-        projectDao.deleteProject(project)
+    suspend fun deleteLocalPost(post: Post) {
+        postDao.deletePost(post)
     }
 
-    suspend fun deleteAdProjects() {
-        projectDao.deleteAdProjects()
+    suspend fun deleteAdPosts() {
+        postDao.deleteAdPosts()
     }
 
     suspend fun deleteLocalChatChannelById(chatChannelId: String) {
@@ -311,24 +310,24 @@ class MainRepository(private val db: CodesquareDatabase) {
         return userDao.getReactiveUser(userId)
     }
 
-    fun getReactiveProject(projectId: String): LiveData<Project> {
-        return projectDao.getReactiveProject(projectId)
+    fun getReactivePost(postId: String): LiveData<Post> {
+        return postDao.getReactivePost(postId)
     }
 
-    suspend fun clearProjectInvites() {
-        projectInviteDao.clearTable()
+    suspend fun clearPostInvites() {
+        postInviteDao.clearTable()
     }
 
-    suspend fun disableLocationBasedProjects() {
-        projectDao.disableLocationBasedProjects()
+    suspend fun disableLocationBasedPosts() {
+        postDao.disableLocationBasedPosts()
     }
 
-    suspend fun getProjectRequest(projectId: String): ProjectRequest? {
-        return projectRequestDao.getProjectRequestByProject(projectId)
+    suspend fun getPostRequest(postId: String): PostRequest? {
+        return postRequestDao.getPostRequestByPost(postId)
     }
 
-    suspend fun deleteProjectById(projectId: String) {
-        projectDao.deleteProjectById(projectId)
+    suspend fun deletePostById(postId: String) {
+        postDao.deletePostById(postId)
     }
 
     suspend fun updateLocalMessages(updatedUser: User) {
@@ -339,11 +338,43 @@ class MainRepository(private val db: CodesquareDatabase) {
         messageDao.insertMessages(currentUserMessages)
     }
 
+    suspend fun clearLikedItems() {
+        referenceItemDao.clearTable()
+    }
+
+    suspend fun insertReferenceItems(items: List<ReferenceItem>) {
+        referenceItemDao.insert(items)
+    }
+
+    suspend fun deleteReferenceItem(itemId: String) {
+        referenceItemDao.deleteReferenceItem(itemId)
+    }
+
+    suspend fun insertInterestItems(interestItems: List<InterestItem>) {
+        interestItemDao.insert(interestItems)
+    }
+
+    suspend fun clearInterestItems() {
+        interestItemDao.clearInterestsTable()
+    }
+
+    fun getUnreadGeneralNotifications(): LiveData<List<Notification>> {
+        return notificationDao.getUnreadNotifications(0)
+    }
+
+    fun getUnreadRequestNotifications(): LiveData<List<Notification>> {
+        return notificationDao.getUnreadNotifications(1)
+    }
+
+    fun getUnreadInviteNotifications(): LiveData<List<Notification>> {
+        return notificationDao.getUnreadNotifications(-1)
+    }
+
     companion object {
 
         @Volatile private var instance: MainRepository? = null
 
-        fun getInstance(db: CodesquareDatabase): MainRepository {
+        fun getInstance(db: CollabDatabase): MainRepository {
             return instance ?: synchronized(this) {
                 instance ?: MainRepository(db)
             }

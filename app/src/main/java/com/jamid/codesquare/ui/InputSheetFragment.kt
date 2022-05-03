@@ -24,7 +24,7 @@ class InputSheetFragment: BottomSheetDialogFragment() {
     }
 
     private lateinit var binding: FragmentInputSheetBinding
-    private var title: String = "Collab"
+    private var title: String = "CollabMe"
     private var message: String? = null
     private var positiveLabel: String = "Yes"
     private var negativeLabel: String = "No"

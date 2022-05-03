@@ -21,19 +21,19 @@ data class Comment(
     @Embedded(prefix = "comment_")
     var sender: UserMinimal,
     var parentId: String,
-    var projectId: String,
+    var postId: String,
     var commentChannelId: String,
     var threadChannelId: String,
-    var likesCount: Long,
-    var repliesCount: Long,
-    var commentLevel: Long,
-    var createdAt: Long,
-    var updatedAt: Long,
-    var likes: List<String>,
+    var parentCommentChannelId: String? = null,
+    var likesCount: Long = 0,
+    var repliesCount: Long = 0,
+    var commentLevel: Long = 0,
+    var createdAt: Long = System.currentTimeMillis(),
+    var updatedAt: Long = System.currentTimeMillis(),
     @Exclude @set: Exclude @get: Exclude
-    var isLiked: Boolean,
+    var isLiked: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
-    var postTitle: String,
+    var postTitle: String = "",
 ): Parcelable {
-    constructor(): this("", "", "", UserMinimal(), "", "", "", "", 0, 0, 0, System.currentTimeMillis(), System.currentTimeMillis(), emptyList(), false, "")
+    constructor(): this("", "", "", UserMinimal(), "", "", "", "")
 }

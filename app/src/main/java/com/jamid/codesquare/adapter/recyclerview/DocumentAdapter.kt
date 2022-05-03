@@ -4,20 +4,25 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.DocumentLayoutBinding
+import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.ui.MessageListenerFragment
 
-class DocumentAdapter(private val fragment: MessageListenerFragment): ListAdapter<Message, DocumentAdapter.DocumentViewHolder>(MessageComparator()) {
+@OptIn(ExperimentalPagingApi::class)
+class DocumentAdapter(
+    private val fragment: MessageListenerFragment<ViewBinding, MainViewModel>
+): ListAdapter<Message, DocumentAdapter.DocumentViewHolder>(MessageComparator()) {
 
     inner class DocumentViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         fun bind(message: Message) {
-
             val binding = DocumentLayoutBinding.bind(view)
 
             binding.documentNameText.text = message.metadata?.name

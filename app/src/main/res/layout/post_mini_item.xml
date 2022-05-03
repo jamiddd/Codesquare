@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/mini_project_user_img"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/divider26"
+        app:layout_constraintEnd_toStartOf="@+id/mini_project_info"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="@+id/mini_project_thumbnail"
+        app:layout_constraintTop_toBottomOf="@+id/mini_project_thumbnail"
+        app:placeholderImage="@color/light_grey"
+        app:roundAsCircle="true"
+        tools:ignore="ImageContrastCheck" />
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/mini_project_thumbnail"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/mini_project_user_img"
+        app:layout_constraintEnd_toStartOf="@+id/mini_project_name"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:placeholderImage="@color/light_grey"
+        app:roundedCornerRadius="8dp"
+        tools:ignore="ImageContrastCheck" />
+
+    <TextView
+        android:id="@+id/mini_project_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="Collab Me"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+        android:textSize="15sp"
+        app:layout_constraintBottom_toTopOf="@+id/mini_project_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/mini_project_thumbnail"
+        app:layout_constraintTop_toTopOf="@+id/mini_project_thumbnail"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/mini_project_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        app:layout_constraintBottom_toBottomOf="@+id/mini_project_thumbnail"
+        app:layout_constraintEnd_toEndOf="@+id/mini_project_name"
+        app:layout_constraintStart_toStartOf="@+id/mini_project_name"
+        app:layout_constraintTop_toBottomOf="@+id/mini_project_name" />
+
+    <View
+        android:id="@+id/divider26"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/mini_project_option"
+        app:layout_constraintStart_toStartOf="@+id/mini_project_user_img"
+        app:layout_constraintTop_toBottomOf="@+id/mini_project_user_img" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/mini_project_option"
+        style="@style/AppTheme.PostItemStyledBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/options_for_this_post"
+        app:icon="@drawable/ic_round_more_horiz_24"
+        app:layout_constraintBottom_toBottomOf="@+id/mini_project_user_img"
+        app:layout_constraintEnd_toEndOf="@+id/mini_project_name"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/mini_project_info"
+        app:layout_constraintTop_toTopOf="@+id/mini_project_user_img"
+        tools:ignore="TouchTargetSizeCheck" />
+
+    <TextView
+        android:id="@+id/mini_project_info"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_constraintBottom_toBottomOf="@+id/mini_project_user_img"
+        app:layout_constraintEnd_toStartOf="@+id/mini_project_option"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/mini_project_user_img"
+        app:layout_constraintTop_toTopOf="@+id/mini_project_user_img" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -10,7 +10,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ListItemBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 
-class OptionsAdapter(private val optionClickListener: OptionClickListener, val user: User? = null, val project: Project? = null, val chatChannel: ChatChannel? = null, val comment: Comment? = null, val tag: String? = null): ListAdapter<Option, OptionsAdapter.OptionsViewHolder>(comparator) {
+class OptionsAdapter(private val optionClickListener: OptionClickListener, val user: User? = null, val post: Post? = null, val chatChannel: ChatChannel? = null, val comment: Comment? = null, val tag: String? = null): ListAdapter<Option, OptionsAdapter.OptionsViewHolder>(comparator) {
 
     companion object {
         val comparator = object : DiffUtil.ItemCallback<Option>() {
@@ -32,13 +32,13 @@ class OptionsAdapter(private val optionClickListener: OptionClickListener, val u
             binding.listOptionItem.text = option.item
 
             if (option.icon != null) {
-                binding.listOptionItem.setCompoundDrawablesRelativeWithIntrinsicBounds(option.icon, 0, 0, 0)
+                binding.listOptionItem.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, option.icon, 0)
             } else {
                 binding.listOptionItem.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
             }
 
             binding.listOptionItem.setOnClickListener {
-                optionClickListener.onOptionClick(option, user, project, chatChannel, comment, tag)
+                optionClickListener.onOptionClick(option, user, post, chatChannel, comment, tag)
             }
 
         }

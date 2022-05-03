@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
@@ -14,16 +15,18 @@ import com.jamid.codesquare.listeners.MessageDialogInterface
 class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
 
     private lateinit var binding: FragmentMessageDialogBinding
-    private var title: String = "Collab"
+    private var title: String = "CollabMe"
     private var message: String? = null
     private var positiveLabel: String = "Yes"
     private var negativeLabel: String = "No"
     private var onPositiveClickListener: MessageDialogInterface.OnClickListener? = null
     private var onNegativeClickListener: MessageDialogInterface.OnClickListener? = null
+    private var onInflateListener: MessageDialogInterface.OnInflateListener? = null
     private var shouldShowProgress: Boolean = false
     private var isDraggable: Boolean = true
     private var isHideable: Boolean = true
     private var isScrimVisible: Boolean = true
+    private var layoutId: Int = -1
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -75,6 +78,12 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
 
         binding.dialogProgressBar.isVisible = shouldShowProgress
 
+        if (layoutId != -1) {
+            binding.dialogExtraContainer.layoutResource = layoutId
+            val v = binding.dialogExtraContainer.inflate()
+            onInflateListener?.onInflate(this, v)
+        }
+
     }
 
     companion object {
@@ -107,6 +116,16 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
                 messageDialogFragment.negativeLabel = label
                 messageDialogFragment.onNegativeClickListener = object : MessageDialogInterface.OnClickListener {
                     override fun onClick(d: DialogFragment, v: View) {
+                        a(d, v)
+                    }
+                }
+                return this
+            }
+
+            fun setCustomView(@LayoutRes id: Int, a: (DialogFragment, View) -> Unit): Builder {
+                messageDialogFragment.layoutId = id
+                messageDialogFragment.onInflateListener = object: MessageDialogInterface.OnInflateListener {
+                    override fun onInflate(d: DialogFragment, v: View) {
                         a(d, v)
                     }
                 }

@@ -21,7 +21,6 @@
             android:layout_height="?actionBarSize"
             android:elevation="0dp"
             app:logo="@drawable/ic_logo_xy"
-            app:menu="@menu/generic_menu"
             app:subtitleCentered="true" />
 
         <com.google.android.material.appbar.MaterialToolbar
@@ -64,6 +63,24 @@
         app:navGraph="@navigation/main_navigation"
         tools:layout="@layout/fragment_home" />
 
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/main_primary_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="8dp"
+        android:fontFamily="@font/title_semi"
+        android:text="@string/join_post"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textColor="@color/white"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_add_24"
+        app:iconTint="@color/white"
+        app:layout_behavior=".ui.SnackBarAwareBehavior"
+        app:tint="@color/white"
+        tools:visibility="visible" />
+
     <ProgressBar
         android:id="@+id/main_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -82,19 +99,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:translationY="200dp">
+        app:cardElevation="20dp">
 
         <LinearLayout
             android:id="@+id/comment_bottom_linear_vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
-
-            <View
-                android:id="@+id/divider18"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="?android:attr/listDivider" />
 
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"
@@ -167,14 +178,14 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/comment_send_btn"
                     style="@style/AppTheme.Button.IconOnly"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
                     android:layout_marginTop="4dp"
                     android:layout_marginEnd="8dp"
                     android:layout_marginBottom="4dp"
                     android:backgroundTint="?colorAccent"
                     android:contentDescription="@string/comment_send_button_info"
-                    android:paddingStart="8dp"
+                    android:paddingStart="6dp"
                     android:paddingEnd="0dp"
                     app:icon="@drawable/ic_round_arrow_forward_24"
                     app:iconTint="@color/white"
@@ -186,7 +197,15 @@
 
     </com.google.android.material.card.MaterialCardView>
 
-    <com.google.android.gms.ads.AdView
+    <com.google.android.material.chip.Chip
+        android:id="@+id/main_notify_chip"
+        style="@style/AppTheme.ActionChip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:visibility="gone" />
+
+    <!--<com.google.android.gms.ads.AdView
         android:id="@+id/adView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -219,5 +238,5 @@
         android:visibility="gone"
         app:iconTint="@color/white"
         tools:visibility="visible" />
-
+-->
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

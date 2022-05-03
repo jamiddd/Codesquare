@@ -22,6 +22,7 @@ import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.FeedSort.*
 import com.jamid.codesquare.db.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -35,8 +36,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     private val repo: MainRepository
     private val chatRepository: ChatRepository
     private val userRepository: UserRepository
+
     init {
-        val db = CodesquareDatabase.getInstance(application.applicationContext)
+        val db = CollabDatabase.getInstance(application.applicationContext)
         repo = MainRepository.getInstance(db)
         chatRepository = ChatRepository(db, viewModelScope, application.applicationContext)
         userRepository = UserRepository(db, viewModelScope)
@@ -47,19 +49,29 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     val currentError: LiveData<Exception?> = _currentError
     val currentUser: LiveData<User> = repo.currentUser
 
-    var currentFocusedTag: String? = null
-
     /**
-     * A placeholder project to be used while creating new project.
+     * A placeholder post to be used while creating new post.
     * */
-    private val _currentProject = MutableLiveData<Project>().apply { value = null }
-    val currentProject: LiveData<Project> = _currentProject
+    private val _currentPost = MutableLiveData<Post>().apply { value = null }
+    val currentPost: LiveData<Post> = _currentPost
+
+
+    val chatChannelsBitmapMap = mutableMapOf<String, Bitmap>()
+
+
+    private val _currentQuery = MutableLiveData<Query>().apply { value = null }
+    val currentQuery: LiveData<Query> = _currentQuery
+
+    private val defaultFeedOption = FeedOption("Random", MOST_RECENT, FeedOrder.DESC)
+
+    private val _feedOption = MutableLiveData<FeedOption>().apply { value = defaultFeedOption }
+    val feedOption: LiveData<FeedOption> = _feedOption
 
     private val _currentImage = MutableLiveData<Uri?>()
     val currentImage: LiveData<Uri?> = _currentImage
 
     private val userCache = mutableMapOf<String, User>()
-    private val projectCache = mutableMapOf<String, Project>()
+    private val postCache = mutableMapOf<String, Post>()
 
 
     /**
@@ -81,10 +93,20 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         _currentlySelectedSku.postValue(skuDetails)
     }
 
-    val chatScrollPositions = mutableMapOf<String, Int>()
-
     fun setSubscriptionDetailsList(detailsList: List<SkuDetails> = emptyList()) {
         _subscriptionDetails.postValue(detailsList)
+    }
+
+    fun setCurrentFeedOption(feedOption: FeedOption) {
+        _feedOption.postValue(feedOption)
+    }
+
+    fun setDefaultFeedOption() {
+        _feedOption.postValue(defaultFeedOption)
+    }
+
+    fun setCurrentQuery(query: Query) {
+        _currentQuery.postValue(query)
     }
 
     /**
@@ -140,14 +162,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertInterests(interests)
     }
 
-    val recentProjectSearchList = MutableLiveData<List<ProjectMinimal2>>()
+    val recentPostSearchList = MutableLiveData<List<PostMinimal2>>()
     val recentUserSearchList = MutableLiveData<List<UserMinimal2>>()
 
     @Suppress("UNCHECKED_CAST")
     fun search(query: String) = viewModelScope.launch (Dispatchers.IO) {
         val newQueries = mutableListOf<IndexedQuery>()
         val iq = IndexQuery(
-            IndexName("projects"), com.algolia.search.model.search.Query(query)
+            IndexName("posts"), com.algolia.search.model.search.Query(query)
         )
 
         val iq1 = IndexQuery(IndexName("users"), com.algolia.search.model.search.Query(query))
@@ -161,7 +183,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             val list = response.results as List<ResultMultiSearch<ResponseSearch>>
 
             val usersList = mutableListOf<UserMinimal2>()
-            val projectsList = mutableListOf<ProjectMinimal2>()
+            val postsList = mutableListOf<PostMinimal2>()
 
             val searchList = mutableListOf<SearchQuery>()
             for (result in list) {
@@ -179,21 +201,21 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                         Log.d(TAG, "search: $usersList")
 
                     } else {
-                        val project = hit.deserialize(ProjectMinimal2.serializer())
-                        val searchQuery = SearchQuery(project.objectID, project.name, System.currentTimeMillis(), QUERY_TYPE_PROJECT)
+                        val post = hit.deserialize(PostMinimal2.serializer())
+                        val searchQuery = SearchQuery(post.objectID, post.name, System.currentTimeMillis(), QUERY_TYPE_POST)
                         searchList.add(searchQuery)
-                        projectsList.add(project)
+                        postsList.add(post)
 
-                        Log.d(TAG, "search: $projectsList")
+                        Log.d(TAG, "search: $postsList")
 
                     }
                 }
             }
 
-            recentProjectSearchList.postValue(projectsList)
+            recentPostSearchList.postValue(postsList)
             recentUserSearchList.postValue(usersList)
 
-         /*   insertProjects(*projectsList.toTypedArray())
+         /*   insertPosts(*postsList.toTypedArray())
             insertUsers(*usersList.toTypedArray())*/
 
             setSearchData(searchList)
@@ -210,6 +232,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertUsers(users)
     }
 
+    // saving the user in both memory and cache
+    fun saveUser(user: User) = viewModelScope.launch (Dispatchers.IO) {
+        userCache[user.id] = user
+        repo.insertUser(user)
+    }
+
     // make sure the user in this comment is not null or empty
     val replyToContent = MutableLiveData<Comment>()
 
@@ -217,67 +245,67 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         _currentError.postValue(exception)
     }
 
-    fun setCurrentProject(project: Project?) {
-        _currentProject.postValue(project)
+    fun setCurrentPost(post: Post?) {
+        _currentPost.postValue(post)
     }
 
-    fun setCurrentProjectTitle(title: String) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.name = title
-            setCurrentProject(existingProject)
+    fun setCurrentPostTitle(title: String) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.name = title
+            setCurrentPost(existingPost)
         }
     }
 
-    fun setCurrentProjectContent(content: String) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.content = content
-            setCurrentProject(existingProject)
+    fun setCurrentPostContent(content: String) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.content = content
+            setCurrentPost(existingPost)
         }
     }
 
-    fun setCurrentProjectImages(images: List<String>) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.images = images
-            setCurrentProject(existingProject)
+    fun setCurrentPostImages(images: List<String>) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.images = images
+            setCurrentPost(existingPost)
         }
     }
 
-    fun addToExistingProjectImages(images: List<String>) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            val existingImages = existingProject.images.toMutableList()
+    fun addToExistingPostImages(images: List<String>) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            val existingImages = existingPost.images.toMutableList()
             existingImages.addAll(images)
-            existingProject.images = existingImages
-            setCurrentProject(existingProject)
+            existingPost.images = existingImages
+            setCurrentPost(existingPost)
         }
     }
 
-    fun addTagsToCurrentProject(tags: List<String>) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            val newList = existingProject.tags.toMutableList()
+    fun addTagsToCurrentPost(tags: List<String>) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            val newList = existingPost.tags.toMutableList()
             newList.addAll(tags)
-            existingProject.tags = newList.distinct()
-            setCurrentProject(existingProject)
+            existingPost.tags = newList.distinct()
+            setCurrentPost(existingPost)
         }
     }
 
-    fun setCurrentProjectTags(tags: List<String>) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.tags = tags
-            setCurrentProject(existingProject)
+    fun setCurrentPostTags(tags: List<String>) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.tags = tags
+            setCurrentPost(existingPost)
         }
     }
 
-    fun setCurrentProjectLocation(location: Location) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.location = location
-            setCurrentProject(existingProject)
+    fun setCurrentPostLocation(location: Location) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.location = location
+            setCurrentPost(existingPost)
         }
     }
 
@@ -286,59 +314,27 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         insertUser(localUser)
     }
 
-    private fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
+    fun insertUser(localUser: User) = viewModelScope.launch (Dispatchers.IO) {
+        userCache[localUser.id] = localUser
         repo.insertUser(localUser)
     }
 
-    fun deleteProjectImageAtPosition(pos: Int) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            val existingImages = existingProject.images.toMutableList()
+    fun deletePostImageAtPosition(pos: Int) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            val existingImages = existingPost.images.toMutableList()
             existingImages.removeAt(pos)
-            existingProject.images = existingImages
-            setCurrentProject(existingProject)
+            existingPost.images = existingImages
+            setCurrentPost(existingPost)
         }
     }
 
-    fun createProject(onComplete: (task: Task<Void>) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
-        val project = currentProject.value!!
-        val currentUser = UserManager.currentUser
-
-        val chatChannelId = randomId()
-        project.chatChannel = chatChannelId
-
-        FireUtility.createProject(project) {
+    fun createPost(onComplete: (task: Task<Void>) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        val post = currentPost.value!!
+        FireUtility.createPost(post) {
             if (it.isSuccessful) {
-                val existingList = currentUser.projects.toMutableList()
-                existingList.add(project.id)
-
-                val chatChannels = currentUser.chatChannels.toMutableList()
-                chatChannels.add(project.chatChannel)
-
-                project.isMadeByMe = true
-                insertNewProject(project)
-
-                val tokens = mutableListOf(currentUser.token)
-
-                ChatChannel.newInstance(project)
-
-                val chatChannel = ChatChannel(
-                    chatChannelId,
-                    project.id,
-                    project.name,
-                    project.images.first(),
-                    project.contributors.size.toLong(),
-                    listOf(project.creator.userId),
-                    listOf(project.creator.userId),
-                    "",
-                    project.createdAt,
-                    project.updatedAt,
-                    null,
-                    tokens
-                )
-
-                insertChatChannelsWithoutProcessing(listOf(chatChannel))
-
+                post.isMadeByMe = true
+                insertNewPost(post)
             } else {
                 setCurrentError(it.exception)
             }
@@ -359,7 +355,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             onComplete(it)
             if (it.isSuccessful) {
                 insertCurrentUser(updatedUser)
-                updateLocalProjects(updatedUser, updatedUser.projects)
+                updateLocalPosts(updatedUser, updatedUser.posts)
                 updateLocalMessages(updatedUser)
             } else {
                 setCurrentError(it.exception)
@@ -371,8 +367,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.updateLocalMessages(updatedUser)
     }
 
-    private fun updateLocalProjects(updatedUser: User, projects: List<String>) = viewModelScope.launch (Dispatchers.IO) {
-        repo.updateLocalProjects(updatedUser, projects)
+    private fun updateLocalPosts(updatedUser: User, posts: List<String>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateLocalPosts(updatedUser, posts)
     }
 
     fun checkIfUsernameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
@@ -384,110 +380,186 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     @ExperimentalPagingApi
-    fun getProjectsNearMe(): Flow<PagingData<Project>>{
+    fun getPostsNearMe(): Flow<PagingData<Post>>{
         return Pager(
             config = PagingConfig(pageSize = 20)
         ) {
-            repo.projectDao.getProjectsNearMe()
+            repo.postDao.getPostsNearMe()
         }.flow.cachedIn(viewModelScope)
     }
 
     @ExperimentalPagingApi
-    fun getFeedItems(query: Query, tag: String? = null): Flow<PagingData<Project>> {
+    fun getFeedItems(query: Query, tag: String? = null): Flow<PagingData<Post>> {
+
+        val feedSetting = feedOption.value!!
+
         return if (tag != null) {
+
+            val formattedTag = "%$tag%"
+
+            /*val source = when (feedSetting.sort) {
+                FeedSort.CONTRIBUTORS -> {
+                    repo.postDao.getTagPostsByContributors(formattedTag)
+                }
+                LIKES -> {
+                    repo.postDao.getTagPostsByLikes(formattedTag)
+                }
+                MOST_VIEWED -> {
+                    repo.postDao.getTagPostsByViews(formattedTag)
+                }
+                MOST_RECENT -> {
+                    repo.postDao.getTagPostsByTime(formattedTag)
+                }
+                FeedSort.LOCATION -> {
+                    repo.postDao.getTagPostsByTime(formattedTag)
+                }
+            }*/
+
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = ProjectRemoteMediator(query, repo, true)
+                remoteMediator = PostRemoteMediator(query, repo, true)
             ) {
-                repo.projectDao.getTagProjects("%$tag%")
+                when (feedSetting.sort) {
+                    FeedSort.CONTRIBUTORS -> {
+                        repo.postDao.getTagPostsByContributors(formattedTag)
+                    }
+                    LIKES -> {
+                        repo.postDao.getTagPostsByLikes(formattedTag)
+                    }
+                    MOST_VIEWED -> {
+                        repo.postDao.getTagPostsByViews(formattedTag)
+                    }
+                    MOST_RECENT -> {
+                        repo.postDao.getTagPostsByTime(formattedTag)
+                    }
+                    FeedSort.LOCATION -> {
+                        repo.postDao.getTagPostsByTime(formattedTag)
+                    }
+                }
             }.flow.cachedIn(viewModelScope)
         } else {
+           /* val source = when (feedSetting.sort) {
+                FeedSort.CONTRIBUTORS -> {
+                    repo.postDao.getPagedPostsByContributors()
+                }
+                LIKES -> {
+                    repo.postDao.getPagedPostsByLikes()
+                }
+                MOST_VIEWED -> {
+                    repo.postDao.getPagedPostsByViews()
+                }
+                MOST_RECENT -> {
+                    repo.postDao.getPagedPostsByTime()
+                }
+                FeedSort.LOCATION -> {
+                    repo.postDao.getPagedPostsByTime()
+                }
+            }*/
+
+            Log.d(TAG, "getFeedItems: ${feedSetting.sort}")
+
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = ProjectRemoteMediator(query, repo, true)
+                remoteMediator = PostRemoteMediator(query, repo, true)
             ) {
-                repo.projectDao.getPagedProjects()
+                when (feedSetting.sort) {
+                    FeedSort.CONTRIBUTORS -> {
+                        repo.postDao.getPagedPostsByContributors()
+                    }
+                    LIKES -> {
+                        repo.postDao.getPagedPostsByLikes()
+                    }
+                    MOST_VIEWED -> {
+                        repo.postDao.getPagedPostsByViews()
+                    }
+                    MOST_RECENT -> {
+                        repo.postDao.getPagedPostsByTime()
+                    }
+                    FeedSort.LOCATION -> {
+                        repo.postDao.getPagedPostsByTime()
+                    }
+                }
             }.flow.cachedIn(viewModelScope)
         }
     }
 
-    private fun insertNewProject(project: Project) = viewModelScope.launch(Dispatchers.IO) {
+    private fun insertNewPost(post: Post) = viewModelScope.launch(Dispatchers.IO) {
         val currentUser = UserManager.currentUser
-        repo.insertProjects(arrayOf(project))
-        currentUser.projectsCount += 1
+        repo.insertPosts(arrayOf(post))
+        currentUser.postsCount += 1
 
-        val newProjectsList = currentUser.projects.addItemToList(project.id)
-        currentUser.projects = newProjectsList
+        val newPostsList = currentUser.posts.addItemToList(post.id)
+        currentUser.posts = newPostsList
 
-        val newChannelsList = currentUser.chatChannels.addItemToList(project.chatChannel)
+        val newChannelsList = currentUser.chatChannels.addItemToList(post.chatChannel)
         currentUser.chatChannels = newChannelsList
 
         insertCurrentUser(currentUser)
     }
 
-    fun getCurrentUserProjects(): LiveData<List<Project>> {
-        return repo.getCurrentUserProjects()
+    fun getCurrentUserPosts(): LiveData<List<Post>> {
+        return repo.getCurrentUserPosts()
     }
 
     @ExperimentalPagingApi
-    fun getCurrentUserProjects(query: Query): Flow<PagingData<Project>> {
+    fun getCurrentUserPosts(query: Query): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo)
         ) {
-            repo.projectDao.getCurrentUserPagedProjects()
+            repo.postDao.getCurrentUserPagedPosts()
         }.flow.cachedIn(viewModelScope)
     }
 
     @ExperimentalPagingApi
-    fun getPagedProjectRequests(): Flow<PagingData<ProjectRequest>> {
+    fun getPagedPostRequests(): Flow<PagingData<PostRequest>> {
         val currentUser = UserManager.currentUser
-        val query = Firebase.firestore.collection("projectRequests")
+        val query = Firebase.firestore.collection("postRequests")
             .whereEqualTo("receiverId", currentUser.id)
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRequestRemoteMediator(query, repo)
+            remoteMediator = PostRequestRemoteMediator(query, repo)
         ) {
-            repo.projectRequestDao.getPagedProjectRequests(currentUser.id)
+            repo.postRequestDao.getPagedPostRequests(currentUser.id)
         }.flow.cachedIn(viewModelScope)
     }
 
     @ExperimentalPagingApi
-    fun getCollaborations(query: Query): Flow<PagingData<Project>> {
+    fun getCollaborations(query: Query): Flow<PagingData<Post>> {
         val currentUserId = UserManager.currentUserId
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo)
         ) {
-            repo.projectDao.getPagedCollaborations("%${currentUserId}%", currentUserId)
+            repo.postDao.getPagedCollaborations("%${currentUserId}%", currentUserId)
         }.flow.cachedIn(viewModelScope)
     }
 
 
     @ExperimentalPagingApi
-    fun getOtherUserProjects(query: Query, otherUser: User): Flow<PagingData<Project>> {
+    fun getOtherUserPosts(query: Query, otherUser: User): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo)
         ) {
-            repo.projectDao.getPagedOtherUserProjects(otherUser.id)
+            repo.postDao.getPagedOtherUserPosts(otherUser.id)
         }.flow.cachedIn(viewModelScope)
     }
 
     @ExperimentalPagingApi
-    fun getOtherUserCollaborations(query: Query, otherUser: User): Flow<PagingData<Project>> {
+    fun getOtherUserCollaborations(query: Query, otherUser: User): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo)
         ) {
-            repo.projectDao.getOtherUserPagedCollaborations("%${otherUser.id}%", otherUser.id)
+            repo.postDao.getOtherUserPagedCollaborations("%${otherUser.id}%", otherUser.id)
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun getOtherUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
+    /*fun getOtherUser(userId: String, onComplete: (task: Task<DocumentSnapshot>) -> Unit) {
         val ref = Firebase.firestore.collection("users").document(userId)
         FireUtility.getDocument(ref, onComplete)
-    }
+    }*/
 
     fun likeLocalUserById(userId: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.likeLocalUserById(userId)
@@ -497,24 +569,24 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.dislikeLocalUserById(userId)
     }
 
-    @ExperimentalPagingApi
-    fun getSavedProjects(query: Query): Flow<PagingData<Project>> {
+    /*@ExperimentalPagingApi
+    fun getSavedPosts(query: Query): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo)
         ) {
-            repo.projectDao.getPagedSavedProjects()
+            repo.postDao.getPagedSavedPosts()
         }.flow.cachedIn(viewModelScope)
-    }
+    }*/
 
 
-    fun sendComment(comment: Comment, parent: Any) {
+    fun sendComment(comment: Comment, parent: Any, onComplete: (task: Task<Void>) -> Unit) {
         val parentChannelId: String?
         val currentUser = UserManager.currentUser
         val notification = when (parent) {
-            is Project -> {
+            is Post -> {
                 parentChannelId = null
-                val content = currentUser.name + " commented on your project"
+                val content = currentUser.name + " commented on your post"
                 val title = parent.name
                 Notification.createNotification(
                     content,
@@ -533,14 +605,19 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 )
             }
             else -> {
-                throw IllegalArgumentException("Only project and comment object is accepted.")
+                throw IllegalArgumentException("Only post and comment object is accepted.")
             }
         }
 
         FireUtility.sendComment(comment, parentChannelId) {
+
+            insertComment(comment)
+
+            onComplete(it)
+
             if (it.isSuccessful) {
 
-                onCommentSend(comment)
+                onCommentSend(comment, parent)
 
                 if (notification.senderId != notification.receiverId) {
                     FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
@@ -563,11 +640,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun onCommentSend(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
-        val project = getLocalProject(comment.projectId)
-        if (project != null) {
-            project.comments += 1
-            insertProjects(project)
+    private fun onCommentSend(comment: Comment, parent: Any) = viewModelScope.launch (Dispatchers.IO) {
+        val post = getLocalPost(comment.postId)
+        if (post != null) {
+            post.commentsCount += 1
+            insertPost(post)
         }
 
         if (comment.commentLevel >= 1) {
@@ -581,7 +658,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         insertComment(comment)
     }
 
-    fun insertComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
+    private fun insertComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
         repo.insertComments(listOf(comment))
     }
 
@@ -599,14 +676,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getLocalChannelContributors(chatChannel)
     }
 
-    fun updateProject(onComplete: (Project, task: Task<Void>) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
-        val currentProject = currentProject.value!!
-        FireUtility.updateProject(currentProject, onComplete)
+    fun updatePost(onComplete: (Post, task: Task<Void>) -> Unit) = viewModelScope.launch(Dispatchers.IO) {
+        val currentPost = currentPost.value!!
+        FireUtility.updatePost(currentPost, onComplete)
     }
 
 
-    fun updateLocalProject(project: Project) = viewModelScope.launch (Dispatchers.IO) {
-        repo.updateLocalProject(project)
+    fun updateLocalPost(post: Post) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateLocalPost(post)
     }
 
     private suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
@@ -625,34 +702,34 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertChatChannels(chatChannels)
     }
 
-    private fun insertChatChannelsWithoutProcessing(channels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertChatChannelsWithoutProcessing(channels)
-    }
-
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return repo.getDocumentMessages(chatChannelId)
     }
 
 
-    fun getTagProjects(tag: String, query: Query): Flow<PagingData<Project>> {
+    fun getTagPosts(tag: String, query: Query): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo, false)
+            remoteMediator = PostRemoteMediator(query, repo, false)
         ) {
-            repo.projectDao.getTagProjects("%$tag%")
+            repo.postDao.getTagPosts("%$tag%")
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun setCurrentProjectLinks(links: List<String>) {
-        val existingProject = currentProject.value
-        if (existingProject != null) {
-            existingProject.sources = links
-            setCurrentProject(existingProject)
+    fun setCurrentPostLinks(links: List<String>) {
+        val existingPost = currentPost.value
+        if (existingPost != null) {
+            existingPost.sources = links
+            setCurrentPost(existingPost)
         }
     }
 
     fun deleteComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteComment(comment)
+        updateLocalPostAfterCommentDeletion(comment)
+        if (comment.parentCommentChannelId != null) {
+            updateRepliesCountOfParentCommentById(comment.parentId)
+        }
     }
 
     fun updateComment(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
@@ -716,21 +793,21 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }.flow.cachedIn(viewModelScope)
     }
 
-    fun insertProjects(projects: List<Project>) = viewModelScope.launch (Dispatchers.IO) {
-        for (project in projects) {
-            projectCache[project.id] = project
+    fun insertPosts(posts: List<Post>) = viewModelScope.launch (Dispatchers.IO) {
+        for (post in posts) {
+            postCache[post.id] = post
         }
-        repo.insertProjects(projects.toTypedArray())
+        repo.insertPosts(posts.toTypedArray())
     }
 
 
     val testImage = MutableLiveData<Uri>().apply { value = null }
 
-    fun insertProjects(vararg projects: Project) = viewModelScope.launch (Dispatchers.IO) {
-        for (project in projects) {
-            projectCache[project.id] = project
+    fun insertPosts(vararg posts: Post) = viewModelScope.launch (Dispatchers.IO) {
+        for (post in posts) {
+            postCache[post.id] = post
         }
-        repo.insertProjects(projects)
+        repo.insertPosts(posts)
     }
 
     private val _reportUploadImages = MutableLiveData<List<Uri>>()
@@ -756,12 +833,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         repo.insertNotifications(notifications)
     }
 
-    fun insertProjectRequests(requests: List<ProjectRequest>) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertProjectRequests(requests)
+    fun insertPostRequests(requests: List<PostRequest>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertPostRequests(requests)
     }
 
-    fun insertProjectRequests(vararg projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertProjectRequests(projectRequest)
+    fun insertPostRequests(vararg postRequest: PostRequest) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertPostRequests(postRequest)
     }
 
     fun insertSearchQuery(searchQuery: SearchQuery) = viewModelScope.launch (Dispatchers.IO) {
@@ -776,103 +853,103 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.removeUserFromAdmin(chatChannelId, userId, onComplete)
     }
 
-    private suspend fun getLocalProject(projectId: String): Project? {
-        return repo.getProject(projectId)
+    private suspend fun getLocalPost(postId: String): Post? {
+        return repo.getPost(postId)
     }
 
     fun deleteNotification(notification: Notification) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotification(notification)
     }
 
-    fun deleteProjectRequest(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteProjectRequest(projectRequest)
+    fun deletePostRequest(postRequest: PostRequest) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deletePostRequest(postRequest)
     }
 
     @ExperimentalPagingApi
-    fun getProjectInvites(): Flow<PagingData<ProjectInvite>> {
+    fun getPostInvites(): Flow<PagingData<PostInvite>> {
         val currentUser = UserManager.currentUser
-        val query = Firebase.firestore.collection("users")
+        val query = Firebase.firestore.collection(USERS)
             .document(currentUser.id)
-            .collection("invites")
+            .collection(INVITES)
 
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectInviteRemoteMediator(query, repo)
+            remoteMediator = PostInviteRemoteMediator(query, repo)
         ) {
-            repo.projectInviteDao.getProjectInvites()
+            repo.postInviteDao.getPostInvites()
         }.flow.cachedIn(viewModelScope)
     }
 
     // in future this should not be private
-    fun deleteProjectInvite(projectInvite: ProjectInvite) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteProjectInvite(projectInvite)
+    fun deletePostInvite(postInvite: PostInvite) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deletePostInvite(postInvite)
     }
 
-    fun insertProjectInvites(vararg newProjectInvites: ProjectInvite) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertProjectInvites(newProjectInvites)
+    fun insertPostInvites(vararg newPostInvites: PostInvite) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertPostInvites(newPostInvites)
     }
 
     fun deleteNotificationById(id: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteNotificationById(id)
     }
 
-    fun deleteLocalProject(project: Project) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteLocalProject(project)
+    fun deleteLocalPost(post: Post) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteLocalPost(post)
     }
 
-    fun getArchivedProjects(query: Query): Flow<PagingData<Project>> {
+    /*fun getArchivedPosts(query: Query): Flow<PagingData<Post>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRemoteMediator(query, repo, false)
+            remoteMediator = PostRemoteMediator(query, repo, false)
         ) {
-            repo.projectDao.getArchivedProjects()
+            repo.postDao.getArchivedPosts()
         }.flow.cachedIn(viewModelScope)
+    }*/
+
+    fun deleteAdPosts() = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteAdPosts()
     }
 
-    fun deleteAdProjects() = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteAdProjects()
-    }
-
-    fun deleteLocalProjectRequest(projectRequest: ProjectRequest) = viewModelScope.launch (Dispatchers.IO) {
-        repo.deleteProjectRequest(projectRequest)
+    fun deleteLocalPostRequest(postRequest: PostRequest) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deletePostRequest(postRequest)
     }
 
     fun deleteLocalChatChannelById(chatChannelId: String) = viewModelScope.launch (Dispatchers.IO) {
         repo.deleteLocalChatChannelById(chatChannelId)
     }
 
-    fun getReactiveUser(userId: String): LiveData<User> {
+    /*fun getReactiveUser(userId: String): LiveData<User> {
         return repo.getReactiveUser(userId)
     }
 
-    fun getReactiveProject(projectId: String): LiveData<Project> {
-        return repo.getReactiveProject(projectId)
-    }
+    fun getReactivePost(postId: String): LiveData<Post> {
+        return repo.getReactivePost(postId)
+    }*/
 
-    fun getProjectSupporters(query: Query, projectId: String): Flow<PagingData<User>> {
+    /*fun getPostSupporters(query: Query, postId: String): Flow<PagingData<User>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
             remoteMediator = UserRemoteMediator(query, repo)
         ) {
-            repo.userDao.getProjectSupporters("%$projectId%")
+            repo.userDao.getPostSupporters("%$postId%")
         }.flow.cachedIn(viewModelScope)
-    }
+    }*/
 
-    fun getUserSupporters(query: Query, userId: String): Flow<PagingData<User>> {
+    /*fun getUserSupporters(query: Query, userId: String): Flow<PagingData<User>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
             remoteMediator = UserRemoteMediator(query, repo)
         ) {
             repo.userDao.getUserSupporters("%$userId%")
         }.flow.cachedIn(viewModelScope)
-    }
+    }*/
 
-    fun getMyProjectRequests(query: Query): Flow<PagingData<ProjectRequest>> {
+    fun getMyPostRequests(query: Query): Flow<PagingData<PostRequest>> {
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ProjectRequestRemoteMediator(query, repo)
+            remoteMediator = PostRequestRemoteMediator(query, repo)
         ) {
-            repo.projectRequestDao.getMyProjectRequests(UserManager.currentUserId)
+            repo.postRequestDao.getMyPostRequests(UserManager.currentUserId)
         }.flow.cachedIn(viewModelScope)
     }
 
@@ -880,12 +957,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return userCache[senderId]
     }
 
-    fun disableLocationBasedProjects() = viewModelScope.launch (Dispatchers.IO) {
-        repo.disableLocationBasedProjects()
+    fun disableLocationBasedPosts() = viewModelScope.launch (Dispatchers.IO) {
+        repo.disableLocationBasedPosts()
     }
 
-    private fun getProjectRequest(projectId: String, onComplete: (ProjectRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        onComplete(repo.getProjectRequest(projectId))
+    private fun getPostRequest(postId: String, onComplete: (PostRequest?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        onComplete(repo.getPostRequest(postId))
     }
 
     /* Chat related functions */
@@ -984,7 +1061,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     /**
      * To upload message to firestore
      *
-     * @param chatChannelId The chat channel id to where this project belongs
+     * @param chatChannelId The chat channel id to where this post belongs
      * @param content Content of the text message
      * @param replyTo An optional message id attached to the current message to be send which is connected respectively
      * @param replyMessage An optional message attached to the current message in minified form
@@ -1001,7 +1078,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     /**
      * To send multiple messages together, may include message of all type [image, document, text]
      *
-     * @param chatChannelId The chat channel id to where this project belongs
+     * @param chatChannelId The chat channel id to where this post belongs
      * @param listOfMessages The messages to be sent
      *
      * */
@@ -1184,10 +1261,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         userRepository.setListenerForEmailVerification(60, 5)
     }
 
-    fun removeProjectFromUserLocally(chatChannelId: String, projectId: String, user: User) {
+    fun removePostFromUserLocally(chatChannelId: String, postId: String, user: User) {
         val newList = user.chatChannels.removeItemFromList(chatChannelId)
         user.chatChannels = newList
-        val newList1 = user.collaborations.removeItemFromList(projectId)
+        val newList1 = user.collaborations.removeItemFromList(postId)
         user.collaborations = newList1
         user.collaborationsCount -= 1
         insertUsers(user)
@@ -1197,31 +1274,31 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         chatRepository.clearChatChannels()
     }
 
-    // We cannot set snapshot listener in every project that's why,
-    // when a project request is accepted, to reflect the changes locally,
+    // We cannot set snapshot listener in every post that's why,
+    // when a post request is accepted, to reflect the changes locally,
     // we need to check if something has changed in user document and respectively
     // make the changes locally.
-    fun checkAndUpdateLocalProjects(currentUser: User) = viewModelScope.launch (Dispatchers.IO) {
-        for (project in currentUser.collaborations) {
-            val mProject = getLocalProject(project)
-            if (mProject != null) {
-                if (mProject.isRequested || !mProject.isCollaboration) {
-                    mProject.isRequested = false
-                    mProject.isCollaboration = true
+    fun checkAndUpdateLocalPosts(currentUser: User) = viewModelScope.launch (Dispatchers.IO) {
+        for (post in currentUser.collaborations) {
+            val mPost = getLocalPost(post)
+            if (mPost != null) {
+                if (mPost.isRequested || !mPost.isCollaboration) {
+                    mPost.isRequested = false
+                    mPost.isCollaboration = true
 
-                    val newContList = mProject.contributors.addItemToList(currentUser.id)
-                    mProject.contributors = newContList
+                    val newContList = mPost.contributors.addItemToList(currentUser.id)
+                    mPost.contributors = newContList
 
-                    mProject.updatedAt = System.currentTimeMillis()
+                    mPost.updatedAt = System.currentTimeMillis()
 
-                    getProjectRequest(mProject.id) {
+                    getPostRequest(mPost.id) {
                         if (it != null) {
-                            val newRequestsList = mProject.requests.removeItemFromList(it.requestId)
-                            mProject.requests = newRequestsList
+                            val newRequestsList = mPost.requests.removeItemFromList(it.requestId)
+                            mPost.requests = newRequestsList
 
-                            deleteProjectRequest(it)
+                            deletePostRequest(it)
                         }
-                        updateLocalProject(mProject)
+                        updateLocalPost(mPost)
                     }
                 }
             }
@@ -1232,29 +1309,131 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         userCache[creator.id] = creator
     }
 
-    fun getCachedProject(id: String): Project? {
-        return projectCache[id]
+    fun getCachedPost(id: String): Post? {
+        return postCache[id]
     }
 
-    fun insertProjectToCache(project: Project) {
-        projectCache[project.id] = project
+    fun insertPostToCache(post: Post) {
+        postCache[post.id] = post
     }
 
     fun getUser(senderId: String, function: (User?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
         function(repo.getUser(senderId))
     }
 
-    fun getProject(projectId: String, function: (Project?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
-        function(repo.getProject(projectId))
+    fun getPost(postId: String, function: (Post?) -> Unit) = viewModelScope.launch (Dispatchers.IO) {
+        function(repo.getPost(postId))
     }
 
-    fun deleteProjectById(projectId: String) = viewModelScope.launch (Dispatchers.IO) {
-        if (projectCache.containsKey(projectId)) {
-            projectCache.remove(projectId)
+    fun deletePostById(postId: String) = viewModelScope.launch (Dispatchers.IO) {
+        if (postCache.containsKey(postId)) {
+            postCache.remove(postId)
         }
 
-        repo.deleteProjectById(projectId)
+        repo.deletePostById(postId)
     }
+
+    private val _googleSignInError = MutableLiveData<Int?>()
+    val googleSignInError: LiveData<Int?> = _googleSignInError
+
+    fun setGoogleSignInError(code: Int) {
+        if (code == -1) {
+            _googleSignInError.postValue(null)
+        } else {
+            _googleSignInError.postValue(code)
+        }
+    }
+
+    fun getLikes(query: Query): Flow<PagingData<LikedBy>>{
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = LikedByRemoteMediator(query, repo)
+        ) {
+            repo.likedByDao.getLikedBy()
+        }.flow
+    }
+
+    fun getReferenceItems(query: Query): Flow<PagingData<ReferenceItem>> {
+        return Pager(
+            config = PagingConfig(pageSize = 20),
+            remoteMediator = ReferenceItemRemoteMediator(query, repo)
+        ) {
+            repo.referenceItemDao.getReferenceItems()
+        }.flow
+    }
+
+    fun deleteReferenceItem(itemId: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteReferenceItem(itemId)
+    }
+
+    private fun updateRepliesCountOfParentCommentById(parentCommentId: String) = viewModelScope.launch (Dispatchers.IO) {
+        val parentComment = repo.getComment(parentCommentId)
+        if (parentComment != null) {
+            Log.e(TAG, "updateRepliesCountOfParentCommentById: found parent comment with id $parentCommentId")
+            parentComment.repliesCount -= 1
+            insertComment(parentComment)
+        } else {
+            Log.e(TAG, "updateRepliesCountOfParentCommentById: parent comment was null with id $parentCommentId")
+        }
+    }
+
+    private fun updateLocalPostAfterCommentDeletion(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
+        val totalCommentsDeletedFromThePost = 1 + comment.repliesCount
+        getPost(comment.postId) {
+            if (it != null) {
+                it.commentsCount -= totalCommentsDeletedFromThePost
+                insertPosts(it)
+            }
+        }
+    }
+
+    fun insertPost(post: Post) = viewModelScope.launch (Dispatchers.IO) {
+        insertPostToCache(post)
+        updateLocalPost(post)
+    }
+
+    private val _isNewPostCreated = MutableLiveData<Boolean?>()
+    val isNewPostCreated: LiveData<Boolean?> = _isNewPostCreated
+
+    fun setCreatedNewPost(b: Boolean?) {
+        _isNewPostCreated.postValue(b)
+    }
+
+    fun getPagedInterestItems(query: Query): Flow<PagingData<InterestItem>> {
+        return Pager(
+            config = PagingConfig(pageSize = 50),
+            remoteMediator = InterestItemRemoteMediator(repo, query)
+        ) {
+            repo.interestItemDao.getPagedInterestItems()
+        }.flow.cachedIn(viewModelScope)
+    }
+
+    fun uncheckInterestItem(interestItem: InterestItem) = viewModelScope.launch (Dispatchers.IO) {
+        interestItem.isChecked = false
+        repo.insertInterestItems(listOf(interestItem))
+    }
+
+    fun checkInterestItem(interestItem: InterestItem) = viewModelScope.launch (Dispatchers.IO) {
+        interestItem.isChecked = true
+        repo.insertInterestItems(listOf(interestItem))
+    }
+
+    fun insertInterestItem(interestItem: InterestItem) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertInterestItems(listOf(interestItem))
+    }
+
+    fun getUnreadGeneralNotifications(): LiveData<List<Notification>> {
+        return repo.getUnreadGeneralNotifications()
+    }
+
+    fun getUnreadRequestNotifications(): LiveData<List<Notification>> {
+        return repo.getUnreadRequestNotifications()
+    }
+
+    fun getUnreadInviteNotifications(): LiveData<List<Notification>> {
+        return repo.getUnreadInviteNotifications()
+    }
+
 
     /* Chat related functions end */
 

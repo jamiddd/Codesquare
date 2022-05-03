@@ -9,9 +9,9 @@
         app:actionViewClass="androidx.appcompat.widget.SearchView"
         app:showAsAction="collapseActionView|always" />
     <item
-        android:id="@+id/create_project"
+        android:id="@+id/create_post"
         android:icon="@drawable/ic_round_add_24"
-        android:title="@string/create_project"
+        android:title="@string/create_post"
         app:showAsAction="always"
         tools:ignore="AlwaysShowAction" />
 

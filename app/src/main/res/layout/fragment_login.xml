@@ -4,7 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:animateLayoutChanges="true">
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -46,6 +47,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/password"
+                android:imeOptions="actionDone"
                 android:inputType="textPassword"
                 tools:ignore="TextContrastCheck" />
         </com.google.android.material.textfield.TextInputLayout>
@@ -74,8 +76,12 @@
         android:layout_marginTop="24dp"
         android:layout_marginEnd="16dp"
         android:enabled="false"
+        android:fontFamily="@font/title_semi"
         android:minHeight="56dp"
         android:text="@string/sign_in"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@id/google_sign_in_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
@@ -88,7 +94,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:fontFamily="@font/title_semi"
         android:text="@string/create_account_link"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@+id/google_sign_in_btn"
         app:layout_constraintStart_toStartOf="@+id/google_sign_in_btn"
@@ -100,9 +108,11 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:fontFamily="@font/title_semi"
         android:minHeight="58dp"
         android:text="@string/sign_in_with_google"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="15sp"
         app:buttonSize="wide"
         app:layout_constraintBottom_toTopOf="@+id/sign_up_btn"
         app:layout_constraintEnd_toEndOf="@+id/sign_in_btn"

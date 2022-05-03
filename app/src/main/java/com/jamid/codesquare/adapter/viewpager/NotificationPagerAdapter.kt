@@ -5,8 +5,8 @@ import androidx.fragment.app.FragmentActivity
 import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.ui.NotificationFragment
-import com.jamid.codesquare.ui.profile.ProjectInvitesFragment
-import com.jamid.codesquare.ui.profile.ProjectRequestFragment
+import com.jamid.codesquare.ui.profile.PostInvitesFragment
+import com.jamid.codesquare.ui.profile.PostRequestFragment
 
 @ExperimentalPagingApi
 class NotificationPagerAdapter(fa: FragmentActivity): FragmentStateAdapter(fa) {
@@ -15,8 +15,8 @@ class NotificationPagerAdapter(fa: FragmentActivity): FragmentStateAdapter(fa) {
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> NotificationFragment()
-            1 -> ProjectRequestFragment()
-            2 -> ProjectInvitesFragment()
+            1 -> PostRequestFragment()
+            2 -> PostInvitesFragment()
             else -> throw IllegalStateException("The position specified is out of bounds.")
         }
     }

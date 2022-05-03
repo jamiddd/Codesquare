@@ -40,7 +40,7 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         val title = arguments?.getString(ARG_TITLE)
 
         val user = arguments?.getParcelable<User>(ARG_OPTION_USER)
-        val project = arguments?.getParcelable<Project>(ARG_OPTION_PROJECT)
+        val project = arguments?.getParcelable<Post>(ARG_OPTION_PROJECT)
         val chatChannel = arguments?.getParcelable<ChatChannel>(ARG_OPTION_CHAT_CHANNEL)
         val comment = arguments?.getParcelable<Comment>(ARG_OPTION_COMMENT)
         val tag = arguments?.getString(ARG_STRING)
@@ -92,13 +92,13 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         const val ARG_OPTION_COMMENT = "ARG_OPTION_COMMENT"
         const val ARG_STRING = "ARG_STRING"
 
-        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null, user: User? = null, project: Project? = null, chatChannel: ChatChannel? = null, comment: Comment? = null, tag: String? = null) = OptionsFragment().apply {
+        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null, user: User? = null, post: Post? = null, chatChannel: ChatChannel? = null, comment: Comment? = null, tag: String? = null) = OptionsFragment().apply {
             arguments = Bundle().apply {
                 putString(TITLE, title)
                 putStringArrayList(ARG_OPTIONS, options)
                 putIntegerArrayList(ARG_ICONS, icons)
                 putParcelable(ARG_OPTION_USER, user)
-                putParcelable(ARG_OPTION_PROJECT, project)
+                putParcelable(ARG_OPTION_PROJECT, post)
                 putParcelable(ARG_OPTION_CHAT_CHANNEL, chatChannel)
                 putParcelable(ARG_OPTION_COMMENT, comment)
                 putString(ARG_STRING, tag)

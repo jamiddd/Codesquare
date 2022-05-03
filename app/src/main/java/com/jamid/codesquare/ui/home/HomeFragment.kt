@@ -3,39 +3,42 @@ package com.jamid.codesquare.ui.home
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
-import android.view.*
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
 import androidx.activity.addCallback
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
 import androidx.core.view.size
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
+import com.jamid.codesquare.data.AdLimit
 import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.databinding.FragmentHomeBinding
-import com.jamid.codesquare.ui.MainActivity
-import com.jamid.codesquare.ui.MessageDialogFragment
+import com.jamid.codesquare.ui.NoSwipeBehavior
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
-class HomeFragment: Fragment() {
+class HomeFragment: BaseFragment<FragmentHomeBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentHomeBinding
-    private val viewModel: MainViewModel by activityViewModels()
-
+    override val viewModel: MainViewModel by activityViewModels()
+    private lateinit var viewPager2Callback: ViewPager2.OnPageChangeCallback
     private var tooltipView: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,11 +47,11 @@ class HomeFragment: Fragment() {
     }
 
     private fun showCreateItemTooltip() = requireActivity().runOnUiThread {
-        val container = (activity as MainActivity).binding.root
+        val container = activity.binding.root
 
         container.removeView(tooltipView)
 
-        val createItem = requireActivity().findViewById<View>(R.id.create_project)
+        val createItem = requireActivity().findViewById<View>(R.id.create_post)
         if (createItem != null) {
             val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
             val createProjectDialogFlag = sharedPref.getBoolean(PREF_CREATE_TOOLTIP, true)
@@ -98,19 +101,14 @@ class HomeFragment: Fragment() {
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
+        activity.binding.mainToolbar.menu.clear()
         inflater.inflate(R.menu.home_menu, menu)
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-
-        toolbar.setOnClickListener {
+        activity.binding.mainToolbar.setOnClickListener {
             if (binding.homeViewPager.currentItem == 0) {
-                val recyclerView = activity?.findViewById<RecyclerView>(R.id.pager_items_recycler)
-                recyclerView?.smoothScrollToPosition(0)
-            } else {
-                val recyclerView = activity?.findViewById<RecyclerView>(R.id.pager_items_recycler)
+                val recyclerView = activity.findViewById<RecyclerView>(R.id.pager_items_recycler)
                 recyclerView?.smoothScrollToPosition(0)
             }
         }
-
     }
 
     override fun onPrepareOptionsMenu(menu: Menu) {
@@ -131,27 +129,18 @@ class HomeFragment: Fragment() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.notifications -> {
-                findNavController().navigate(R.id.action_homeFragment_to_notificationCenterFragment, bundleOf(TYPE to 0), slideRightNavOptions())
+                findNavController().navigate(R.id.notificationCenterFragment, bundleOf(TYPE to 0), slideRightNavOptions())
                 true
             }
             R.id.search -> {
-                findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.preSearchFragment, null, slideRightNavOptions())
                 true
             }
-            R.id.create_project -> {
-
-                val currentUser = UserManager.currentUser
-                if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
-                    findNavController().navigate(R.id.createProjectFragment, null, slideRightNavOptions())
+            R.id.create_post -> {
+                if (activity.isEligibleToCreateProject()) {
+                    findNavController().navigate(R.id.createPostFragment, null, slideRightNavOptions())
                 } else {
-                    val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
-                        .setPositiveButton("Upgrade") { _, _ ->
-                            (activity as MainActivity?)?.showSubscriptionFragment()
-                        }.setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }.build()
-
-                    frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
+                    activity.showLimitDialog(AdLimit.MAX_POSTS)
                 }
 
                 true
@@ -164,22 +153,9 @@ class HomeFragment: Fragment() {
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentHomeBinding.inflate(inflater)
-        requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar).inflateMenu(R.menu.generic_menu)
-        return binding.root
-    }
-
     @SuppressLint("UnsafeOptInUsageError")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val activity = requireActivity() as MainActivity
-
         binding.homeViewPager.offscreenPageLimit = 2
 
         binding.homeViewPager.adapter = MainViewPagerAdapter(activity)
@@ -189,7 +165,7 @@ class HomeFragment: Fragment() {
         val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
         TabLayoutMediator(tabLayout, binding.homeViewPager) { a, b ->
             when (b) {
-                0 -> a.text = "Projects"
+                0 -> a.text = "Posts"
                 1 -> a.text = "Chats"
             }
         }.attach()
@@ -199,21 +175,57 @@ class HomeFragment: Fragment() {
                 activity.finish()
             } else {
                 binding.homeViewPager.setCurrentItem(0, true)
-
             }
         }
+
+        viewPager2Callback = object: ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                if (activity.initialLoadWaitFinished) {
+                    if (position == 0) {
+                        activity.binding.mainPrimaryBtn.show()
+                    } else {
+                        activity.binding.mainPrimaryBtn.hide()
+                    }
+                }
+            }
+        }
+
+        binding.homeViewPager.registerOnPageChangeCallback(viewPager2Callback)
 
         (binding.homeViewPager.getChildAt(0) as RecyclerView).overScrollMode = RecyclerView.OVER_SCROLL_NEVER
 
         val mAuth = Firebase.auth
         if (mAuth.currentUser == null) {
-            findNavController().navigate(R.id.action_homeFragment_to_loginFragment, null, slideRightNavOptions())
-        } else {
-            activity.setBottomAdView()
+            findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
         }
 
+
+        activity.binding.mainPrimaryBtn.extend()
+        activity.binding.mainPrimaryBtn.text = "Filter posts"
+        activity.binding.mainPrimaryBtn.icon = getImageResource(R.drawable.ic_round_filter_list_24)
+
+        activity.binding.mainPrimaryBtn.setOnClickListener {
+           val frag = FilterFragment()
+           frag.show(activity.supportFragmentManager, FilterFragment.TAG)
+        }
+
+        if (activity.initialLoadWaitFinished) {
+            showPrimaryBtn()
+        }
     }
 
+    private fun showPrimaryBtn() {
+        activity.binding.mainPrimaryBtn.show()
+    }
 
+    override fun getViewBinding(): FragmentHomeBinding {
+        return FragmentHomeBinding.inflate(layoutInflater)
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding.homeViewPager.unregisterOnPageChangeCallback(viewPager2Callback)
+    }
 
 }

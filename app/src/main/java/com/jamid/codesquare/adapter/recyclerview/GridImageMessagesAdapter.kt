@@ -8,17 +8,23 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import androidx.core.view.ViewCompat
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewbinding.ViewBinding
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.ui.MessageListenerFragment
 import java.io.File
 
-class GridImageMessagesAdapter(private val fragment: MessageListenerFragment): ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
+@ExperimentalPagingApi
+class GridImageMessagesAdapter(
+    private val fragment: MessageListenerFragment<ViewBinding, MainViewModel>
+): ListAdapter<Message, GridImageMessagesAdapter.GridImageMessageViewHolder>(comparator) {
 
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Message>() {

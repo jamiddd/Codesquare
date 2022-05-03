@@ -2,14 +2,19 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.MessageComparator
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.ui.MessageListenerFragment
 
-class MessageAdapter3(private val fragment: MessageListenerFragment): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
+@OptIn(ExperimentalPagingApi::class)
+class MessageAdapter3(
+    private val fragment: MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>
+): PagingDataAdapter<Message, MessageViewHolder2<Message>>(MessageComparator()) {
 
     private val currentUserId = UserManager.currentUser.id
     var chatChannel: ChatChannel? = null

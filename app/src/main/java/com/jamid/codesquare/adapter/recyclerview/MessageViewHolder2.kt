@@ -1,14 +1,13 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
@@ -17,9 +16,9 @@ import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.*
 import com.jamid.codesquare.ui.MessageListenerFragment
-import java.io.File
 import kotlin.math.abs
 
+@OptIn(ExperimentalPagingApi::class)
 class MessageViewHolder2<T: Any>(
     val view: View,
     private val itemType: Int,
@@ -27,7 +26,7 @@ class MessageViewHolder2<T: Any>(
 
     private val controllerListener = FrescoImageControllerListener()
     private val currentUserId = UserManager.currentUser.id
-    var fragment: MessageListenerFragment? = null
+    var fragment: MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>? = null
 
     private fun updateMessageUi(state: Int) {
         when (state) {
@@ -152,14 +151,34 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
-        binding.replyComponent.root.show()
+        binding.replyLayoutRoot.show()
         if (replyMessage != null) {
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
+                binding.replyName.text = view.context.getString(R.string.you)
             } else {
-                binding.replyComponent.replyName.text = replyMessage.name
+                binding.replyName.text = replyMessage.name
             }
-            binding.replyComponent.replyText.text = replyMessage.content
+
+            if (replyMessage.type == text) {
+                binding.replyText.text = replyMessage.content
+                binding.replyImage.hide()
+            } else {
+                binding.replyText.text = replyMessage.type
+
+                if (replyMessage.type == image) {
+                    binding.replyImage.show()
+                    binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
+                }
+
+                if (replyMessage.type == document) {
+                    binding.replyImage.show()
+                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                }
+            }
+        }
+
+        binding.replyLayoutRoot.setOnClickListener {
+            fragment?.onReplyMessageClick(message)
         }
     }
 
@@ -173,7 +192,7 @@ class MessageViewHolder2<T: Any>(
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
             binding.documentIcon.background = icon
         }
@@ -204,7 +223,7 @@ class MessageViewHolder2<T: Any>(
         binding.root
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = getImageUriFromMessage(message, binding.root.context)
+            val imageUri = view.context.getImageUriFromMessage(message)
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
@@ -228,14 +247,34 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
-        binding.replyComponent.root.show()
+        binding.replyLayoutRoot.show()
         if (replyMessage != null) {
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
+                binding.replyName.text = view.context.getString(R.string.you)
             } else {
-                binding.replyComponent.replyName.text = replyMessage.name
+                binding.replyName.text = replyMessage.name
             }
-            binding.replyComponent.replyText.text = replyMessage.content
+
+            if (replyMessage.type == text) {
+                binding.replyText.text = replyMessage.content
+                binding.replyImage.hide()
+            } else {
+                binding.replyText.text = replyMessage.type
+
+                if (replyMessage.type == image) {
+                    binding.replyImage.show()
+                    binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
+                }
+
+                if (replyMessage.type == document) {
+                    binding.replyImage.show()
+                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                }
+            }
+        }
+
+        binding.replyLayoutRoot.setOnClickListener {
+            fragment?.onReplyMessageClick(message)
         }
 
         // setting time
@@ -254,7 +293,7 @@ class MessageViewHolder2<T: Any>(
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
             binding.documentIcon.background = icon
         }
@@ -289,7 +328,7 @@ class MessageViewHolder2<T: Any>(
         // setting image
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = getImageUriFromMessage(message, binding.root.context)
+            val imageUri = view.context.getImageUriFromMessage(message)
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
@@ -315,15 +354,36 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
-        binding.replyComponent.root.show()
+        binding.replyLayoutRoot.show()
         if (replyMessage != null) {
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
+                binding.replyName.text = view.context.getString(R.string.you)
             } else {
-                binding.replyComponent.replyName.text = replyMessage.name
+                binding.replyName.text = replyMessage.name
             }
-            binding.replyComponent.replyText.text = replyMessage.content
+
+            if (replyMessage.type == text) {
+                binding.replyText.text = replyMessage.content
+                binding.replyImage.hide()
+            } else {
+                binding.replyText.text = replyMessage.type
+
+                if (replyMessage.type == image) {
+                    binding.replyImage.show()
+                    binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
+                }
+
+                if (replyMessage.type == document) {
+                    binding.replyImage.show()
+                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                }
+            }
         }
+
+        binding.replyLayoutRoot.setOnClickListener {
+            fragment?.onReplyMessageClick(message)
+        }
+
     }
 
     /*// Generate palette synchronously and return it
@@ -340,7 +400,7 @@ class MessageViewHolder2<T: Any>(
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
             binding.documentIcon.background = icon
         }
@@ -371,7 +431,7 @@ class MessageViewHolder2<T: Any>(
 
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = getImageUriFromMessage(message, binding.root.context)
+            val imageUri = view.context.getImageUriFromMessage(message)
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
@@ -394,17 +454,37 @@ class MessageViewHolder2<T: Any>(
 
         // setting reply message
         val replyMessage = message.replyMessage
-        binding.replyComponent.root.show()
+        binding.replyLayoutRoot.show()
 
         if (replyMessage != null) {
             if (currentUserId == replyMessage.senderId) {
-                binding.replyComponent.replyName.text = view.context.getString(R.string.you)
+                binding.replyName.text = view.context.getString(R.string.you)
             } else {
-                binding.replyComponent.replyName.text = replyMessage.name
+                binding.replyName.text = replyMessage.name
             }
-            binding.replyComponent.replyText.text = replyMessage.content
+
+
+            if (replyMessage.type == text) {
+                binding.replyText.text = replyMessage.content
+                binding.replyImage.hide()
+            } else {
+                binding.replyText.text = replyMessage.type
+
+                if (replyMessage.type == image) {
+                    binding.replyImage.show()
+                    binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
+                }
+
+                if (replyMessage.type == document) {
+                    binding.replyImage.show()
+                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                }
+            }
         }
 
+        binding.replyLayoutRoot.setOnClickListener {
+            fragment?.onReplyMessageClick(message)
+        }
 
         // setting sender image
         binding.messageSenderImg.setImageURI(message.sender.photo)
@@ -428,7 +508,7 @@ class MessageViewHolder2<T: Any>(
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_document)
+                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
             binding.documentIcon.background = icon
         }
@@ -508,7 +588,7 @@ class MessageViewHolder2<T: Any>(
         // setting image
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = getImageUriFromMessage(message, binding.root.context)
+            val imageUri = view.context.getImageUriFromMessage(message)
             setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
         } else {
             binding.messageImgProgress.show()
@@ -599,14 +679,6 @@ class MessageViewHolder2<T: Any>(
         const val MESSAGE_SELECTED = 1
     }
 
-}
-
-fun getImageUriFromMessage(message: Message, context: Context): Uri {
-    val imagesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    val name = message.content + message.metadata!!.ext
-    val destination = File(imagesDir, message.chatChannelId)
-    val file = File(destination, name)
-    return Uri.fromFile(file)
 }
 
 const val MESSAGE_DEFAULT_ITEM = 0

@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import kotlinx.coroutines.*
 
-class UserRepository(db: CodesquareDatabase, private val scope: CoroutineScope) {
+class UserRepository(db: CollabDatabase, private val scope: CoroutineScope) {
 
     private val _isSignedIn = MutableLiveData<Boolean>().apply { value = false }
     var currentUser = User()
@@ -119,7 +119,7 @@ class UserRepository(db: CodesquareDatabase, private val scope: CoroutineScope) 
 
     private fun processUser(user: User): User {
         user.isCurrentUser = currentUser.id == user.id
-        user.isLiked = currentUser.likedUsers.contains(user.id)
+//        user.isLiked = currentUser.likedUsers.contains(user.id)
         return user
     }
 

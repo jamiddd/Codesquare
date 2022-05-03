@@ -2,10 +2,7 @@ package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -22,20 +19,14 @@ import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageDialogFragment
 
 @ExperimentalPagingApi
-class ChatListFragment2: Fragment() {
+class ChatListFragment2: BaseFragment<FragmentChatList2Binding, MainViewModel>() {
 
-    private lateinit var binding: FragmentChatList2Binding
     private lateinit var chatChannelAdapter2: ChatChannelAdapter2
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private var hasTriedOnce = false
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChatList2Binding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentChatList2Binding {
+        return FragmentChatList2Binding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -48,6 +39,8 @@ class ChatListFragment2: Fragment() {
             layoutManager = LinearLayoutManager(requireContext())
             addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         }
+
+        binding.chatChannelsRefresher.setDefaultSwipeRefreshLayoutUi()
 
         binding.noChatChannelsText.text = getString(R.string.empty_chat_list_greet)
 
@@ -64,13 +57,13 @@ class ChatListFragment2: Fragment() {
             }
         }
 
-        binding.exploreProjectBtn.setOnClickListener {
-            findNavController().navigate(R.id.action_homeFragment_to_preSearchFragment)
+        binding.explorePostBtn.setOnClickListener {
+            findNavController().navigate(R.id.preSearchFragment)
         }
 
         binding.getStartedBtn.setOnClickListener {
-            if (currentUser.premiumState.toInt() == 1 || currentUser.projects.size < 2) {
-                findNavController().navigate(R.id.createProjectFragment, null, slideRightNavOptions())
+            if (currentUser.premiumState.toInt() == 1 || currentUser.posts.size < 2) {
+                findNavController().navigate(R.id.createPostFragment, null, slideRightNavOptions())
             } else {
                 val frag = MessageDialogFragment.builder("You have already created 2 projects. To create more, upgrade your subscription plan!")
                     .setPositiveButton("Upgrade") { _, _ ->
@@ -82,8 +75,6 @@ class ChatListFragment2: Fragment() {
                 frag.show(requireActivity().supportFragmentManager, MessageDialogFragment.TAG)
             }
         }
-
-
 
 
         binding.chatChannelsRefresher.setOnRefreshListener {
@@ -126,7 +117,7 @@ class ChatListFragment2: Fragment() {
         binding.noChatChannelsText.hide()
         binding.noChannelsImage.hide()
         binding.getStartedBtn.hide()
-        binding.exploreProjectBtn.hide()
+        binding.explorePostBtn.hide()
         binding.chatListRecycler.show()
     }
 
@@ -134,7 +125,7 @@ class ChatListFragment2: Fragment() {
         binding.noChatChannelsText.show()
         binding.noChannelsImage.show()
         binding.getStartedBtn.show()
-        binding.exploreProjectBtn.show()
+        binding.explorePostBtn.show()
         binding.chatListRecycler.hide()
     }
 

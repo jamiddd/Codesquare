@@ -5,31 +5,93 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+    <View
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:background="@drawable/ic_curved_arrow"
+        android:backgroundTint="@color/light_grey"
+        android:rotation="-86"
+        app:layout_constraintEnd_toStartOf="@+id/message_with_reply_container"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/reply_layout_root"
+        app:layout_constraintTop_toBottomOf="@+id/reply_layout_root" />
+
+    <LinearLayout
+        android:id="@+id/reply_layout_root"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="2dp"
+        android:background="@drawable/message_reply_background"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/message_with_reply_container"
+        app:layout_constraintEnd_toEndOf="@+id/message_with_reply_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintWidth_max="240dp"
+        app:layout_constraintWidth_min="100dp">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
+
+            <TextView
+                android:id="@+id/reply_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+                tools:text="Jamid Deka" />
+
+            <TextView
+                android:id="@+id/reply_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                tools:text="Something is always something no matter what." />
+        </LinearLayout>
+
+        <com.facebook.drawee.view.SimpleDraweeView
+            android:id="@+id/reply_image"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="4dp"
+            android:backgroundTint="@color/ios_grey"
+            android:visibility="gone"
+            app:roundedCornerRadius="16dp"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+
     <LinearLayout
         android:id="@+id/message_with_reply_container"
         style="@style/AppTheme.ChatBalloonRight"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:layout_marginEnd="8dp"
         android:background="@drawable/message_background_alt"
-        android:minWidth="200dp"
+        android:minWidth="100dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@+id/message_created_at"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/reply_layout_root"
+        app:layout_constraintVertical_chainStyle="packed"
         app:layout_constraintWidth_max="270dp">
-
-        <include
-            android:id="@+id/reply_component"
-            layout="@layout/reply_layout_right"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="2dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="9dp" />
 
         <TextView
             android:id="@+id/message_content"

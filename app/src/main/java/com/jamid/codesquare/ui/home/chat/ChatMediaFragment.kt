@@ -1,34 +1,40 @@
 package com.jamid.codesquare.ui.home.chat
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.CHAT_CHANNEL
+import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
-class ChatMediaFragment : Fragment() {
+class ChatMediaFragment : BaseFragment<FragmentChatMediaBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentChatMediaBinding
+    override val viewModel: MainViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChatMediaBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentChatMediaBinding {
+        return FragmentChatMediaBinding.inflate(layoutInflater)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        activity.binding.mainToolbar.menu.clear()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

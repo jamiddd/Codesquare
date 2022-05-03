@@ -82,7 +82,7 @@
                 tools:ignore="TextContrastCheck"
                 android:importantForAutofill="no" />
 
-            <com.google.android.flexbox.FlexboxLayout
+            <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/interests_container"
                 style="@style/AppTheme.ChatBottomText"
                 android:layout_width="match_parent"

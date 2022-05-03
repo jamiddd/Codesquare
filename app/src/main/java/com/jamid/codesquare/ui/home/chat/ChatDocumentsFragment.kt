@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewbinding.ViewBinding
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.DocumentAdapter
@@ -23,11 +24,11 @@ import com.jamid.codesquare.ui.MessageListenerFragment
 import kotlinx.coroutines.launch
 import java.io.File
 
+@Suppress("UNCHECKED_CAST")
 @ExperimentalPagingApi
-class ChatDocumentsFragment: MessageListenerFragment() {
+class ChatDocumentsFragment: MessageListenerFragment<FragmentChatDocumentsBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentChatDocumentsBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private val imagesDir: File by lazy {
         requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
@@ -37,19 +38,14 @@ class ChatDocumentsFragment: MessageListenerFragment() {
             ?: throw NullPointerException("Couldn't get documents directory.")
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChatDocumentsBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentChatDocumentsBinding {
+        return FragmentChatDocumentsBinding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val documentAdapter = DocumentAdapter(this)
+        val documentAdapter = DocumentAdapter(this as MessageListenerFragment<ViewBinding, MainViewModel>)
         val chatChannelId = arguments?.getString(ARG_CHAT_CHANNEL_ID) ?: return
 
         binding.documentsRecycler.apply {

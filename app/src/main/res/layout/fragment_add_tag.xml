@@ -11,8 +11,9 @@
         android:id="@+id/add_tags_header"
         android:layout_width="match_parent"
         android:layout_height="?actionBarSize"
+        android:fontFamily="@font/title_semi"
         android:gravity="center"
-        android:text="@string/add_tag_to_project"
+        android:text="@string/add_tag_to_post"
         android:textAppearance="@style/TextAppearance.AppCompat.Body2"
         app:layout_constraintBottom_toTopOf="@id/add_tag_scroll"
         app:layout_constraintEnd_toEndOf="parent"
@@ -20,18 +21,18 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/project_tags_close_btn"
-        style="@style/AppTheme.TextButton"
+        android:id="@+id/post_tags_close_btn"
+        style="@style/AppTheme.PostItemStyledBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:text="@string/close"
+        app:icon="@drawable/ic_round_close_24"
         app:layout_constraintBottom_toBottomOf="@id/add_tags_header"
         app:layout_constraintStart_toStartOf="@id/add_tags_header"
         app:layout_constraintTop_toTopOf="@id/add_tags_header" />
 
     <Button
-        android:id="@+id/project_tags_add_btn"
+        android:id="@+id/post_tags_add_btn"
         style="@style/AppTheme.TextButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -58,7 +59,7 @@
             android:layout_height="wrap_content">
 
             <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/project_tag_search_input"
+                android:id="@+id/post_tag_search_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -66,7 +67,7 @@
                 android:elevation="3dp"
                 app:endIconDrawable="@drawable/ic_round_search_24"
                 app:endIconMode="custom"
-                app:layout_constraintBottom_toTopOf="@+id/project_tag_search_recycler"
+                app:layout_constraintBottom_toTopOf="@+id/post_tag_search_recycler"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
@@ -78,24 +79,25 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/write_something_here"
                     tools:ignore="TextContrastCheck" />
+
             </com.google.android.material.textfield.TextInputLayout>
 
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/project_tag_search_recycler"
+                android:id="@+id/post_tag_search_recycler"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:background="@drawable/search_recycler_background"
                 android:translationY="-4dp"
                 android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@+id/project_tags"
-                app:layout_constraintEnd_toEndOf="@+id/project_tag_search_input"
+                app:layout_constraintBottom_toTopOf="@+id/post_tags"
+                app:layout_constraintEnd_toEndOf="@+id/post_tag_search_input"
                 app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toStartOf="@+id/project_tag_search_input"
-                app:layout_constraintTop_toBottomOf="@+id/project_tag_search_input"
+                app:layout_constraintStart_toStartOf="@+id/post_tag_search_input"
+                app:layout_constraintTop_toBottomOf="@+id/post_tag_search_input"
                 tools:visibility="visible" />
 
-            <com.google.android.flexbox.FlexboxLayout
-                android:id="@+id/project_tags"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/post_tags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -104,18 +106,14 @@
                 android:layout_marginBottom="24dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                app:flexDirection="row"
-                app:flexWrap="wrap"
-                app:justifyContent="center"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@+id/project_tag_search_input"
+                app:layout_constraintEnd_toEndOf="@+id/post_tag_search_input"
                 app:layout_constraintHeight_min="100dp"
                 app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/project_tag_search_input"
-                app:layout_constraintTop_toBottomOf="@+id/project_tag_search_recycler">
+                app:layout_constraintStart_toStartOf="@+id/post_tag_search_input"
+                app:layout_constraintTop_toBottomOf="@+id/post_tag_search_recycler">
 
-
-            </com.google.android.flexbox.FlexboxLayout>
+            </androidx.recyclerview.widget.RecyclerView>
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 

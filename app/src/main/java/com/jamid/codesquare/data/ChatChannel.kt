@@ -5,6 +5,7 @@ import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
@@ -14,9 +15,9 @@ import kotlinx.parcelize.Parcelize
 data class ChatChannel(
     @PrimaryKey(autoGenerate = false)
     var chatChannelId: String,
-    var projectId: String,
-    var projectTitle: String,
-    var projectImage: String,
+    var postId: String,
+    var postTitle: String,
+    var postImage: String,
     var contributorsCount: Long,
     var administrators: List<String>,
     var contributors: List<String>,
@@ -29,15 +30,22 @@ data class ChatChannel(
     var blockedUsers: List<String> = emptyList(),
     var archived: Boolean = false
 ): Parcelable {
-    constructor(): this(randomId(), "", "", "", 0, emptyList(), emptyList(), "Pssst \uD83E\uDD2D .. No rules written yet ... update it soon before other contributors join. \uD83D\uDE0E \uD83E\uDD73", System.currentTimeMillis(), System.currentTimeMillis(), Message(), emptyList(), emptyList())
+    constructor(): this(randomId(), "", "", "", 0, emptyList(), emptyList(), "Pssst \uD83E\uDD2D .. No rules written yet ... update it soon before other contributors join. \uD83D\uDE0E \uD83E\uDD73", System.currentTimeMillis(), System.currentTimeMillis(), null, emptyList(), emptyList())
 
 
     companion object {
-        fun newInstance(project: Project): ChatChannel {
+        fun newInstance(post: Post): ChatChannel {
             val chatChannel = ChatChannel()
-            chatChannel.projectId = project.id
-            chatChannel.projectTitle = project.name
-            chatChannel.projectImage = project.images.first()
+            chatChannel.postId = post.id
+            chatChannel.postTitle = post.name
+            chatChannel.postImage = post.images.first()
+            chatChannel.contributorsCount = post.contributors.size.toLong()
+            chatChannel.contributors = post.contributors
+            chatChannel.administrators = listOf(post.creator.userId)
+            chatChannel.contributors = listOf(post.creator.userId)
+            chatChannel.createdAt = post.createdAt
+            chatChannel.updatedAt = post.updatedAt
+            chatChannel.tokens = listOf(UserManager.currentUserId)
             return chatChannel
         }
     }

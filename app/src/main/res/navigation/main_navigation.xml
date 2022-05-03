@@ -9,126 +9,35 @@
         android:id="@+id/homeFragment"
         android:name="com.jamid.codesquare.ui.home.HomeFragment"
         android:label=" "
-        tools:layout="@layout/fragment_home">
-        <action
-            android:id="@+id/action_homeFragment_to_createProjectFragment"
-            app:destination="@id/createProjectFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_preSearchFragment"
-            app:destination="@id/preSearchFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <!--<action
-            android:id="@+id/action_homeFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />-->
-        <action
-            android:id="@+id/action_homeFragment_to_commentsFragment"
-            app:destination="@id/commentsFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_chatFragment"
-            app:destination="@id/chatFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_chatContainerSample"
-            app:destination="@+id/chatContainerSample" />
-        <action
-            android:id="@+id/action_homeFragment_to_editProfileFragment"
-            app:destination="@id/editProfileFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_searchFragment"
-            app:destination="@id/searchFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_emailVerificationFragment"
-            app:destination="@id/emailVerificationFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_loginFragment2"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_reportFragment"
-            app:destination="@id/reportFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_notificationCenterFragment"
-            app:destination="@id/notificationCenterFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_projectRequestFragment"
-            app:destination="@id/projectRequestFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_subscriberFragment"
-            app:destination="@+id/subscriberFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_updateProjectFragment"
-            app:destination="@+id/updateProjectFragment" />
-        <action
-            android:id="@+id/action_homeFragment_to_projectLikesFragment"
-            app:destination="@+id/projectLikesFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_home"/>
 
     <fragment
         android:id="@+id/chatContainerSample"
         android:name="com.jamid.codesquare.ui.ChatContainerFragment"
         android:label=" "
-        tools:layout="@layout/fragment_chat_container">
-
-        <argument android:name="title" app:argType="string" android:defaultValue="Title" />
-
-    </fragment>
+        tools:layout="@layout/fragment_chat_container"/>
 
     <fragment
         android:id="@+id/subscriberFragment"
         android:name="com.jamid.codesquare.ui.SubscriberFragment"
         android:label=" "
-        tools:layout="@layout/fragment_subscriber">
-
-    </fragment>
+        tools:layout="@layout/fragment_subscriber"/>
     <fragment
-        android:id="@+id/createProjectFragment"
-        android:name="com.jamid.codesquare.ui.CreateProjectFragment"
-        android:label="@string/create_project"
-        tools:layout="@layout/fragment_create_project" >
-        <action
-            android:id="@+id/action_createProjectFragment_to_locationFragment"
-            app:destination="@id/locationFragment" />
-    </fragment>
+        android:id="@+id/createPostFragment"
+        android:name="com.jamid.codesquare.ui.CreatePostFragment"
+        android:label="@string/create_post"
+        tools:layout="@layout/fragment_create_post" />
 
     <fragment
         android:id="@+id/loginFragment"
         android:name="com.jamid.codesquare.ui.auth.LoginFragment"
         android:label="Login"
-        tools:layout="@layout/fragment_login">
-        <action
-            android:id="@+id/action_loginFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
-        <action
-            android:id="@+id/action_loginFragment_to_createAccountFragment"
-            app:destination="@id/createAccountFragment" />
-        <action
-            android:id="@+id/action_loginFragment_to_onBoardingFragment"
-            app:destination="@id/onBoardingFragment" />
-        <action
-            android:id="@+id/action_loginFragment_to_homeFragment2"
-            app:destination="@id/homeFragment" />
-        <action
-            android:id="@+id/action_loginFragment_to_splashFragment"
-            app:destination="@id/splashFragment1" />
-        <action
-            android:id="@+id/action_loginFragment_to_forgotPasswordFragment"
-            app:destination="@id/forgotPasswordFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_login"/>
     <fragment
         android:id="@+id/createAccountFragment"
         android:name="com.jamid.codesquare.ui.auth.CreateAccountFragment"
         tools:layout="@layout/fragment_create_account"
-        android:label="Create account" >
-        <action
-            android:id="@+id/action_createAccountFragment_to_emailVerificationFragment"
-            app:destination="@id/emailVerificationFragment" />
-        <action
-            android:id="@+id/action_createAccountFragment_to_profileImageFragment"
-            app:destination="@id/profileImageFragment" />
-    </fragment>
+        android:label="Create account" />
     <fragment
         android:id="@+id/locationFragment"
         android:name="com.jamid.codesquare.ui.LocationFragment"
@@ -138,128 +47,27 @@
         android:id="@+id/profileFragment"
         android:name="com.jamid.codesquare.ui.profile.ProfileFragment"
         android:label="Profile"
-        tools:layout="@layout/fragment_profile" >
-        <action
-            android:id="@+id/action_profileFragment_to_subscriberFragment"
-            app:destination="@+id/subscriberFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_preSearchFragment"
-            app:destination="@id/preSearchFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_editProfileFragment"
-            app:destination="@id/editProfileFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <!--<action
-            android:id="@+id/action_profileFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />-->
-        <action
-            android:id="@+id/action_profileFragment_to_projectRequestFragment"
-            app:destination="@id/projectRequestFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_savedProjectsFragment"
-            app:destination="@id/savedProjectsFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_createProjectFragment"
-            app:destination="@id/createProjectFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_settingsFragment"
-            app:destination="@id/settingsFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_notificationCenterFragment"
-            app:destination="@id/notificationCenterFragment" />
-        <action
-            android:id="@+id/action_profileFragment_self"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_reportFragment"
-            app:destination="@id/reportFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_commentsFragment"
-            app:destination="@id/commentsFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_archiveFragment"
-            app:destination="@id/archiveFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_updateProjectFragment"
-            app:destination="@+id/updateProjectFragment" />
-        <action
-            android:id="@+id/action_profileFragment_to_projectLikesFragment"
-            app:destination="@+id/projectLikesFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_profile" />
     <fragment
         android:id="@+id/editProfileFragment"
         android:name="com.jamid.codesquare.ui.profile.EditProfileFragment"
         android:label="Edit Profile"
-        tools:layout="@layout/fragment_edit_profile" >
-
-        <action android:id="@+id/action_editProfileFragment_to_cropFragment2"
-            app:destination="@id/cropFragment2"/>
-
-    </fragment>
+        tools:layout="@layout/fragment_edit_profile" />
     <fragment
-        android:id="@+id/projectFragment"
-        android:name="com.jamid.codesquare.ui.ProjectFragment"
-        tools:layout="@layout/fragment_project"
-        android:label=" " >
-
-        <action
-            android:id="@+id/action_projectFragment_to_updateProjectFragment"
-            app:destination="@+id/updateProjectFragment"/>
-        <action
-            android:id="@+id/action_projectFragment_to_subscriberFragment"
-            app:destination="@+id/subscriberFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_commentsFragment"
-            app:destination="@id/commentsFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_projectContributorsFragment"
-            app:destination="@id/projectContributorsFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_tagFragment"
-            app:destination="@id/tagFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_imageViewFragment"
-            app:destination="@id/imageViewFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_reportFragment"
-            app:destination="@id/reportFragment" />
-        <action
-            android:id="@+id/action_projectFragment_to_projectLikesFragment"
-            app:destination="@+id/projectLikesFragment" />
-    </fragment>
+        android:id="@+id/postFragment"
+        android:name="com.jamid.codesquare.ui.PostFragment"
+        tools:layout="@layout/fragment_post"
+        android:label=" " />
     <fragment
-        android:id="@+id/projectRequestFragment"
-        android:name="com.jamid.codesquare.ui.profile.ProjectRequestFragment"
-        android:label="Project Requests"
+        android:id="@+id/postRequestFragment"
+        android:name="com.jamid.codesquare.ui.profile.PostRequestFragment"
+        android:label="Post Requests"
         tools:layout="@layout/fragment_pager" />
     <fragment
-        android:id="@+id/savedProjectsFragment"
-        android:name="com.jamid.codesquare.ui.profile.SavedProjectsFragment"
+        android:id="@+id/savedPostsFragment"
+        android:name="com.jamid.codesquare.ui.profile.SavedPostsFragment"
         tools:layout="@layout/fragment_pager"
-        android:label="Saved projects">
-
-       <!-- <action
-            android:id="@+id/action_savedProjectsFragment_to_projectFragment"
-            app:destination="@+id/projectFragment" />-->
-
-        <action
-            android:id="@+id/action_savedProjectsFragment_to_updateProjectFragment"
-            app:destination="@+id/updateProjectFragment" />
-
-        <action
-            android:id="@+id/action_savedProjectsFragment_to_profileFragment"
-            app:destination="@+id/profileFragment" />
-
-        <action
-            android:id="@+id/action_savedProjectsFragment_to_projectLikesFragment"
-            app:destination="@+id/projectLikesFragment" />
-
-    </fragment>
+        android:label="Saved posts"/>
     <fragment
         android:id="@+id/commentsFragment"
         android:label="{title}"
@@ -268,16 +76,7 @@
         <argument
             android:name="title"
             app:argType="string"
-            android:defaultValue="Project" />
-        <action
-            android:id="@+id/action_commentsFragment_self"
-            app:destination="@id/commentsFragment" />
-        <action
-            android:id="@+id/action_commentsFragment_to_reportFragment"
-            app:destination="@id/reportFragment" />
-        <action
-            android:id="@+id/action_commentsFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
+            android:defaultValue="Post" />
 
     </fragment>
     <fragment
@@ -291,19 +90,6 @@
             app:argType="string"
             android:defaultValue="Chat" />
 
-        <action
-            android:id="@+id/action_chatFragment_to_chatDetailFragment"
-            app:destination="@id/chatDetailFragment" />
-        <action
-            android:id="@+id/action_chatFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_chatFragment_to_imageViewFragment"
-            app:destination="@id/imageViewFragment" />
-        <action
-            android:id="@+id/action_chatFragment_to_messageDetailFragment"
-            app:destination="@id/messageDetailFragment" />
-
     </fragment>
     <fragment
         android:id="@+id/chatDetailFragment"
@@ -315,41 +101,18 @@
             android:name="title"
             app:argType="string"
             android:defaultValue="Chat" />
-        <action
-            android:id="@+id/action_chatDetailFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_chatDetailFragment_to_chatMediaFragment"
-            app:destination="@id/chatMediaFragment" />
-        <action
-            android:id="@+id/action_chatDetailFragment_to_imageViewFragment"
-            app:destination="@id/imageViewFragment" />
-        <action
-            android:id="@+id/action_chatDetailFragment_to_reportFragment"
-            app:destination="@id/reportFragment" />
-        <action
-            android:id="@+id/action_chatDetailFragment_to_channelGuidelinesFragment"
-            app:destination="@id/channelGuidelinesFragment" />
 
     </fragment>
     <fragment
         android:id="@+id/chatMediaFragment"
         android:name="com.jamid.codesquare.ui.home.chat.ChatMediaFragment"
         android:label="Media"
-        tools:layout="@layout/fragment_chat_media" >
-        <action
-            android:id="@+id/action_chatMediaFragment_to_imageViewFragment"
-            app:destination="@id/imageViewFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_chat_media" />
     <fragment
-        android:id="@+id/projectContributorsFragment"
-        android:name="com.jamid.codesquare.ui.ProjectContributorsFragment"
-        tools:layout="@layout/fragment_project_contributors"
-        android:label="Contributors" >
-        <action
-            android:id="@+id/action_projectContributorsFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-    </fragment>
+        android:id="@+id/postContributorsFragment"
+        android:name="com.jamid.codesquare.ui.PostContributorsFragment"
+        tools:layout="@layout/fragment_post_contributors"
+        android:label="Contributors" />
     <fragment
         android:id="@+id/tagFragment"
         android:name="com.jamid.codesquare.ui.TagFragment"
@@ -373,111 +136,30 @@
     <fragment
         android:id="@+id/searchFragment"
         android:name="com.jamid.codesquare.ui.SearchFragment"
-        android:label="Search for projects, accounts .."
-        tools:layout="@layout/fragment_search" >
-       <!-- <action
-            android:id="@+id/action_searchFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />-->
-        <action
-            android:id="@+id/action_searchFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_searchFragment_to_updateProjectFragment"
-            app:destination="@id/updateProjectFragment" />
-    </fragment>
+        android:label="Search for posts, accounts .."
+        tools:layout="@layout/fragment_search" />
     <fragment
         android:id="@+id/onBoardingFragment"
         android:name="com.jamid.codesquare.ui.onboarding.OnBoardingFragment"
         tools:layout="@layout/fragment_on_boarding"
-        android:label="OnBoardingFragment" >
-        <action
-            android:id="@+id/action_onBoardingFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-    </fragment>
+        android:label="OnBoardingFragment" />
     <fragment
         android:id="@+id/emailVerificationFragment"
         android:name="com.jamid.codesquare.ui.auth.EmailVerificationFragment"
         tools:layout="@layout/fragment_email_verification"
-        android:label=" " >
-        <action
-            android:id="@+id/action_emailVerificationFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_emailVerificationFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
-        <action
-            android:id="@+id/action_emailVerificationFragment_to_profileImageFragment"
-            app:destination="@id/profileImageFragment" />
-    </fragment>
+        android:label=" " />
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.jamid.codesquare.ui.SettingsFragment"
-        android:label="Settings" >
-        <action
-            android:id="@+id/action_settingsFragment_to_subscriberFragment"
-            app:destination="@+id/subscriberFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_editProfileFragment"
-            app:destination="@id/editProfileFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_savedProjectsFragment"
-            app:destination="@id/savedProjectsFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_feedbackFragment"
-            app:destination="@id/feedbackFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_updatePasswordFragment"
-            app:destination="@id/updatePasswordFragment" />
-
-        <action
-            android:id="@+id/action_settingsFragment_to_forgotPasswordFragment"
-            app:destination="@id/forgotPasswordFragment" />
-        <action
-            android:id="@+id/action_settingsFragment_to_archiveFragment"
-            app:destination="@id/archiveFragment" />
-
-    </fragment>
+        android:label="Settings" />
     <fragment
         android:id="@+id/splashFragment1"
-        android:name="com.jamid.codesquare.ui.SplashFragment" >
-
-        <action
-            android:id="@+id/action_splashFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
-        <action
-            android:id="@+id/action_splashFragment_to_loginFragment"
-            app:destination="@id/loginFragment" />
-        <action
-            android:id="@+id/action_splashFragment_to_emailVerificationFragment"
-            app:destination="@id/emailVerificationFragment" />
-        <action
-            android:id="@+id/action_splashFragment_to_profileImageFragment"
-            app:destination="@id/profileImageFragment" />
-        <action
-            android:id="@+id/action_splashFragment_to_userInfoFragment"
-            app:destination="@id/userInfoFragment" />
-    </fragment>
+        android:name="com.jamid.codesquare.ui.SplashFragment" />
     <fragment
         android:id="@+id/notificationCenterFragment"
         android:name="com.jamid.codesquare.ui.NotificationCenterFragment"
         tools:layout="@layout/fragment_notification_center"
         android:label="Notifications">
-
-        <action
-            android:id="@+id/action_notificationCenterFragment_to_commentsFragment"
-            app:destination="@id/commentsFragment" />
-      <!--  <action
-            android:id="@+id/action_notificationCenterFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />-->
-        <action
-            android:id="@+id/action_notificationCenterFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-        <action
-            android:id="@+id/action_notificationCenterFragment_to_projectRequestFragment"
-            app:destination="@id/projectRequestFragment" />
         <deepLink
             android:id="@+id/deepLink"
             android:autoVerify="true"
@@ -503,48 +185,20 @@
         android:id="@+id/messageDetailFragment"
         android:name="com.jamid.codesquare.ui.home.chat.MessageDetailFragment"
         android:label="Message Detail"
-        tools:layout="@layout/fragment_message_detail" >
-        <action
-            android:id="@+id/action_messageDetailFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_message_detail" />
     <fragment
         android:id="@+id/preSearchFragment"
         android:name="com.jamid.codesquare.ui.PreSearchFragment"
         android:label=" "
-        tools:layout="@layout/fragment_pre_search">
-
-        <action
-            android:id="@+id/action_preSearchFragment_to_searchFragment"
-            app:destination="@id/searchFragment" />
-    </fragment>
+        tools:layout="@layout/fragment_pre_search"/>
     <fragment
         android:id="@+id/profileImageFragment"
         android:name="com.jamid.codesquare.ui.auth.ProfileImageFragment"
-        android:label="ProfileImageFragment">
-
-        <action
-            android:id="@+id/action_profileImageFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
-
-        <action
-            android:id="@+id/action_profileImageFragment_to_userInfoFragment"
-            app:destination="@id/userInfoFragment" />
-        <action
-            android:id="@+id/action_profileImageFragment_to_cropFragment2"
-            app:destination="@id/cropFragment2" />
-
-    </fragment>
+        android:label="ProfileImageFragment"/>
     <fragment
         android:id="@+id/userInfoFragment"
         android:name="com.jamid.codesquare.ui.auth.UserInfoFragment"
-        android:label="UserInfoFragment">
-
-        <action
-            android:id="@+id/action_userInfoFragment_to_homeFragment"
-            app:destination="@id/homeFragment" />
-
-    </fragment>
+        android:label="UserInfoFragment"/>
     <fragment
         android:id="@+id/updatePasswordFragment"
         android:name="com.jamid.codesquare.ui.UpdatePasswordFragment"
@@ -566,27 +220,10 @@
     <fragment
         android:id="@+id/archiveFragment"
         android:name="com.jamid.codesquare.ui.ArchiveFragment"
-        android:label="Archived projects">
-      <!--  <action
-            android:id="@+id/action_archiveFragment_to_projectFragment"
-            app:destination="@id/projectFragment" />-->
-
-        <action
-            android:id="@+id/action_archiveFragment_to_profileFragment"
-            app:destination="@id/profileFragment" />
-
-        <action
-            android:id="@+id/action_archiveFragment_to_updateProjectFragment"
-            app:destination="@+id/updateProjectFragment" />
-
-        <action
-            android:id="@+id/action_archiveFragment_to_projectLikesFragment"
-            app:destination="@+id/projectLikesFragment" />
-
-    </fragment>
+        android:label="Archived posts"/>
     <fragment
-        android:id="@+id/projectLikesFragment"
-        android:name="com.jamid.codesquare.ProjectLikesFragment"
+        android:id="@+id/postLikesFragment"
+        android:name="com.jamid.codesquare.PostLikesFragment"
         android:label="Liked by" />
 
     <fragment
@@ -600,28 +237,28 @@
         android:label="My requests"/>
 
     <fragment
-        android:id="@+id/projectFragmentContainer"
-        android:name="com.jamid.codesquare.ui.ProjectFragmentContainer"
+        android:id="@+id/postFragmentContainer"
+        android:name="com.jamid.codesquare.ui.PostFragmentContainer"
         android:label="{title}"
-        tools:layout="@layout/project_fragment_container">
+        tools:layout="@layout/post_fragment_container">
 
         <argument
             android:name="title"
             app:argType="string"
-            android:defaultValue="Project" />
+            android:defaultValue="Post" />
 
     </fragment>
 
     <fragment
-        android:id="@+id/locationProjectsFragment"
-        android:name="com.jamid.codesquare.ui.LocationProjectsFragment"
+        android:id="@+id/locationPostsFragment"
+        android:name="com.jamid.codesquare.ui.LocationPostsFragment"
         android:label="{title}">
 
 
         <argument
             android:name="title"
             app:argType="string"
-            android:defaultValue="Project" />
+            android:defaultValue="Post" />
 
     </fragment>
     <fragment
@@ -634,5 +271,11 @@
         android:name="com.jamid.codesquare.ui.TestFragment"
         tools:layout="@layout/fragment_test"
         android:label="Compression Test" />
+
+    <fragment
+        android:id="@+id/extraFragment"
+        android:name="com.jamid.codesquare.extra.ExtraFragment"
+        tools:layout="@layout/fragment_extra"
+        android:label="Add Interest to Database" />
 
 </navigation>

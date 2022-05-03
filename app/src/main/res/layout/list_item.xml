@@ -10,7 +10,10 @@
     android:drawablePadding="12dp"
     android:focusable="true"
     android:gravity="center_vertical"
-    android:padding="12dp"
+    android:paddingStart="24dp"
+    android:paddingTop="12dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="12dp"
     android:textAppearance="@style/TextAppearance.AppCompat.Body1"
     tools:drawableStartCompat="@drawable/ic_image_coloured"
     tools:ignore="TextContrastCheck" />

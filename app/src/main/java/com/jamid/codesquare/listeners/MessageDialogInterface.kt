@@ -9,6 +9,10 @@ interface MessageDialogInterface {
         fun onClick(d: DialogFragment, v: View)
     }
 
+    interface OnInflateListener {
+        fun onInflate(d: DialogFragment, v: View)
+    }
+
     interface OnInputSubmitListener {
         fun onSubmit(d: DialogFragment, v: View, s: String)
     }

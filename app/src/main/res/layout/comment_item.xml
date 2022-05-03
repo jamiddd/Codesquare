@@ -39,7 +39,7 @@
 
     <Button
         android:id="@+id/comment_option_btn"
-        style="@style/AppTheme.ProjectItemStyledBtn"
+        style="@style/AppTheme.PostItemStyledBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginEnd="8dp"
@@ -74,7 +74,7 @@
 
     <Button
         android:id="@+id/comment_reply_btn"
-        style="@style/AppTheme.ProjectItemStyledBtn"
+        style="@style/AppTheme.PostItemStyledBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:layout_marginStart="4dp"

@@ -16,7 +16,7 @@ import com.jamid.codesquare.data.Message
 import kotlinx.coroutines.*
 import java.io.File
 
-class ChatRepository(val db: CodesquareDatabase, private val scope: CoroutineScope, context: Context) {
+class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, context: Context) {
 
     val messageDao = db.messageDao()
     private val chatChannelDao = db.chatChannelDao()

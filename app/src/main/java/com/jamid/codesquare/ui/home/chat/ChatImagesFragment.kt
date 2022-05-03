@@ -1,3 +1,5 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.jamid.codesquare.ui.home.chat
 
 import android.net.Uri
@@ -12,10 +14,12 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
 import com.jamid.codesquare.data.Image
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.databinding.FragmentChatImagesBinding
 import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageListenerFragment
@@ -23,10 +27,9 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 @ExperimentalPagingApi
-class ChatImagesFragment : MessageListenerFragment() {
+class ChatImagesFragment : MessageListenerFragment<FragmentChatImagesBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentChatImagesBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private val imagesDir: File by lazy {
         requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
@@ -36,14 +39,8 @@ class ChatImagesFragment : MessageListenerFragment() {
             ?: throw NullPointerException("Couldn't get documents directory.")
     }
 
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChatImagesBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentChatImagesBinding {
+        return FragmentChatImagesBinding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -56,7 +53,7 @@ class ChatImagesFragment : MessageListenerFragment() {
 
     private fun setMediaRecyclerAndData(chatChannelId: String) =
         viewLifecycleOwner.lifecycleScope.launch {
-            val gridAdapter = GridImageMessagesAdapter(this@ChatImagesFragment)
+            val gridAdapter = GridImageMessagesAdapter(this@ChatImagesFragment as MessageListenerFragment<ViewBinding, MainViewModel>)
 
             binding.chatImagesRecycler.apply {
                 layoutManager = GridLayoutManager(requireContext(), 3)
@@ -107,6 +104,8 @@ class ChatImagesFragment : MessageListenerFragment() {
     override fun onCheckForStaleData(message: Message, onUpdate: (newMessage: Message) -> Unit) {
 
     }
+
+
 
     private fun createNewFileAndDownload(
         externalFilesDir: File,

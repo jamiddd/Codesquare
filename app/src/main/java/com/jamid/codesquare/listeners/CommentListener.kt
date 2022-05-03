@@ -4,7 +4,7 @@ import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.UserMinimal
 
 interface CommentListener {
-    fun onCommentLikeClicked(comment: Comment)
+    fun onCommentLikeClicked(comment: Comment, onChange: (newComment: Comment) -> Unit)
     fun onCommentReply(comment: Comment)
     fun onClick(comment: Comment)
     fun onCommentDelete(comment: Comment)
@@ -17,7 +17,5 @@ interface CommentListener {
 }
 
 interface CommentMiniListener {
-    fun onCommentLikeClicked(comment: Comment)
-    fun onCommentReply(comment: Comment)
     fun onOptionClick(comment: Comment)
 }

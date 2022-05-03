@@ -79,10 +79,10 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
                 if (it.isNotEmpty()) {
                     binding.forwardBtn.isEnabled = true
                     if (it.size > 1) {
-                        val infoText = "${it.first().projectTitle} and ${it.size - 1} more"
+                        val infoText = "${it.first().postTitle} and ${it.size - 1} more"
                         binding.forwardInfo.text = infoText
                     } else {
-                        binding.forwardInfo.text = it.first().projectTitle
+                        binding.forwardInfo.text = it.first().postTitle
                     }
                 } else {
                     binding.forwardBtn.isEnabled = false

@@ -18,7 +18,6 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/notification_title"
-        app:placeholderImage="@color/normal_grey"
         app:roundAsCircle="true"
         tools:ignore="ImageContrastCheck" />
 

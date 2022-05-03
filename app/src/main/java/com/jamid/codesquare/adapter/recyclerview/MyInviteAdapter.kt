@@ -8,25 +8,25 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.comparators.ProjectInviteComparator
-import com.jamid.codesquare.data.ProjectInvite
+import com.jamid.codesquare.adapter.comparators.PostInviteComparator
+import com.jamid.codesquare.data.PostInvite
 import com.jamid.codesquare.data.Result
-import com.jamid.codesquare.databinding.ProjectListItemBinding
+import com.jamid.codesquare.databinding.PostListItemBinding
 import com.jamid.codesquare.hide
-import com.jamid.codesquare.listeners.ProjectMiniItemClickListener
+import com.jamid.codesquare.listeners.PostMiniItemClickListener
 import com.jamid.codesquare.show
 
-class MyInviteAdapter(private val inviteClickListener: ProjectMiniItemClickListener): ListAdapter<ProjectInvite, MyInviteAdapter.MyInviteViewHolder>(ProjectInviteComparator()){
+class MyInviteAdapter(private val inviteClickListener: PostMiniItemClickListener): ListAdapter<PostInvite, MyInviteAdapter.MyInviteViewHolder>(PostInviteComparator()){
 
     inner class MyInviteViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
-        private lateinit var binding: ProjectListItemBinding
+        private lateinit var binding: PostListItemBinding
 
-        fun bind(invite: ProjectInvite) {
-            binding = ProjectListItemBinding.bind(view)
+        fun bind(invite: PostInvite) {
+            binding = PostListItemBinding.bind(view)
 
-            binding.projectMiniImage.setImageURI(invite.project.image)
-            binding.projectMiniName.text = invite.project.name
+            binding.postMiniImage.setImageURI(invite.post.image)
+            binding.postMiniName.text = invite.post.name
 
             FireUtility.getUser(invite.receiverId) {
                 val result = it ?: return@getUser
@@ -34,23 +34,23 @@ class MyInviteAdapter(private val inviteClickListener: ProjectMiniItemClickListe
                 when (result) {
                     is Result.Error -> Log.e(TAG, "bind: ${result.exception.localizedMessage}")
                     is Result.Success -> {
-                        binding.projectMiniInviteHelperText.show()
+                        binding.postMiniInviteHelperText.show()
                         val receiver = result.data
                         val t = "Invite sent to ${receiver.name}"
-                        binding.projectMiniInviteHelperText.text = t
+                        binding.postMiniInviteHelperText.text = t
                     }
                 }
 
             }
 
-            binding.projectMiniInviteBtn.text = "Revoke"
-            binding.projectMiniInviteBtn.setOnClickListener {
+            binding.postMiniInviteBtn.text = "Revoke"
+            binding.postMiniInviteBtn.setOnClickListener {
                 binding.inviteBtnProgress.show()
-                binding.projectMiniInviteBtn.hide()
+                binding.postMiniInviteBtn.hide()
 
                 inviteClickListener.onRevokeInviteClick(invite) {
                     binding.inviteBtnProgress.hide()
-                    binding.projectMiniInviteBtn.show()
+                    binding.postMiniInviteBtn.show()
                 }
             }
 
@@ -59,7 +59,7 @@ class MyInviteAdapter(private val inviteClickListener: ProjectMiniItemClickListe
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MyInviteViewHolder {
         return MyInviteViewHolder(
-            LayoutInflater.from(parent.context).inflate(R.layout.project_list_item, parent, false)
+            LayoutInflater.from(parent.context).inflate(R.layout.post_list_item, parent, false)
         )
     }
 

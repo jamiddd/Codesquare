@@ -2,11 +2,8 @@ package com.jamid.codesquare.ui.auth
 
 import android.net.Uri
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -19,10 +16,9 @@ import com.jamid.codesquare.listeners.CommonImageListener
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
 
 @ExperimentalPagingApi
-class ProfileImageFragment : Fragment() {
+class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentProfileImageBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private var profileImage: String? = userImages.random()
 
     private var listener: BaseControllerListener<ImageInfo>? = null
@@ -32,15 +28,6 @@ class ProfileImageFragment : Fragment() {
         // just a precaution, need to remove later, because the fragment responsible
         // for getting current image is also responsible for clearing it out.
         viewModel.setCurrentImage(null)
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentProfileImageBinding.inflate(inflater)
-        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -55,7 +42,7 @@ class ProfileImageFragment : Fragment() {
         // skipping entirely
         binding.skipImageUpdateBtn.setOnClickListener {
             findNavController().navigate(
-                R.id.action_profileImageFragment_to_homeFragment,
+                R.id.homeFragment,
                 null,
                 slideRightNavOptions()
             )
@@ -82,7 +69,7 @@ class ProfileImageFragment : Fragment() {
                 if (it.isSuccessful) {
                     // navigate to next fragment
                     findNavController().navigate(
-                        R.id.action_profileImageFragment_to_userInfoFragment,
+                        R.id.userInfoFragment,
                         null,
                         slideRightNavOptions()
                     )
@@ -206,6 +193,10 @@ class ProfileImageFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         viewModel.setCurrentImage(null)
+    }
+
+    override fun getViewBinding(): FragmentProfileImageBinding {
+        return FragmentProfileImageBinding.inflate(layoutInflater)
     }
 
 }

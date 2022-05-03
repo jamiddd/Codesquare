@@ -5,13 +5,14 @@ import android.os.Bundle
 import android.os.Parcelable
 import android.text.SpannableString
 import android.text.style.StyleSpan
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.AdView
 import com.google.android.material.button.MaterialButton
@@ -23,14 +24,14 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.CommentAdapter
 import com.jamid.codesquare.adapter.recyclerview.CommentViewHolder
 import com.jamid.codesquare.data.Comment
-import com.jamid.codesquare.data.Project
+import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.listeners.CommentListener
 
 @ExperimentalPagingApi
 class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
 
-    private var project: Project? = null
-    private var comment: Comment? = null
+    private var parentPost: Post? = null
+    private var parentComment: Comment? = null
     private val currentUser = UserManager.currentUser
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,9 +44,6 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
         super.onViewLaidOut()
 
         val commentChannelId = arguments?.getString(COMMENT_CHANNEL_ID) ?: return
-
-        Log.d(TAG, commentChannelId)
-
         shouldShowImage = false
 
         val query = Firebase.firestore.collection(COMMENT_CHANNELS)
@@ -56,13 +54,24 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
             viewModel.getPagedComments(commentChannelId, query)
         }
 
-        binding.pagerItemsRecycler.addItemDecoration(
+        /*binding.pagerItemsRecycler.addItemDecoration(
             DividerItemDecoration(
                 requireContext(),
                 DividerItemDecoration.VERTICAL
             )
-        )
-        binding.pagerItemsRecycler.itemAnimator = null
+        )*/
+
+        pagingAdapter.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                super.onItemRangeRemoved(positionStart, itemCount)
+                if (pagingAdapter.itemCount == 0) {
+                    toast("No comments in this thread.")
+                    findNavController().navigateUp()
+                }
+            }
+        })
+
+//        binding.pagerItemsRecycler.itemAnimator = null
         binding.pagerNoItemsText.text = getString(R.string.empty_comments_greet)
 
         showKeyboard()
@@ -87,10 +96,10 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
 
         val parent = arguments?.getParcelable<Parcelable>(PARENT) ?: return
 
-        if (parent is Project) {
-            project = parent
+        if (parent is Post) {
+            parentPost = parent
         } else if (parent is Comment) {
-            comment = parent
+            parentComment = parent
         }
 
         setCommentInputUI(senderImg, commentInputLayout)
@@ -146,7 +155,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
         }
 
         if (currentUser.premiumState.toInt() == -1) {
-            attachAdToFragment(adView, null)
+            attachAd(adView, null)
             adView.show()
         } else {
             adView.hide()
@@ -172,20 +181,22 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
                     currentUser.id,
                     currentUser.minify(),
                     replyComment.commentId,
-                    replyComment.projectId,
+                    replyComment.postId,
                     replyComment.threadChannelId,
                     randomId(),
+                    replyComment.commentChannelId,
                     0,
                     0,
                     replyComment.commentLevel + 1,
                     System.currentTimeMillis(),
                     System.currentTimeMillis(),
-                    emptyList(),
                     false,
                     replyComment.postTitle
                 )
 
-                viewModel.sendComment(comment1, replyComment)
+                viewModel.sendComment(comment1, replyComment) {
+                    activity.onClick(replyComment)
+                }
 
                 inputLayout.text.clear()
 
@@ -199,47 +210,51 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
 
                 val content = inputLayout.text.trim().toString()
 
-                if (project != null) {
+                if (parentPost != null) {
                     val comment1 = Comment(
                         randomId(),
                         content,
                         currentUser.id,
                         currentUser.minify(),
-                        project!!.id,
-                        project!!.id,
-                        project!!.commentChannel,
+                        parentPost!!.id,
+                        parentPost!!.id,
+                        parentPost!!.commentChannel,
                         randomId(),
+                        null,
                         0,
                         0,
                         0,
                         System.currentTimeMillis(),
                         System.currentTimeMillis(),
-                        emptyList(),
                         false,
-                        project!!.name
+                        parentPost!!.name
                     )
-                    viewModel.sendComment(comment1, project!!)
+                    viewModel.sendComment(comment1, parentPost!!) {
+                        //
+                    }
                 } else {
-                    if (comment != null) {
+                    if (parentComment != null) {
                         val comment1 = Comment(
                             randomId(),
                             content,
                             currentUser.id,
                             currentUser.minify(),
-                            comment!!.commentId,
-                            comment!!.projectId,
-                            comment!!.threadChannelId,
+                            parentComment!!.commentId,
+                            parentComment!!.postId,
+                            parentComment!!.threadChannelId,
                             randomId(),
+                            parentComment!!.commentChannelId,
                             0,
                             0,
-                            comment!!.commentLevel + 1,
+                            parentComment!!.commentLevel + 1,
                             System.currentTimeMillis(),
                             System.currentTimeMillis(),
-                            emptyList(),
                             false,
-                            comment!!.postTitle
+                            parentComment!!.postTitle
                         )
-                        viewModel.sendComment(comment1, comment!!)
+                        viewModel.sendComment(comment1, parentComment!!) {
+                            //
+                        }
                     }
                 }
 
@@ -255,7 +270,7 @@ class CommentsFragment : PagerListFragment<Comment, CommentViewHolder>() {
     }
 
     override fun getAdapter(): PagingDataAdapter<Comment, CommentViewHolder> {
-        return CommentAdapter(requireActivity() as CommentListener)
+        return CommentAdapter(activity as CommentListener)
     }
 
     companion object {

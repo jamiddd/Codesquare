@@ -10,7 +10,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.data.Notification
-import com.jamid.codesquare.data.ProjectRequest
+import com.jamid.codesquare.data.PostRequest
 import com.jamid.codesquare.data.User
 
 /**
@@ -116,7 +116,7 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
 
 
                 // 4. project requests listener
-                projectRequestsListenerRegistration = Firebase.firestore.collection(PROJECT_REQUESTS)
+                projectRequestsListenerRegistration = Firebase.firestore.collection(POST_REQUESTS)
                     .whereEqualTo(SENDER_ID, currentUserId)
                     .addSnapshotListener { value, error ->
                         if (error != null) {
@@ -127,9 +127,9 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
                         }
 
                         if (value != null && !value.isEmpty) {
-                            val projectRequests = value.toObjects(ProjectRequest::class.java)
+                            val projectRequests = value.toObjects(PostRequest::class.java)
 
-                            viewModel.insertProjectRequests(projectRequests)
+                            viewModel.insertPostRequests(projectRequests)
                         }
                     }
             }

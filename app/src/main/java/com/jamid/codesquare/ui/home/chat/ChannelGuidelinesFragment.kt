@@ -15,32 +15,35 @@ import com.jamid.codesquare.databinding.FragmentChannelGuidelinesBinding
 import com.jamid.codesquare.ui.ChatContainerFragment
 
 @ExperimentalPagingApi
-class ChannelGuidelinesFragment : Fragment() {
+class ChannelGuidelinesFragment : BaseFragment<FragmentChannelGuidelinesBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentChannelGuidelinesBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var chatChannel: ChatChannel
     private val shouldUpdate = MutableLiveData<Boolean>()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentChannelGuidelinesBinding.inflate(inflater)
-        setHasOptionsMenu(true)
-        return binding.root
+    override fun getViewBinding(): FragmentChannelGuidelinesBinding {
+        return FragmentChannelGuidelinesBinding.inflate(layoutInflater)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
         enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
         returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
     }
 
+
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        activity.binding.mainToolbar.menu.clear()
         inflater.inflate(R.menu.update_guidelines_menu, menu)
     }
+
+    /*
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+
+        inflater.inflate(R.menu.update_guidelines_menu, menu)
+    }*/
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {

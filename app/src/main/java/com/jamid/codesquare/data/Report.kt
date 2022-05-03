@@ -24,11 +24,11 @@ data class Report(
 
     companion object {
 
-        fun getReportForProject(project: Project): Report {
+        fun getReportForPost(post: Post): Report {
             val report = Report()
-            report.title = project.name
-            report.image = project.images.first()
-            report.contextId = project.id
+            report.title = post.name
+            report.image = post.images.first()
+            report.contextId = post.id
             report.type = ReportType.REPORT_PROJECT
             return report
         }

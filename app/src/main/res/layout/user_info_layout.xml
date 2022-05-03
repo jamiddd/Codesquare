@@ -76,12 +76,12 @@
         app:layout_constraintTop_toBottomOf="@+id/collaborations_count" />
 
     <com.google.android.material.chip.Chip
-        android:id="@+id/projects_count"
+        android:id="@+id/posts_count"
         style="@style/AppTheme.MyChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:checkable="false"
-        android:contentDescription="@string/total_number_of_projects"
+        android:contentDescription="@string/total_number_of_posts"
         app:layout_constraintBottom_toBottomOf="@+id/collaborations_count"
         app:layout_constraintEnd_toStartOf="@+id/collaborations_count"
         app:layout_constraintHorizontal_bias="0.5"
@@ -104,7 +104,7 @@
         app:layout_constraintBottom_toTopOf="@+id/divider4"
         app:layout_constraintEnd_toStartOf="@+id/likes_count"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/projects_count"
+        app:layout_constraintStart_toEndOf="@+id/posts_count"
         app:layout_constraintTop_toBottomOf="@+id/user_about" />
 
     <com.google.android.material.chip.Chip
@@ -123,7 +123,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/profile_primary_btn"
-        style="@style/AppTheme.ProfilePrimaryAction"
+        style="@style/AppTheme.ButtonOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingStart="12dp"
@@ -142,7 +142,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/invite_btn"
-        style="@style/AppTheme.ProfilePrimaryAction"
+        style="@style/AppTheme.ButtonOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

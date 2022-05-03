@@ -35,4 +35,7 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Query("DELETE FROM notifications WHERE id = :id")
     abstract suspend fun deleteNotificationById(id: String)
 
+    @Query("SELECT * FROM notifications WHERE type = :type AND read = 0")
+    abstract fun getUnreadNotifications(type: Int): LiveData<List<Notification>>
+
 }

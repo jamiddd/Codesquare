@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -18,6 +19,7 @@ import com.jamid.codesquare.databinding.FragmentSearchBinding
 import com.jamid.codesquare.hideKeyboard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
 class SearchFragment: Fragment() {
@@ -41,6 +43,8 @@ class SearchFragment: Fragment() {
         val tabLayout = requireActivity().findViewById<TabLayout>(R.id.main_tab_layout)
 
         val query = arguments?.getParcelable<SearchQuery>("query") ?: return
+
+        OverScrollDecoratorHelper.setUpOverScroll((binding.searchPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
         TabLayoutMediator(tabLayout, binding.searchPager) { t, p ->
             when (p) {

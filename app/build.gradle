@@ -180,5 +180,7 @@ dependencies {
     implementation 'io.github.everythingme:overscroll-decor-android:1.1.1'
 
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
-    
+
+    implementation 'com.github.mmin18:RealtimeBlurView:master-SNAPSHOT'
+
 }

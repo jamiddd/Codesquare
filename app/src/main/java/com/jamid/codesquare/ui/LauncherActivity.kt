@@ -23,7 +23,6 @@ import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -37,7 +36,7 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 @ExperimentalPagingApi
-abstract class LauncherActivity : AppCompatActivity(){
+abstract class LauncherActivity : LocationAwareActivity(){
 
     var loadingDialog: AlertDialog? = null
     var imageSelectType = IMAGE_PROFILE
@@ -52,35 +51,18 @@ abstract class LauncherActivity : AppCompatActivity(){
     }
 
     val viewModel: MainViewModel by viewModels()
-    lateinit var fusedLocationProviderClient: FusedLocationProviderClient
 
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    /*override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         onCreate()
     }
 
     @SuppressLint("VisibleForTests")
-    open fun onCreate() {
-        fusedLocationProviderClient = FusedLocationProviderClient(this)
-        requestLocationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-    }
+    open fun onCreate() {}
+*/
 
-    val locationStateLauncher = registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) {
-        val isNetworkAvailable = viewModel.isNetworkAvailable.value
-        if (isNetworkAvailable != null && isNetworkAvailable) {
-            LocationProvider.updateData(fusedLocationProviderClient, state = it.resultCode == RESULT_OK)
-        }
-    }
 
-    val requestLocationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        val isNetworkAvailable = viewModel.isNetworkAvailable.value
-        if (isNetworkAvailable != null && isNetworkAvailable) {
-            LocationProvider.updateData(fusedLocationProviderClient, permission = isGranted)
-        }
-    }
 
     val requestGoogleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         loadingDialog?.dismiss()
@@ -96,10 +78,10 @@ abstract class LauncherActivity : AppCompatActivity(){
                 }
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
-                Log.w(TAG, "Google sign in failed", e)
-
-                viewModel.setCurrentError(e)
+                viewModel.setGoogleSignInError(0)
             }
+        } else {
+            viewModel.setGoogleSignInError(1)
         }
     }
 
@@ -213,14 +195,13 @@ abstract class LauncherActivity : AppCompatActivity(){
                                 outputRequestHeight = 100
                                 outputRequestWidth = 100
                             }
-                            findNavController(R.id.nav_host_fragment).navigate(R.id.action_editProfileFragment_to_cropFragment2, bundleOf("image" to singleImage.toString(), "cropOptions" to options))
+                            findNavController(R.id.nav_host_fragment).navigate(R.id.cropFragment2, bundleOf("image" to singleImage.toString(), "cropOptions" to options))
                         }
                     }
-                    IMAGE_PROJECT -> {
-
-                        val currentProject = viewModel.currentProject.value
-                        if (currentProject != null) {
-                            val isProjectImagesEmpty = currentProject.images.isNullOrEmpty()
+                    IMAGE_POST -> {
+                        val currentPost = viewModel.currentPost.value
+                        if (currentPost != null) {
+                            val isPostImagesEmpty = currentPost.images.isNullOrEmpty()
                             try {
                                 if (clipData != null) {
                                     images = getImagesFromClipData(clipData)
@@ -233,16 +214,16 @@ abstract class LauncherActivity : AppCompatActivity(){
 
                                     val formattedImages = images.map {it1 -> it1.toString() }
 
-                                    if (isProjectImagesEmpty) {
-                                        viewModel.setCurrentProjectImages(formattedImages)
+                                    if (isPostImagesEmpty) {
+                                        viewModel.setCurrentPostImages(formattedImages)
                                     } else {
 
-                                        if (currentProject.images.size + images.size > 10) {
+                                        if (currentPost.images.size + images.size > 10) {
                                             toast("Cannot add more images")
                                             return@registerForActivityResult
                                         }
 
-                                        viewModel.addToExistingProjectImages(formattedImages)
+                                        viewModel.addToExistingPostImages(formattedImages)
                                     }
 
                                 } else {
@@ -254,16 +235,16 @@ abstract class LauncherActivity : AppCompatActivity(){
 
                                         val formattedImages = images.map {it1 -> it1.toString() }
 
-                                        if (isProjectImagesEmpty) {
-                                            viewModel.setCurrentProjectImages(formattedImages)
+                                        if (isPostImagesEmpty) {
+                                            viewModel.setCurrentPostImages(formattedImages)
                                         } else {
 
-                                            if (currentProject.images.size + images.size > 10) {
+                                            if (currentPost.images.size + images.size > 10) {
                                                 toast("Cannot add more images")
                                                 return@registerForActivityResult
                                             }
 
-                                            viewModel.addToExistingProjectImages(formattedImages)
+                                            viewModel.addToExistingPostImages(formattedImages)
                                         }
                                     }
                                 }
@@ -395,14 +376,14 @@ abstract class LauncherActivity : AppCompatActivity(){
                             UserManager.updateUser(oldUser)
                             viewModel.insertCurrentUser(oldUser)
                         } else {
-                            val localUser = User.newUser(user.uid, user.displayName!!, user.email!!)
+                            val localUser = User.newUser(user.uid, user.displayName!!, user.email!!, user.photoUrl)
 
-                            FireUtility.uploadDocument(ref, localUser) { it2 ->
+                            FireUtility.uploadUser(localUser) { it2 ->
                                 if (it2.isSuccessful) {
                                     UserManager.updateUser(localUser)
                                     viewModel.insertCurrentUser(localUser)
                                 } else {
-                                    viewModel.setCurrentError(it.exception)
+                                    viewModel.setCurrentError(it2.exception)
                                     Firebase.auth.signOut()
                                 }
                             }

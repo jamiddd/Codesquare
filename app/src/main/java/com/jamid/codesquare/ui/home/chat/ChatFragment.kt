@@ -1,8 +1,17 @@
+@file:Suppress("UNCHECKED_CAST")
+
 package com.jamid.codesquare.ui.home.chat
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
+import androidx.core.os.bundleOf
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
@@ -18,8 +27,9 @@ import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
 import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.databinding.FragmentChatContainerBinding
 import com.jamid.codesquare.ui.ChatContainerFragment
-import com.jamid.codesquare.ui.MainActivity
 import com.jamid.codesquare.ui.MessageListenerFragment
 import com.jamid.codesquare.ui.PagerListFragment
 import kotlinx.coroutines.delay
@@ -33,9 +43,67 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     private lateinit var chatChannel: ChatChannel
     private val mContext: Context by lazy { requireContext() }
 //    private var fab: FloatingActionButton? = null
+    private lateinit var post: Post
+
 
     private var tooltipView: View? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    private fun setChannelIcon(menu: Menu, chatChannelId: String, imageString: String) {
+        val channelSavedBitmap = viewModel.chatChannelsBitmapMap[chatChannelId]
+        if (channelSavedBitmap != null) {
+            setBitmapDrawable(menu, channelSavedBitmap)
+        } else {
+            downloadBitmapUsingFresco(activity, imageString) { image ->
+                activity.runOnUiThread {
+                    if (image != null) {
+                        viewModel.chatChannelsBitmapMap[chatChannelId] = image
+                        setBitmapDrawable(menu, image)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setBitmapDrawable(menu: Menu, bitmap: Bitmap) {
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.height, bitmap.height, false)
+        val length = resources.getDimension(R.dimen.unit_len) * 6
+        val drawable = RoundedBitmapDrawableFactory.create(resources, scaledBitmap).also {
+            it.cornerRadius = length
+        }
+        menu.getItem(0).icon = drawable
+    }
+
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        if ((parentFragment as ChatContainerFragment).getCurrentFragmentTag() == TAG){
+            Log.d(TAG, "onCreateOptionsMenu: Setting menu chat fragment")
+            activity.binding.mainToolbar.menu.clear()
+            inflater.inflate(R.menu.chat_fragment_menu, menu)
+        }
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        super.onPrepareOptionsMenu(menu)
+        if ((parentFragment as ChatContainerFragment).getCurrentFragmentTag() == TAG) {
+            setChannelIcon(menu, chatChannelId, chatChannel.postImage)
+        }
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.chat_icon -> {
+                (parentFragment as ChatContainerFragment).navigate(ChatDetailFragment.TAG, bundleOf(
+                    CHAT_CHANNEL to chatChannel, POST to post))
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
 
     private fun getScrollPosition(): Int {
         val layoutManager = binding.pagerItemsRecycler.layoutManager as LinearLayoutManager?
@@ -113,7 +181,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     private fun showToolbarClickTooltip(toolbar: View) {
 
-        val container = (activity as MainActivity).binding.root
+        val container = activity.binding.root
         container.removeView(tooltipView)
 
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
@@ -153,6 +221,10 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 //        setFabLayout()
 
         setNewMessagesListener()
+
+        activity.getPostImpulsive(chatChannel.postId) {
+            post = it
+        }
 
     }
 
@@ -216,7 +288,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     }
 
     override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder2<Message>> {
-        return MessageAdapter3(parentFragment as MessageListenerFragment)
+        return MessageAdapter3(parentFragment as MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>)
     }
 
     companion object {

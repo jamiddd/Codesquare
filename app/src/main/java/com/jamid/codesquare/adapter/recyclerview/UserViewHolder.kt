@@ -1,9 +1,11 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
@@ -11,6 +13,8 @@ import com.facebook.drawee.generic.GenericDraweeHierarchyBuilder
 import com.facebook.drawee.generic.RoundingParams
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.material.button.MaterialButton
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.UserGridItemBinding
@@ -65,13 +69,26 @@ class UserViewHolder(
             likeBtn?.hide()
         }
 
-        likeBtn?.apply {
-            isSelected = user.isLiked
+        Firebase.firestore.collection(USERS)
+            .document(UserManager.currentUserId)
+            .collection(LIKED_USERS)
+            .document(user.id)
+            .get()
+            .addOnSuccessListener {
 
-            setOnClickListener {
-                userClickListener.onUserLikeClick(user.copy())
+                user.isLiked = it.exists()
+
+                likeBtn?.apply {
+                    isSelected = user.isLiked
+
+                    setOnClickListener {
+                        userClickListener.onUserLikeClick(user.copy())
+                    }
+                }
+            }.addOnFailureListener {
+                Log.e(TAG, "setUserLayout: ${it.localizedMessage}")
             }
-        }
+
 
         if (associatedChatChannel != null) {
             if (associatedChatChannel.administrators.contains(user.id)) {
@@ -220,5 +237,11 @@ class UserViewHolder(
 
     companion object {
         private const val TAG = "UserViewHolder"
+
+        fun newInstance(parent: ViewGroup, @LayoutRes layoutId: Int): UserViewHolder {
+            val v = LayoutInflater.from(parent.context).inflate(layoutId, parent, false)
+            return UserViewHolder(v)
+        }
+
     }
 }

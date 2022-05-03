@@ -53,7 +53,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         setProfileSection()
 
-        setProjectSection()
+        setPostSection()
 
         setLocationSection()
 
@@ -63,7 +63,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         setOtherFunctions()
 
-//        setSubscriptionSetting()
+//        val adminSection = findPreference<PreferenceCategory>("admin")
+        val addInterest = findPreference<Preference>("admin_add_interest")
+
+        addInterest?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.extraFragment, null, slideRightNavOptions())
+            true
+        }
+
+        /*val currentUser = UserManager.currentUser
+        if (currentUser.email != "jamiddeka1@gmail.com") {
+            adminSection?.isEnabled = false
+        } else {
+
+        }*/
 
     }
 
@@ -154,7 +167,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     }
 
-    private fun setProjectSection() {
+    private fun setPostSection() {
         /*val expiryS = sharedPreference.getString(PROJECT_EXPIRY, "0")
         val projectExpiry = findPreference<EditTextPreference>(PROJECT_EXPIRY)
         if (expiryS != "0") {
@@ -208,19 +221,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val updateProfile = findPreference<Preference>(PROFILE_UPDATE)
         updateProfile?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_editProfileFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
             true
         }
 
-        val savedProjects = findPreference<Preference>(PROFILE_SAVED)
-        savedProjects?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_savedProjectsFragment, null, slideRightNavOptions())
+        val savedPosts = findPreference<Preference>(PROFILE_SAVED)
+        savedPosts?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.savedPostsFragment, null, slideRightNavOptions())
             true
         }
 
-        val archivedProjects = findPreference<Preference>(PROFILE_ARCHIVED)
-        archivedProjects?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_archiveFragment, null, slideRightNavOptions())
+        val archivedPosts = findPreference<Preference>(PROFILE_ARCHIVED)
+        archivedPosts?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.archiveFragment, null, slideRightNavOptions())
             true
         }
 
@@ -243,13 +256,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val updatePasswordItem = findPreference<Preference>(ACCOUNT_UPDATE_PASSWORD)
         updatePasswordItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_updatePasswordFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.updatePasswordFragment, null, slideRightNavOptions())
             true
         }
 
         val forgotPasswordItem = findPreference<Preference>(ACCOUNT_FORGOT_PASSWORD)
         forgotPasswordItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_forgotPasswordFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.forgotPasswordFragment, null, slideRightNavOptions())
             true
         }
 
@@ -297,7 +310,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val logoutItem = findPreference<Preference>("logout")
         logoutItem?.setOnPreferenceClickListener {
             UserManager.logOut(requireContext()) {
-                findNavController().navigate(R.id.action_settingsFragment_to_loginFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
                 viewModel.signOut {}
             }
             true
@@ -305,7 +318,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val feedbackItem = findPreference<Preference>("feedback")
         feedbackItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.action_settingsFragment_to_feedbackFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.feedbackFragment, null, slideRightNavOptions())
             true
         }
     }

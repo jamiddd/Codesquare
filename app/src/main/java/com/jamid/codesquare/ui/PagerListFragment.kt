@@ -2,14 +2,10 @@ package com.jamid.codesquare.ui
 
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.view.setMargins
 import androidx.core.view.updateLayoutParams
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
@@ -25,12 +21,15 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
-abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment() {
+abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFragment<FragmentPagerBinding, MainViewModel>() {
 
     open var job: Job? = null
     lateinit var pagingAdapter: PagingDataAdapter<T, VH>
-    protected val viewModel: MainViewModel by activityViewModels()
-    lateinit var binding: FragmentPagerBinding
+    override val viewModel: MainViewModel by activityViewModels()
+
+    override fun getViewBinding(): FragmentPagerBinding {
+        return FragmentPagerBinding.inflate(layoutInflater)
+    }
 
     var shouldHideRecyclerView = false
     var shouldShowImage = true
@@ -42,22 +41,12 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
 
     open fun getItems(func: suspend () -> Flow<PagingData<T>>) {
         job?.cancel()
+        Log.d(TAG, "getItems: Cancelling job")
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {
-                Log.d(TAG, "New data")
                 pagingAdapter.submitData(it)
             }
         }
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentPagerBinding.inflate(inflater)
-        pagingAdapter = getAdapter()
-        return binding.root
     }
 
     fun setIsViewPagerFragment(isViewPagerFragment: Boolean) {
@@ -86,6 +75,7 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
     }
 
     open fun onViewLaidOut() {
+        pagingAdapter = getAdapter()
         initLayout()
     }
 
@@ -99,28 +89,8 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : Fragment
             adapter = pagingAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
-
         addLoadListener()
-
-        binding.pagerRefresher.let {
-            it.setOnRefreshListener {
-                pagingAdapter.refresh()
-            }
-
-            it.setColorSchemeColors(requireContext().accentColor())
-
-            if (isNightMode()) {
-                it.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(requireContext(), R.color.darkest_grey_2))
-            } else {
-                it.setProgressBackgroundColorSchemeColor(ContextCompat.getColor(requireContext(), R.color.white))
-            }
-
-            val zero = resources.getDimension(R.dimen.zero).toInt()
-            val actionBarOffset = resources.getDimension(R.dimen.action_bar_height).toInt()
-
-            it.setProgressViewOffset(false, zero, actionBarOffset)
-        }
-
+        binding.pagerRefresher.setDefaultSwipeRefreshLayoutUi()
     }
 
     open fun addLoadListener() {

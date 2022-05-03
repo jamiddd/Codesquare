@@ -40,7 +40,7 @@ class OnBoardingFragment: Fragment() {
             if (currentItem != 2) {
                 binding.onBoardingPager.setCurrentItem(currentItem + 1, true)
             } else {
-                findNavController().navigate(R.id.action_onBoardingFragment_to_loginFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
             }
         }
 
@@ -49,7 +49,7 @@ class OnBoardingFragment: Fragment() {
             if (currentItem != 0) {
                 binding.onBoardingPager.setCurrentItem(currentItem - 1, true)
             } else {
-                findNavController().navigate(R.id.action_onBoardingFragment_to_loginFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
             }
         }
 

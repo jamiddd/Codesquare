@@ -42,11 +42,11 @@ abstract class UserDao: BaseDao<User>() {
     @Query("SELECT * FROM users WHERE id = :userId")
     abstract fun getReactiveUser(userId: String): LiveData<User>
 
-    @Query("SELECT * FROM users WHERE likedProjects LIKE :projectId ORDER BY name ASC")
-    abstract fun getProjectSupporters(projectId: String): PagingSource<Int, User>
+//    @Query("SELECT * FROM users WHERE likedProjects LIKE :projectId ORDER BY name ASC")
+//    abstract fun getPostSupporters(projectId: String): PagingSource<Int, User>
 
-    @Query("SELECT * FROM users WHERE likedUsers LIKE :userId ORDER BY name ASC")
-    abstract fun getUserSupporters(userId: String): PagingSource<Int, User>
+//    @Query("SELECT * FROM users WHERE likedUsers LIKE :userId ORDER BY name ASC")
+//    abstract fun getUserSupporters(userId: String): PagingSource<Int, User>
 
     @Query("SELECT * FROM users WHERE chatChannels LIKE :chatChannelId ORDER BY name ASC LIMIT :limit")
     abstract fun getContributors(chatChannelId: String, limit: Int = 6): LiveData<List<User>>

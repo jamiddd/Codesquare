@@ -14,13 +14,14 @@ data class CommentChannel(
     @PrimaryKey
     var commentChannelId: String,
     var parentId: String,
-    var projectId: String,
+    var postId: String,
     var postTitle: String,
+    var commentsCount: Long,
     var createdAt: Long,
     @Embedded(prefix = "comment_channel_")
     var lastComment: Comment?,
     var archived: Boolean = false,
     var updatedAt: Long = System.currentTimeMillis()
 ): Parcelable {
-    constructor(): this("", "", "", "", System.currentTimeMillis(), Comment())
+    constructor(): this("", "", "", "", 0, System.currentTimeMillis(), Comment())
 }

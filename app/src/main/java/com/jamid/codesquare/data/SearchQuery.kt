@@ -10,9 +10,9 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @Keep
 data class SearchQuery(@PrimaryKey val id: String, val queryString: String, val createdAt: Long, val type: Int): Parcelable {
-    constructor(): this("", "", System.currentTimeMillis(), QUERY_TYPE_PROJECT)
+    constructor(): this("", "", System.currentTimeMillis(), QUERY_TYPE_POST)
 }
 
-const val QUERY_TYPE_PROJECT = 0
+const val QUERY_TYPE_POST = 0
 const val QUERY_TYPE_USER = 1
 const val QUERY_TYPE_INTEREST = 2

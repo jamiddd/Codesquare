@@ -6,6 +6,8 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
@@ -25,9 +27,9 @@ class ChatChannelViewHolder(
 
             val binding = ChatChannelItemBinding.bind(view)
 
-            binding.channelImg.setImageURI(chatChannel.projectImage)
+            binding.channelImg.setImageURI(chatChannel.postImage)
 
-            binding.channelName.text = chatChannel.projectTitle
+            binding.channelName.text = chatChannel.postTitle
 
             val message = chatChannel.lastMessage
 
@@ -92,6 +94,12 @@ class ChatChannelViewHolder(
                 binding.channelTime.hide()
                 binding.channelLastMessage.hide()
                 binding.chatSelectRadioBtn.show()
+
+                val a = view.context.resources.getDimension(R.dimen.unit_len).toInt()
+
+                binding.linearLayout8.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                    setMargins(0, a, a * 20, a)
+                }
 
                 binding.chatSelectRadioBtn.isClickable = false
 

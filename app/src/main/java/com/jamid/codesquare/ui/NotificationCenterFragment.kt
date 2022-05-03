@@ -5,11 +5,14 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
+import com.jamid.codesquare.BaseFragment
+import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.TYPE
 import com.jamid.codesquare.adapter.viewpager.NotificationPagerAdapter
@@ -19,19 +22,13 @@ import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 @ExperimentalPagingApi
-class NotificationCenterFragment: Fragment() {
+class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding, MainViewModel>() {
 
-    private lateinit var binding: FragmentNotificationCenterBinding
-    private lateinit var tabLayout: TabLayout
+    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var newTab: TabLayout.Tab
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentNotificationCenterBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentNotificationCenterBinding {
+        return FragmentNotificationCenterBinding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -39,16 +36,46 @@ class NotificationCenterFragment: Fragment() {
 
         binding.notificationPager.adapter = NotificationPagerAdapter(requireActivity())
         binding.notificationPager.offscreenPageLimit = 2
-        tabLayout = requireActivity().findViewById(R.id.main_tab_layout)
-        newTab = tabLayout.newTab()
+        newTab = activity.binding.mainTabLayout.newTab()
 
         OverScrollDecoratorHelper.setUpOverScroll((binding.notificationPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
-        tabLayout.addTab(newTab)
+        viewModel.getUnreadGeneralNotifications().observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it.isEmpty()) {
+                    activity.binding.mainTabLayout.getTabAt(0)?.removeBadge()
+                } else {
+                    activity.binding.mainTabLayout.getTabAt(0)?.orCreateBadge?.number = it.size
+                }
+            }
+        }
+
+        viewModel.getUnreadRequestNotifications().observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it.isEmpty()) {
+                    activity.binding.mainTabLayout.getTabAt(1)?.removeBadge()
+                } else {
+                    activity.binding.mainTabLayout.getTabAt(1)?.orCreateBadge?.number = it.size
+                }
+            }
+        }
+
+        viewModel.getUnreadInviteNotifications().observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it.isEmpty()) {
+                    activity.binding.mainTabLayout.getTabAt(1)?.removeBadge()
+                } else {
+                    activity.binding.mainTabLayout.getTabAt(1)?.orCreateBadge?.number = it.size
+                }
+            }
+        }
+
+
+        activity.binding.mainTabLayout.addTab(newTab)
 
         val type = arguments?.getInt(TYPE) ?: 0
 
-        TabLayoutMediator(tabLayout, binding.notificationPager) { t, pos ->
+        TabLayoutMediator(activity.binding.mainTabLayout, binding.notificationPager) { t, pos ->
             when (pos) {
                 0 -> t.text = "General"
                 1 -> t.text = "Requests"

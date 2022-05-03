@@ -18,13 +18,13 @@
             style="@style/AppTheme.Button.IconOnly"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/close_the_project_info_dialog"
+            android:contentDescription="@string/close_the_post_info_dialog"
             app:icon="@drawable/ic_round_close_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/project_info_header"
+            android:id="@+id/post_info_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -35,26 +35,26 @@
             android:paddingTop="8dp"
             android:paddingEnd="12dp"
             android:paddingBottom="8dp"
-            android:text="@string/creating_your_project"
+            android:text="@string/creating_your_post"
             android:textAppearance="@style/TextAppearance.AppCompat.Body2"
             android:textSize="16sp"
-            app:layout_constraintBottom_toTopOf="@+id/project_info_desc"
+            app:layout_constraintBottom_toTopOf="@+id/post_info_desc"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/project_info_desc"
+            android:id="@+id/post_info_desc"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
-            android:text="@string/create_project_info"
+            android:text="@string/create_post_info"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/project_info_header" />
+            app:layout_constraintTop_toBottomOf="@+id/post_info_header" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

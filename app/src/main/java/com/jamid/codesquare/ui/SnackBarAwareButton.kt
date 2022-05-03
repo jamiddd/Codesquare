@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import com.google.android.material.snackbar.Snackbar
+import com.jamid.codesquare.R
 
 class SnackBarAwareBehavior(context: Context, attributeSet: AttributeSet)
     : CoordinatorLayout.Behavior<View>(context, attributeSet){
@@ -34,7 +35,8 @@ class SnackBarAwareBehavior(context: Context, attributeSet: AttributeSet)
         dependencies.forEach { dependency ->
             if (dependency is Snackbar.SnackbarLayout && parent.doViewsOverlap(view, dependency)){
                 maxOffset =
-                    maxOffset.coerceAtLeast((dependency.translationY - dependency.height) * -1)
+                    maxOffset.coerceAtLeast((dependency.translationY - dependency.height - view.context.resources.getDimension(
+                        R.dimen.generic_len)) * -1)
             }
         }
 

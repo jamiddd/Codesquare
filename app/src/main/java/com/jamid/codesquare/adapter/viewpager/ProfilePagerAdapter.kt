@@ -7,7 +7,7 @@ import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.PROFILE_PAGE_COUNT
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.profile.CollaborationsFragment
-import com.jamid.codesquare.ui.profile.ProjectsFragment
+import com.jamid.codesquare.ui.profile.PostsFragment
 
 @ExperimentalPagingApi
 class ProfilePagerAdapter(activity: FragmentActivity, val user: User? = null): FragmentStateAdapter(activity) {
@@ -15,7 +15,7 @@ class ProfilePagerAdapter(activity: FragmentActivity, val user: User? = null): F
 
     override fun createFragment(position: Int): Fragment {
         return if (position == 0) {
-            ProjectsFragment.newInstance(user)
+            PostsFragment.newInstance(user)
         } else {
             CollaborationsFragment.newInstance(user)
         }

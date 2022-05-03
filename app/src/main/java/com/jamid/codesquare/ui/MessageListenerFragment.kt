@@ -2,9 +2,15 @@ package com.jamid.codesquare.ui
 
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
+import androidx.paging.ExperimentalPagingApi
+import androidx.viewbinding.ViewBinding
+import com.jamid.codesquare.BaseFragment
+import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.data.Message
 
-abstract class MessageListenerFragment: Fragment(), MessageListener {
+@OptIn(ExperimentalPagingApi::class)
+abstract class MessageListenerFragment<T: ViewBinding, U: ViewModel>: BaseFragment<T, U>(), MessageListener {
 
     override fun onMessageClick(message: Message) {}
     override fun onMessageContextClick(message: Message) {}
@@ -16,7 +22,7 @@ abstract class MessageListenerFragment: Fragment(), MessageListener {
     override fun onMessageNotDownloaded(message: Message, onComplete: (newMessage: Message) -> Unit) {}
 
     abstract fun onCheckForStaleData(message: Message, onUpdate: (newMessage: Message) -> Unit)
-
+    open fun onReplyMessageClick(message: Message) {}
 }
 
 interface MessageListener {

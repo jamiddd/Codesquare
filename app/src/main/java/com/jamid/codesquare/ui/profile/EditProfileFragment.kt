@@ -1,8 +1,8 @@
 package com.jamid.codesquare.ui.profile
 
-import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
@@ -17,14 +17,15 @@ import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
+import com.jamid.codesquare.data.InterestItem
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
-import com.jamid.codesquare.ui.DefaultProfileImageSheet
-import com.jamid.codesquare.ui.InputSheetFragment
-import com.jamid.codesquare.ui.MessageDialogFragment
+import com.jamid.codesquare.listeners.AddTagsListener
+import com.jamid.codesquare.listeners.InterestItemClickListener
+import com.jamid.codesquare.ui.*
 
 @ExperimentalPagingApi
-class EditProfileFragment: Fragment() {
+class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListener {
 
     private lateinit var binding: FragmentEditProfileBinding
     private val viewModel: MainViewModel by activityViewModels()
@@ -110,13 +111,19 @@ class EditProfileFragment: Fragment() {
             findNavController().navigateUp()
         } else {
             viewModel.updateUser(updatedUser, changes) { it1 ->
+
                 loadingFragment?.dismiss()
+
                 if (it1.isSuccessful) {
-                    Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG)
+                        .setBehavior(NoSwipeBehavior())
+                        .show()
                     viewModel.setCurrentImage(null)
                     findNavController().navigateUp()
                 } else {
-                    Snackbar.make(binding.root, "Something went wrong. Try again.", Snackbar.LENGTH_LONG).show()
+                    Snackbar.make(binding.root, "Something went wrong. Try again.", Snackbar.LENGTH_LONG)
+                        .setBehavior(NoSwipeBehavior())
+                        .show()
                 }
             }
         }
@@ -221,7 +228,14 @@ class EditProfileFragment: Fragment() {
 
         binding.addInterestBtn.setOnClickListener {
 
-            val inputSheet = InputSheetFragment.builder("Adding interest helps us to search for related projects for you.")
+            val frag = AddTagsFragment.builder()
+                .setTitle("Add interests")
+                .setListener(this)
+                .build()
+
+            frag.show(childFragmentManager, AddTagsFragment.TAG)
+
+           /* val inputSheet = InputSheetFragment.builder("Adding interest helps us to search for related projects for you.")
                 .setTitle("Add Interest")
                 .setHint("Add interest ... ")
 //                .setMessage("You can add multiple interests at once by separating with a space.")
@@ -234,7 +248,7 @@ class EditProfileFragment: Fragment() {
                     a.dismiss()
                 }.build()
 
-            inputSheet.show(childFragmentManager, InputSheetFragment.TAG)
+            inputSheet.show(childFragmentManager, InputSheetFragment.TAG)*/
 
         }
 
@@ -428,6 +442,18 @@ class EditProfileFragment: Fragment() {
 
     companion object {
         const val TAG = "EditProfileFragment"
+    }
+
+    override fun onTagsSelected(tags: List<String>) {
+        addInterests(tags)
+    }
+
+    override fun onInterestClick(interestItem: InterestItem) {
+        if (interestItem.isChecked) {
+            viewModel.uncheckInterestItem(interestItem)
+        } else {
+            viewModel.checkInterestItem(interestItem)
+        }
     }
 
 }

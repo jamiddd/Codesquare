@@ -33,18 +33,12 @@ class SplashFragment: Fragment() {
             if (isSignedIn != null) {
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
-
-                        if (UserManager.currentUser.interests.isEmpty()) {
-                            findNavController().navigate(R.id.userInfoFragment, null, slideRightNavOptions())
-                        } else {
-                            findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
-                        }
-
+                        findNavController().navigate(R.id.homeFragment, null, slideRightNavOptions())
                     } else {
-                        findNavController().navigate(R.id.action_splashFragment_to_emailVerificationFragment)
+                        findNavController().navigate(R.id.emailVerificationFragment, null, slideRightNavOptions())
                     }
                 } else {
-                    findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
+                    findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
                 }
             }
         }

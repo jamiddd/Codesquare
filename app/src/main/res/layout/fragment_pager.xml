@@ -43,10 +43,12 @@
 
     <TextView
         android:id="@+id/pager_no_items_text"
-        android:layout_width="361dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:gravity="center"
-        android:text="@string/no_projects"
+        android:text="@string/no_posts"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/pager_action_btn"
         app:layout_constraintEnd_toEndOf="parent"
@@ -59,11 +61,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/rerty_the_current_request"
+        android:fontFamily="@font/title_semi"
+        android:textAllCaps="false"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/pager_no_items_text"
         tools:visibility="visible" />
+
+
+    <com.google.android.material.chip.Chip
+        android:id="@+id/notify_chip"
+        style="@style/AppTheme.ActionChip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="New posts"
+        android:translationY="-100dp"
+        app:chipIcon="@drawable/ic_round_keyboard_arrow_up_24"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

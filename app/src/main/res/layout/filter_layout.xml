@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/options_handle"
+        android:layout_width="40dp"
+        android:layout_height="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/chat_edittext_background"
+        android:backgroundTint="@color/darker_grey"
+        app:layout_constraintBottom_toTopOf="@+id/filter_heading"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/filter_heading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        android:fontFamily="@font/title_semi"
+        android:gravity="center"
+        android:text="Filter and sort posts"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:textSize="16sp"
+        app:layout_constraintBottom_toTopOf="@+id/sort_by_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/options_handle" />
+
+    <TextView
+        android:id="@+id/sort_by_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/title_semi"
+        android:paddingStart="24dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="8dp"
+        android:text="Sort by"
+        app:layout_constraintBottom_toTopOf="@+id/sort_tags"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/filter_heading" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/sort_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/filter_interest_tags_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sort_by_header"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/sort_contributors"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_contributors" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/sort_likes"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_likes" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/sort_relevance"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_relevance" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/sort_time"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/sort_time" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/sort_location"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_location" />
+
+    </com.google.android.material.chip.ChipGroup>
+
+    <TextView
+        android:id="@+id/filter_interest_tags_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:fontFamily="@font/title_semi"
+        android:paddingStart="24dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="8dp"
+        android:text="Your interests"
+        app:layout_constraintBottom_toTopOf="@+id/filter_interest_tags"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sort_tags" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/filter_interest_tags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        app:layout_constraintBottom_toTopOf="@+id/add_interests_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_min="56dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/filter_interest_tags_header"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/filter_random"
+            style="@style/AppTheme.MyChip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="@string/random" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <Button
+        android:id="@+id/apply_filter_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="32dp"
+        android:fontFamily="@font/title_semi"
+        android:text="Apply"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/remember_filter" />
+
+    <Switch
+        android:id="@+id/remember_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:minHeight="48dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="16dp"
+        android:text="Remember filter settings"
+        app:layout_constraintBottom_toTopOf="@+id/apply_filter_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/add_interests_btn" />
+
+    <Button
+        android:id="@+id/add_interests_btn"
+        style="@style/AppTheme.ButtonOutlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:fontFamily="@font/title_semi"
+        android:text="Add interests"
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:visibility="gone"
+        app:icon="@drawable/ic_round_add_24"
+        app:layout_constraintBottom_toTopOf="@+id/remember_filter"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/filter_interest_tags" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
