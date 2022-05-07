@@ -11,10 +11,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
-import com.jamid.codesquare.BaseFragment
-import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.R
-import com.jamid.codesquare.TYPE
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.viewpager.NotificationPagerAdapter
 import com.jamid.codesquare.databinding.FragmentNotificationCenterBinding
 import kotlinx.coroutines.delay
@@ -45,7 +42,11 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
                 if (it.isEmpty()) {
                     activity.binding.mainTabLayout.getTabAt(0)?.removeBadge()
                 } else {
-                    activity.binding.mainTabLayout.getTabAt(0)?.orCreateBadge?.number = it.size
+                    activity.binding.mainTabLayout.getTabAt(0)?.let { tab ->
+                        tab.orCreateBadge
+                        tab.badge?.number = it.size
+                        tab.badge?.badgeTextColor = getColorResource(R.color.white)
+                    }
                 }
             }
         }
@@ -55,7 +56,11 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
                 if (it.isEmpty()) {
                     activity.binding.mainTabLayout.getTabAt(1)?.removeBadge()
                 } else {
-                    activity.binding.mainTabLayout.getTabAt(1)?.orCreateBadge?.number = it.size
+                    activity.binding.mainTabLayout.getTabAt(1)?.let { tab ->
+                        tab.orCreateBadge
+                        tab.badge?.number = it.size
+                        tab.badge?.badgeTextColor = getColorResource(R.color.white)
+                    }
                 }
             }
         }
@@ -63,9 +68,13 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
         viewModel.getUnreadInviteNotifications().observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it.isEmpty()) {
-                    activity.binding.mainTabLayout.getTabAt(1)?.removeBadge()
+                    activity.binding.mainTabLayout.getTabAt(2)?.removeBadge()
                 } else {
-                    activity.binding.mainTabLayout.getTabAt(1)?.orCreateBadge?.number = it.size
+                    activity.binding.mainTabLayout.getTabAt(2)?.let { tab ->
+                        tab.orCreateBadge
+                        tab.badge?.number = it.size
+                        tab.badge?.badgeTextColor = getColorResource(R.color.white)
+                    }
                 }
             }
         }

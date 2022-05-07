@@ -2,14 +2,15 @@ package com.jamid.codesquare.ui.auth
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
@@ -142,6 +143,42 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, MainViewModel>() {
                 loadingFragment?.dismiss()
             }
         }
+
+        val sp = SpannableString(binding.termsPrivacy.text)
+
+        val cs = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/terms-and-conditions")
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val greyColor = getColorResource(R.color.darker_grey)
+                ds.color = greyColor
+            }
+        }
+
+        val cs1 = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/home")
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val greyColor = getColorResource(R.color.darker_grey)
+                ds.color = greyColor
+            }
+        }
+
+        sp.setSpan(cs, 0, 20, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        sp.setSpan(cs1, 23, binding.termsPrivacy.text.length - 1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        binding.termsPrivacy.movementMethod = LinkMovementMethod.getInstance()
+
+        binding.termsPrivacy.text = sp
+
     }
 
     private fun onTextChange() {

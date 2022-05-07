@@ -115,6 +115,7 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
                 loadingFragment?.dismiss()
 
                 if (it1.isSuccessful) {
+
                     Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG)
                         .setBehavior(NoSwipeBehavior())
                         .show()

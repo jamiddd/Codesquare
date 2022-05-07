@@ -36,8 +36,6 @@ import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
 class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
 
-
-
     // just for external use cases
     lateinit var post: Post
     private lateinit var binding: PostItemBinding

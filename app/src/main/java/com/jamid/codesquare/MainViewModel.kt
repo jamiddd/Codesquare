@@ -142,10 +142,10 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         try {
             val index = client.initIndex(IndexName("interests"))
             val response = index.search(com.algolia.search.model.search.Query(query))
-            val results = response.hits.deserialize(Interest.serializer())
+            val results = response.hits.deserialize(InterestItem.serializer())
             val searchData = mutableListOf<SearchQuery>()
             for (result in results) {
-                val searchQuery = SearchQuery(result.id, result.interest, System.currentTimeMillis(), QUERY_TYPE_INTEREST)
+                val searchQuery = SearchQuery(result.objectID, result.content, System.currentTimeMillis(), QUERY_TYPE_INTEREST)
                 searchData.add(searchQuery)
             }
 
@@ -158,8 +158,8 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     }
 
-    private fun insertInterests(vararg interests: Interest) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertInterests(interests)
+    private fun insertInterests(vararg interests: InterestItem) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertInterestItems(interests.toList())
     }
 
     val recentPostSearchList = MutableLiveData<List<PostMinimal2>>()
@@ -354,6 +354,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         FireUtility.updateUser2(changes) {
             onComplete(it)
             if (it.isSuccessful) {
+                insertUser(updatedUser)
                 insertCurrentUser(updatedUser)
                 updateLocalPosts(updatedUser, updatedUser.posts)
                 updateLocalMessages(updatedUser)
@@ -617,7 +618,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
             if (it.isSuccessful) {
 
-                onCommentSend(comment, parent)
+                onCommentSend(comment)
 
                 if (notification.senderId != notification.receiverId) {
                     FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
@@ -640,7 +641,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         }
     }
 
-    private fun onCommentSend(comment: Comment, parent: Any) = viewModelScope.launch (Dispatchers.IO) {
+    private fun onCommentSend(comment: Comment) = viewModelScope.launch (Dispatchers.IO) {
         val post = getLocalPost(comment.postId)
         if (post != null) {
             post.commentsCount += 1
@@ -1389,7 +1390,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun insertPost(post: Post) = viewModelScope.launch (Dispatchers.IO) {
         insertPostToCache(post)
-        updateLocalPost(post)
+        repo.insertPosts(arrayOf(post))
     }
 
     private val _isNewPostCreated = MutableLiveData<Boolean?>()
@@ -1432,6 +1433,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun getUnreadInviteNotifications(): LiveData<List<Notification>> {
         return repo.getUnreadInviteNotifications()
+    }
+
+    fun updateChatChannel(chatChannel: ChatChannel) = viewModelScope.launch (Dispatchers.IO) {
+        repo.updateChatChannel(chatChannel)
+    }
+
+    fun getUnreadChatChannels() : LiveData<List<ChatChannel>> {
+        return repo.getUnreadChatChannels()
     }
 
 

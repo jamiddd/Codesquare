@@ -93,13 +93,16 @@
         app:layout_anchorGravity="bottom"
         tools:visibility="visible" />
 
-
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/comment_bottom_root"
         android:layout_width="match_parent"
+
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        app:cardElevation="20dp">
+        android:translationY="200dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="20dp"
+        tools:visibility="gone">
 
         <LinearLayout
             android:id="@+id/comment_bottom_linear_vertical"
@@ -172,8 +175,7 @@
                     android:paddingStart="12dp"
                     android:paddingTop="8dp"
                     android:paddingEnd="12dp"
-                    android:paddingBottom="8dp"
-                    android:textColorHint="#546E7A" />
+                    android:paddingBottom="8dp" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/comment_send_btn"
@@ -203,7 +205,11 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
-        android:visibility="gone" />
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:textAppearance="@style/AppTheme.ActionChipTextAppearance1"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
     <!--<com.google.android.gms.ads.AdView
         android:id="@+id/adView2"

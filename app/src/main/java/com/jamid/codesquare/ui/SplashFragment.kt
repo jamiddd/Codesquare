@@ -34,6 +34,7 @@ class SplashFragment: Fragment() {
                 if (isSignedIn) {
                     if (UserManager.isEmailVerified) {
                         findNavController().navigate(R.id.homeFragment, null, slideRightNavOptions())
+//                        findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
                     } else {
                         findNavController().navigate(R.id.emailVerificationFragment, null, slideRightNavOptions())
                     }

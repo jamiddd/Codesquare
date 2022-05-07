@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setMargins
@@ -41,7 +40,6 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFrag
 
     open fun getItems(func: suspend () -> Flow<PagingData<T>>) {
         job?.cancel()
-        Log.d(TAG, "getItems: Cancelling job")
         job = viewLifecycleOwner.lifecycleScope.launch {
             func().collectLatest {
                 pagingAdapter.submitData(it)
@@ -89,8 +87,23 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFrag
             adapter = pagingAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }
+
         addLoadListener()
+
+        setSwipeRefresher()
+    }
+
+    open fun setSwipeRefresher(onRefresh: (() -> Unit)? = null) {
         binding.pagerRefresher.setDefaultSwipeRefreshLayoutUi()
+
+        binding.pagerRefresher.setOnRefreshListener {
+            if (onRefresh != null) {
+                onRefresh()
+            } else {
+                pagingAdapter.refresh()
+            }
+        }
+
     }
 
     open fun addLoadListener() {
@@ -155,7 +168,6 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFrag
 
                 when (it.append) {
                     is LoadState.Loading -> {
-                        Log.d(TAG, "Append function - Loading")
                         // when append is loading
                         if (shouldShowProgress) {
                             binding.pagerRefresher.isRefreshing = true
@@ -164,8 +176,6 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFrag
                         binding.noDataImage.hide()
                     }
                     is LoadState.Error -> {
-                        Log.d(TAG, "Append function - Error")
-
                         // when append went wrong
                         // when something went wrong while refreshing
                         binding.pagerRefresher.isRefreshing = false
@@ -206,10 +216,6 @@ abstract class PagerListFragment<T: Any, VH: RecyclerView.ViewHolder> : BaseFrag
                 }
             }
         }
-    }
-
-    companion object {
-        private const val TAG = "PagerListFragment"
     }
 
 }

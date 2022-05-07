@@ -11,7 +11,7 @@ import com.jamid.codesquare.data.dao.*
 
 @Database(
     entities = [InterestItem::class, ReferenceItem::class, LikedBy::class, Post::class, User::class, Interest::class, PostInvite::class, ChatChannel::class, Message::class, PostRequest::class, Comment::class, Notification::class, SearchQuery::class],
-    version = 18
+    version = 19
 )
 @TypeConverters(Converters::class)
 abstract class CollabDatabase : RoomDatabase() {

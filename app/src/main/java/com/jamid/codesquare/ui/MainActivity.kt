@@ -6,7 +6,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.net.*
 import android.os.Bundle
 import android.os.Environment
@@ -16,8 +18,10 @@ import android.view.View
 import androidx.activity.addCallback
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.animation.doOnEnd
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.lifecycle.lifecycleScope
@@ -30,7 +34,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
@@ -40,7 +43,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.chip.ChipDrawable
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
@@ -112,11 +115,18 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                                 if (navController.currentDestination?.id == R.id.chatContainerSample)
                                     return@getChatChannel
 
+                                if (navController.currentDestination?.id == R.id.homeFragment && binding.mainTabLayout.selectedTabPosition == 1) {
+                                    return@getChatChannel
+                                }
+
                                 val lastMessage = chatChannel.lastMessage
                                 if (lastMessage != null) {
-                                    Snackbar.make(binding.root, "${chatChannel.postTitle}: ${lastMessage.sender.name} has sent a message", Snackbar.LENGTH_INDEFINITE).setAction("View"){
+                                    showCustomChipNotification("${chatChannel.postTitle}: ${lastMessage.sender.name} has sent a message", chatChannel.postImage) {
                                         onChannelClick(chatChannel)
-                                    }.setBehavior(NoSwipeBehavior()).show()
+                                    }
+                                    /*Snackbar.make(binding.root, "${chatChannel.postTitle}: ${lastMessage.sender.name} has sent a message", Snackbar.LENGTH_INDEFINITE).setAction("View"){
+                                        onChannelClick(chatChannel)
+                                    }.setBehavior(NoSwipeBehavior()).show()*/
                                 }
                             }
                         }
@@ -124,6 +134,67 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
         }
+    }
+
+    private fun getBitmapDrawable(bitmap: Bitmap): Drawable {
+        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.height, bitmap.height, false)
+        val length = resources.getDimension(R.dimen.unit_len) * 6
+        val drawable = RoundedBitmapDrawableFactory.create(resources, scaledBitmap).also {
+            it.cornerRadius = length
+        }
+        return drawable
+    }
+
+    fun showCustomChipNotification(msg: String, image: String? = null, onClick: () -> Unit) {
+        binding.mainNotifyChip.text = msg
+
+        var dy = resources.getDimension(R.dimen.action_height)
+        // default 56dp
+
+        if (binding.mainTabLayout.isVisible) {
+            // add extra 64 dp
+            dy += resources.getDimension(R.dimen.large_padding)
+        }
+
+        if (image != null) {
+            binding.mainNotifyChip.isChipIconVisible = true
+            downloadBitmapUsingFresco(this, image) { i ->
+                runOnUiThread {
+                    if (i != null) {
+                        binding.mainNotifyChip.chipIcon = getBitmapDrawable(i)
+                    }
+                }
+            }
+        }
+
+        binding.mainNotifyChip.show()
+
+        fun slideReset() {
+            val slideResetAni = binding.mainNotifyChip.slideReset()
+            slideResetAni.doOnEnd {
+                binding.mainNotifyChip.hide()
+            }
+        }
+
+        // auto
+        val slideDownAni = binding.mainNotifyChip.slideDown(dy)
+        slideDownAni.doOnEnd {
+            lifecycleScope.launch {
+                delay(5000)
+
+                runOnUiThread {
+                    if (binding.mainNotifyChip.translationY != 0f) {
+                       slideReset()
+                    }
+                }
+            }
+        }
+
+        binding.mainNotifyChip.setOnClickListener {
+            slideReset()
+            onClick()
+        }
+
     }
 
     private val notificationReceiver = object : BroadcastReceiver() {
@@ -219,6 +290,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 if (navController.currentDestination?.id == R.id.homeFragment) {
                     val badgeDrawable = BadgeDrawable.create(this)
                     badgeDrawable.number = it.size
+                    badgeDrawable.badgeTextColor = getColorResource(R.color.white)
                     attachBadgeDrawable(badgeDrawable, binding.mainToolbar, R.id.notifications)
                 }
             }
@@ -280,10 +352,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         setBroadcastReceivers()
 
-
 //        binding.navHostFragment
-
-
     }
 
     private fun getCurrentFragmentInfo(navHostFragment: NavHostFragment) {
@@ -355,11 +424,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
 
-
-        navHostFragment.childFragmentManager.addOnBackStackChangedListener {
-            getCurrentFragmentInfo(navHostFragment)
-        }
-
         navController = navHostFragment.navController
 
         val appBarConfiguration = AppBarConfiguration(setOf(R.id.homeFragment, R.id.loginFragment))
@@ -374,6 +438,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
             invalidateOptionsMenu()
 
+            invalidateTabLayoutBadges()
+
             binding.mainToolbar.setNavigationOnClickListener {
                 navController.navigateUp()
             }
@@ -385,11 +451,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             binding.commentBottomRoot.slideDown(dy)
 
             binding.mainProgressBar.hide()
-
-            if (destination.id != R.id.chatContainerSample) {
-                binding.mainToolbar.findViewWithTag<SimpleDraweeView>("post_icon")?.hide()
-                binding.mainToolbar.findViewWithTag<MaterialButton>("post_option")?.hide()
-            }
 
             if (destination.id != R.id.homeFragment) {
                 binding.mainPrimaryBtn.hide()
@@ -457,6 +518,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     baseFragmentBehavior = null
                 )
                 else -> updateUi()
+            }
+        }
+    }
+
+    private fun invalidateTabLayoutBadges() {
+        val acceptedFragments = listOf(R.id.homeFragment, R.id.notificationCenterFragment)
+        if (!acceptedFragments.contains(navController.currentDestination?.id)) {
+            for (i in 0 until binding.mainTabLayout.tabCount) {
+                binding.mainTabLayout.getTabAt(i)?.removeBadge()
             }
         }
     }
@@ -583,19 +653,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             binding.mainToolbar.subtitle = null
         }
 
-        /*if (shouldShowAd) {
-
-            if (shouldShowAd(navController.currentDestination!!.id,
-                    isNetworkAvailable
-                )
-            ) {
-                binding.adView2.show()
-                binding.hideAdBtn.show()
-            }
-        } else {
-            binding.adView2.hide()
-            binding.hideAdBtn.hide()
-        }*/
     }
 
 
@@ -666,8 +723,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 if (it.isSuccessful) {
                     // check if notification already exists
                     onChange(newPost)
-                    viewModel.insertPosts(newPost)
-                    viewModel.insertPostToCache(newPost)
+                    viewModel.insertPost(newPost)
                     sendNotificationImpulsive(notification)
                 } else {
                     viewModel.setCurrentError(it.exception)
@@ -715,7 +771,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         playBillingController.isPurchaseAcknowledged.observe(this) { isPurchaseAcknowledged ->
             if (isPurchaseAcknowledged == true) {
-                subscriptionFragment?.dismiss()
+                if (subscriptionFragment != null && subscriptionFragment!!.isVisible) {
+                    subscriptionFragment!!.dismiss()
+                }
                 navController.navigate(R.id.subscriberFragment, null, slideRightNavOptions())
             }
         }
@@ -725,7 +783,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
             when (premiumState) {
                 STATE_NO_PURCHASE -> {
-                    subscriptionFragment?.dismiss()
+                    if (subscriptionFragment != null && subscriptionFragment!!.isVisible) {
+                        subscriptionFragment!!.dismiss()
+                    }
                 }
                 STATE_HALF_PURCHASE -> {
                     //
@@ -1495,10 +1555,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         val (choices, icons) = if (isCommentByMe) {
             name = "You"
-            arrayListOf(OPTION_29, OPTION_30) to arrayListOf(R.drawable.ic_report, R.drawable.ic_remove)
+            arrayListOf(OPTION_29, OPTION_30) to arrayListOf(R.drawable.ic_round_report_24, R.drawable.ic_round_delete_24)
         } else {
             name = comment.sender.name
-            arrayListOf(OPTION_29) to arrayListOf(R.drawable.ic_report)
+            arrayListOf(OPTION_29) to arrayListOf(R.drawable.ic_round_report_24)
         }
 
         optionsFragment = OptionsFragment.newInstance(title = "Comment by $name", options = choices, icons = icons, comment = comment)
@@ -1530,7 +1590,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     }
 
+    override fun onCommentInfoClick(comment: Comment) {
+        val bundle = bundleOf(COMMENT to comment)
+        navController.navigate(R.id.commentLikesFragment, bundle, slideRightNavOptions())
+    }
+
     override fun onChannelClick(chatChannel: ChatChannel) {
+        chatChannel.isNewLastMessage = false
+        viewModel.updateChatChannel(chatChannel)
+
         val bundle = bundleOf(
             CHAT_CHANNEL to chatChannel,
             TITLE to chatChannel.postTitle
@@ -1684,9 +1752,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         lifecycleScope.launch {
             delay(500)
-            imageViewBinding.fullscreenImage.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                width = ConstraintLayout.LayoutParams.MATCH_PARENT
-                height = ConstraintLayout.LayoutParams.MATCH_PARENT
+            runOnUiThread {
+                imageViewBinding.fullscreenImage.updateLayoutParams<ConstraintLayout.LayoutParams> {
+                    width = ConstraintLayout.LayoutParams.MATCH_PARENT
+                    height = ConstraintLayout.LayoutParams.MATCH_PARENT
+                }
             }
         }
 
@@ -1741,7 +1811,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         if (appbar?.translationY == 0f) {
             val dy = resources.getDimension(R.dimen.appbar_slide_translation)
             appbar.slideUp(dy)
-            backgroundView.setBackgroundColor(Color.BLACK)
+
+            backgroundView.setBackgroundColor(getColorResource(R.color.dank_grey))
 
             val dy1 = resources.getDimension(R.dimen.image_info_translation)
             bottomInfoView.slideDown(dy1)

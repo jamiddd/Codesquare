@@ -104,6 +104,14 @@
             app:title="Feedback" />
 
         <Preference
+            app:key="terms_and_conditions"
+            app:title="Terms and conditions"/>
+
+        <Preference
+            app:key="privacy_policy"
+            app:title="Privacy and policy" />
+
+        <Preference
             app:key="version"
             app:summary="1.0.0"
             app:title="Version" />

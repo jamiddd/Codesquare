@@ -5,6 +5,8 @@ import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.firebase.firestore.Exclude
+import com.google.firebase.firestore.IgnoreExtraProperties
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
@@ -12,6 +14,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @Entity(tableName = "chat_channels")
 @Keep
+@IgnoreExtraProperties
 data class ChatChannel(
     @PrimaryKey(autoGenerate = false)
     var chatChannelId: String,
@@ -28,6 +31,8 @@ data class ChatChannel(
     var lastMessage: Message?,
     var tokens: List<String>,
     var blockedUsers: List<String> = emptyList(),
+    @Exclude @set: Exclude @get: Exclude
+    var isNewLastMessage: Boolean = false,
     var archived: Boolean = false
 ): Parcelable {
     constructor(): this(randomId(), "", "", "", 0, emptyList(), emptyList(), "Pssst \uD83E\uDD2D .. No rules written yet ... update it soon before other contributors join. \uD83D\uDE0E \uD83E\uDD73", System.currentTimeMillis(), System.currentTimeMillis(), null, emptyList(), emptyList())

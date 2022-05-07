@@ -2,12 +2,9 @@ package com.jamid.codesquare.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
@@ -21,26 +18,21 @@ import com.jamid.codesquare.databinding.FragmentReportBinding
 import com.jamid.codesquare.listeners.ImageClickListener
 
 @ExperimentalPagingApi
-class ReportFragment: Fragment(), ImageClickListener {
+class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), ImageClickListener {
 
-    private lateinit var binding: FragmentReportBinding
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
     private val reportViewModel: ReportViewModel by viewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentReportBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentReportBinding {
+        return FragmentReportBinding.inflate(layoutInflater)
     }
 
     @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val report = arguments?.getParcelable<Report>("report") ?: return
+        val report = arguments?.getParcelable<Report>(REPORT) ?: return
+
         binding.contextImg.setImageURI(report.image)
         binding.contextName.text = report.title
 
@@ -125,7 +117,7 @@ class ReportFragment: Fragment(), ImageClickListener {
         } else {
             binding.reportAddScreenshots.text = getString(R.string.add_images)
             binding.reportAddScreenshots.setOnClickListener {
-                (activity as MainActivity).selectImage(ImageSelectType.IMAGE_REPORT)
+                activity.selectImage(ImageSelectType.IMAGE_REPORT)
             }
         }
     }
@@ -136,7 +128,7 @@ class ReportFragment: Fragment(), ImageClickListener {
     }
 
     override fun onImageClick(view: View, image: Image) {
-        (activity as MainActivity).showImageViewFragment(view, image)
+        activity.showImageViewFragment(view, image)
     }
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {

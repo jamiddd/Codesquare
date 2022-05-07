@@ -5,7 +5,6 @@ import android.util.Log
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.view.children
-import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -14,7 +13,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayout
 import com.google.android.flexbox.FlexboxLayoutManager
 import com.google.android.material.chip.Chip
 import com.google.firebase.firestore.ktx.firestore
@@ -124,21 +122,27 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
 
         binding.interestSearchText.doAfterTextChanged {
             if (!it.isNullOrBlank()) {
-                binding.searchActionBtn.isEnabled = true
-                binding.searchActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+                binding.interestSearchTextInputLayout.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_add_24)
+
                 viewModel.searchInterests(it.toString())
+
+                binding.interestSearchTextInputLayout.setEndIconOnClickListener {
+                    val tag = binding.interestSearchText.text.toString()
+                    insertInterestItem(tag)
+                    binding.interestSearchText.text?.clear()
+                }
+
             } else {
-                binding.searchActionBtn.isEnabled = false
-                binding.searchActionBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_search_24)
+                binding.interestSearchTextInputLayout.endIconDrawable = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_search_24)
                 viewModel.setSearchData(emptyList())
+
+                binding.interestSearchTextInputLayout.setEndIconOnClickListener {
+
+                }
             }
         }
 
-        binding.searchActionBtn.setOnClickListener {
-            val tag = binding.interestSearchText.text.toString()
-            insertInterestItem(tag)
-            binding.interestSearchText.text.clear()
-        }
+
 
         /*val alphabets = "abcdefghijklmnopqrstuvwxyz"
 
@@ -210,14 +214,10 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
 
     }*/
 
-    companion object {
-        private const val TAG = "UserInfoFragment"
-    }
-
     override fun onSearchItemClick(searchQuery: SearchQuery) {
         val interest = searchQuery.queryString
         insertInterestItem(interest)
-        binding.interestSearchText.text.clear()
+        binding.interestSearchText.text?.clear()
     }
 
     private fun insertInterestItem(tag: String) {
@@ -236,7 +236,7 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
         )
 
         FireUtility.insertInterestItem(interestItem) {
-            binding.interestSearchText.text.clear()
+            binding.interestSearchText.text?.clear()
 
             if (it.isSuccessful) {
                 viewModel.insertInterestItem(interestItem)

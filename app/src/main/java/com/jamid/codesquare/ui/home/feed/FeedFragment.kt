@@ -64,144 +64,8 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
 
         binding.pagerItemsRecycler.itemAnimator = null
 
-        /*binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (!recyclerView.canScrollVertically(View.FOCUS_DOWN)) {
-
-                    if (!recyclerView.canScrollVertically(View.FOCUS_UP)) {
-                        // either there's no posts, or 1 post
-                    } else {
-                        activity.binding.mainPrimaryBtn.hide()
-                    }
-
-                } else {
-                    activity.binding.mainPrimaryBtn.show()
-                }
-            }
-        })*/
-
         val largeBottomPadding = resources.getDimension(R.dimen.extra_comfort_len)
         binding.pagerItemsRecycler.setPadding(0, 0, 0, largeBottomPadding.toInt())
-
-//        binding.root.removeView(binding.noDataImage)
-
-       /* val tagsContainerView = layoutInflater.inflate(R.layout.tags_container, null, false)
-        tagsContainerBinding = TagsContainerBinding.bind(tagsContainerView)*/
-
-       /* OverScrollDecoratorHelper.setUpOverScroll(tagsContainerBinding.tagsContainer)
-
-        tagsContainerBinding.tagsContainer.setOnScrollChangeListener { _, _, _, _, _ ->
-            if (tagsContainerBinding.tagsContainer.canScrollHorizontally(1)) {
-                tagsContainerBinding.nextTagBtn.show()
-            } else {
-                tagsContainerBinding.nextTagBtn.hide()
-            }
-
-            if (tagsContainerBinding.tagsContainer.canScrollHorizontally(-1)) {
-                tagsContainerBinding.prevTagBtn.show()
-            } else {
-                tagsContainerBinding.prevTagBtn.hide()
-            }
-        }
-
-        tagsContainerBinding.nextTagBtn.setOnClickListener {
-            tagsContainerBinding.tagsContainer.smoothScrollTo(tagsContainerBinding.tagsContainer.scrollX + 380, tagsContainerBinding.tagsContainer.scrollY)
-        }
-
-        tagsContainerBinding.prevTagBtn.setOnClickListener {
-            tagsContainerBinding.tagsContainer.smoothScrollTo(tagsContainerBinding.tagsContainer.scrollX - 380, tagsContainerBinding.tagsContainer.scrollY)
-        }
-
-        binding.pagerRoot.addView(tagsContainerBinding.root)
-
-        tagsContainerView.updateLayoutParams<ConstraintLayout.LayoutParams> {
-            startToStart = binding.pagerRoot.id
-            topToTop = binding.pagerRoot.id
-            endToEnd = binding.pagerRoot.id
-            height = ConstraintLayout.LayoutParams.WRAP_CONTENT
-            width = ConstraintLayout.LayoutParams.MATCH_PARENT
-        }
-
-        val touchLength = resources.getDimension(R.dimen.touch_len).toInt()
-        val bottomPadding = resources.getDimension(R.dimen.generic_len).toInt() * 10
-        binding.pagerItemsRecycler.setPadding(0, touchLength, 0, bottomPadding)
-
-        setRandomButton(tagsContainerBinding.random)
-
-        setLocationButton(tagsContainerBinding.nearMe)
-
-        viewModel.currentUser.observe(viewLifecycleOwner) {
-            if (it != null) {
-
-                tagsContainerBinding.tagsHolder.removeViews(2, tagsContainerBinding.tagsHolder.childCount - 2)
-
-                if (it.interests.isEmpty()) {
-                    tagsContainerBinding.nextTagBtn.hide()
-                    tagsContainerBinding.prevTagBtn.hide()
-                    tagsContainerBinding.tagsHolder.addUpdateInterestButton()
-                } else {
-                    tagsContainerBinding.prevTagBtn.hide()
-                    tagsContainerBinding.nextTagBtn.show()
-                    for (interest in it.interests) {
-                        tagsContainerBinding.tagsHolder.addTag(interest)
-                    }
-                }
-
-                if (isEmpty.value == true) {
-                    pagingAdapter.refresh()
-                }
-
-            }
-        }
-
-        showFilterTagsTooltip(tagsContainerView)
-
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-
-        val screenWidth = getWindowWidth()
-
-        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    val layoutManager = (recyclerView.layoutManager as LinearLayoutManager)
-                    val pos = layoutManager.findFirstCompletelyVisibleItemPosition()
-
-                    if (pos > 4) {
-                        // that means the user has scrolled way bottom for the first time
-                        if (toolbar != null)
-                            showToolbarClickTooltip(toolbar)
-
-                    }
-
-                    val checkedId = tagsContainerBinding.tagsHolder.checkedChipId
-                    val v = tagsContainerBinding.tagsHolder.findViewById<View>(checkedId)
-                    if (v != null) {
-                        val location = intArrayOf(0, 0)
-                        v.getLocationInWindow(location)
-
-                        val x1 = location[0]
-                        val y1 = location[1]
-                        when {
-                            x1 < 0 -> {
-                                // left side of the screen
-                                tagsContainerBinding.tagsContainer.smoothScrollTo(x1, y1)
-                            }
-                            x1 > screenWidth -> {
-                                // right side of the screen
-                                tagsContainerBinding.tagsContainer.smoothScrollTo(x1, y1)
-                            }
-                            else -> {
-                                // on the screen
-                            }
-                        }
-
-                    }
-                }
-            }
-        })*/
 
         binding.pagerItemsRecycler.doOnLayout {
             if (!activity.initialLoadWaitFinished) {
@@ -342,7 +206,6 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
             }
         }
 
-
         /*
 
         FUTURE IMPLEMENTATION
@@ -356,79 +219,6 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
         }*/
 
     }
-
-   /* private fun showToolbarClickTooltip(toolbar: View) {
-
-        val container = activity.binding.root
-        container.removeView(tooltipView)
-
-        val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val scrollToTopDialogFlag = sharedPref.getBoolean(PREF_SCROLL_TOP, true)
-
-        if (scrollToTopDialogFlag) {
-            tooltipView = showTooltip("Click on toolbar to scroll to top again", container, toolbar, AnchorSide.Bottom)
-
-            val editor = sharedPref.edit()
-            editor.putBoolean(PREF_SCROLL_TOP, false)
-            editor.apply()
-        }
-
-    }
-
-    private fun showFilterTagsTooltip(tagsContainer: View) = viewLifecycleOwner.lifecycleScope.launch {
-
-        delay(1500)
-
-        requireActivity().runOnUiThread {
-            val container = activity.binding.root
-            container.removeView(tooltipView)
-
-            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-            val feedTagsDialogFlag = sharedPref.getBoolean(PREF_POST_TAGS, true)
-            if (feedTagsDialogFlag) {
-                tooltipView = showTooltip("Filter posts by tags", container, tagsContainer, AnchorSide.Bottom)
-
-                val editor = sharedPref.edit()
-                editor.putBoolean(PREF_POST_TAGS, false)
-                editor.apply()
-            }
-        }
-    }*/
-
-   /* private fun setLocationButton(locationBtn: Chip) {
-
-        locationBtn.apply {
-            isCloseIconVisible = false
-        }
-
-        locationBtn.setOnClickListener {
-            if (!isLocationListenerSet) {
-                isLocationListenerSet = true
-                activity.attachFragmentWithLocationListener(this)
-            }
-            binding.pagerNoItemsText.text = getString(R.string.no_location_posts)
-        }
-    }
-
-    private fun setRandomButton(random: Chip) {
-
-        random.setOnClickListener {
-
-            binding.pagerNoItemsText.text = getString(R.string.no_posts)
-
-            viewModel.disableLocationBasedPosts()
-
-            getItems {
-                viewModel.getFeedItems(query)
-            }
-        }
-
-        random.apply {
-            isCloseIconVisible = false
-        }
-
-
-    }*/
 
     private fun searchBasedOnLocation(geoLocation: GeoLocation, tag: String? = null) {
         if (!searchInProgress){
@@ -503,58 +293,7 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
         }
     }
 
-   /* private fun ChipGroup.addUpdateInterestButton() {
-        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
-        chip.text = requireContext().getString(R.string.update_interests)
-        chip.isCheckable = false
-        chip.isCloseIconVisible = false
-
-        chip.setOnClickListener {
-            findNavController().navigate(R.id.editProfileFragment, null)
-        }
-
-        addView(chip)
-
-    }*/
-
-   /* private fun ChipGroup.addTag(tag: String) {
-
-        tag.trim()
-        val lContext = requireContext()
-        val chip = View.inflate(lContext, R.layout.choice_chip, null) as Chip
-
-        val t1 = tag.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-        val t2 = tag.uppercase()
-        val t3 = tag.lowercase()
-
-        chip.apply {
-            isCheckable = true
-            text = tag
-            isCloseIconVisible = false
-            addView(this)
-
-            setOnClickListener {
-                val noItemsText = "No posts related to $tag"
-                binding.pagerNoItemsText.text = noItemsText
-
-                viewModel.disableLocationBasedPosts()
-
-                val query = Firebase.firestore.collection(POSTS)
-                    .whereEqualTo(ARCHIVED, false)
-                    .whereArrayContainsAny("tags", listOf(tag, t1, t2, t3))
-                    .orderBy("viewsCount", Query.Direction.DESCENDING)
-
-                getItems {
-                    viewModel.getFeedItems(query, tag)
-                }
-            }
-        }
-    }*/
-
     companion object {
-
-        private const val TAG = "FeedFragment"
-
         @JvmStatic
         fun newInstance() = FeedFragment()
     }
@@ -595,8 +334,6 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
     }
 
     private fun updateUiOnError(msg: String) {
-        // fallback from location based search
-//        tagsContainerBinding.random.performClick()
         viewModel.setDefaultFeedOption()
         locationBasedSnackBars?.dismiss()
 

@@ -36,8 +36,10 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        if ((parentFragment as PostFragmentContainer).getCurrentFragmentTag() == TAG) {
-            activity.binding.mainToolbar.menu.clear()
+        if (parentFragment is PostFragmentContainer) {
+            if ((parentFragment as PostFragmentContainer).getCurrentFragmentTag() == TAG) {
+                activity.binding.mainToolbar.menu.clear()
+            }
         }
     }
 
@@ -48,8 +50,8 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
         val title = arguments?.getString(TITLE)
         val subtitle = arguments?.getString(SUB_TITLE)
 
-        (activity as MainActivity?)?.binding?.mainToolbar?.title = title
-        (activity as MainActivity?)?.binding?.mainToolbar?.subtitle = subtitle
+        activity.binding.mainToolbar.title = title
+        activity.binding.mainToolbar.subtitle = subtitle
 
         userAdapter = UserAdapter(small = true, grid = true)
 
@@ -59,6 +61,8 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
         }
 
         getContributors()
+
+        binding.contributorsRefresher.setDefaultSwipeRefreshLayoutUi()
 
         binding.contributorsRefresher.setOnRefreshListener {
             getContributors()
@@ -71,6 +75,7 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
             .whereArrayContains(CHAT_CHANNELS, post.chatChannel)
             .get()
             .addOnSuccessListener {
+                binding.contributorsRefresher.isRefreshing = false
                 if (it != null && !it.isEmpty) {
                     val contributors = mutableListOf<User>()
                     val users = it.toObjects(User::class.java)
@@ -80,7 +85,6 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
                     for (user in users) {
                         viewModel.insertUserToCache(user)
                     }
-
                 }
             }.addOnFailureListener {
                 Log.e(TAG, "onViewCreated: ${it.localizedMessage}")

@@ -4,10 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.LIKED_USERS
-import com.jamid.codesquare.R
-import com.jamid.codesquare.USERS
-import com.jamid.codesquare.USER_ID
+import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.LikedByAdapter
 import com.jamid.codesquare.adapter.recyclerview.PagingUserAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserViewHolder
@@ -23,7 +20,8 @@ class UserLikesFragment: PagerListFragment<LikedBy, UserViewHolder>() {
         val userId = arguments?.getString(USER_ID) ?: return
 
         val query = Firebase.firestore.collection(USERS)
-            .whereArrayContains(LIKED_USERS, userId)
+            .document(userId)
+            .collection("likedBy")
 
         getItems {
             viewModel.getLikes(query)

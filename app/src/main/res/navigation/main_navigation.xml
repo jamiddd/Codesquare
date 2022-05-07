@@ -278,4 +278,9 @@
         tools:layout="@layout/fragment_extra"
         android:label="Add Interest to Database" />
 
+    <fragment
+        android:id="@+id/commentLikesFragment"
+        android:name="com.jamid.codesquare.ui.CommentLikesFragment"
+        android:label="Liked by" />
+
 </navigation>

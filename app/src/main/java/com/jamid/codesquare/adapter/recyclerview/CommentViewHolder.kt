@@ -1,9 +1,14 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.text.SpannableString
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -44,7 +49,6 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
 
             setCommentLikeBtn(comment)
 
-
             view.setOnClickListener {
                 commentListener.onClick(comment)
             }
@@ -83,7 +87,24 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
 
     private fun setLikeAndReplies(comment: Comment) {
         val likeRepliesText = "${comment.likesCount} Likes • ${comment.repliesCount} Replies"
-        binding.commentLikesReplies.text = likeRepliesText
+
+        val sp = SpannableString(likeRepliesText)
+        val cs = object: ClickableSpan() {
+            override fun onClick(p0: View) {
+                commentListener.onCommentInfoClick(comment)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val greyColor = ContextCompat.getColor(view.context, R.color.darker_grey)
+                ds.color = greyColor
+            }
+        }
+
+        sp.setSpan(cs, 0, comment.likesCount.toString().length + 6, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        binding.commentLikesReplies.movementMethod = LinkMovementMethod.getInstance()
+        binding.commentLikesReplies.text = sp
     }
 
     companion object {

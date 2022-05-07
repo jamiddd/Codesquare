@@ -63,20 +63,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         setOtherFunctions()
 
-//        val adminSection = findPreference<PreferenceCategory>("admin")
         val addInterest = findPreference<Preference>("admin_add_interest")
-
-        addInterest?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.extraFragment, null, slideRightNavOptions())
-            true
+        val acceptedEmails = listOf("jamiddeka1@gmail.com", "lunabarua1@gmail.com")
+        if (!acceptedEmails.contains(UserManager.currentUser.email)) {
+            val adminSection = findPreference<PreferenceCategory>("admin_section")
+            adminSection?.isVisible = false
+        } else {
+            addInterest?.setOnPreferenceClickListener {
+                findNavController().navigate(R.id.extraFragment, null, slideRightNavOptions())
+                true
+            }
         }
 
-        /*val currentUser = UserManager.currentUser
-        if (currentUser.email != "jamiddeka1@gmail.com") {
-            adminSection?.isEnabled = false
-        } else {
 
-        }*/
 
     }
 
@@ -321,6 +320,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
             findNavController().navigate(R.id.feedbackFragment, null, slideRightNavOptions())
             true
         }
+
+        val termsAndConditions = findPreference<Preference>("terms_and_conditions")
+        termsAndConditions?.setOnPreferenceClickListener {
+            (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/terms-and-conditions")
+            true
+        }
+
+        val privacyPolicy =findPreference<Preference>("privacy_policy")
+        privacyPolicy?.setOnPreferenceClickListener {
+            (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/home")
+            true
+        }
+
     }
 
     companion object {

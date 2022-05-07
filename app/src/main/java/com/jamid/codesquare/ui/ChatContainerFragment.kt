@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -11,13 +10,10 @@ import android.view.*
 import androidx.activity.addCallback
 import androidx.core.animation.doOnEnd
 import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
 import androidx.core.view.*
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
@@ -38,39 +34,19 @@ import com.jamid.codesquare.listeners.DocumentClickListener
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.ui.home.chat.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
 
-/**
- *
- * Desc: This is a fragment which controls most of chat related activities
- *
- * Main components of this fragment
- * 1. Send button - the send button can behave differently at different times
- *         a) When there is reply message
- *         b) When there are images and documents
- * 2. Bottom layout for messaging
- * 3. Bottom layout for chat options
- * 4. Toolbar navigation for child fragments
- *         a) back navigation
- *         b) navigation inside this fragment
- *         c) Control postIcon and optionBtn
- *
- * */
 @ExperimentalPagingApi
 class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>(), ImageClickListener, OptionClickListener, DocumentClickListener {
 
     override val viewModel: MainViewModel by activityViewModels()
     private lateinit var chatChannel: ChatChannel
     private lateinit var post: Post
-    private lateinit var toolbar: MaterialToolbar
     private var isSingleSelectedMessage = false
     private var currentMessage: Message? = null
     var isInProgressMode = false
-
-    private val menuObservable = MutableLiveData<Menu>()
+    private var contributorsListener: ListenerRegistration? = null
     private var chatListener: ListenerRegistration? = null
 
     override fun getViewBinding(): FragmentChatContainerBinding {
@@ -78,11 +54,11 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
     }
 
     private val imagesDir: File by lazy {
-        requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
     }
     private val documentsDir: File by lazy {
-        requireActivity().getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+        activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
             ?: throw NullPointerException("Couldn't get documents directory.")
     }
 
@@ -90,62 +66,6 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
     private lateinit var documentsAdapter: SmallDocumentsAdapter
     private lateinit var smallImagesAdapter: SmallImagesAdapter
     private var isChatFragment = true
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        toolbar = requireActivity().findViewById(R.id.main_toolbar)
-    }
-
-   /* override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.chat_detail_menu, menu)
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-        super.onPrepareOptionsMenu(menu)
-        menuObservable.postValue(menu)
-        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
-        setChannelIcon(menu, chatChannel.chatChannelId, chatChannel.postImage)
-        updateNecessaryItems()
-    }*/
-
-    /*private fun onMenuReady(z: Z) {
-        when (z.fragmentTag) {
-            ChatFragment.TAG -> {
-                updateUi(isPostOptionVisible = true)
-            }
-            ChatDetailFragment.TAG -> {
-                updateUi(isPostOptionVisible = true)
-            }
-            ChatMediaFragment.TAG -> {
-                updateUi(title="Media", isTabLayoutVisible = true)
-            }
-            MessageDetailFragment.TAG -> {
-                updateUi()
-            }
-            ChannelGuidelinesFragment.TAG -> {
-                updateUi("Post rules")
-            }
-            else -> updateUi()
-        }
-    }*/
-
-    /*override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.channel_icon -> {
-                val bundle = bundleOf(POST to post, CHAT_CHANNEL to chatChannel)
-                navigate(ChatDetailFragment.TAG, bundle)
-            }
-            R.id.channel_option -> {
-                val options = arrayListOf(OPTION_16, OPTION_15)
-                val icons = arrayListOf(R.drawable.ic_round_sticky_note_2_24, R.drawable.ic_round_edit_note_24)
-
-                activity.optionsFragment = OptionsFragment.newInstance(options = options, icons = icons, post = post)
-                activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }*/
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -164,7 +84,6 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 .show()
 
             greetingBinding.apply {
-
                 if (chatChannel.rules.isNotBlank()) {
                     val t = "Message by the admin:\n\n" + chatChannel.rules
                     chatRulesText.text = t
@@ -208,14 +127,14 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
 
-        toolbar.title = chatChannel.postTitle
+        activity.binding.mainToolbar.title = chatChannel.postTitle
 
         activity.getPostImpulsive(chatChannel.postId) {
             post = it
             init()
         }
 
-        Firebase.firestore.collection(USERS)
+        contributorsListener = Firebase.firestore.collection(USERS)
             .whereArrayContains(CHAT_CHANNEL, chatChannel.chatChannelId)
             .addSnapshotListener { value, error ->
                 if (error != null) {
@@ -227,15 +146,6 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                     viewModel.insertUsers(contributors)
                 }
             }
-
-        /*menuObservable.observe(viewLifecycleOwner) { menu ->
-            if (menu != null && menu.size == 2) {
-                updateNecessaryItems(menu)
-            }
-        }*/
-
-//        getCurrentFragmentInfo()
-
     }
 
     fun getCurrentFragmentTag(): String {
@@ -311,8 +221,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             val secondaryToolbar = requireActivity().findViewById<MaterialToolbar>(R.id.secondary_toolbar)
             val dy = resources.getDimension(R.dimen.appbar_slide_translation)
             if (viewModel.isSelectModeOn) {
-                toolbar.slideUp(dy)
-                toolbar.hide()
+                activity.binding.mainToolbar.slideUp(dy)
+                activity.binding.mainToolbar.hide()
                 secondaryToolbar?.show()
                 secondaryToolbar.slideReset()
                 secondaryToolbar.title = "${selectedMessages.size} Selected"
@@ -322,8 +232,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 }
 
             } else {
-                toolbar.slideReset()
-                toolbar.show()
+                activity.binding.mainToolbar.slideReset()
+                activity.binding.mainToolbar.show()
                 secondaryToolbar.slideUp(dy)
                 secondaryToolbar?.hide()
             }
@@ -376,7 +286,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 updateUi(title = "Media", isTabLayoutVisible = true)
             }
             childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)?.isVisible == true -> {
-                updateUi(isPostOptionVisible = true)
+                updateUi()
 
                 // TODO("need to do something about this")
                 val chatDetailFragment = childFragmentManager.findFragmentByTag(ChatDetailFragment.TAG)
@@ -395,43 +305,17 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 updateUi(title = "Forward")
             }
             childFragmentManager.findFragmentByTag(ChatFragment.TAG)?.isVisible == true -> {
-                updateUi(isPostIconVisible = true)
+                updateUi()
             }
         }
     }
 
     private fun updateUi(
         title: String = chatChannel.postTitle,
-        isPostIconVisible: Boolean = false,
-        isPostOptionVisible: Boolean = false,
         isTabLayoutVisible: Boolean = false,
         isChatOptionRootEnabled: Boolean = false
     ) {
         activity.binding.mainToolbar.title = title
-//        val size = activity.binding.mainToolbar.menu.size
-
-        Log.d(TAG, "updateUi")
-        
-
-       /* viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-            val ci = activity.findViewById<View>(R.id.channel_icon)
-            while (ci == null) {
-                Log.d(TAG, "updateUi: ci")
-            }
-            activity.runOnUiThread {
-                ci.isVisible = isPostIconVisible
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-            val co = activity.findViewById<View>(R.id.channel_option)
-            while (co == null) {
-                Log.d(TAG, "updateUi: co")
-            }
-            activity.runOnUiThread {
-                co.isVisible = isPostOptionVisible
-            }
-        }*/
 
         activity.binding.mainTabLayout.isVisible = isTabLayoutVisible
 
@@ -454,7 +338,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             onNavigation()
         }
 
-        toolbar.setNavigationOnClickListener {
+        activity.binding.mainToolbar.setNavigationOnClickListener {
             /*if (viewModel.chatFragmentStack.size != 1)
                 viewModel.chatFragmentStack.pop()*/
             onNavigation()
@@ -878,8 +762,6 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
      * */
     private fun cleanUp() {
         viewModel.disableSelectMode(chatChannel.chatChannelId)
-//        toolbar.removeView(moreBtn)
-//        toolbar.removeView(postIcon)
     }
 
     override fun onPause() {
@@ -887,10 +769,11 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         viewModel.disableSelectMode(chatChannel.chatChannelId)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         cleanUp()
         chatListener?.remove()
+        contributorsListener?.remove()
     }
 
     private fun createNewFileAndDownload(
@@ -1001,7 +884,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 currentMessage = message
 
                 val options = arrayListOf(OPTION_19, OPTION_20, OPTION_21, OPTION_22)
-                val icons = arrayListOf(R.drawable.ic_round_reply_24, R.drawable.ic_round_arrow_forward_24, R.drawable.ic_outline_info_24, R.drawable.ic_round_account_circle_24)
+                val icons = arrayListOf(R.drawable.ic_round_reply_24, R.drawable.ic_forward, R.drawable.ic_outline_info_24, R.drawable.ic_round_account_circle_24)
 
                 if (message.senderId == UserManager.currentUserId) {
                     options.removeAt(3)
@@ -1087,7 +970,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 metadata.ext
             )
 
-            (requireActivity() as MainActivity).showImageViewFragment(imageView, image, message)
+            activity.showImageViewFragment(imageView, image, message)
         }
 
     }
@@ -1187,7 +1070,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             }
         }
 
-        (activity as MainActivity?)?.getUserImpulsive(message.senderId) {
+        activity.getUserImpulsive(message.senderId) {
             if (it.minify() != message.sender) {
                 onChangeNeeded(it)
             }
@@ -1208,7 +1091,7 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
         if (message.replyMessage != null) {
-            (activity as MainActivity?)?.getUserImpulsive(message.replyMessage!!.senderId) {
+            activity.getUserImpulsive(message.replyMessage!!.senderId) {
                 if (it.name != message.replyMessage!!.name) {
                     onChangeNeeded1(it)
                 }

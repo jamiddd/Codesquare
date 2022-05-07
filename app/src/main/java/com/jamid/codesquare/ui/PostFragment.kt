@@ -121,6 +121,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             binding.adContainer.root.hide()
         }
 
+        binding.projectRefresher.setDefaultSwipeRefreshLayoutUi()
+
         binding.projectRefresher.setOnRefreshListener {
             updatePost()
         }
@@ -160,7 +162,6 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                     Log.e(TAG, "onViewCreated: ${it.localizedMessage}")
                 }
         }
-
 
     }
 
@@ -447,7 +448,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     private fun addLink(link: String) {
         val lContext = requireContext()
 
-        val chip = View.inflate(lContext, R.layout.choice_chip, null) as Chip
+        val chip = View.inflate(lContext, R.layout.action_chip, null) as Chip
 
         val (requireDots, len) = if (link.length > 16) {
             true to 16
@@ -456,25 +457,26 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         }
 
         val shortLink = link.take(len) + if (requireDots) "..." else ""
-
+/*
         val darkGreenColor = ContextCompat.getColor(lContext, R.color.green_dark)
         val darkGreenNightColor = ContextCompat.getColor(lContext, R.color.green_dark_night)
         val lightGreenColor = ContextCompat.getColor(lContext, R.color.green_light)
         val textColor = if (isNightMode()) darkGreenNightColor else lightGreenColor
+*/
 
         chip.apply {
             text = shortLink
-            chipIconTint = ColorStateList.valueOf(darkGreenColor)
+//            chipIconTint = ColorStateList.valueOf(darkGreenColor)
             chipIcon = ContextCompat.getDrawable(lContext, R.drawable.forward_icon)
             chipIconSize = resources.getDimension(R.dimen.large_len)
             isChipIconVisible = true
             isCheckable = false
             chipStrokeWidth = 0f
             isCloseIconVisible = false
-            chipBackgroundColor = ColorStateList.valueOf(textColor)
+//            chipBackgroundColor = ColorStateList.valueOf(textColor)
             binding.projectLinks.addView(this)
 
-            setTextColor(darkGreenColor)
+//            setTextColor(darkGreenColor)
 
             setOnClickListener {
                 if (link.startsWith("https://") || link.startsWith("http://")) {
@@ -499,9 +501,9 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
         // local context
         val lContext = requireContext()
-        val chip = Chip(lContext)
+        val chip = View.inflate(lContext, R.layout.action_chip, null) as Chip
 
-        val (backgroundColor, textColor) = if (isNightMode()) {
+        /*val (backgroundColor, textColor) = if (isNightMode()) {
             val colorPair = colorPalettesNight.random()
             ContextCompat.getColor(lContext, colorPair.first) to
             ContextCompat.getColor(lContext, colorPair.second)
@@ -509,19 +511,16 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             val colorPair = colorPalettesDay.random()
             ContextCompat.getColor(lContext, colorPair.first) to
             ContextCompat.getColor(lContext, colorPair.second)
-        }
+        }*/
 
         chip.apply {
             text = tag
             isCheckable = false
             isCloseIconVisible = false
             binding.projectTags.addView(this)
-            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
-
+//            chipBackgroundColor = ColorStateList.valueOf(backgroundColor)
             chipStrokeWidth = 0f
-
-            setTextColor(textColor)
-
+//            setTextColor(textColor)
             setOnClickListener {
                 (parentFragment as PostFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag, SUB_TITLE to "Posts related to ${post.name.uppercase()}"))
             }
@@ -652,6 +651,11 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
                 val likeRepliesText = "${lastComment.likesCount} Likes • ${lastComment.repliesCount} Replies"
                 commentLikesReplies.text = likeRepliesText
+
+                val isCommentByMe = lastComment.senderId == UserManager.currentUserId
+                if (isCommentByMe) {
+                    commentOptionBtn.hide()
+                }
 
                 commentOptionBtn.setOnClickListener {
                     onOptionClick(lastComment)
@@ -906,7 +910,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             return
 
         val choices = arrayListOf(OPTION_29)
-        val icons = arrayListOf(R.drawable.ic_report)
+        val icons = arrayListOf(R.drawable.ic_round_report_24)
 
         activity.optionsFragment = OptionsFragment.newInstance(title = "Comment by $name", options = choices, icons = icons, comment = comment)
         activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)

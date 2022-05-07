@@ -218,7 +218,9 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             )
         }
 
-//        setFabLayout()
+        activity.binding.mainToolbar.setOnClickListener {
+            scrollToBottom()
+        }
 
         setNewMessagesListener()
 

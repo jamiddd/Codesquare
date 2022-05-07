@@ -103,11 +103,17 @@ class MainRepository(private val db: CollabDatabase) {
 
     // the contributors must be downloaded before the channels
     suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
-        /*val newListOfChatChannels = mutableListOf<ChatChannel>()
+        val currentUserId = UserManager.currentUserId
+        val newListOfChatChannels = mutableListOf<ChatChannel>()
         for (chatChannel in chatChannels) {
-            newListOfChatChannels.add(processChatChannel(chatChannel))
-        }*/
-        chatChannelDao.insert(chatChannels)
+            chatChannel.isNewLastMessage =
+                chatChannel.lastMessage != null &&
+                        chatChannel.lastMessage!!.senderId != currentUserId &&
+                        !chatChannel.lastMessage!!.readList.contains(currentUserId)
+
+            newListOfChatChannels.add(chatChannel)
+        }
+        chatChannelDao.insert(newListOfChatChannels)
     }
 
     private fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
@@ -368,6 +374,14 @@ class MainRepository(private val db: CollabDatabase) {
 
     fun getUnreadInviteNotifications(): LiveData<List<Notification>> {
         return notificationDao.getUnreadNotifications(-1)
+    }
+
+    suspend fun updateChatChannel(chatChannel: ChatChannel) {
+        chatChannelDao.update(chatChannel)
+    }
+
+    fun getUnreadChatChannels(): LiveData<List<ChatChannel>> {
+        return chatChannelDao.getUnreadChatChannels()
     }
 
     companion object {

@@ -33,11 +33,12 @@ class ChatListFragment2: BaseFragment<FragmentChatList2Binding, MainViewModel>()
         super.onViewCreated(view, savedInstanceState)
 
         val currentUser = UserManager.currentUser
-        chatChannelAdapter2 = ChatChannelAdapter2(currentUser.id, requireActivity() as ChatChannelClickListener)
+        chatChannelAdapter2 = ChatChannelAdapter2(currentUser.id, activity)
+
         binding.chatListRecycler.apply {
             adapter = chatChannelAdapter2
-            layoutManager = LinearLayoutManager(requireContext())
-            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+            layoutManager = LinearLayoutManager(activity)
+            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
         }
 
         binding.chatChannelsRefresher.setDefaultSwipeRefreshLayoutUi()

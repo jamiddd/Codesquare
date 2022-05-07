@@ -13,9 +13,7 @@ class CommonImageListener(val progressBar: View? = null): BaseControllerListener
 
     override fun onFinalImageSet(id: String?, imageInfo: ImageInfo?, animatable: Animatable?) {
         super.onFinalImageSet(id, imageInfo, animatable)
-
         progressBar?.hide()
-
         if (imageInfo != null) {
             finalWidth = imageInfo.width
             finalHeight = imageInfo.height
@@ -25,9 +23,7 @@ class CommonImageListener(val progressBar: View? = null): BaseControllerListener
 
     override fun onFailure(id: String?, throwable: Throwable?) {
         super.onFailure(id, throwable)
-
         progressBar?.hide()
-
     }
 
 }

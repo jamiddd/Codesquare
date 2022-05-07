@@ -30,4 +30,8 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels WHERE chatChannelId = :chatChannelId")
     abstract fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel>
 
+
+    @Query("SELECT * FROM chat_channels WHERE isNewLastMessage = 1")
+    abstract fun getUnreadChatChannels(): LiveData<List<ChatChannel>>
+
 }

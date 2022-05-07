@@ -67,7 +67,18 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
     }
 
     private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch (Dispatchers.IO) {
-        chatChannelDao.insert(chatChannels)
+        val currentUserId = UserManager.currentUserId
+        val newListOfChatChannels = mutableListOf<ChatChannel>()
+        for (chatChannel in chatChannels) {
+            chatChannel.isNewLastMessage =
+                chatChannel.lastMessage != null &&
+                        chatChannel.lastMessage!!.senderId != currentUserId &&
+                        !chatChannel.lastMessage!!.readList.contains(currentUserId)
+
+
+            newListOfChatChannels.add(chatChannel)
+        }
+        chatChannelDao.insert(newListOfChatChannels)
     }
 
     /**

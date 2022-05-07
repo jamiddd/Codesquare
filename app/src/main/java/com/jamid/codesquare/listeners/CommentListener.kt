@@ -14,6 +14,7 @@ interface CommentListener {
     fun onCommentUserClick(userMinimal: UserMinimal)
     fun onOptionClick(comment: Comment)
     fun onCheckForStaleData(comment: Comment, onUpdate: (newComment: Comment) -> Unit)
+    fun onCommentInfoClick(comment: Comment)
 }
 
 interface CommentMiniListener {

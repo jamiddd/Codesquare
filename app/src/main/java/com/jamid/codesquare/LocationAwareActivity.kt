@@ -135,6 +135,7 @@ abstract class LocationAwareActivity: AppCompatActivity() {
     open fun attachFragmentWithLocationListener(listener: LocationStateListener) {
         locationStateListener = listener
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+        isLocationPermissionGranted()
         isLocationPermissionHardRejected = sharedPref.getBoolean("location_permission_hard_reject", false)
         checkIfLocationSettingsReady()
     }
@@ -263,6 +264,11 @@ abstract class LocationAwareActivity: AppCompatActivity() {
                         this,
                         Manifest.permission.ACCESS_COARSE_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED -> {
+                val sharedPref = PreferenceManager.getDefaultSharedPreferences(this)
+                val editor = sharedPref.edit()
+                editor.putBoolean("location_permission_hard_reject", false)
+                editor.apply()
+                isLocationPermissionHardRejected = false
                 return true
             }
             shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION) -> {

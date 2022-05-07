@@ -275,6 +275,7 @@
         <item name="rippleColor">@color/lightest_grey</item>
     </style>
 
+
     <style name="AppTheme.AnimationNoPosts">
         <item name="lottie_rawRes">@raw/no_posts</item>
     </style>
@@ -666,7 +667,7 @@
     </style>
 
     <style name="AppTheme.SplashLogo">
-        <item name="srcCompat">@drawable/ic_collab_me_blue_logo_night</item>
+        <item name="srcCompat">@drawable/ic_collab_me_blue_logo</item>
     </style>
 
     <style name="AppTheme.PrimaryChipBtn" parent="AppTheme.MyChip">
@@ -733,7 +734,12 @@
     <style name="AppTheme.DefaultBlur">
         <item name="realtimeBlurRadius">25dp</item>
         <item name="realtimeDownsampleFactor">4</item>
-        <item name="realtimeOverlayColor">#4DFFFFFF</item>
+        <item name="realtimeOverlayColor">#99FFFFFF</item>
+    </style>
+
+    <style name="AppTheme.ActionChipTextAppearance1" parent="TextAppearance.AppCompat.Body1">
+        <item name="fontFamily">@font/title_semi</item>
+        <item name="android:fontFamily">@font/title_semi</item>
     </style>
 
 

@@ -28,6 +28,7 @@ const val image = "Image"
 const val text = "Text"
 const val document = "Document"
 
+const val COMMENT = "comment"
 
 
 const val LAST_MESSAGE = "lastMessage"

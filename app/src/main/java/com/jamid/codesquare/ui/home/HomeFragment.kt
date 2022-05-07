@@ -3,11 +3,13 @@ package com.jamid.codesquare.ui.home
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.activity.addCallback
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.os.bundleOf
 import androidx.core.view.size
@@ -18,8 +20,6 @@ import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.ktx.auth
@@ -29,7 +29,6 @@ import com.jamid.codesquare.adapter.viewpager.MainViewPagerAdapter
 import com.jamid.codesquare.data.AdLimit
 import com.jamid.codesquare.data.AnchorSide
 import com.jamid.codesquare.databinding.FragmentHomeBinding
-import com.jamid.codesquare.ui.NoSwipeBehavior
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
@@ -182,7 +181,7 @@ class HomeFragment: BaseFragment<FragmentHomeBinding, MainViewModel>() {
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (activity.initialLoadWaitFinished) {
-                    if (position == 0) {
+                    if (position == 0 && findNavController().currentDestination?.id == R.id.homeFragment) {
                         activity.binding.mainPrimaryBtn.show()
                     } else {
                         activity.binding.mainPrimaryBtn.hide()
@@ -200,6 +199,24 @@ class HomeFragment: BaseFragment<FragmentHomeBinding, MainViewModel>() {
             findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
         }
 
+        viewModel.getUnreadChatChannels().observe(viewLifecycleOwner) {
+            if (it != null) {
+
+                for (ch in it) {
+                    Log.d(TAG, "onViewCreated: {name: ${ch.postTitle}, isNewLastMessage: ${ch.isNewLastMessage}}")
+                }
+
+                if (it.isEmpty()) {
+                    activity.binding.mainTabLayout.getTabAt(1)?.removeBadge()
+                } else {
+                    activity.binding.mainTabLayout.getTabAt(1)?.let { tab ->
+                        tab.orCreateBadge
+                        tab.badge?.number = it.size
+                        tab.badge?.badgeTextColor = getColorResource(R.color.white)
+                    }
+                }
+            }
+        }
 
         activity.binding.mainPrimaryBtn.extend()
         activity.binding.mainPrimaryBtn.text = "Filter posts"

@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
@@ -22,9 +23,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalPagingApi::class)
-class ImageViewFragment: Fragment(), View.OnClickListener {
-
-    private lateinit var binding: FragmentImageViewBinding
+class ImageViewFragment: BaseFragment<FragmentImageViewBinding, MainViewModel>(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,13 +38,10 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentImageViewBinding.inflate(inflater)
-        return binding.root
+    override val viewModel: MainViewModel by activityViewModels()
+
+    override fun getViewBinding(): FragmentImageViewBinding {
+        return FragmentImageViewBinding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -77,7 +73,6 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
             startPostponedEnterTransition()
 
             val multiGestureListener = MultiGestureListener()
-//            multiGestureListener.addListener(FlingListener(this@ImageViewFragment))
             multiGestureListener.addListener(TapListener(this))
             multiGestureListener.addListener(DoubleTapGestureListener(this))
             setTapListener(multiGestureListener)
@@ -99,50 +94,32 @@ class ImageViewFragment: Fragment(), View.OnClickListener {
     }
 
     override fun onClick(p0: View?) {
-        val appbar = activity?.findViewById<AppBarLayout>(R.id.main_appbar)!!
 
-        if (appbar.translationY == 0f) {
+        if (activity.binding.mainAppbar.translationY == 0f) {
             val height = resources.getDimension(R.dimen.appbar_slide_translation)
-            appbar.slideUp(height)
-
-            binding.fullscreenImage.setBackgroundColor(Color.BLACK)
-
+            activity.binding.mainAppbar.slideUp(height)
             val height1 = resources.getDimension(R.dimen.image_info_translation)
             binding.bottomInfoView.slideDown(height1)
-
             hideSystemUI()
-
         } else {
-            appbar.slideReset()
-            if (!isNightMode()) {
-                binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
-            }
-
+            activity.binding.mainAppbar.slideReset()
             binding.bottomInfoView.slideReset()
-
             showSystemUI()
         }
     }
 
     private fun hideSystemUI() {
-        val activity = activity as MainActivity
         activity.hideSystemUI()
     }
 
     private fun showSystemUI() {
-        val activity = activity as MainActivity
         activity.showSystemUI()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        val appbar = activity?.findViewById<AppBarLayout>(R.id.main_appbar)!!
         showSystemUI()
-        appbar.slideReset()
-        if (!isNightMode()) {
-            binding.fullscreenImage.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.lightest_grey))
-        }
-
+        activity.binding.mainAppbar.slideReset()
         binding.bottomInfoView.slideReset()
     }
 

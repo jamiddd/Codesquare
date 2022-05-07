@@ -4,10 +4,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.util.Log
-import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -23,19 +22,25 @@ import com.jamid.codesquare.ui.ChatContainerFragment
 import java.io.File
 
 @ExperimentalPagingApi
-class ForwardFragment: Fragment(), ChatChannelClickListener {
+class ForwardFragment: BaseFragment<FragmentForwardBinding, MainViewModel>(), ChatChannelClickListener {
 
-    private lateinit var binding: FragmentForwardBinding
     private lateinit var chatChannelId: String
-    private val viewModel: MainViewModel by activityViewModels()
+    override val viewModel: MainViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentForwardBinding.inflate(inflater)
-        return binding.root
+    override fun getViewBinding(): FragmentForwardBinding {
+        return FragmentForwardBinding.inflate(layoutInflater)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        super.onCreateOptionsMenu(menu, inflater)
+        if ((parentFragment as ChatContainerFragment).getCurrentFragmentTag() == TAG) {
+            activity.binding.mainToolbar.menu.clear()
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -45,7 +50,6 @@ class ForwardFragment: Fragment(), ChatChannelClickListener {
         if (messages.isEmpty()) {
             return
         }
-
 
         val imagesDir = view.context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
         val documentsDir = view.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)

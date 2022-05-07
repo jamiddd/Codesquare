@@ -37,7 +37,7 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding, MainViewM
         binding.userImage.setOnClickListener(onImageUpdateClick)
         binding.updateImageBtn.setOnClickListener(onImageUpdateClick)
 
-        listener = CommonImageListener(binding.userImgProgressBar)
+        listener = CommonImageListener(/*binding.userImgProgressBar*/)
 
         // skipping entirely
         binding.skipImageUpdateBtn.setOnClickListener {
@@ -83,6 +83,9 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding, MainViewM
         }
 
         viewModel.currentImage.observe(viewLifecycleOwner) { image ->
+
+            binding.userImgProgressBar.show()
+
             // when new image or empty image is being fetched
             onNewImageOrNullSet(image)
 
@@ -111,7 +114,6 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding, MainViewM
 
     private fun setProfileImage(image: String?) {
         profileImage = image
-        binding.userImgProgressBar.show()
 
         val builder = Fresco.newDraweeControllerBuilder()
             .setUri(image)
@@ -140,6 +142,7 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding, MainViewM
     private fun uploadImage(image: Uri) {
         viewModel.uploadImage(UserManager.currentUserId, image) { downloadUri ->
             onImageUploaded()
+            binding.userImgProgressBar.hide()
             if (downloadUri != null) {
                 setProfileImage(downloadUri.toString())
             } else {
