@@ -9,9 +9,9 @@ Online work is personalized with Collab Me. Make purposeful connections with peo
 Let others know what you’re working on and collaborate with them to learn and finish your posts effectively and efficiently. If you are in a position where you do not have anyone to work with, this is the right place for you.
 
 <div float="left">
-  <img width="33%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_filter.jpeg?alt=media&token=47ff319c-0c6d-4c65-bf58-ef5248f6ed0b">
-  <img width="33%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_join_post.jpeg?alt=media&token=4e1d92c4-d08f-44c9-9da7-d6f27dda52a4">
-  <img width="33%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_chat.jpeg?alt=media&token=4f7492ef-2b9b-41fc-b1c6-11eff4c81903">
+  <img width="30%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_filter.jpeg?alt=media&token=47ff319c-0c6d-4c65-bf58-ef5248f6ed0b">
+  <img width="30%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_join_post.jpeg?alt=media&token=4e1d92c4-d08f-44c9-9da7-d6f27dda52a4">
+  <img width="30%" src="https://firebasestorage.googleapis.com/v0/b/codesqaure.appspot.com/o/images%2Fscreenshots%2Fscreenshot_chat.jpeg?alt=media&token=4f7492ef-2b9b-41fc-b1c6-11eff4c81903">
 </div>
 
 ## Explore
