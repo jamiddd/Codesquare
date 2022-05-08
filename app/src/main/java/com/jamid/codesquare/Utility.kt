@@ -676,7 +676,6 @@ fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<S
     }
 }
 
-
 private fun findValuesForKey(key: String, jsonString: String): List<String> {
     var index: Int
     val result = mutableListOf<String>()

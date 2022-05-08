@@ -1,6 +1,7 @@
 package com.jamid.codesquare.data
 
 import android.os.Parcelable
+import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -8,6 +9,7 @@ import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "liked_by")
 @Parcelize
+@Keep
 data class LikedBy(
     @PrimaryKey
     val id: String,

@@ -19,7 +19,7 @@ export interface User {
     postRequests: string[];
     postInvites: string[];
     chatChannels: string[];
-    token: string[];
+    token: string;
     postsCount: number;
     collaborationsCount: number;
     likesCount: number;

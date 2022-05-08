@@ -530,7 +530,7 @@ object FireUtility {
                 NOTIFICATIONS
             ).document(postRequest.notificationId)
 
-        batch.addNewUserToPost(post.id, post.chatChannel, postRequest.senderId, UserManager.currentUser.token)
+        batch.addNewUserToPost(post.id, post.chatChannel, SourceInfo(postRequest.requestId, null, postRequest.senderId), UserManager.currentUser.token)
             .updateParticularDocument(senderRef, senderChanges)
             .deleteParticularDocument(postRequestRef)
             .deleteParticularDocument(currentUserNotificationRef)
@@ -1810,7 +1810,7 @@ object FireUtility {
         batch.addNewUserToPost(
             post.id,
             post.chatChannel,
-            currentUserId,
+            SourceInfo(null, postInvite.id, currentUserId),
             currentUserRegistrationToken
         )
             .updateCurrentUser(currentUserId, currentUserChanges)
@@ -1825,23 +1825,35 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
+
+    data class SourceInfo(val requestId: String?, val inviteId: String?, val senderId: String)
+
     private fun WriteBatch.addNewUserToPost(
         postId: String,
         chatChannelId: String,
-        userId: String,
+        sourceInfo: SourceInfo,
         token: String
     ): WriteBatch {
         val postReference = Firebase.firestore.collection(POSTS).document(postId)
-        val changes1 = mapOf(
-            CONTRIBUTORS to FieldValue.arrayUnion(userId),
+        val changes1 = mutableMapOf(
+            CONTRIBUTORS to FieldValue.arrayUnion(sourceInfo.senderId),
             CONTRIBUTORS_COUNT to FieldValue.increment(1),
             UPDATED_AT to System.currentTimeMillis()
         )
+
+        if (sourceInfo.requestId != null) {
+            changes1[REQUESTS] = FieldValue.arrayRemove(sourceInfo.requestId)
+        }
+
+        /*if (sourceInfo.inviteId != null) {
+
+        }*/
+
         val chatChannelReference =
             Firebase.firestore.collection(CHAT_CHANNELS).document(chatChannelId)
         val changes2 = mutableMapOf(
             CONTRIBUTORS_COUNT to FieldValue.increment(1),
-            CONTRIBUTORS to FieldValue.arrayUnion(userId),
+            CONTRIBUTORS to FieldValue.arrayUnion(sourceInfo.senderId),
             UPDATED_AT to System.currentTimeMillis()
         )
 

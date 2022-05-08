@@ -400,6 +400,11 @@ export const onNewMessage = functions.firestore.document(channelMessagesPath).on
             response: `Document with id - ${chatChannelId} doesn't exist.`
         };
     } else {
+        const senderSnap = await admin.firestore().collection(Constants.USERS).withConverter(userConverter).doc(message.senderId).get();
+        const sender = senderSnap.data();
+
+        const senderRegistrationToken = sender?.token;
+
         const chatChannel = chatChannelSnap.data();
         if (chatChannel !== undefined) {
             const data: Record<string, string> = {
@@ -416,7 +421,14 @@ export const onNewMessage = functions.firestore.document(channelMessagesPath).on
                 data.content = message.sender.name + ": " + snap.get("content");
             }
 
-            const tokens = chatChannel.tokens;
+            const tokens: string[] = chatChannel.tokens;
+
+            if (senderRegistrationToken !== undefined) {
+                const index = tokens.indexOf(senderRegistrationToken);
+                if (index !== -1) {
+                    tokens.splice(index, 1);
+                }                
+            }
 
             const result = await sendNotification(tokens, data);
 

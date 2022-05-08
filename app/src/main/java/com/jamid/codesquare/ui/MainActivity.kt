@@ -537,6 +537,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             when {
                 extras.containsKey(CHANNEL_ID) -> {
                     // chat notification
+                    binding.mainPrimaryBtn.hide()
 
                     val senderId = extras[SENDER_ID] ?: return
 
@@ -555,6 +556,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     }
                 }
                 extras.containsKey(NOTIFICATION_ID) -> {
+                    binding.mainPrimaryBtn.hide()
+
                     if (extras.containsKey(TYPE)) {
                         val type = extras[TYPE] as String?
 
