@@ -6,9 +6,13 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.ReferenceItem
 
 @OptIn(ExperimentalPagingApi::class)
-class ReferenceItemRemoteMediator(q: Query, private val repo: MainRepository): FirebaseRemoteMediator<Int, ReferenceItem>(q) {
+class ReferenceItemRemoteMediator(q: Query, private val repo: MainRepository, private val filter: (ReferenceItem) -> Boolean): FirebaseRemoteMediator<Int, ReferenceItem>(q) {
     override suspend fun onLoadComplete(items: QuerySnapshot) {
-        repo.insertReferenceItems(items.toObjects(ReferenceItem::class.java))
+        val refItems = items.toObjects(ReferenceItem::class.java)
+        val toBeSavedRefItems = refItems.filter {
+            filter(it)
+        }
+        repo.insertReferenceItems(toBeSavedRefItems)
     }
 
     override suspend fun onRefresh() {

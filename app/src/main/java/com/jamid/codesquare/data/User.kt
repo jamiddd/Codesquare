@@ -85,6 +85,10 @@ data class User(
     var updatedAt: Long = -1,
     @Exclude @set: Exclude @get: Exclude
     @Transient
+    @SerializedName("isBlocked")
+    var isBlocked: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    @Transient
     @SerializedName("isLiked")
     var isLiked: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
@@ -112,6 +116,10 @@ data class User(
     var postInvites: List<String> = emptyList(),
     @SerializedName("chatChannels")
     var chatChannels: List<String> = emptyList(),
+    @SerializedName("blockedUsers")
+    var blockedUsers: List<String> = emptyList(),
+    @SerializedName("blockedBy")
+    var blockedBy: List<String> = emptyList()
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", "", 0, 0, 0, 0, 0)
 

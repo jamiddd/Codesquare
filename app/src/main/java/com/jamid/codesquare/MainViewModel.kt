@@ -185,38 +185,49 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             val usersList = mutableListOf<UserMinimal2>()
             val postsList = mutableListOf<PostMinimal2>()
 
+            val currentUser = UserManager.currentUser
+
+            val blockedUsers = currentUser.blockedUsers
+            val blockedBy = currentUser.blockedBy
+
             val searchList = mutableListOf<SearchQuery>()
             for (result in list) {
                 for (hit in result.response.hits) {
-
 
                     val type = hit.json["type"].toString()
 
                     if (type == "\"user\"") {
                         val user = hit.deserialize(UserMinimal2.serializer())
                         val searchQuery = SearchQuery(user.objectID, user.name, System.currentTimeMillis(), QUERY_TYPE_USER)
-                        searchList.add(searchQuery)
-                        usersList.add(user)
 
-                        Log.d(TAG, "search: $usersList")
-
+                        if (!(currentUser.blockedUsers.contains(user.objectID) || currentUser.blockedBy.contains(user.objectID))) {
+                            searchList.add(searchQuery)
+                            usersList.add(user)
+                        }
                     } else {
                         val post = hit.deserialize(PostMinimal2.serializer())
                         val searchQuery = SearchQuery(post.objectID, post.name, System.currentTimeMillis(), QUERY_TYPE_POST)
-                        searchList.add(searchQuery)
-                        postsList.add(post)
 
-                        Log.d(TAG, "search: $postsList")
-
+                        if (!(blockedUsers.contains(post.creator.userId) || blockedBy.contains(post.creator.userId))) {
+                            searchList.add(searchQuery)
+                            postsList.add(post)
+                        }
                     }
                 }
             }
 
+
+/*
+            val finalPostsList = postsList.filter {
+                !(blockedUsers.contains(it.creator.userId) || blockedBy.contains(it.creator.userId))
+            }
+
+            val finalUsersList = usersList.filter {
+                !(currentUser.blockedUsers.contains(it.objectID) || currentUser.blockedBy.contains(it.objectID))
+            }*/
+
             recentPostSearchList.postValue(postsList)
             recentUserSearchList.postValue(usersList)
-
-         /*   insertPosts(*postsList.toTypedArray())
-            insertUsers(*usersList.toTypedArray())*/
 
             setSearchData(searchList)
         } catch (e: Exception) {
@@ -393,32 +404,18 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     fun getFeedItems(query: Query, tag: String? = null): Flow<PagingData<Post>> {
 
         val feedSetting = feedOption.value!!
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
 
         return if (tag != null) {
 
             val formattedTag = "%$tag%"
 
-            /*val source = when (feedSetting.sort) {
-                FeedSort.CONTRIBUTORS -> {
-                    repo.postDao.getTagPostsByContributors(formattedTag)
-                }
-                LIKES -> {
-                    repo.postDao.getTagPostsByLikes(formattedTag)
-                }
-                MOST_VIEWED -> {
-                    repo.postDao.getTagPostsByViews(formattedTag)
-                }
-                MOST_RECENT -> {
-                    repo.postDao.getTagPostsByTime(formattedTag)
-                }
-                FeedSort.LOCATION -> {
-                    repo.postDao.getTagPostsByTime(formattedTag)
-                }
-            }*/
-
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = PostRemoteMediator(query, repo, true)
+                remoteMediator = PostRemoteMediator(query, repo, true) {
+                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+                }
             ) {
                 when (feedSetting.sort) {
                     FeedSort.CONTRIBUTORS -> {
@@ -439,29 +436,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
                 }
             }.flow.cachedIn(viewModelScope)
         } else {
-           /* val source = when (feedSetting.sort) {
-                FeedSort.CONTRIBUTORS -> {
-                    repo.postDao.getPagedPostsByContributors()
-                }
-                LIKES -> {
-                    repo.postDao.getPagedPostsByLikes()
-                }
-                MOST_VIEWED -> {
-                    repo.postDao.getPagedPostsByViews()
-                }
-                MOST_RECENT -> {
-                    repo.postDao.getPagedPostsByTime()
-                }
-                FeedSort.LOCATION -> {
-                    repo.postDao.getPagedPostsByTime()
-                }
-            }*/
-
-            Log.d(TAG, "getFeedItems: ${feedSetting.sort}")
-
             Pager(
                 config = PagingConfig(pageSize = 20),
-                remoteMediator = PostRemoteMediator(query, repo, true)
+                remoteMediator = PostRemoteMediator(query, repo, true) {
+                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+                }
             ) {
                 when (feedSetting.sort) {
                     FeedSort.CONTRIBUTORS -> {
@@ -504,9 +483,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getCurrentUserPosts(query: Query): Flow<PagingData<Post>> {
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
+
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = PostRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo) {
+                !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+            }
         ) {
             repo.postDao.getCurrentUserPagedPosts()
         }.flow.cachedIn(viewModelScope)
@@ -527,10 +511,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getCollaborations(query: Query): Flow<PagingData<Post>> {
+        val blockedUsers = UserManager.currentUser.blockedUsers
         val currentUserId = UserManager.currentUserId
+        val blockedBy = UserManager.currentUser.blockedBy
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = PostRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo) {
+                !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+            }
         ) {
             repo.postDao.getPagedCollaborations("%${currentUserId}%", currentUserId)
         }.flow.cachedIn(viewModelScope)
@@ -539,9 +527,14 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getOtherUserPosts(query: Query, otherUser: User): Flow<PagingData<Post>> {
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
+
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = PostRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo) {
+                !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+            }
         ) {
             repo.postDao.getPagedOtherUserPosts(otherUser.id)
         }.flow.cachedIn(viewModelScope)
@@ -549,9 +542,13 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getOtherUserCollaborations(query: Query, otherUser: User): Flow<PagingData<Post>> {
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = PostRemoteMediator(query, repo)
+            remoteMediator = PostRemoteMediator(query, repo) {
+                !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+            }
         ) {
             repo.postDao.getOtherUserPagedCollaborations("%${otherUser.id}%", otherUser.id)
         }.flow.cachedIn(viewModelScope)
@@ -665,9 +662,12 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     @ExperimentalPagingApi
     fun getPagedComments(commentChannelId: String, query: Query): Flow<PagingData<Comment>> {
+        val currentUser = UserManager.currentUser
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = CommentRemoteMediator(query, repo)
+            remoteMediator = CommentRemoteMediator(query, repo) { comment ->
+                !(currentUser.blockedUsers.contains(comment.senderId) || currentUser.blockedBy.contains(comment.senderId))
+            }
         ) {
             repo.commentDao.getPagedComments(commentChannelId)
         }.flow
@@ -707,11 +707,15 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
         return repo.getDocumentMessages(chatChannelId)
     }
 
-
     fun getTagPosts(tag: String, query: Query): Flow<PagingData<Post>> {
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
+
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = PostRemoteMediator(query, repo, false)
+            remoteMediator = PostRemoteMediator(query, repo, false) {
+                !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
+            }
         ) {
             repo.postDao.getTagPosts("%$tag%")
         }.flow.cachedIn(viewModelScope)
@@ -1006,6 +1010,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
      * @return A flow of messages in paged order by position in local database by recent order
      * */
     fun getPagedMessages(chatChannelId: String, query: Query): Flow<PagingData<Message>> {
+        val currentUser = UserManager.currentUser
         return Pager(config =
         PagingConfig(
             pageSize = 50,
@@ -1016,7 +1021,9 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             remoteMediator = MessageRemoteMediator(
                 query,
                 chatRepository
-            )
+            ) {
+                !(currentUser.blockedUsers.contains(it.senderId) || currentUser.blockedBy.contains(it.senderId))
+            }
         ) {
             chatRepository.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.cachedIn(viewModelScope)
@@ -1346,18 +1353,24 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun getLikes(query: Query): Flow<PagingData<LikedBy>>{
+        val currentUser = UserManager.currentUser
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = LikedByRemoteMediator(query, repo)
+            remoteMediator = LikedByRemoteMediator(query, repo) {
+                !(currentUser.blockedUsers.contains(it.id) || currentUser.blockedBy.contains(it.id))
+            }
         ) {
             repo.likedByDao.getLikedBy()
         }.flow
     }
 
     fun getReferenceItems(query: Query): Flow<PagingData<ReferenceItem>> {
+        val currentUser = UserManager.currentUser
         return Pager(
             config = PagingConfig(pageSize = 20),
-            remoteMediator = ReferenceItemRemoteMediator(query, repo)
+            remoteMediator = ReferenceItemRemoteMediator(query, repo) {
+                !(currentUser.blockedUsers.contains(it.id) || currentUser.blockedBy.contains(it.id))
+            }
         ) {
             repo.referenceItemDao.getReferenceItems()
         }.flow
@@ -1441,6 +1454,18 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
 
     fun getUnreadChatChannels() : LiveData<List<ChatChannel>> {
         return repo.getUnreadChatChannels()
+    }
+
+    fun deleteCommentsByUserId(id: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deleteCommentsByUserId(id)
+    }
+
+    fun deletePostsByUserId(id: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deletePostsByUserId(id)
+    }
+
+    fun deletePreviousSearchByUserId(id: String) = viewModelScope.launch (Dispatchers.IO) {
+        repo.deletePreviousSearchByUserId(id)
     }
 
 

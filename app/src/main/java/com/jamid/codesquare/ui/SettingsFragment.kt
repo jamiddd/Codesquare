@@ -248,6 +248,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        val blockedAccounts = findPreference<Preference>("profile_blocked_accounts")
+        blockedAccounts?.setOnPreferenceClickListener {
+            findNavController().navigate(R.id.blockedAccountsFragment, null, slideRightNavOptions())
+            true
+        }
     }
 
     @SuppressLint("InflateParams")
@@ -332,6 +337,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/home")
             true
         }
+
+        val version = findPreference<Preference>("version")
+        version?.summary = BuildConfig.VERSION_NAME
 
     }
 

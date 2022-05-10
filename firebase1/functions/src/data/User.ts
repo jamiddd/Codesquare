@@ -19,6 +19,8 @@ export interface User {
     postRequests: string[];
     postInvites: string[];
     chatChannels: string[];
+    blockedUsers: string[];
+    blockedBy: string[];
     token: string;
     postsCount: number;
     collaborationsCount: number;

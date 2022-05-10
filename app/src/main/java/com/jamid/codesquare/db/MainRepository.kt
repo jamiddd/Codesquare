@@ -38,6 +38,8 @@ class MainRepository(private val db: CollabDatabase) {
         likedByDao.clearTable()
     }
 
+
+
     suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
 
         val currentUser = UserManager.currentUser
@@ -382,6 +384,18 @@ class MainRepository(private val db: CollabDatabase) {
 
     fun getUnreadChatChannels(): LiveData<List<ChatChannel>> {
         return chatChannelDao.getUnreadChatChannels()
+    }
+
+    suspend fun deleteCommentsByUserId(id: String) {
+        commentDao.deleteCommentsByUserId(id)
+    }
+
+    suspend fun deletePostsByUserId(id: String) {
+        postDao.deletePostsByUserId(id)
+    }
+
+    suspend fun deletePreviousSearchByUserId(id: String) {
+        searchQueryDao.deletePreviousSearchByUserId(id)
     }
 
     companion object {

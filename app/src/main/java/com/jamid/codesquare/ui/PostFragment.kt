@@ -1,6 +1,5 @@
 package com.jamid.codesquare.ui
 
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.text.SpannableString
@@ -87,7 +86,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
                     arrayListOf(OPTION_15, option) to arrayListOf(R.drawable.ic_round_edit_note_24, R.drawable.ic_round_archive_24)
                 } else {
-                    arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_round_report_24)
+                    arrayListOf(OPTION_7, OPTION_14) to arrayListOf(R.drawable.ic_round_logout_24, R.drawable.ic_round_report_24)
                 }
 
                 activity.optionsFragment = OptionsFragment.newInstance(options = a, title = post.name, icons = b, post = post)
@@ -539,6 +538,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     }
 
     private fun onContributorsFetched(contributors: List<User>) = activity.runOnUiThread {
+
         userAdapter.submitList(contributors)
 
         Log.d(TAG, "onContributorsFetched: $contributors")

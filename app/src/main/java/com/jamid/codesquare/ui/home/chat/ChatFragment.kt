@@ -70,7 +70,24 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     }
 
     private fun setBitmapDrawable(menu: Menu, bitmap: Bitmap) {
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.height, bitmap.height, false)
+        val scaledBitmap = if (bitmap.width >= bitmap.height){
+            Bitmap.createBitmap(
+                bitmap,
+                bitmap.width /2 - bitmap.height /2,
+                0,
+                bitmap.height,
+                bitmap.height
+            )
+
+        }else{
+            Bitmap.createBitmap(
+                bitmap,
+                0,
+                bitmap.height /2 - bitmap.width /2,
+                bitmap.width,
+                bitmap.width
+            )
+        }
         val length = resources.getDimension(R.dimen.unit_len) * 6
         val drawable = RoundedBitmapDrawableFactory.create(resources, scaledBitmap).also {
             it.cornerRadius = length

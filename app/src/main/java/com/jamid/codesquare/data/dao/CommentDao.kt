@@ -28,4 +28,7 @@ abstract class CommentDao: BaseDao<Comment>() {
     @Query("SELECT * FROM comments WHERE commentId = :commentId")
     abstract fun getReactiveComment(commentId: String): LiveData<Comment>
 
+    @Query("DELETE FROM comments WHERE senderId = :id")
+    abstract suspend fun deleteCommentsByUserId(id: String)
+
 }

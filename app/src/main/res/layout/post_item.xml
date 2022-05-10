@@ -9,7 +9,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_save_btn"
-        style="@style/AppTheme.PostItemStyledBtn"
+        style="@style/AppTheme.GenericIconBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/save_this_post_for_later"
@@ -79,7 +79,7 @@
 
     <Button
         android:id="@+id/post_option"
-        style="@style/AppTheme.PostItemStyledBtn"
+        style="@style/AppTheme.GenericIconBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="12dp"
@@ -152,7 +152,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="12dp"
-        android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
         android:contentDescription="@string/like_btn_desc"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -162,7 +161,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_comment_btn"
-        style="@style/AppTheme.PostItemStyledBtn"
+        style="@style/AppTheme.GenericIconBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/comment_btn_desc"
@@ -174,7 +173,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_join_btn"
-        style="@style/AppTheme.ButtonOutlined"
+        style="@style/AppTheme.GenericBtnOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="12dp"
@@ -183,6 +182,7 @@
         android:text="@string/join"
         android:textAllCaps="false"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:cornerRadius="24dp"
         app:layout_constraintBottom_toBottomOf="@+id/post_comment_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/post_comment_btn" />
@@ -225,7 +225,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/right_btn"
-        style="@style/AppTheme.SmallOverlayBtn"
+        style="@style/AppTheme.GenericIconOverlayBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
@@ -239,7 +239,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/left_btn"
-        style="@style/AppTheme.SmallOverlayBtn"
+        style="@style/AppTheme.GenericIconOverlayBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

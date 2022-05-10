@@ -283,4 +283,10 @@
         android:name="com.jamid.codesquare.ui.CommentLikesFragment"
         android:label="Liked by" />
 
+    <fragment
+        android:id="@+id/blockedAccountsFragment"
+        android:name="com.jamid.codesquare.ui.BlockedAccountsFragment"
+        tools:layout="@layout/fragment_blocked_accounts"
+        android:label="Blocked accounts" />
+
 </navigation>

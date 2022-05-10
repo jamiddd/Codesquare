@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -24,6 +26,7 @@ import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -68,6 +71,12 @@ val colorPalettesDay = mutableListOf(
     Pair(R.color.chip_back_purple_day, R.color.chip_front_purple_day),
     Pair(R.color.chip_back_teal_day, R.color.chip_front_teal_day)
 )
+
+fun TextView.setDrawableColor(color: Int) {
+    for (drawable in compoundDrawables) {
+        drawable?.setTint(color)
+    }
+}
 
 fun Context.getOrderFromString(s: String?): FeedOrder {
     return when (s) {

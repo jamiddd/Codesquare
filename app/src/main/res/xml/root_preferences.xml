@@ -36,6 +36,10 @@
             app:key="profile_sent_invites"
             app:title="Sent invites" />
 
+        <Preference
+            app:key="profile_blocked_accounts"
+            app:title="Blocked accounts" />
+
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Location">

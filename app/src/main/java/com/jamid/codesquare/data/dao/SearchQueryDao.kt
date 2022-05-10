@@ -22,4 +22,7 @@ abstract class SearchQueryDao: BaseDao<SearchQuery>() {
     @Query("DELETE FROM search_query")
     abstract suspend fun clearTable()
 
+    @Query("DELETE FROM search_query WHERE id = :id")
+    abstract suspend fun deletePreviousSearchByUserId(id: String)
+
 }

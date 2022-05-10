@@ -43,7 +43,6 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.badge.BadgeDrawable
 import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
-import com.google.android.material.chip.ChipDrawable
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
@@ -2462,6 +2461,18 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             OPTION_32 -> {
                 if (user != null) {
                     onUserClick(user)
+                }
+            }
+
+            OPTION_34 -> {
+                if (user != null) {
+                    FireUtility.unblockUser(user) {
+                        if (it.isSuccessful) {
+                            Log.d(TAG, "onOptionClick: ")
+                        } else {
+                            Log.e(TAG, "onOptionClick: ${it.exception?.localizedMessage}")
+                        }
+                    }
                 }
             }
         }

@@ -123,7 +123,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/profile_primary_btn"
-        style="@style/AppTheme.ButtonOutlined"
+        style="@style/AppTheme.GenericBtnOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingStart="12dp"
@@ -142,7 +142,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/invite_btn"
-        style="@style/AppTheme.ButtonOutlined"
+        style="@style/AppTheme.GenericBtnOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

@@ -2390,6 +2390,68 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
+    /*fun checkForBlockedUser(userId: String, onCheck: (isBlocked: Boolean?) -> Unit) {
+        Firebase.firestore.collection(USERS)
+            .document(UserManager.currentUserId)
+            .collection("blockedUsers")
+            .document(userId)
+            .get()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    onCheck(it.result.exists())
+                } else {
+                    onCheck(null)
+                }
+            }
+    }
+*/
+
+
+    fun unblockUser(user: User, onComplete: (task: Task<Void>) -> Unit) {
+        val db = Firebase.firestore
+        val batch = db.batch()
+        val now = System.currentTimeMillis()
+
+        val currentUserRef = db.collection(USERS).document(UserManager.currentUserId)
+        batch.update(currentUserRef, mapOf("blockedUsers" to FieldValue.arrayRemove(user.id), UPDATED_AT to now))
+
+        val otherUserRef = db.collection(USERS).document(user.id)
+        batch.update(otherUserRef, mapOf("blockedBy" to FieldValue.arrayRemove(UserManager.currentUserId), UPDATED_AT to now))
+
+        batch.commit().addOnCompleteListener(onComplete)
+    }
+
+    fun blockUser(user: User, onComplete: (task: Task<Void>) -> Unit) {
+        val db = Firebase.firestore
+        val batch = db.batch()
+        val now = System.currentTimeMillis()
+        val currentUserRef = db.collection(USERS).document(UserManager.currentUserId)
+        batch.update(currentUserRef, mapOf("blockedUsers" to FieldValue.arrayUnion(user.id), UPDATED_AT to now))
+
+        val otherUserRef = db.collection(USERS).document(user.id)
+        batch.update(otherUserRef, mapOf("blockedBy" to FieldValue.arrayUnion(UserManager.currentUserId), UPDATED_AT to now))
+
+        batch.commit().addOnCompleteListener(onComplete)
+    }
+
+    fun checkIfPostAssociatedWithBlockedUser(postMinimal2: PostMinimal2, onCheck: (isBlocked: Boolean?) -> Unit) {
+        val blockedUsers = UserManager.currentUser.blockedUsers
+        val blockedBy = UserManager.currentUser.blockedBy
+
+        getPost(postMinimal2.objectID) {
+            val res = it ?: return@getPost
+            when (res) {
+                is Result.Error -> {
+                    onCheck(null)
+                }
+                is Result.Success -> {
+                    val post = res.data
+                    onCheck(((blockedUsers.contains(post.creator.userId) || blockedUsers.intersect(post.contributors).isNotEmpty()) || (blockedBy.contains(post.creator.userId) || blockedBy.intersect(post.contributors).isNotEmpty())))
+                }
+            }
+        }
+    }
+
     /*fun setSecondLastCommentAsLastComment(lastComment: Comment, onComplete: (Result<Comment>) -> Unit) {
         Firebase.firestore.collection(COMMENT_CHANNELS)
             .document(lastComment.commentChannelId)

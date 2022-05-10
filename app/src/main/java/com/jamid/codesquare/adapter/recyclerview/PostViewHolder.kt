@@ -2,16 +2,12 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.annotation.SuppressLint
 import android.graphics.Color
-import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
 import android.view.*
-import androidx.core.content.ContextCompat
-import androidx.core.view.doOnLayout
-import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.findViewTreeLifecycleOwner
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -30,7 +26,6 @@ import com.jamid.codesquare.databinding.PostItemBinding
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.PostClickListener
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
@@ -187,13 +182,15 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
         }
 
         if (mPost != null) {
+
+            binding = PostItemBinding.bind(view)
+            view.tag = mPost.id
+
             post = mPost
             hasAttachedOnce = true
 
             Log.d(TAG, "bind: Invoked ${post.isLiked}")
 
-            binding = PostItemBinding.bind(view)
-            view.tag = mPost.id
 
             setPostCreatorInfo()
 

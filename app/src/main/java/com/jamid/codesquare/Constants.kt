@@ -140,6 +140,8 @@ const val OPTION_29 = "Report comment"
 const val OPTION_30 = "Delete comment"
 const val OPTION_31 = "Sent invites"
 const val OPTION_32 = "View profile"
+const val OPTION_33 = "Block"
+const val OPTION_34 = "Unblock"
 const val PREVIOUS_POST = "prev_post"
 
 const val HTTPS = "https"

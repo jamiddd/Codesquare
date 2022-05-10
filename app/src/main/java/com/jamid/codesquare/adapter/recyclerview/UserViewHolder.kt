@@ -225,14 +225,6 @@ class UserViewHolder(
             binding.userTag.hide()
         }
 
-        view.setOnClickListener {
-            userClickListener.onUserClick(userMinimal)
-        }
-
-        view.setOnLongClickListener {
-            userClickListener.onUserOptionClick(userMinimal)
-            true
-        }
     }
 
     companion object {

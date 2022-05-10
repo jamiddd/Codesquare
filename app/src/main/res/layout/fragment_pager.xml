@@ -58,12 +58,11 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/pager_action_btn"
+        style="@style/AppTheme.GenericBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/rerty_the_current_request"
-        android:fontFamily="@font/title_semi"
-        android:textAllCaps="false"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:text="Something"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

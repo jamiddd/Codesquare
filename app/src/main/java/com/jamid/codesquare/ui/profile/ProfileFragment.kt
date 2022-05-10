@@ -1,7 +1,6 @@
 package com.jamid.codesquare.ui.profile
 
 import android.animation.AnimatorInflater
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuInflater
@@ -26,6 +25,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.ui.MessageDialogFragment
 import com.jamid.codesquare.ui.OptionsFragment
 import com.jamid.codesquare.ui.PostListFragment
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
@@ -59,7 +59,7 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
                 val (choices, icons) = if (mUser == null || mUser?.id == UserManager.currentUserId) {
                     arrayListOf(OPTION_24, OPTION_25, OPTION_26, OPTION_31, OPTION_27, OPTION_23) to arrayListOf(R.drawable.ic_round_collections_bookmark_24, R.drawable.ic_round_archive_24, R.drawable.ic_round_post_add_24, R.drawable.ic_round_group_add_24, R.drawable.ic_round_settings_24, R.drawable.ic_round_logout_24)
                 } else {
-                    arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_round_report_24)
+                    arrayListOf(OPTION_14, OPTION_33) to arrayListOf(R.drawable.ic_round_report_24, R.drawable.ic_round_block_24)
                 }
 
                 activity.optionsFragment = OptionsFragment.newInstance(null, choices, icons, listener = this, user = mUser)
@@ -199,8 +199,8 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
 
     private fun setUpPrimaryButton(primaryBtn: MaterialButton, likesCount: Chip, user: User) {
 
-        primaryBtn.iconTint = ColorStateList.valueOf(primaryBtn.context.accentColor())
-        primaryBtn.setTextColor(primaryBtn.context.accentColor())
+       /* primaryBtn.iconTint = ColorStateList.valueOf(primaryBtn.context.accentColor())
+        primaryBtn.setTextColor(primaryBtn.context.accentColor())*/
 
         if (!user.isCurrentUser) {
             // set primary btn for other user
@@ -324,7 +324,65 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
             OPTION_31 -> {
                 findNavController().navigate(R.id.invitesFragment, null, slideRightNavOptions())
             }
+            OPTION_33 -> {
+                if (user != null) {
+                    val d = MessageDialogFragment.builder("Are you sure you want to block ${user.name}")
+                        .setPositiveButton("Block") { _, _ ->
+
+                            val hits = user.collaborations.intersect(UserManager.currentUser.posts)
+                            if (hits.isNotEmpty()) {
+                                // there are posts where the blocked user is a collaborator, ask the current user to remove them first
+                                val msg = "Cannot block ${user.name} because he/she is a collaborator in one of your posts. Remove them before blocking."
+                                onIssueWhileBlocking(msg)
+                            } else {
+                                block(user)
+                            }
+
+                        }.setNegativeButton("Cancel") { a, _ ->
+                            a.dismiss()
+                        }.build()
+
+                    d.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
+
+                }
+            }
         }
+    }
+
+    private fun block(user: User) {
+        FireUtility.blockUser(user) {
+
+            if (it.isSuccessful) {
+                // delete all posts that belong to that user
+                // delete all comments that belong to that user
+                viewModel.deleteCommentsByUserId(user.id)
+                viewModel.deletePostsByUserId(user.id)
+                viewModel.deletePreviousSearchByUserId(user.id)
+
+                val frag = MessageDialogFragment.builder("${user.name} is blocked. A blocked user cannot see your profile. They cannot see your work. To unblock any blocked users, go to, Settings-Blocked accounts.")
+                    .setTitle("This user is blocked.")
+                    .setIsHideable(false)
+                    .setIsDraggable(false)
+                    .setPositiveButton("Done") { a, _ ->
+                        a.dismiss()
+                        findNavController().navigateUp()
+                    }.build()
+
+                frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
+            } else {
+                it.exception?.localizedMessage?.let { msg ->
+                    onIssueWhileBlocking(msg)
+                }
+            }
+        }
+    }
+
+    private fun onIssueWhileBlocking(msg: String) {
+        val f = MessageDialogFragment.builder(msg)
+            .setTitle("Could not block ...")
+            .build()
+
+        f.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
     }
 
     override fun onDestroyView() {

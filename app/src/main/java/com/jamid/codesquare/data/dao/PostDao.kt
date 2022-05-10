@@ -97,5 +97,8 @@ abstract class PostDao: BaseDao<Post>() {
     @Query("UPDATE posts SET isNearMe = 0")
     abstract suspend fun disableLocationBasedPosts()
 
+    @Query("DELETE FROM posts WHERE post_userId = :id")
+    abstract suspend fun deletePostsByUserId(id: String)
+
 
 }

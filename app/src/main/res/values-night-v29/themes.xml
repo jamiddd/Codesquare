@@ -8,13 +8,13 @@
 
         <item name="colorPrimary">@color/darkest_blue</item>
         <item name="colorPrimaryVariant">@color/variant_blue</item>
-        <item name="colorOnPrimary">@color/darkest_blue</item>
+        <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimarySurface">@color/chip_back_blue_night</item>
 
         <item name="android:forceDarkAllowed">false</item>
         <!-- Secondary brand color. -->
-        <item name="colorSecondary">@color/pink</item>
-        <item name="colorSecondaryVariant">@color/variant_pink</item>
+        <item name="colorSecondary">@color/secondary_night</item>
+        <item name="colorSecondaryVariant">@color/secondary_night</item>
         <item name="colorOnSecondary">@color/black</item>
 
         <item name="colorOnError">@color/lightest_red</item>

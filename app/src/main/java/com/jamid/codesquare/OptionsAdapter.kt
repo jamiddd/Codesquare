@@ -1,14 +1,19 @@
 package com.jamid.codesquare
 
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ListItemBinding
 import com.jamid.codesquare.listeners.OptionClickListener
+
 
 class OptionsAdapter(private val optionClickListener: OptionClickListener, val user: User? = null, val post: Post? = null, val chatChannel: ChatChannel? = null, val comment: Comment? = null, val tag: String? = null): ListAdapter<Option, OptionsAdapter.OptionsViewHolder>(comparator) {
 
@@ -24,6 +29,8 @@ class OptionsAdapter(private val optionClickListener: OptionClickListener, val u
         }
     }
 
+
+
     inner class OptionsViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         fun bind(option: Option) {
@@ -35,6 +42,13 @@ class OptionsAdapter(private val optionClickListener: OptionClickListener, val u
                 binding.listOptionItem.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, option.icon, 0)
             } else {
                 binding.listOptionItem.setCompoundDrawablesRelativeWithIntrinsicBounds(null, null, null, null)
+            }
+
+            if (option.item == OPTION_33) {
+                val errorColor = ContextCompat.getColor(view.context, R.color.error_color)
+                binding.listOptionItem.setTextColor(errorColor)
+
+//                binding.listOptionItem.setDrawableColor(errorColor)
             }
 
             binding.listOptionItem.setOnClickListener {
