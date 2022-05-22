@@ -4,59 +4,57 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.view.postOnAnimationDelayed
-import androidx.lifecycle.findViewTreeLifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.comparators.SubscriptionComparator
-import com.jamid.codesquare.data.Subscription
+import com.jamid.codesquare.data.OneTimeProduct
 import com.jamid.codesquare.databinding.SubscriptionItemBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.SubscriptionListener
 import com.jamid.codesquare.show
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-class SubscriptionAdapter(private val subscriptionListener: SubscriptionListener): ListAdapter<Subscription, SubscriptionAdapter.SubscriptionViewHolder>(SubscriptionComparator()) {
+class SubscriptionAdapter(private val subscriptionListener: SubscriptionListener): ListAdapter<OneTimeProduct, SubscriptionAdapter.SubscriptionViewHolder>(SubscriptionComparator()) {
 
     inner class SubscriptionViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private lateinit var binding: SubscriptionItemBinding
 
-        fun bind(subscription: Subscription) {
+        fun bind(oneTimeProduct: OneTimeProduct) {
             binding = SubscriptionItemBinding.bind(view)
 
-            binding.durationHeaderText.text = if (subscription.period == "P1M") {
+
+
+          /*  binding.durationHeaderText.text = if (oneTimeProduct.period == "P1M") {
                 "MONTHLY"
             } else {
                 "YEARLY"
-            }
-            binding.featuresText.text = subscription.description
+            }*/
 
-            val price = subscription.priceText + if (subscription.period == "P1M") {
+            binding.featuresText.text = oneTimeProduct.description
+
+            /*val price = oneTimeProduct.priceText + if (oneTimeProduct.period == "P1M") {
                 "/month"
             } else {
                 "/year"
-            }
+            }*/
 
-            if (subscription.priceText.contains("150.00")) {
+            if (oneTimeProduct.priceText.contains("150.00")) {
                 binding.bestValueAnimation.show()
             } else {
                 binding.bestValueAnimation.hide()
             }
 
-            binding.priceText.text = price
+            binding.priceText.text = oneTimeProduct.priceText
             binding.subscriptionSelectBtn.isFocusable = false
             binding.subscriptionSelectBtn.isClickable = false
 
-            Log.d("SubscriptionAdapter", subscription.isSelected.toString())
+            Log.d("SubscriptionAdapter", oneTimeProduct.isSelected.toString())
 
-            binding.subscriptionSelectBtn.isChecked = subscription.isSelected
+            binding.subscriptionSelectBtn.isChecked = oneTimeProduct.isSelected
 
             binding.root.setOnClickListener {
-                subscriptionListener.onSubscriptionSelected(subscription, absoluteAdapterPosition)
+                subscriptionListener.onSubscriptionSelected(oneTimeProduct, absoluteAdapterPosition)
                 check()
             }
         }

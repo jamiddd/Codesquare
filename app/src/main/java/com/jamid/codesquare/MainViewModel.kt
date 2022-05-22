@@ -16,7 +16,7 @@ import com.algolia.search.model.multipleindex.IndexedQuery
 import com.algolia.search.model.response.ResponseMultiSearch
 import com.algolia.search.model.response.ResponseSearch
 import com.algolia.search.model.response.ResultMultiSearch
-import com.android.billingclient.api.SkuDetails
+import com.android.billingclient.api.ProductDetails
 import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.*
 import com.google.firebase.firestore.ktx.firestore
@@ -84,17 +84,17 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     /**
      * List of all the products fetched from play store
      * */
-    private val _subscriptionDetails = MutableLiveData<List<SkuDetails>>().apply { value = emptyList() }
-    val subscriptionDetails: LiveData<List<SkuDetails>> = _subscriptionDetails
+    private val _productDetails = MutableLiveData<List<ProductDetails>>().apply { value = emptyList() }
+    val productDetails: LiveData<List<ProductDetails>> = _productDetails
 
-    private val _currentlySelectedSku = MutableLiveData<SkuDetails?>()
+    private val _currentlySelectedProduct = MutableLiveData<ProductDetails?>()
 
-    fun setCurrentlySelectedSku(skuDetails: SkuDetails?) {
-        _currentlySelectedSku.postValue(skuDetails)
+    fun setCurrentlySelectedProduct(productDetails: ProductDetails?) {
+        _currentlySelectedProduct.postValue(productDetails)
     }
 
-    fun setSubscriptionDetailsList(detailsList: List<SkuDetails> = emptyList()) {
-        _subscriptionDetails.postValue(detailsList)
+    fun setProductDetailsList(productDetails: List<ProductDetails> = emptyList()) {
+        _productDetails.postValue(productDetails)
     }
 
     fun setCurrentFeedOption(feedOption: FeedOption) {
@@ -112,11 +112,11 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     /**
      * List of all the available subscriptions for the user
      * */
-    private val _subscriptions = MutableLiveData<List<Subscription>>().apply { value = emptyList() }
-    val subscriptions: LiveData<List<Subscription>> = _subscriptions
+    private val _products = MutableLiveData<List<OneTimeProduct>>().apply { value = emptyList() }
+    val products: LiveData<List<OneTimeProduct>> = _products
 
-    fun setSubscriptions(list: List<Subscription> = emptyList()) {
-        _subscriptions.postValue(list)
+    fun setProducts(list: List<OneTimeProduct> = emptyList()) {
+        _products.postValue(list)
     }
 
 

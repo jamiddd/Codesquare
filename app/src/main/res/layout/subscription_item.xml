@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
-        android:text="@string/monthly"
+        android:text="Forever"
         android:textAllCaps="true"
         app:layout_constraintBottom_toTopOf="@+id/price_text"
         app:layout_constraintStart_toStartOf="parent"

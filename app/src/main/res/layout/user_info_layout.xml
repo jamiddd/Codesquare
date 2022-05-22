@@ -159,18 +159,4 @@
         app:layout_constraintTop_toTopOf="@+id/profile_primary_btn"
         tools:visibility="visible" />
 
-    <com.facebook.drawee.view.SimpleDraweeView
-        android:id="@+id/premium_icon"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:background="@drawable/white_circle"
-        android:elevation="24dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/user_img"
-        app:layout_constraintEnd_toEndOf="@+id/user_img"
-        app:layout_constraintTop_toTopOf="@+id/user_img"
-        app:layout_constraintVertical_bias="0.97"
-        app:placeholderImage="@drawable/ic_medal"
-        app:roundAsCircle="true" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

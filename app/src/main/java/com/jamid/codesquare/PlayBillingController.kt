@@ -2,21 +2,24 @@ package com.jamid.codesquare
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.*
 import androidx.lifecycle.Lifecycle.Event.*
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.MutableLiveData
 import com.android.billingclient.api.*
+import com.google.common.collect.ImmutableList
 import com.google.firebase.functions.FirebaseFunctions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-class PlayBillingController(private val mContext: Context): LifecycleEventObserver {
+class PlayBillingController(private val mContext: Context): LifecycleEventObserver, PurchasesUpdatedListener {
 
     var billingClient: BillingClient? = null
     val isPurchaseAcknowledged = MutableLiveData<Boolean>()
     val premiumState = MutableLiveData<PremiumState>()
-    val purchaseDetails = MutableLiveData<List<SkuDetails>>()
+    val purchaseDetails = MutableLiveData<List<ProductDetails>>()
+    val errors = MutableLiveData<Exception>()
 
     private fun verifyPurchase(purchase: Purchase) {
 
@@ -43,6 +46,7 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
 
                             billingClient?.acknowledgePurchase(acknowledgePurchaseParams) { it1 ->
                                 if (it1.responseCode == BillingClient.BillingResponseCode.OK) {
+                                    updatePremiumState(PremiumState.STATE_FULL_PURCHASE.state)
                                     isPurchaseAcknowledged.postValue(true)
                                 } else {
                                     Log.e(TAG, "verifyPurchase: ${it1.debugMessage}")
@@ -58,12 +62,23 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
             }
     }
 
-    private fun querySubscriptions() {
-        billingClient?.queryPurchasesAsync(BillingClient.SkuType.SUBS) { p0, p1 ->
-            if (p0.responseCode == BillingClient.BillingResponseCode.OK) {
-                if (p1.isNotEmpty()) {
-                    // check for subscriptions here
-                    onPurchasesFetched(p1)
+    private fun queryProducts() {
+        val queryProductDetailsParams =
+            QueryProductDetailsParams.newBuilder()
+                .setProductList(
+                    ImmutableList.of(
+                        QueryProductDetailsParams.Product.newBuilder()
+                            .setProductId("one_time_premium")
+                            .setProductType(BillingClient.ProductType.INAPP)
+                            .build())
+                ).build()
+
+        billingClient?.queryProductDetailsAsync(
+            queryProductDetailsParams
+        ) { billingResult, productDetailsList ->
+            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                if (productDetailsList.isNotEmpty()) {
+//                    onPurchasesFetched(productDetailsList)
                 } else {
                     premiumState.postValue(PremiumState.STATE_NO_PURCHASE)
                     updatePremiumState(PremiumState.STATE_NO_PURCHASE.state)
@@ -86,11 +101,12 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
         }
     }
 
-    private fun onPurchasesFetched(purchases: List<Purchase>) {
+    /*private fun onPurchasesFetched(purchases: List<ProductDetails>) {
         try {
             if (purchases.size > 1) {
                 throw IllegalStateException("There cannot be more than one subscription at a time.")
             } else {
+
                 for (purchase in purchases) {
                     if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged) {
                         verifyPurchase(purchase)
@@ -112,49 +128,85 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
         } catch (e: Exception) {
             Log.e(TAG, "onPurchasesFetched: ${e.localizedMessage}")
         }
-    }
+    }*/
 
-    private fun connectToGooglePlayBilling() {
+    private fun connectToGooglePlayBilling(scope: CoroutineScope) {
         billingClient?.startConnection(object : BillingClientStateListener {
             override fun onBillingServiceDisconnected() {
-                connectToGooglePlayBilling()
+                connectToGooglePlayBilling(scope)
             }
 
             override fun onBillingSetupFinished(p0: BillingResult) {
                 if (p0.responseCode == BillingClient.BillingResponseCode.OK) {
-                    getSubscriptionDetails()
-                    querySubscriptions()
+                    scope.launch (Dispatchers.IO) {
+                        getProductDetails()
+                    }
                 }
             }
         })
     }
 
-    private fun getSubscriptionDetails() {
-        val subscriptionIds = mutableListOf<String>()
+    /*suspend fun processPurchases() {
+        val productList = mutableListOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId("one_time_premium")
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
 
-        subscriptionIds.add(HALF_SUBSCRIPTION)
-        subscriptionIds.add(FULL_SUBSCRIPTION)
+        val params = QueryProductDetailsParams.newBuilder()
+        params.setProductList(productList)
 
-        val query = SkuDetailsParams.newBuilder()
-            .setSkusList(subscriptionIds)
-            .setType(BillingClient.SkuType.SUBS)
-            .build()
 
-        billingClient?.querySkuDetailsAsync(
-            query
-        ) { p0, p1 ->
-            if (p0.responseCode == BillingClient.BillingResponseCode.OK && p1 != null) {
-                purchaseDetails.postValue(p1)
+        // leverage queryProductDetails Kotlin extension function
+        val productDetailsResult = withContext(Dispatchers.IO) {
+            billingClient?.queryProductDetails(params.build())
+        }
+
+        // Process the result
+        productDetailsResult?.let { processProducts(it) }
+
+    }*/
+
+    /*private fun processProducts(productDetailsResult: ProductDetailsResult) {
+        if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            val product = productDetailsResult.productDetailsList?.get(0)
+            if (product != null) {
+                // here is the product
+                // show the product
             }
         }
+    }*/
+
+    private suspend fun getProductDetails() {
+        val productList = mutableListOf(
+            QueryProductDetailsParams.Product.newBuilder()
+                .setProductId("one_time_premium")
+                .setProductType(BillingClient.ProductType.INAPP)
+                .build()
+        )
+
+        val params = QueryProductDetailsParams.newBuilder()
+        params.setProductList(productList)
+
+        // leverage queryProductDetails Kotlin extension function
+        val productDetailsResult = withContext(Dispatchers.IO) {
+            billingClient?.queryProductDetails(params.build())
+        }
+
+        if (productDetailsResult != null) {
+            if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK && productDetailsResult.productDetailsList != null) {
+                purchaseDetails.postValue(productDetailsResult.productDetailsList!!)
+            }
+        }
+
     }
 
     override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
         when (event) {
             ON_CREATE -> {
-                billingClient = BillingClient.newBuilder(mContext)
-                    .enablePendingPurchases()
-                    .setListener { p0, p1 ->
+                val purchasesUpdatedListener =
+                    PurchasesUpdatedListener { p0, p1 ->
                         if (p0.responseCode == BillingClient.BillingResponseCode.OK && p1 != null) {
                             for (purchase in p1) {
                                 if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED && !purchase.isAcknowledged) {
@@ -163,13 +215,19 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
                             }
                         }
                     }
+
+                billingClient = BillingClient.newBuilder(mContext)
+                    .setListener(purchasesUpdatedListener)
+                    .enablePendingPurchases()
                     .build()
 
-                connectToGooglePlayBilling()
+                connectToGooglePlayBilling(source.lifecycle.coroutineScope)
 
             }
             ON_RESUME -> {
-                querySubscriptions()
+                source.lifecycle.coroutineScope.launch (Dispatchers.IO) {
+                    getProductDetails()
+                }
             }
             else -> {
                 Log.d(TAG, "onStateChanged: state not in use")
@@ -181,6 +239,20 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
         STATE_NO_PURCHASE(-1), STATE_HALF_PURCHASE(0), STATE_FULL_PURCHASE(1)
     }
 
+    private fun handleNonConsumablePurchase(purchase: Purchase) {
+        if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
+            if (!purchase.isAcknowledged) {
+                val acknowledgePurchaseParams = AcknowledgePurchaseParams.newBuilder()
+                    .setPurchaseToken(purchase.purchaseToken).build()
+                billingClient?.acknowledgePurchase(acknowledgePurchaseParams) { billingResult ->
+                    val billingResponseCode = billingResult.responseCode
+                    if (billingResponseCode == BillingClient.BillingResponseCode.OK) {
+                        verifyPurchase(purchase)
+                    }
+                }
+            }
+        }
+    }
     companion object {
         private const val TAG = "PlayBillingController"
         private const val HALF_SUBSCRIPTION = "remove_ads_subscription"
@@ -193,6 +265,22 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
         private const val USER_ID = "userId"
         private const val VERIFY_PURCHASE = "verifyPurchase"
         private const val IS_VALID = "isValid"
+    }
+
+    override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
+        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
+            for (purchase in purchases) {
+                handleNonConsumablePurchase(purchase)
+            }
+        } else if (billingResult.responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
+            // Handle an error caused by a user cancelling the purchase flow.
+            val exc = Exception("User has canceled the flow")
+            errors.postValue(exc)
+        } else {
+            // Handle any other error codes.
+            val exc = Exception("Unknown error occurred")
+            errors.postValue(exc)
+        }
     }
 
 }

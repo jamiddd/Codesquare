@@ -126,15 +126,6 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
 
             userName.text = user.name
 
-            when {
-                user.premiumState.toInt() == 1 -> {
-                    premiumIcon.show()
-                }
-                else -> {
-                    premiumIcon.hide()
-                }
-            }
-
             if (user.tag.isBlank()) {
                 userTag.hide()
             } else {

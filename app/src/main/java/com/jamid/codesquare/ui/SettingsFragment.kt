@@ -8,6 +8,7 @@ import android.text.InputType
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.activityViewModels
@@ -34,15 +35,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
         super.onViewCreated(view, savedInstanceState)
         listView.overScrollMode = View.OVER_SCROLL_NEVER
 
-        listView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                mScroll += dy
-                if (mScroll < 100) {
-                    setSubscriptionSetting(listView)
+        val currentUser = UserManager.currentUser
+        if (currentUser.premiumState.toInt() == 1) {
+
+        } else {
+            listView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    mScroll += dy
+                    if (mScroll < 100) {
+                        setSubscriptionSetting(listView)
+                    }
                 }
-            }
-        })
+            })
+        }
+
 
     }
 
@@ -75,7 +82,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
-
+        if (UserManager.currentUser.premiumState.toInt() == 1) {
+            val pref = findPreference<PreferenceCategory>("subscription_category")
+            pref?.isVisible = false
+        }
 
     }
 
@@ -86,6 +96,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val mainActivity = context as MainActivity
 
 
+        val parent = v.findViewById<ConstraintLayout>(R.id.upgrade_plan_layout)
         val upgradePlanBtn = v.findViewById<MaterialButton>(R.id.upgrade_plan_btn)
         val currentPlanHeader = v.findViewById<TextView>(R.id.current_plan_header)
         val currentPlanDesc = v.findViewById<TextView>(R.id.current_plan_text)
@@ -136,7 +147,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     getString(R.string.base_subscription_desc)
             }
             1 -> {
-                // just some changes that needs to be done if the button is visible
+
+                val pref = findPreference<PreferenceCategory>("subscription_category")
+                pref?.isVisible = false
+
+                /*// just some changes that needs to be done if the button is visible
                 upgradePlanBtn?.rippleColor = ColorStateList.valueOf(
                     ContextCompat.getColor(
                         context,
@@ -157,7 +172,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     getString(R.string.premium_subscriptions).uppercase()
                 currentPlanHeader?.setTextColor(accentColor)
                 currentPlanDesc?.text =
-                    getString(R.string.premium_subscription_desc)
+                    getString(R.string.premium_subscription_desc)*/
             }
         }
 

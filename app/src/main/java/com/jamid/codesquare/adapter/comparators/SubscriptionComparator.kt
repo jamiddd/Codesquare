@@ -1,14 +1,14 @@
 package com.jamid.codesquare.adapter.comparators
 
 import androidx.recyclerview.widget.DiffUtil
-import com.jamid.codesquare.data.Subscription
+import com.jamid.codesquare.data.OneTimeProduct
 
-class SubscriptionComparator: DiffUtil.ItemCallback<Subscription>() {
-    override fun areItemsTheSame(oldItem: Subscription, newItem: Subscription): Boolean {
+class SubscriptionComparator: DiffUtil.ItemCallback<OneTimeProduct>() {
+    override fun areItemsTheSame(oldItem: OneTimeProduct, newItem: OneTimeProduct): Boolean {
         return oldItem.id == newItem.id
     }
 
-    override fun areContentsTheSame(oldItem: Subscription, newItem: Subscription): Boolean {
+    override fun areContentsTheSame(oldItem: OneTimeProduct, newItem: OneTimeProduct): Boolean {
         return oldItem == newItem
     }
 }

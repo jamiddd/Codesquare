@@ -1,7 +1,7 @@
 package com.jamid.codesquare.listeners
 
-import com.jamid.codesquare.data.Subscription
+import com.jamid.codesquare.data.OneTimeProduct
 
 interface SubscriptionListener {
-    fun onSubscriptionSelected(subscription: Subscription, position: Int)
+    fun onSubscriptionSelected(oneTimeProduct: OneTimeProduct, position: Int)
 }

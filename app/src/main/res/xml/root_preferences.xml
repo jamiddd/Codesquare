@@ -3,10 +3,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout="@layout/sample_fragment_background">
 
-    <Preference
-        android:id="@+id/subscription"
-        app:key="subscription_setting"
-        app:layout="@layout/subscription_setting_layout" />
+    <PreferenceCategory app:key="subscription_category">
+        <Preference
+            android:id="@+id/subscription"
+            app:key="subscription_setting"
+            app:layout="@layout/subscription_setting_layout" />
+    </PreferenceCategory>
 
     <PreferenceCategory app:key="admin_section" app:title="Admin">
         <Preference

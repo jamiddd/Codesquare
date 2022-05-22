@@ -5,6 +5,7 @@
       <map>
         <entry key="..\:/Users/jamid/.gradle/caches/transforms-3/e696ff673b4459ebf76ceeb2baa28bfc/transformed/material-1.5.0/res/drawable/design_snackbar_background.xml" value="0.1" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/background_glow.xml" value="0.1575" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/blue_gradient.xml" value="0.141" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/bottom_sheet_background.xml" value="0.1" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/bottom_sheet_background_night.xml" value="0.1725" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/drawable/chat_channel_item.xml" value="0.23515981735159816" />
@@ -262,6 +263,7 @@
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/small_image_item.xml" value="0.4" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/subscription_item.xml" value="0.2" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/subscription_layout.xml" value="0.2" />
+        <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/subscription_layout_2.xml" value="0.176" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/subscription_setting_layout.xml" value="0.25" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/tags_container.xml" value="0.4" />
         <entry key="..\:/Users/jamid/AndroidStudioProjects/Codesquare2/app/src/main/res/layout/test_chipgroup.xml" value="0.264" />

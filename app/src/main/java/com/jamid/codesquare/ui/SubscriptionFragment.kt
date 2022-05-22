@@ -6,40 +6,36 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.RadioButton
 import androidx.fragment.app.activityViewModels
 import androidx.paging.ExperimentalPagingApi
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.android.billingclient.api.BillingFlowParams
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.jamid.codesquare.MainViewModel
-import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.recyclerview.SubscriptionAdapter
-import com.jamid.codesquare.data.Subscription
-import com.jamid.codesquare.databinding.SubscriptionLayoutBinding
-import com.jamid.codesquare.listeners.SubscriptionListener
+import com.jamid.codesquare.data.OneTimeProduct
+import com.jamid.codesquare.databinding.SubscriptionLayout2Binding
+import com.jamid.codesquare.disappear
+import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
 
 @ExperimentalPagingApi
-class SubscriptionFragment : RoundedBottomSheetDialogFragment(), SubscriptionListener {
+class SubscriptionFragment : RoundedBottomSheetDialogFragment() {
 
-    private lateinit var binding: SubscriptionLayoutBinding
-    private lateinit var subscriptionAdapter: SubscriptionAdapter
+    private lateinit var binding: SubscriptionLayout2Binding
     private val viewModel: MainViewModel by activityViewModels()
-    private var lastPosition = -1
+    private var lastPosition = 0
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        binding = SubscriptionLayoutBinding.inflate(inflater)
+        binding = SubscriptionLayout2Binding.inflate(inflater)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        subscriptionAdapter = SubscriptionAdapter(this)
+//        subscriptionAdapter = SubscriptionAdapter(this)
 
         val dialog = dialog!!
         val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
@@ -48,88 +44,97 @@ class SubscriptionFragment : RoundedBottomSheetDialogFragment(), SubscriptionLis
 
         behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
-        binding.subscriptionsRecycler.apply {
+       /* binding.subscriptionsRecycler.apply {
             adapter = subscriptionAdapter
             layoutManager = LinearLayoutManager(requireContext())
-        }
+        }*/
 
-        viewModel.subscriptionDetails.observe(viewLifecycleOwner) { list ->
+        viewModel.productDetails.observe(viewLifecycleOwner) { list ->
             if (!list.isNullOrEmpty()) {
-                val subscriptions = list.map {
-                    Subscription(it.sku, it.priceAmountMicros, it.price, it.priceCurrencyCode, it.subscriptionPeriod, false, it.description, System.currentTimeMillis(), false)
+                val products = list.map {
+                    OneTimeProduct(it.productId, it.oneTimePurchaseOfferDetails!!.priceAmountMicros, it.oneTimePurchaseOfferDetails!!.formattedPrice, it.oneTimePurchaseOfferDetails!!.priceCurrencyCode, false, it.description, System.currentTimeMillis(), false)
                 }
 
-                viewModel.setSubscriptions(subscriptions)
-            }
-        }
-
-        viewModel.subscriptions.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                Log.d(TAG, it.map {it1 -> it1.isSelected }.toString())
-                subscriptionAdapter.submitList(it)
-            } else {
-                Log.d(TAG, "No subscriptions")
+                viewModel.setProducts(products)
             }
         }
 
 
-        binding.subscriptionDoneBtn.isEnabled = false
-
-        binding.subscriptionCloseBtn.setOnClickListener {
+        binding.closeBtn.setOnClickListener {
             dismiss()
         }
 
-        binding.subscriptionDoneBtn.setOnClickListener {
+        binding.upgradBtn.setOnClickListener {
             val billingClient = (activity as MainActivity?)?.playBillingController?.billingClient
             if (billingClient != null) {
 
-                binding.loadingScrim.show()
+                binding.upgradeProgress.show()
+                binding.upgradBtn.disappear()
 
-                val list = viewModel.subscriptionDetails.value
+                val list = viewModel.productDetails.value
                 if (!list.isNullOrEmpty()) {
                     val detail = list[lastPosition]
-                    viewModel.setCurrentlySelectedSku(detail)
-                    billingClient.launchBillingFlow(requireActivity(), BillingFlowParams.newBuilder().setSkuDetails(detail).build())
+
+                    val pp = mutableListOf(
+                        BillingFlowParams.ProductDetailsParams
+                            .newBuilder()
+                            .setProductDetails(detail)
+                            .build()
+                    )
+
+                    val flowParams = BillingFlowParams.newBuilder()
+                        .setProductDetailsParamsList(pp)
+                        .build()
+
+                    billingClient.launchBillingFlow(requireActivity(), flowParams).responseCode
                 }
+            }
+        }
+
+
+        (activity as MainActivity).playBillingController.errors.observe(this) {
+            if (it != null) {
+                binding.upgradeProgress.hide()
+                binding.upgradBtn.show()
             }
         }
 
     }
 
-    override fun onSubscriptionSelected(subscription: Subscription, position: Int) {
+   /* override fun onSubscriptionSelected(oneTimeProduct: OneTimeProduct, position: Int) {
         binding.subscriptionDoneBtn.isEnabled = true
 
-        val existingList = viewModel.subscriptions.value
+        val existingList = viewModel.products.value
         if (!existingList.isNullOrEmpty()) {
             val newList = existingList.toMutableList()
 
             // change old position
             if (lastPosition != -1) {
-                val oldSubscription = newList[lastPosition]
-                oldSubscription.isSelected = false
-                newList[lastPosition] = oldSubscription
+                val oldProduct = newList[lastPosition]
+                oldProduct.isSelected = false
+                newList[lastPosition] = oldProduct
 
-                val lastChild =getChildRadioBtn(lastPosition)
+                val lastChild = getChildRadioBtn(lastPosition)
                 lastChild?.isChecked = false
             }
 
             // set new position
-            subscription.isSelected = true
-            newList[position] = subscription
+            oneTimeProduct.isSelected = true
+            newList[position] = oneTimeProduct
             lastPosition = position
 
             val child = getChildRadioBtn(position)
             child?.isChecked = true
 
             // set the list
-            viewModel.setSubscriptions(newList)
+            viewModel.setProducts(newList)
         }
     }
 
     private fun getChildRadioBtn(position: Int) : RadioButton? {
         return binding.subscriptionsRecycler.getChildAt(position)?.findViewById(
             R.id.subscription_select_btn)
-    }
+    }*/
 
     override fun onPause() {
         super.onPause()

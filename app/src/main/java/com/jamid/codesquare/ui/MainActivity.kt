@@ -33,6 +33,7 @@ import androidx.navigation.ui.NavigationUI
 import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
+import com.android.billingclient.api.PurchasesUpdatedListener
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
 import com.firebase.geofire.GeoFireUtils
@@ -800,7 +801,13 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         playBillingController.purchaseDetails.observe(this) {p1 ->
             if (!p1.isNullOrEmpty()) {
-                viewModel.setSubscriptionDetailsList(p1)
+                viewModel.setProductDetailsList(p1)
+            }
+        }
+
+        playBillingController.errors.observe(this) {
+            if (it != null) {
+                subscriptionFragment?.dismiss()
             }
         }
 
@@ -872,12 +879,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     fun isEligibleToCreateProject(): Boolean {
         val currentUser = UserManager.currentUser
-        return currentUser.premiumState.toInt() != 1 && (currentUser.posts.size + currentUser.archivedProjects.size) < 1
+        return if (currentUser.posts.size + currentUser.archivedProjects.size > 0) {
+            // check if premium user
+            currentUser.premiumState.toInt() == 1
+        } else {
+            true
+        }
     }
 
     fun isEligibleToAddContributor(post: Post): Boolean {
         val currentUser = UserManager.currentUser
-        return post.contributors.size < 5 || currentUser.premiumState.toInt() == 1
+        return if (post.contributors.size < 5) {
+            true
+        } else {
+            currentUser.premiumState.toInt() == 1
+        }
     }
 
     fun isEligibleToCollaborate(): Boolean {
@@ -2607,5 +2623,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         currentIndefiniteSnackbar?.show()
     }
+
 
 }
