@@ -148,7 +148,7 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, MainViewModel>() {
 
         val cs = object: ClickableSpan() {
             override fun onClick(p0: View) {
-                (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/terms-and-conditions")
+                (activity as MainActivity).onLinkClick("https://www.collabmee.com/terms")
             }
 
             override fun updateDrawState(ds: TextPaint) {
@@ -161,7 +161,7 @@ class LoginFragment : BaseFragment<FragmentLoginBinding, MainViewModel>() {
 
         val cs1 = object: ClickableSpan() {
             override fun onClick(p0: View) {
-                (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/home")
+                (activity as MainActivity).onLinkClick("https://www.collabmee.com/privacy")
             }
 
             override fun updateDrawState(ds: TextPaint) {

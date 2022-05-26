@@ -15,23 +15,23 @@ class OnBoardingViewPager(private val fa: FragmentActivity): FragmentStateAdapte
         return when (position) {
             0 -> {
                 if (fa.isNightMode()) {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Collaborate on projects with other people and get experienced in what you like.", R.raw.collaboration_dark))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Get to know what people are doing right now.", R.raw.collaboration_dark))
                 } else {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Collaborate on projects with other people and get experienced in what you like.", R.raw.collaboration))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Get to know what people are doing right now.", R.raw.collaboration))
                 }
             }
             1 -> {
                 if (fa.isNightMode()) {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Search from thousands of projects to work on.", R.raw.search_dark))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Explore and get what you're looking for.", R.raw.search_dark))
                 } else {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Search from thousands of projects to work on.", R.raw.search))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Explore and get what you're looking for.", R.raw.search))
                 }
             }
             else -> {
                 if (fa.isNightMode()) {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and make the world a better place with new innovations.", R.raw.communication_dark))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections.", R.raw.communication_dark))
                 } else {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and make the world a better place with new innovations.", R.raw.communication))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections.", R.raw.communication))
                 }
             }
         }
