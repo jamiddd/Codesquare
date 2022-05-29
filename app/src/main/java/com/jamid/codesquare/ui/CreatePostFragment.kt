@@ -513,6 +513,16 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         binding.postLinksContainer.addView(chip, 0)
     }
 
+    override fun onStop() {
+        super.onStop()
+        binding.postTitleText.editText?.text?.toString()
+            ?.let { viewModel.setCurrentPostTitle(it) }
+
+        binding.postContentText.editText?.text?.toString()?.let {
+            viewModel.setCurrentPostContent(it)
+        }
+    }
+
     override fun onPause() {
         super.onPause()
         binding.postTitleText.editText?.text?.toString()
