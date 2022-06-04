@@ -38,4 +38,13 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Query("SELECT * FROM notifications WHERE type = :type AND read = 0")
     abstract fun getUnreadNotifications(type: Int): LiveData<List<Notification>>
 
+    @Query("UPDATE notifications SET read = 1 WHERE type = 0 AND read = 0")
+    abstract suspend fun updateAllGeneralNotificationsToRead()
+
+    @Query("UPDATE notifications SET read = 1 WHERE type = 1 AND read = 0")
+    abstract suspend fun updateAllRequestNotificationsToRead()
+
+    @Query("UPDATE notifications SET read = 1 WHERE type = -1 AND read = 0")
+    abstract suspend fun updateAllInviteNotificationsToRead()
+
 }

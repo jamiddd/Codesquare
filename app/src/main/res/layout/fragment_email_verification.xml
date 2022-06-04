@@ -8,6 +8,7 @@
 
     <LinearLayout
         android:id="@+id/linearLayout4"
+        style="@style/AppTheme.GenericBackground2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="12dp"
@@ -31,6 +32,13 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
             app:drawableTopCompat="@drawable/ic_round_report_problem_24" />
 
+        <TextView
+            android:id="@+id/textView16"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="(The email might be in spam folder. Be sure to check that out.)" />
+
         <ProgressBar
             android:id="@+id/email_verification_progress"
             style="?android:attr/progressBarStyle"
@@ -44,8 +52,9 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        style="@style/AppTheme.SplashLogo"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:layout_marginBottom="24dp"
         android:contentDescription="@string/logo_of_the_app"
         app:layout_constraintBottom_toTopOf="@+id/textView"
@@ -53,8 +62,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.40"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:srcCompat="@drawable/ic_collab_logo" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/textView"

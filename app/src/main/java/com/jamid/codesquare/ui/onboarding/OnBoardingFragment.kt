@@ -5,13 +5,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.viewpager.OnBoardingViewPager
 import com.jamid.codesquare.databinding.FragmentOnBoardingBinding
+import com.jamid.codesquare.hideKeyboard
 import com.jamid.codesquare.slideRightNavOptions
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class OnBoardingFragment: Fragment() {
 
@@ -30,6 +34,11 @@ class OnBoardingFragment: Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.onBoardingPager.adapter = OnBoardingViewPager(requireActivity())
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(400)
+            hideKeyboard()
+        }
 
         TabLayoutMediator(binding.onBoardingTabs, binding.onBoardingPager) { _, _ ->
 

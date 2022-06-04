@@ -68,11 +68,11 @@ class MyNetworkManager(private val mContext: Context, private val networkStateLi
     override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
         super.onCapabilitiesChanged(network, networkCapabilities)
         Log.d(TAG, "onCapabilitiesChanged: Invoked")
-        val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
+        /*val downSpeed = networkCapabilities.linkDownstreamBandwidthKbps
         if (downSpeed < 1000) {
             // slow network
             networkStateListener?.onNetworkNotAvailable()
-        }
+        }*/
     }
 
     override fun onUnavailable() {

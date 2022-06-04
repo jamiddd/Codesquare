@@ -275,14 +275,8 @@ class AddTagsFragment: RoundedBottomSheetDialogFragment(), SearchItemClickListen
 
     override fun onSearchItemClick(searchQuery: SearchQuery) {
         val tag = searchQuery.queryString
-        val existingTag = binding.postTags.findViewWithTag<Chip>(tag)
-
-        binding.postTagSearchInput.editText?.text?.clear()
-        if (existingTag != null){
-            return
-        }
-
         insertInterestItem(tag)
+        binding.postTagSearchInput.editText?.text?.clear()
     }
 
     private fun insertInterestItem(tag: String) {

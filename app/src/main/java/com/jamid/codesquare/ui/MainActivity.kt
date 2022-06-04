@@ -2618,7 +2618,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         currentIndefiniteSnackbar = Snackbar.make(binding.root, "Network not available", Snackbar.LENGTH_INDEFINITE)
             .setBackgroundTint(bgColor)
-            .setBehavior(NoSwipeBehavior())
             .setTextColor(txtColor)
 
         currentIndefiniteSnackbar?.show()

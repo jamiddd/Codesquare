@@ -23,6 +23,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.data.FeedSort.*
+import com.jamid.codesquare.data.form.UserEditForm
 import com.jamid.codesquare.db.*
 import com.jamid.codesquare.ui.create.CreatePostForm
 import kotlinx.coroutines.Dispatchers
@@ -413,7 +414,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             val formattedTag = "%$tag%"
 
             Pager(
-                config = PagingConfig(pageSize = 20),
+                config = PagingConfig(pageSize = 15),
                 remoteMediator = PostRemoteMediator(query, repo, true) {
                     !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
                 }
@@ -438,7 +439,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
             }.flow.cachedIn(viewModelScope)
         } else {
             Pager(
-                config = PagingConfig(pageSize = 20),
+                config = PagingConfig(pageSize = 15),
                 remoteMediator = PostRemoteMediator(query, repo, true) {
                     !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors).isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(it.contributors).isNotEmpty()))
                 }
@@ -1434,7 +1435,7 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     }
 
     fun insertInterestItem(interestItem: InterestItem) = viewModelScope.launch (Dispatchers.IO) {
-        repo.insertInterestItems(listOf(interestItem))
+        repo.insertInterestItem(interestItem)
     }
 
     fun getUnreadGeneralNotifications(): LiveData<List<Notification>> {
@@ -1481,27 +1482,80 @@ class MainViewModel(application: Application): AndroidViewModel(application) {
     /* User related functions end */
 
 
+    private val _userEditForm = MutableLiveData<UserEditForm?>()
+    val userEditForm: LiveData<UserEditForm?> = _userEditForm
 
+    fun setUserEditForm(user: User) {
+        val userEditForm = UserEditForm(
+            user.name,
+            user.username,
+            user.tag,
+            user.about,
+            user.interests,
+            user.photo
+        )
+        _userEditForm.postValue(userEditForm)
+    }
 
+    fun setUserEditFormName(name: String) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.name = name
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun setUserEditFormUsername(username: String) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.username = username
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun setUserEditFormTag(tag: String) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.tag = tag
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun setUserEditFormAbout(about: String) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.about = about
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun setUserEditFormInterests(interests: List<String>) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.interests = interests
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun setUserEditFormProfilePhoto(photo: String) {
+        val existingForm = userEditForm.value
+        if (existingForm != null) {
+            existingForm.photo = photo
+            _userEditForm.postValue(existingForm)
+        }
+    }
 
+    fun updateAllGeneralNotificationsToRead() = viewModelScope.launch(Dispatchers.IO) {
+        repo.updateAllGeneralNotificationsToRead()
+    }
 
+    fun updateAllRequestNotificationsToRead() = viewModelScope.launch(Dispatchers.IO) {
+        repo.updateAllRequestNotificationsToRead()
+    }
 
-
-
-
-
-
-
-
-
-
-
-
+    fun updateAllInviteNotificationToRead() = viewModelScope.launch(Dispatchers.IO) {
+        repo.updateAllInviteNotificationsToRead()
+    }
 
 
     companion object {

@@ -128,7 +128,7 @@ class HomeFragment: BaseFragment<FragmentHomeBinding, MainViewModel>() {
         super.onOptionsItemSelected(item)
         return when (item.itemId) {
             R.id.notifications -> {
-                findNavController().navigate(R.id.notificationCenterFragment, bundleOf(TYPE to 0), slideRightNavOptions())
+                findNavController().navigate(R.id.notificationCenterFragment, null, slideRightNavOptions())
                 true
             }
             R.id.search -> {

@@ -11,6 +11,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import com.google.android.flexbox.FlexboxLayout
@@ -23,6 +24,8 @@ import com.jamid.codesquare.databinding.FragmentEditProfileBinding
 import com.jamid.codesquare.listeners.AddTagsListener
 import com.jamid.codesquare.listeners.InterestItemClickListener
 import com.jamid.codesquare.ui.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @ExperimentalPagingApi
 class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListener {
@@ -33,7 +36,6 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
     private var loadingFragment: MessageDialogFragment? = null
     private lateinit var currentUser: User
     private val needToUpdate = MutableLiveData<Boolean>()
-    private var isUsernameErrorEnabled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,22 +55,25 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
                 if (!validateUser())
                     return true
 
-                val username = binding.usernameText.editText?.text.toString()
+                val userEditForm = viewModel.userEditForm.value ?: return true
+
                 val updatedUser = currentUser.copy()
 
+                val username = userEditForm.username
+
                 val changes = mutableMapOf(
-                    "name" to binding.nameText.editText?.text.toString(),
-                    "about" to binding.aboutText.editText?.text.toString(),
-                    "tag" to binding.tagText.editText?.text.toString(),
-                    "interests" to getInterests(),
-                    "photo" to  profileImage
+                    "name" to userEditForm.name,
+                    "about" to userEditForm.about,
+                    "tag" to userEditForm.tag,
+                    "interests" to userEditForm.interests,
+                    "photo" to  userEditForm.photo
                 )
 
-                updatedUser.name = changes["name"] as String
-                updatedUser.about = changes["about"] as String
-                updatedUser.tag = changes["tag"] as String
-                updatedUser.interests = getInterests()
-                updatedUser.photo = profileImage
+                updatedUser.name = userEditForm.name
+                updatedUser.about = userEditForm.about
+                updatedUser.tag = userEditForm.tag
+                updatedUser.interests = userEditForm.interests
+                updatedUser.photo = userEditForm.photo
 
                 if (currentUser.username != username) {
                     viewModel.checkIfUsernameTaken(username) {
@@ -194,23 +199,100 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         savedInstanceState: Bundle?
     ): View {
         binding = FragmentEditProfileBinding.inflate(inflater)
+        currentUser = UserManager.currentUser
         return binding.root
+    }
+
+
+    private fun setFormObserver() {
+
+        binding.nameText.editText?.doAfterTextChanged {
+            binding.nameText.isErrorEnabled = false
+            binding.nameText.error = null
+
+            val name = if (it.isNullOrBlank()) {
+                ""
+            } else {
+                it.trim().toString()
+            }
+
+            viewModel.setUserEditFormName(name)
+        }
+
+        binding.usernameText.editText?.doAfterTextChanged {
+            binding.usernameText.isErrorEnabled = false
+            binding.usernameText.error = null
+
+            val username = if (it.isNullOrBlank()) {
+                ""
+            } else {
+                it.trim().toString()
+            }
+
+            viewModel.setUserEditFormUsername(username)
+        }
+
+        binding.tagText.editText?.doAfterTextChanged {
+            binding.tagText.isErrorEnabled = false
+            binding.tagText.error = null
+
+            val tag = if (it.isNullOrBlank()) {
+                ""
+            } else {
+                it.trim().toString()
+            }
+
+            viewModel.setUserEditFormTag(tag)
+        }
+
+        binding.aboutText.editText?.doAfterTextChanged {
+            binding.aboutText.isErrorEnabled = false
+            binding.aboutText.error = null
+
+            val about = if (it.isNullOrBlank()) {
+                ""
+            } else {
+                it.trim().toString()
+            }
+
+            viewModel.setUserEditFormAbout(about)
+        }
+
+        binding.interestsGroup.onChildrenChanged {
+            val interests = getInterests()
+            viewModel.setUserEditFormInterests(interests)
+        }
+
+    }
+
+    private fun setFormOnStart() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(500)
+            val userEditForm = viewModel.userEditForm.value
+            if (userEditForm == null) {
+                val currentUser = UserManager.currentUser
+                viewModel.setUserEditForm(currentUser)
+
+                setFormOnStart()
+            } else {
+                binding.nameText.editText?.setText(userEditForm.name)
+                binding.usernameText.editText?.setText(userEditForm.username)
+                binding.tagText.editText?.setText(userEditForm.tag)
+                binding.aboutText.editText?.setText(userEditForm.about)
+
+                addInterests(userEditForm.interests)
+                setProfileImage(userEditForm.photo)
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        currentUser = UserManager.currentUser
+
+        setFormOnStart()
+        setFormObserver()
 
         binding.userImg.setOnClickListener(onImageUpdateClick)
-
-        // setting views on load
-        profileImage = currentUser.photo
-        binding.userImg.setImageURI(profileImage)
-        binding.nameText.editText?.setText(currentUser.name)
-        binding.usernameText.editText?.setText(currentUser.username)
-        binding.tagText.editText?.setText(currentUser.tag)
-        binding.aboutText.editText?.setText(currentUser.about)
-        addInterests(currentUser.interests)
 
         viewModel.currentImage.observe(viewLifecycleOwner) { image ->
             onNewImageOrNullSet(image)
@@ -236,94 +318,7 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
 
             frag.show(childFragmentManager, AddTagsFragment.TAG)
 
-           /* val inputSheet = InputSheetFragment.builder("Adding interest helps us to search for related projects for you.")
-                .setTitle("Add Interest")
-                .setHint("Add interest ... ")
-//                .setMessage("You can add multiple interests at once by separating with a space.")
-                .setPositiveButton("Add") { _, _, s ->
-                    if (s.isNotBlank()) {
-                        addInterest(s)
-                    }
-                }
-                .setNegativeButton("Cancel") { a, _ ->
-                    a.dismiss()
-                }.build()
-
-            inputSheet.show(childFragmentManager, InputSheetFragment.TAG)*/
-
         }
-
-        binding.nameText.editText?.doAfterTextChanged {
-            binding.nameText.isErrorEnabled = false
-            binding.nameText.error = null
-            if (!it.isNullOrBlank()) {
-                checkState()
-            } else {
-                disableSaveBtn()
-            }
-        }
-
-        binding.usernameText.editText?.doAfterTextChanged {
-            binding.usernameText.isErrorEnabled = false
-            binding.usernameText.error = null
-            if (!it.isNullOrBlank()) {
-                checkState()
-            } else {
-                disableSaveBtn()
-            }
-        }
-
-        binding.aboutText.editText?.doAfterTextChanged {
-            binding.aboutText.isErrorEnabled = false
-            binding.aboutText.error = null
-            if (!it.isNullOrBlank()) {
-                checkState()
-            } else {
-                if (currentUser.about == "") {
-                    disableSaveBtn()
-                } else {
-                    enableSaveBtn()
-                }
-            }
-        }
-
-        binding.tagText.editText?.doAfterTextChanged {
-            binding.tagText.isErrorEnabled = false
-            binding.tagText.error = null
-            if (!it.isNullOrBlank()) {
-                checkState()
-            } else {
-                if (currentUser.tag == "") {
-                    disableSaveBtn()
-                } else {
-                    enableSaveBtn()
-                }
-            }
-        }
-
-    }
-
-    private fun checkState() {
-        onChange()
-    }
-
-    private fun shouldDisableSaveBtn(): Boolean {
-        val e1 = currentUser.name == binding.nameText.editText?.text.toString()
-        val e2 = currentUser.photo == profileImage
-        val e3 = currentUser.tag == binding.tagText.editText?.text.toString()
-        val e4 = currentUser.username == binding.usernameText.editText?.text.toString()
-        val e5 = currentUser.about == binding.aboutText.editText?.text.toString()
-        val e6 = currentUser.interests.sorted().toString() == getInterests().sorted().toString()
-
-        return e1 && e2 && e3 && e4 && e5 && e6
-    }
-
-    private fun disableSaveBtn() {
-        needToUpdate.postValue(false)
-    }
-
-    private fun enableSaveBtn() {
-        needToUpdate.postValue(true)
     }
 
     private fun uploadImage(image: Uri) {
@@ -338,15 +333,13 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
     }
 
     private fun removeImage() {
-        profileImage = userImages.random()
+        profileImage = ""
         setProfileImage(profileImage)
     }
 
     private fun onImageUploadFailed(e: Exception) {
         removeImage()
-        toast(e.message.toString())
     }
-
 
     private fun onImageUploaded() {
         binding.userImageProgress.hide()
@@ -354,11 +347,6 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
     }
 
     private fun onNewImageOrNullSet(image: Uri? = null) {
-
-        onChange()
-
-        val currentUser = UserManager.currentUser
-
         val colorFilter =  ContextCompat.getColor(
             requireContext(),
             R.color.darkest_transparent
@@ -375,7 +363,7 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
             binding.userImageProgress.hide()
 
             // setting the already existing image as profile image
-            setProfileImage(currentUser.photo)
+            setProfileImage("")
         }
 
     }
@@ -385,6 +373,7 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
     }
 
     private fun setProfileImage(image: String) {
+        viewModel.setUserEditFormProfilePhoto(image)
         profileImage = image
         binding.userImg.setImageURI(profileImage)
     }
@@ -415,7 +404,6 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
 
         chip.setOnCloseIconClickListener {
             binding.interestsGroup.removeView(chip)
-            onChange()
         }
 
         binding.interestsGroup.addView(chip, 0)
@@ -424,17 +412,8 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
             marginEnd = resources.getDimension(R.dimen.generic_len).toInt()
         }
 
-        onChange()
-
     }
 
-    private fun onChange() {
-        if (shouldDisableSaveBtn()) {
-            needToUpdate.postValue(false)
-        } else {
-            needToUpdate.postValue(true)
-        }
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -446,8 +425,16 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
     }
 
     override fun onTagsSelected(tags: List<String>) {
-        addInterests(tags)
+        val existingInterests = getInterests()
+        val allInterests = mutableListOf<String>()
+
+        allInterests.addAll(existingInterests)
+        allInterests.addAll(tags)
+
+        addInterests(allInterests.distinct())
     }
+
+
 
     override fun onInterestClick(interestItem: InterestItem) {
         if (interestItem.isChecked) {
@@ -456,5 +443,8 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
             viewModel.checkInterestItem(interestItem)
         }
     }
+
+
+
 
 }

@@ -4,10 +4,6 @@ plugins {
     id 'kotlin-kapt'
     id 'kotlin-parcelize'
 
-
-
-
-
     id 'com.google.gms.google-services'
     id 'kotlinx-serialization'
     id 'com.google.firebase.crashlytics'
@@ -32,7 +28,7 @@ android {
         applicationId "com.jamid.codesquare"
         minSdk 23
         targetSdk 31
-        versionCode 26
+        versionCode 38
         versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -79,10 +75,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    
     kotlinOptions {
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+
     configurations.all {
         resolutionStrategy {
             force("com.google.android.gms:play-services-measurement-base:18.0.0")

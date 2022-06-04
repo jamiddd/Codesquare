@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.*
-import androidx.activity.addCallback
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.net.toUri
 import androidx.core.view.children
@@ -13,7 +12,6 @@ import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
-import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -45,6 +43,9 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
     private fun onUpdatePost(post: Post) {
         activity.findViewById<MaterialToolbar>(R.id.main_toolbar).title = getString(R.string.update_post)
         isUpdateMode = true
+
+        binding.postTitleText.disable()
+
         viewModel.setCurrentPost(post)
     }
 
@@ -67,10 +68,10 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
                 if (!validatePostContent())
                     return true
 
-                viewModel.setCurrentPostTitle(getTitle())
+                /*viewModel.setCurrentPostTitle(getTitle())
                 viewModel.setCurrentPostTags(getTags())
                 viewModel.setCurrentPostContent(getContent())
-                viewModel.setCurrentPostLinks(getLinks())
+                viewModel.setCurrentPostLinks(getLinks())*/
 
                 if (isUpdateMode) {
                     val dialogFragment = MessageDialogFragment.builder(getString(R.string.update_post_loading))
@@ -195,6 +196,9 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
             viewModel.setCurrentPost(newPost)
         }
 
+        setNonReactiveUiOnStartAndResume()
+
+
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
 
@@ -220,89 +224,6 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
             binding.postTitleText.error = null
         }
 
-        viewModel.currentPost.observe(viewLifecycleOwner) { currentPost ->
-            Log.d(TAG, "onViewCreated: Current post has changed")
-            if (currentPost != null) {
-                val images = currentPost.images
-                if (images.isNotEmpty()) {
-
-                    Log.d(TAG, "onViewCreated: Images not empty")
-
-                    val newImages = checkForSizeIssues(images)
-
-                    if (newImages.size > images.size) {
-                        viewModel.setCurrentPostImages(newImages)
-                        return@observe
-                    }
-
-                    imageAdapter.submitList(images)
-
-                    imagesCount = images.size
-
-                    updateLayoutOnImagesLoaded()
-
-                    val counterText = "1/$imagesCount"
-                    binding.imageCounter.text = counterText
-
-                    binding.removeCurrentImgBtn.show()
-
-                } else {
-
-                    Log.d(TAG, "onViewCreated: Images empty")
-
-                    imageAdapter.submitList(emptyList())
-                    updateBtnOnImageCleared()
-
-                    binding.removeCurrentImgBtn.hide()
-                }
-
-
-                binding.postTitleText.editText?.setText(currentPost.name)
-
-                binding.postContentText.editText?.setText(currentPost.content)
-
-                if (currentPost.location.address.isNotBlank()) {
-                    binding.postLocationText.text = currentPost.location.address
-
-                    binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_location_on_small, 0, 0, 0)
-
-                    binding.postLocationText.setOnClickListener {
-
-                        val frag = MessageDialogFragment.builder("Are you sure you want to remove location attached to this post?")
-                            .setTitle("Removing location ...")
-                            .setPositiveButton("Remove") { _, _ ->
-                                viewModel.setCurrentPostLocation(Location())
-                            }
-                            .setNegativeButton("Cancel") { d, _ ->
-                                d.dismiss()
-                            }
-                            .build()
-
-                        frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-                    }
-                } else {
-                    binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
-                    binding.postLocationText.text = getString(R.string.add_location)
-
-                    binding.postLocationText .setOnClickListener {
-                        viewModel.setCurrentPostTitle(getTitle())
-                        viewModel.setCurrentPostContent(getContent())
-
-                        val tags = getTags()
-                        viewModel.setCurrentPostTags(tags)
-
-                        val frag = LocationFragment()
-                        frag.show(activity.supportFragmentManager, "LocationFragment")
-                    }
-                }
-
-                addTags(currentPost.tags)
-                addLinks(currentPost.sources)
-
-            } else {
-                updateBtnOnImageCleared()
-            }
-        }
 
         binding.removeCurrentImgBtn.setOnClickListener {
             val pos = imagesManager.findFirstCompletelyVisibleItemPosition()
@@ -370,6 +291,8 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
             }
         })
 
+        setPostObserver()
+
        /* val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val isCreatingPostFirstTime = sharedPref.getBoolean("isCreatingPostFirstTime", true)
         if (isCreatingPostFirstTime) {
@@ -390,6 +313,37 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
             }
         }*/
 
+    }
+
+    private fun setImagesUi(images: List<String>) {
+        if (images.isNotEmpty()) {
+            val newImages = checkForSizeIssues(images)
+
+            if (newImages.size > images.size) {
+                viewModel.setCurrentPostImages(newImages)
+                return
+            }
+
+            imageAdapter.submitList(images)
+
+            imagesCount = images.size
+
+            updateLayoutOnImagesLoaded()
+
+            val counterText = "1/$imagesCount"
+            binding.imageCounter.text = counterText
+
+            binding.removeCurrentImgBtn.show()
+
+        } else {
+
+            Log.d(TAG, "onViewCreated: Images empty")
+
+            imageAdapter.submitList(emptyList())
+            updateBtnOnImageCleared()
+
+            binding.removeCurrentImgBtn.hide()
+        }
     }
 
     private fun checkForSizeIssues(images: List<String>): List<String> {
@@ -437,7 +391,7 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         return tags
     }
 
-    private fun addTags(tags: List<String>) {
+    private fun setTags(tags: List<String>) {
         if (binding.postTagsContainer.childCount != 1) {
             binding.postTagsContainer.removeViews(0, binding.postTagsContainer.childCount - 1)
         }
@@ -446,7 +400,7 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         }
     }
 
-    private fun addLinks(links: List<String>) {
+    private fun setLinks(links: List<String>) {
         if (binding.postLinksContainer.childCount != 1) {
             binding.postLinksContainer.removeViews(0, binding.postLinksContainer.childCount - 1)
         }
@@ -463,8 +417,6 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         chip.isCloseIconVisible = true
         chip.setOnCloseIconClickListener {
             binding.postTagsContainer.removeView(chip)
-
-            onChange()
         }
         binding.postTagsContainer.addView(chip, 0)
     }
@@ -506,8 +458,6 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         chip.isCheckable = false
         chip.setOnCloseIconClickListener {
             binding.postLinksContainer.removeView(chip)
-
-            onChange()
         }
 
         binding.postLinksContainer.addView(chip, 0)
@@ -548,7 +498,170 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
     }
 
     override fun onTagsSelected(tags: List<String>) {
-        viewModel.setCurrentPostTags(tags)
+
+        val existingTags = getTags()
+        val allTags = mutableListOf<String>()
+
+        allTags.addAll(existingTags)
+        allTags.addAll(tags)
+
+        setTags(allTags.distinct())
+    }
+
+
+    override fun onResume() {
+        super.onResume()
+        setNonReactiveUiOnStartAndResume()
+    }
+
+    fun setNonReactiveUiOnStartAndResume() = viewLifecycleOwner.lifecycleScope.launch {
+
+        delay(500)
+
+        val currentPostState = viewModel.currentPost.value
+        if (currentPostState != null) {
+
+            Log.d(TAG, "setNonReactiveUiOnStartAndResume: $currentPostState")
+
+            /* This is must because the title and content are not refreshed
+            all the time by the observer, since it may lead to infinite loop */
+
+            binding.postTitleText.editText?.setText(currentPostState.name)
+            binding.postContentText.editText?.setText(currentPostState.content)
+            setTags(currentPostState.tags)
+            setLinks(currentPostState.sources)
+        }
+    }
+
+    fun setLocationTextUi(location: Location) {
+        if (location.address.isNotBlank()) {
+            binding.postLocationText.text = location.address
+
+            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_location_on_small, 0, 0, 0)
+
+            binding.postLocationText.setOnClickListener {
+                val frag = MessageDialogFragment.builder("Are you sure you want to remove location attached to this post?")
+                    .setTitle("Removing location ...")
+                    .setPositiveButton("Remove") { _, _ ->
+                        viewModel.setCurrentPostLocation(Location())
+                    }
+                    .setNegativeButton("Cancel") { d, _ ->
+                        d.dismiss()
+                    }
+                    .build()
+
+                frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
+            }
+        } else {
+            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
+
+            binding.postLocationText.text = getString(R.string.add_location)
+
+            binding.postLocationText .setOnClickListener {
+                val frag = LocationFragment()
+                frag.show(activity.supportFragmentManager, "LocationFragment")
+            }
+        }
+    }
+
+    fun setReactiveUi(currentPost: Post) {
+        setImagesUi(currentPost.images)
+        setLocationTextUi(currentPost.location)
+    }
+
+
+    /* There are two places when we need the saved post from viewModel
+    *
+    * 1. when the fragments opens
+    * 2. when the fragment resumes
+    *
+    * Location, tags and links are changed outside the current fragment
+    * hence there should be an observer for current post only regarding
+    * location, tags and links.
+    *
+    * To have updated data at all times, the changes in the form must be
+    * reflected in the viewModel data immediately
+    *
+    * */
+
+
+    fun setPostObserver() {
+        viewModel.currentPost.observe(viewLifecycleOwner) { currentPost ->
+            if (currentPost != null) {
+                setReactiveUi(currentPost)
+            } else {
+                updateBtnOnImageCleared()
+            }
+        }
+
+        setTitleObserver()
+        setContentObserver()
+        setTagsObserver()
+        setLinksObserver()
+
+    }
+
+    fun setTitleObserver() {
+
+        /* To make sure the title always stays exactly the same as entered immediately */
+        binding.postTitleText.editText?.doAfterTextChanged {
+            if (it.isNullOrBlank()) {
+                viewModel.setCurrentPostTitle("")
+            } else {
+                viewModel.setCurrentPostTitle(it.trim().toString())
+            }
+        }
+    }
+
+    fun setContentObserver() {
+        /* To make sure content is always reflective */
+        binding.postContentText.editText?.doAfterTextChanged {
+            if (it.isNullOrBlank()) {
+                viewModel.setCurrentPostContent("")
+            } else {
+                viewModel.setCurrentPostContent(it.trim().toString())
+            }
+        }
+    }
+
+    fun setTagsObserver() {
+        binding.postTagsContainer.onChildrenChanged {
+            val tags = mutableListOf<String>()
+            for (v in it) {
+                val chip = v as Chip
+                val tag = chip.text.toString()
+                if (tag != "Add tag") {
+                    tags.add(tag)
+                }
+            }
+            viewModel.setCurrentPostTags(tags)
+        }
+    }
+
+    fun setLinksObserver() {
+        binding.postLinksContainer.onChildrenChanged {
+            val links = mutableListOf<String>()
+            for (v in it) {
+                val chip = v as Chip
+                val link = chip.text.toString()
+                if (link != "Add link") {
+                    links.add(link)
+                }
+            }
+            viewModel.setCurrentPostLinks(links)
+        }
+    }
+
+    fun ViewGroup.onChildrenChanged(onChange: (Sequence<View>) -> Unit) {
+        this.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
+            override fun onChildViewAdded(p0: View?, p1: View?) {
+                onChange(this@onChildrenChanged.children)
+            }
+
+            override fun onChildViewRemoved(p0: View?, p1: View?) {
+                onChange(this@onChildrenChanged.children)
+            }
+        })
     }
 
 

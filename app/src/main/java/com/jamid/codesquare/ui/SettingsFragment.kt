@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -49,7 +50,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
             })
         }
-
 
     }
 
@@ -235,6 +235,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val updateProfile = findPreference<Preference>(PROFILE_UPDATE)
         updateProfile?.setOnPreferenceClickListener {
+
+            val currentUser = UserManager.currentUser
+            viewModel.setUserEditForm(currentUser)
+            viewModel.setCurrentImage(currentUser.photo.toUri())
+
             findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
             true
         }
@@ -343,13 +348,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val termsAndConditions = findPreference<Preference>("terms_and_conditions")
         termsAndConditions?.setOnPreferenceClickListener {
-            (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/terms-and-conditions")
+            (activity as MainActivity).onLinkClick("https://www.collabmee.com/terms")
             true
         }
 
         val privacyPolicy =findPreference<Preference>("privacy_policy")
         privacyPolicy?.setOnPreferenceClickListener {
-            (activity as MainActivity).onLinkClick("https://sites.google.com/view/collabmeprivacy/home")
+            (activity as MainActivity).onLinkClick("https://www.collabmee.com/privacy")
             true
         }
 

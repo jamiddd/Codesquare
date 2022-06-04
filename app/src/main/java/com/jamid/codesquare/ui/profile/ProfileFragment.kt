@@ -7,6 +7,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -246,6 +247,10 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
             primaryBtn.iconSize = size.toInt()
 
             primaryBtn.setOnClickListener {
+                val currentUser = UserManager.currentUser
+                viewModel.setUserEditForm(currentUser)
+                viewModel.setCurrentImage(currentUser.photo.toUri())
+
                 findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
             }
         }

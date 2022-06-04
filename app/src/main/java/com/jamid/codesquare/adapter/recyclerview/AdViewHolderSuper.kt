@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.nativead.NativeAdOptions
@@ -33,6 +34,9 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
             .build()
 
         val nativeAdView = binding.root
+
+        /* "ca-app-pub-2159166722829360/7384689864" For play store version */
+        /* "ca-app-pub-3940256099942544/2247696110" For test version*/
 
         binding.adInfoIcon.setOnClickListener {
             projectClickListener.onAdInfoClick()
@@ -121,6 +125,11 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
                     super.onAdLoaded()
                     binding.loadingAdText.hide()
                     binding.adPrimaryAction.show()
+
+                    if (binding.adPrimaryAction.text != "Install") {
+                        binding.adPrimaryAction.icon = ContextCompat.getDrawable(view.context, com.jamid.codesquare.R.drawable.ic_round_arrow_forward_24)
+                    }
+
                 }
             })
             .withNativeAdOptions(adOptions)

@@ -6,8 +6,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Notification
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.listeners.NotificationItemClickListener
+
 
 class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 

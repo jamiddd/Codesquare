@@ -165,11 +165,6 @@
             android:autoVerify="true"
             app:action="ACTION_VIEW"
             app:uri="app://www.collab.com/notifications" />
-        <argument
-            android:name="type"
-            app:argType="integer"
-            android:defaultValue="0" />
-
     </fragment>
     <fragment
         android:id="@+id/reportFragment"

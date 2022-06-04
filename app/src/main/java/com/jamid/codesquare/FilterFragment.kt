@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -92,6 +93,9 @@ class FilterFragment : RoundedBottomSheetDialogFragment() {
         }
 
         binding.addInterestsBtn.setOnClickListener {
+            viewModel.setUserEditForm(currentUser)
+            viewModel.setCurrentImage(currentUser.photo.toUri())
+
             findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
             dismiss()
         }

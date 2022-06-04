@@ -99,6 +99,19 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
             // if there is no old setting no need to do anything
         }
 
+
+        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                hideNotifyBtnOnTop()
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                hideNotifyBtnOnTop()
+            }
+        })
+
         viewModel.isNewPostCreated.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it) {
@@ -218,6 +231,15 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
             }
         }*/
 
+    }
+
+    private fun hideNotifyBtnOnTop() {
+        if (binding.pagerItemsRecycler.scrollY <= 100) {
+            val y = resources.getDimension(R.dimen.appbar_slide_translation)
+            binding.notifyChip.slideUp(y).doOnEnd {
+                binding.notifyChip.hide()
+            }
+        }
     }
 
     private fun searchBasedOnLocation(geoLocation: GeoLocation, tag: String? = null) {

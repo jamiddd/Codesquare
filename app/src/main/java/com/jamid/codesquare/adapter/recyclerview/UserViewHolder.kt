@@ -225,6 +225,10 @@ class UserViewHolder(
             binding.userTag.hide()
         }
 
+        view.setOnClickListener {
+            userClickListener.onUserClick(userMinimal.objectID)
+        }
+
     }
 
     companion object {

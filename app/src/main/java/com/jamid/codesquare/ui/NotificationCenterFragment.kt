@@ -1,14 +1,12 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jamid.codesquare.*
@@ -32,7 +30,7 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
         super.onViewCreated(view, savedInstanceState)
 
         binding.notificationPager.adapter = NotificationPagerAdapter(requireActivity())
-        binding.notificationPager.offscreenPageLimit = 2
+        binding.notificationPager.offscreenPageLimit = 1
         newTab = activity.binding.mainTabLayout.newTab()
 
         OverScrollDecoratorHelper.setUpOverScroll((binding.notificationPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
@@ -79,10 +77,35 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
             }
         }
 
+        binding.notificationPager.registerOnPageChangeCallback(object: ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                super.onPageSelected(position)
+                when (position) {
+                    0 -> {
+                        viewModel.updateAllGeneralNotificationsToRead()
+                    }
+                    1 -> {
+                        viewModel.updateAllRequestNotificationsToRead()
+                    }
+                    2 -> {
+                        viewModel.updateAllInviteNotificationToRead()
+                    }
+                }
+            }
+        })
 
         activity.binding.mainTabLayout.addTab(newTab)
 
-        val type = arguments?.getInt(TYPE) ?: 0
+        val type = arguments?.getInt(TYPE)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            delay(500)
+            requireActivity().runOnUiThread {
+                if (type != null) {
+                    binding.notificationPager.setCurrentItem(type, true)
+                }
+            }
+        }
 
         TabLayoutMediator(activity.binding.mainTabLayout, binding.notificationPager) { t, pos ->
             when (pos) {
@@ -92,12 +115,6 @@ class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding
             }
         }.attach()
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            delay(500)
-            requireActivity().runOnUiThread {
-                binding.notificationPager.setCurrentItem(type, true)
-            }
-        }
 
     }
 

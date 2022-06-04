@@ -86,11 +86,15 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
                     arrayListOf(OPTION_15, option) to arrayListOf(R.drawable.ic_round_edit_note_24, R.drawable.ic_round_archive_24)
                 } else {
-                    arrayListOf(OPTION_7, OPTION_14) to arrayListOf(R.drawable.ic_round_logout_24, R.drawable.ic_round_report_24)
+                    if (post.isCollaboration) {
+                        arrayListOf(OPTION_7, OPTION_14) to arrayListOf(R.drawable.ic_round_logout_24, R.drawable.ic_round_report_24)
+                    } else {
+                        arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_round_report_24)
+                    }
                 }
 
                 activity.optionsFragment = OptionsFragment.newInstance(options = a, title = post.name, icons = b, post = post)
-                activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+                activity.optionsFragment?.show(activity.supportFragmentManager, OptionsFragment.TAG)
 
                 true
             }
@@ -175,6 +179,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
         val nativeAdView = adBinding.root
 
+        /* "ca-app-pub-2159166722829360/3877771267" For play store version */
+        /* "ca-app-pub-3940256099942544/2247696110" For test version */
         adBinding.adInfoIcon.setOnClickListener {
             postClickListener.onAdInfoClick()
         }
@@ -254,6 +260,11 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                     super.onAdLoaded()
                     adBinding.loadingAdText.hide()
                     adBinding.adPrimaryAction.show()
+
+                    if (adBinding.adPrimaryAction.text != "Install") {
+                        adBinding.adPrimaryAction.icon = ContextCompat.getDrawable(activity, R.drawable.ic_round_arrow_forward_24)
+                    }
+
                 }
             })
             .withNativeAdOptions(adOptions)
@@ -445,9 +456,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     }
 
     private fun addLink(link: String) {
-        val lContext = requireContext()
 
-        val chip = View.inflate(lContext, R.layout.action_chip, null) as Chip
+        val chip = View.inflate(activity, R.layout.action_chip, null) as Chip
 
         val (requireDots, len) = if (link.length > 16) {
             true to 16
@@ -466,7 +476,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         chip.apply {
             text = shortLink
 //            chipIconTint = ColorStateList.valueOf(darkGreenColor)
-            chipIcon = ContextCompat.getDrawable(lContext, R.drawable.forward_icon)
+            chipIcon = ContextCompat.getDrawable(activity, R.drawable.forward_icon)
             chipIconSize = resources.getDimension(R.dimen.large_len)
             isChipIconVisible = true
             isCheckable = false
@@ -499,8 +509,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         tag.trim()
 
         // local context
-        val lContext = requireContext()
-        val chip = View.inflate(lContext, R.layout.action_chip, null) as Chip
+        val chip = View.inflate(activity, R.layout.action_chip, null) as Chip
 
         /*val (backgroundColor, textColor) = if (isNightMode()) {
             val colorPair = colorPalettesNight.random()
@@ -565,7 +574,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         binding.projectContributorsRecycler.apply {
             adapter = userAdapter
             layoutManager =
-                LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+                LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
             OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
         }
 
@@ -591,7 +600,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             }.addOnFailureListener {
                 Log.e(TAG, "setContributors: ${it.localizedMessage}")
                 Snackbar.make(binding.root, "Something went wrong while trying to fetch contributors. Try again later ..", Snackbar.LENGTH_LONG)
-                    .setBackgroundTint(ContextCompat.getColor(requireContext(), R.color.error_color))
+                    .setBackgroundTint(ContextCompat.getColor(activity, R.color.error_color))
                     .show()
             }
     }

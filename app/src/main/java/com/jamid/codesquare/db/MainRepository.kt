@@ -39,7 +39,6 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
 
-
     suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
 
         val currentUser = UserManager.currentUser
@@ -359,7 +358,7 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
     suspend fun insertInterestItems(interestItems: List<InterestItem>) {
-        interestItemDao.insert(interestItems)
+        interestItemDao.insertInterests(interestItems)
     }
 
     suspend fun clearInterestItems() {
@@ -396,6 +395,22 @@ class MainRepository(private val db: CollabDatabase) {
 
     suspend fun deletePreviousSearchByUserId(id: String) {
         searchQueryDao.deletePreviousSearchByUserId(id)
+    }
+
+    suspend fun insertInterestItem(interestItem: InterestItem) {
+        interestItemDao.insert(interestItem)
+    }
+
+    suspend fun updateAllGeneralNotificationsToRead() {
+        notificationDao.updateAllGeneralNotificationsToRead()
+    }
+
+    suspend fun updateAllRequestNotificationsToRead() {
+        notificationDao.updateAllRequestNotificationsToRead()
+    }
+
+    suspend fun updateAllInviteNotificationsToRead() {
+        notificationDao.updateAllInviteNotificationsToRead()
     }
 
     companion object {

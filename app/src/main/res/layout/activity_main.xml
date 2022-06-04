@@ -77,7 +77,6 @@
         android:visibility="gone"
         app:icon="@drawable/ic_round_add_24"
         app:iconTint="@color/white"
-        app:layout_behavior=".ui.SnackBarAwareBehavior"
         app:tint="@color/white"
         tools:visibility="visible" />
 
@@ -110,6 +109,8 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
+            <!-- app:adUnitId="ca-app-pub-2159166722829360/8589960328" For play store version -->
+            <!-- app:adUnitId="ca-app-pub-3940256099942544/6300978111" For test version -->
             <com.google.android.gms.ads.AdView
                 android:id="@+id/adView"
                 android:layout_width="match_parent"
