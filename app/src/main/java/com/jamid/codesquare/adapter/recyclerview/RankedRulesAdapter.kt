@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -18,7 +19,9 @@ import com.jamid.codesquare.listeners.RankedRuleClickListener
 import com.jamid.codesquare.show
 
 class RankedRulesAdapter(val rankedRuleClickListener: RankedRuleClickListener? = null) : ListAdapter<RankedRule, RankedRulesAdapter.RankedRulesViewHolder>(RankedRulesComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     inner class RankedRulesViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
         fun bind(rankedRule: RankedRule) {
 

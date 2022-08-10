@@ -5,13 +5,12 @@ import android.os.Environment
 import android.view.View
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentTestBinding
 import com.jamid.codesquare.toast
 import java.io.File
-
+// something simple
 class TestFragment: Fragment(R.layout.fragment_test) {
 
     private val binding: FragmentTestBinding by lazy { FragmentTestBinding.bind(requireView()) }

@@ -11,7 +11,7 @@ import com.jamid.codesquare.adapter.viewpager.SearchPagerAdapter
 import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.databinding.FragmentSearchBinding
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-
+// something simple
 class SearchFragment: BaseFragment<FragmentSearchBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentSearchBinding {

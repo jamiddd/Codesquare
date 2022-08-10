@@ -22,7 +22,7 @@ import com.jamid.codesquare.listeners.PostSelectListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
+// something simple
 class PostSelectorFragment(private val onDone: (list: List<Post>) -> Unit) : BaseBottomFragment<FragmentPostSelectorBinding>(), PostSelectListener {
 
     private var isCurrentUserPostSelection = true

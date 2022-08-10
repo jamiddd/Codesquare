@@ -2,4 +2,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:id="@+id/create_unranked_post" android:title="Post"/>
     <item android:id="@+id/create_ranked_post" android:title="Ranked post" />
-</menu>
+</menu><!-- Something simple -->

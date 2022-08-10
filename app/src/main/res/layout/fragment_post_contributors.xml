@@ -5,7 +5,7 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/contributors_refresher"
         android:layout_width="match_parent"

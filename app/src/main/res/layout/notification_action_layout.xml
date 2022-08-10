@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <Button
         android:id="@+id/secondary_btn"
         style="@style/AppTheme.TextButton"

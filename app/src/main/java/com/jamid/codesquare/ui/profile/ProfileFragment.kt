@@ -27,7 +27,7 @@ import com.jamid.codesquare.ui.OptionsFragment
 import com.jamid.codesquare.ui.SendInviteFragment
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
-
+// something simple
 class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListener {
 
     private lateinit var userClickListener: UserClickListener

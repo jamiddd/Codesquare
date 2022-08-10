@@ -17,7 +17,7 @@ import kotlinx.serialization.Transient
 @Entity(tableName = "posts")
 @Parcelize
 @Serializable
-@Keep
+@Keep// something simple
 data class Post(
     @SerializedName("id")
     @PrimaryKey(autoGenerate = false)

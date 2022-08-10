@@ -8,7 +8,7 @@ import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
 import com.jamid.codesquare.data.OnBoardingData
 import com.jamid.codesquare.databinding.FragmentOnBoardingChildBinding
-
+// something simple
 class OnBoardingChildFragment: Fragment() {
 
     private lateinit var binding: FragmentOnBoardingChildBinding

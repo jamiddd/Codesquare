@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.User
 
@@ -12,5 +13,9 @@ class UserComparator : DiffUtil.ItemCallback<User>() {
         return oldItem == newItem
     }
 
+
+    init {
+        Log.d("Something", "Simple: ")
+    }
 
 }

@@ -8,4 +8,4 @@
             <corners android:topLeftRadius="3dp" android:topRightRadius="3dp"/>
         </shape>
     </item>
-</selector>
+</selector><!-- Something simple -->

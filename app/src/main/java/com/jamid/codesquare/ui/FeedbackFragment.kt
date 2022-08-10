@@ -11,7 +11,7 @@ import com.jamid.codesquare.data.Feedback
 import com.jamid.codesquare.databinding.FragmentFeedbackBinding
 import com.jamid.codesquare.showKeyboard
 import com.jamid.codesquare.toast
-
+// something simple
 class FeedbackFragment: BaseFragment<FragmentFeedbackBinding>() {
 
     private val feedback = Feedback()

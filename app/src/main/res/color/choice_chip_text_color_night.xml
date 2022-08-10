@@ -5,5 +5,5 @@
     <item android:color="?attr/colorPrimary" android:state_enabled="true" android:state_checked="true"/>
     <item android:color="@color/white" android:state_enabled="true"/>
     <item android:color="@color/white"/>
-
+    <!-- Something simple -->
 </selector>

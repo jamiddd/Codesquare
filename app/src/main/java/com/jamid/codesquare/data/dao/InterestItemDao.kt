@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
@@ -9,7 +10,9 @@ import com.jamid.codesquare.data.InterestItem
 
 @Dao
 abstract class InterestItemDao: BaseDao<InterestItem>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM interest_item ORDER BY isChecked DESC, weight DESC")
     abstract fun getPagedInterestItems(): PagingSource<Int, InterestItem>
 

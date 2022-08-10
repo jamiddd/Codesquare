@@ -12,7 +12,7 @@ import com.jamid.codesquare.toast
 class ExtraFragment: BaseFragment<FragmentExtraBinding>() {
 
 
-
+    // something simple
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 

@@ -5,7 +5,7 @@ import androidx.annotation.Keep
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
-
+// something simple
 @Parcelize
 @IgnoreExtraProperties
 @Keep

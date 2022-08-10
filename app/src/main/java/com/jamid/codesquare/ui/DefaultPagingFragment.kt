@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentPagerBinding
-
+// something simple
 abstract class DefaultPagingFragment<T: Any, VH: RecyclerView.ViewHolder> : PagingDataFragment<FragmentPagerBinding, T, VH>() {
 
     private var hasPausedOnce = false

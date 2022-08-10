@@ -7,7 +7,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 @Keep
-data class Feedback(
+data class Feedback(// something simple
     var id: String,
     var content: String,
     var createdAt: Long,

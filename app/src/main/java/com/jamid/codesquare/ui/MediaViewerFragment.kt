@@ -24,7 +24,7 @@ import com.jamid.codesquare.data.MediaItemWrapper
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentMediaViewerBinding
 import com.jamid.codesquare.listeners.MediaClickListener
-
+// something simple
 class MediaViewerFragment: BaseFragment<FragmentMediaViewerBinding>(), MediaClickListener {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentMediaViewerBinding {

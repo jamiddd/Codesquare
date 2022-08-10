@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black">
-
+    <!-- Something simple -->
     <com.jamid.codesquare.ui.MediaRecyclerView
         android:id="@+id/fullscreen_media_recycler"
         android:layout_width="match_parent"

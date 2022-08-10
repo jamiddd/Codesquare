@@ -1,5 +1,5 @@
 package com.jamid.codesquare.ui
-
+// something simple
 /*
 class GallerySelectorFragment: BaseFragment2<FragmentGallerySelectorBinding, MainViewModel>(), LoaderManager.LoaderCallbacks<Cursor>, MediaClickListener {
 

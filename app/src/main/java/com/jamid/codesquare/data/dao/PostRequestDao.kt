@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
@@ -8,7 +9,9 @@ import com.jamid.codesquare.data.PostRequest
 
 @Dao
 abstract class PostRequestDao: BaseDao<PostRequest>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM post_requests WHERE requestId = :requestId")
     abstract suspend fun getPostRequestById(requestId: String): PostRequest?
 

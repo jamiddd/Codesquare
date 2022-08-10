@@ -5,7 +5,7 @@
     android:id="@+id/media_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <FrameLayout
         android:id="@+id/media_container"
         android:layout_width="match_parent"

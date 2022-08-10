@@ -21,7 +21,7 @@ import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
-
+// something simple
 class MediaAdapter(
     val postId: String,
     private val isZoomEnabled: Boolean = false,

@@ -5,7 +5,7 @@ import androidx.annotation.Keep
 import androidx.room.Embedded
 import com.google.firebase.firestore.Exclude
 import kotlinx.parcelize.Parcelize
-
+// something simple
 @Parcelize
 @Keep
 data class MessageMinimal(

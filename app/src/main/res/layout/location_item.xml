@@ -10,7 +10,7 @@
     android:focusable="true"
     android:paddingTop="4dp"
     android:paddingBottom="4dp">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/location_name"
         android:layout_width="0dp"

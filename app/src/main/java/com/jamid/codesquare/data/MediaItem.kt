@@ -6,7 +6,7 @@ import androidx.annotation.Keep
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
-@Parcelize
+@Parcelize// something simple
 @Keep
 data class MediaItem(
     var url: String,

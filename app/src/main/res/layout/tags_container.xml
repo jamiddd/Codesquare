@@ -4,7 +4,7 @@
     style="@style/AppTheme.GenericBackground"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <HorizontalScrollView
         android:id="@+id/tags_container"
         android:layout_width="match_parent"

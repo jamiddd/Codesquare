@@ -3,4 +3,4 @@
     <item android:color="?colorAccent" android:state_enabled="true" android:state_checked="true"/>
     <item android:color="?colorAccent" android:state_enabled="true"/>
     <item android:color="?colorAccent"/>
-</selector>
+</selector><!-- Something simple -->

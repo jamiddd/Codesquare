@@ -24,7 +24,7 @@ import com.jamid.codesquare.listeners.UserClickListener
 import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.ChatViewModelFactory
 import com.jamid.codesquare.ui.OptionsFragment
-
+// something simple
 
 // TODO("Show images from post on the top")
 class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickListener, MediaClickListener {

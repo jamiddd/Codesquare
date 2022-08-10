@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.PostRequest
 
@@ -11,6 +12,9 @@ class PostRequestComparator: DiffUtil.ItemCallback<PostRequest>() {
         return oldItem.requestId == newItem.requestId
     }
 
+    init {
+        Log.d("Something", "Simple: ")
+    }
 
     override fun areContentsTheSame(
         oldItem: PostRequest,

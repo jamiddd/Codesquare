@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.PostMinimal2
 
@@ -10,4 +11,8 @@ class PostMinimalComparator: DiffUtil.ItemCallback<PostMinimal2>() {
     override fun areContentsTheSame(oldItem: PostMinimal2, newItem: PostMinimal2)
             = oldItem == newItem
 
+
+    init {
+        Log.d("Something", "Simple: ")
+    }
 }

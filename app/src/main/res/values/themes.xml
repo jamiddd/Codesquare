@@ -9,7 +9,7 @@
         <item name="colorPrimarySurface">@color/lightest_blue</item>
         <item name="colorPrimaryVariant">@color/variant_blue</item>
         <item name="colorOnPrimary">@color/white</item>
-
+        <!-- Something simple -->
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/pink</item>
         <item name="colorSecondaryVariant">@color/variant_pink</item>

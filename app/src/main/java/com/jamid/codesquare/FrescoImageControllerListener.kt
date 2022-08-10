@@ -4,7 +4,7 @@ import android.graphics.drawable.Animatable
 import android.util.Log
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
-
+// something simple
 class FrescoImageControllerListener(private val onImageLoaded: ((width: Int, height: Int) -> Unit)? = null): BaseControllerListener<ImageInfo>() {
 
     var finalWidth = 0

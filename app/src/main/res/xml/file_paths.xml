@@ -4,7 +4,7 @@
     <files-path
         name="my_images"
         path="images/" />
-
+    <!-- Something simple -->
     <files-path
         name="my_thumbnails"
         path="images/thumbnails" />

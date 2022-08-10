@@ -8,14 +8,15 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.adapter.comparators.ReferenceItemComparator
 import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.data.ReferenceItem
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.listeners.MediaClickListener
 
 class PostAdapter2(
     private val lifecycleOwner: LifecycleOwner,
     private val mediaClickListener: MediaClickListener
 ): PagingDataAdapter<ReferenceItem, PostViewHolder>(ReferenceItemComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onBindViewHolder(holder: PostViewHolder, position: Int) {
 
         getItem(position)?.let {

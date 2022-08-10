@@ -9,7 +9,7 @@ import androidx.core.net.toUri
 import com.canhub.cropper.CropImageOptions
 import com.canhub.cropper.CropImageView
 import com.jamid.codesquare.databinding.FragmentCrop2Binding
-
+// something simple
 class CropFragment2: BaseBottomFragment<FragmentCrop2Binding>() {
 
     var options: CropImageOptions = CropImageOptions().apply {

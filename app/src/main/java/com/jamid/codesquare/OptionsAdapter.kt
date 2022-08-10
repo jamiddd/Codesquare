@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.ListItemBinding
 import com.jamid.codesquare.listeners.OptionClickListener
-
+// something simple
 
 class OptionsAdapter(private val optionClickListener: OptionClickListener, val user: User? = null, val post: Post? = null, val chatChannel: ChatChannel? = null, val comment: Comment? = null, val tag: String? = null, val message: Message? = null): ListAdapter<Option, OptionsAdapter.OptionsViewHolder>(comparator) {
 

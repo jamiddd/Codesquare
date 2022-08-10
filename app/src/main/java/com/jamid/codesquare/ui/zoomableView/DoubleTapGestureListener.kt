@@ -4,7 +4,7 @@ import android.graphics.PointF
 import android.view.GestureDetector
 
 import android.view.MotionEvent
-
+// something simple
 
 class DoubleTapGestureListener(zoomableDraweeView: ZoomableDraweeView) :
 	GestureDetector.SimpleOnGestureListener() {

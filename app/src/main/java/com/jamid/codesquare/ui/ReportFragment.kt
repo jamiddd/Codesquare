@@ -16,7 +16,7 @@ import com.jamid.codesquare.data.Report
 import com.jamid.codesquare.databinding.FragmentReportBinding
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.ItemSelectResultListener
-
+// something simple
 class ReportFragment: BaseFragment<FragmentReportBinding>(), ImageClickListener, ItemSelectResultListener<MediaItem> {
 
     private val reportViewModel: ReportViewModel by viewModels()

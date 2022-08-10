@@ -1,7 +1,7 @@
 package com.jamid.codesquare.ui.zoomableView
 
 import android.view.MotionEvent
-
+// something simple
 
 class MultiPointerGestureDetector {
 	/** The listener for receiving notifications when gestures occur.  */

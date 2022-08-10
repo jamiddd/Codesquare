@@ -7,7 +7,7 @@ import com.jamid.codesquare.data.InterestItem
 
 @ExperimentalPagingApi
 class InterestItemRemoteMediator(private val repo: MainRepository, q: Query): FirebaseRemoteMediator<Int, InterestItem>(q) {
-
+    // something simple
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val interestItems = items.toObjects(InterestItem::class.java)
         repo.insertInterestItems(interestItems)

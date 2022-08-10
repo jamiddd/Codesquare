@@ -34,7 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
-
+// something simple
 
 class MediaRecyclerView @JvmOverloads constructor(
     context: Context,

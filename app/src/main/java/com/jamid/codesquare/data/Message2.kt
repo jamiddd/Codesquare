@@ -7,7 +7,7 @@ import java.util.*
 
 @Keep
 sealed class Message2: Parcelable {
-
+    // something simple
     @Parcelize
     @Keep
     data class MessageItem(

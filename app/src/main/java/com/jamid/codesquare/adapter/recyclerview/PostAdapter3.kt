@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
@@ -16,7 +17,9 @@ class PostAdapter3(
     private val mediaClickListener: MediaClickListener,
     private val listener: PostClickListener? = null,
 ) : ListAdapter<Post, SuperPostViewHolder>(PostComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     var shouldShowJoinButton = true
     var allowContentClick = true
 

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.viewpager
 
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -10,7 +11,9 @@ import com.jamid.codesquare.ui.OnBoardingChildFragment
 
 class OnBoardingViewPager(private val fa: FragmentActivity): FragmentStateAdapter(fa) {
     override fun getItemCount() = 3
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun createFragment(position: Int): Fragment {
         return when (position) {
             0 -> {

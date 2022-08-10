@@ -5,7 +5,7 @@
     android:id="@+id/message_default_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/message_sender_img"
         android:layout_width="30dp"

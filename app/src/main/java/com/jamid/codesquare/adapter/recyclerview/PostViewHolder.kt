@@ -44,7 +44,9 @@ class PostViewHolder(
     private val mediaClickListener: MediaClickListener,
     listener: PostClickListener? = null
 ) : SuperPostViewHolder(v), ImageClickListener, PostVideoListener {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     // just for external use cases
     lateinit var post: Post
     private lateinit var binding: PostItemBinding

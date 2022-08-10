@@ -7,7 +7,7 @@ import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-@Keep
+@Keep// something simple
 data class Report(
     var id: String,
     var senderId: String,

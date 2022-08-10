@@ -7,7 +7,7 @@ import com.jamid.codesquare.data.PostInvite
 
 @ExperimentalPagingApi
 class PostInviteRemoteMediator(q: Query, private val repository: MainRepository): FirebaseRemoteMediator<Int, PostInvite>(q){
-
+    // something simple
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         val invites = items.toObjects(PostInvite::class.java).toTypedArray()
         repository.insertPostInvites(invites)

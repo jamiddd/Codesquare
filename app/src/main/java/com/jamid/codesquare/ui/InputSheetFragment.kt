@@ -8,7 +8,7 @@ import androidx.fragment.app.DialogFragment
 import com.jamid.codesquare.BaseBottomFragment
 import com.jamid.codesquare.databinding.FragmentInputSheetBinding
 import com.jamid.codesquare.listeners.MessageDialogInterface
-
+// something simple
 
 class InputSheetFragment: BaseBottomFragment<FragmentInputSheetBinding>() {
 

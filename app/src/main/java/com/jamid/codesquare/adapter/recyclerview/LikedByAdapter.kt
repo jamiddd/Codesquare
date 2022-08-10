@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import com.jamid.codesquare.R
@@ -12,7 +13,9 @@ class LikedByAdapter: PagingDataAdapter<UserMinimal, UserViewHolder>(UserMinimal
             holder.bind(it.toUser())
         }
     }
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         return UserViewHolder.newInstance(parent, R.layout.user_vertical_item)
     }

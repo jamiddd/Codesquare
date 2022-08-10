@@ -8,7 +8,7 @@
         <item name="colorPrimarySurface">@color/lightest_blue</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="android:forceDarkAllowed">false</item>
-        <!-- Secondary brand color. -->
+        <!-- Secondary brand color. --><!-- Something simple -->
         <item name="colorSecondary">@color/pink</item>
         <item name="colorSecondaryVariant">@color/variant_pink</item>
         <item name="colorOnSecondary">@color/black</item>

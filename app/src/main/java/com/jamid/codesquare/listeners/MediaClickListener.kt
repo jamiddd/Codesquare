@@ -3,7 +3,7 @@ package com.jamid.codesquare.listeners
 import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.data.MediaItemWrapper
 import com.jamid.codesquare.data.Message
-
+// something simple
 interface MediaClickListener {
 
     fun onMediaPostItemClick(mediaItems: List<MediaItem>, currentPos: Int)

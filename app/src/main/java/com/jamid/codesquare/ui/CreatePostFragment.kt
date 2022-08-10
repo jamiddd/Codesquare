@@ -1,5 +1,5 @@
 package com.jamid.codesquare.ui
-
+// something simple
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater

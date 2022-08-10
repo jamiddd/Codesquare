@@ -5,7 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.jamid.codesquare.databinding.FragmentRankIntroBinding
-
+// something simple
 class RankIntroFragment : FullscreenBottomSheetFragment() {
 
     private lateinit var binding: FragmentRankIntroBinding

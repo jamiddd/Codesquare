@@ -9,7 +9,7 @@ import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.databinding.FragmentPostSubmissionBinding
 import com.jamid.codesquare.getBottomSheetBehavior
 import com.jamid.codesquare.isNightMode
-
+// something simple
 class PostSubmissionFragment(val post: Post): FullscreenBottomSheetFragment() {
 
     private lateinit var binding: FragmentPostSubmissionBinding

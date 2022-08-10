@@ -5,7 +5,7 @@
     android:id="@+id/project_refresher"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/project_fragment_scroll"
         style="@style/AppTheme.Fragment"

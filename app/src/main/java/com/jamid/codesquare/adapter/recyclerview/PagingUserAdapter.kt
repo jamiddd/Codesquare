@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
@@ -15,7 +16,9 @@ class PagingUserAdapter(
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         val layout = if (small) {
             R.layout.user_grid_item

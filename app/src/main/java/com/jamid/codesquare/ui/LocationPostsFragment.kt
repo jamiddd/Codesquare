@@ -25,7 +25,7 @@ import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.data.Post2
 import kotlinx.coroutines.flow.map
-
+// something simple
 class LocationPostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
     @OptIn(ExperimentalPagingApi::class)

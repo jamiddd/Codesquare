@@ -8,12 +8,11 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentSubscriberBinding
 import com.jamid.codesquare.doOnAnimationEnd
 import com.jamid.codesquare.isNightMode
-
+// something simple
 class SubscriberFragment: Fragment() {
 
     private lateinit var binding: FragmentSubscriberBinding

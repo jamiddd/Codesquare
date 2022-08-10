@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:elevation="20dp">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/tooltip_msg"
         android:layout_width="wrap_content"

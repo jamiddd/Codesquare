@@ -2,7 +2,7 @@ package com.jamid.codesquare.ui.zoomableView
 
 import android.view.GestureDetector
 import android.view.MotionEvent
-
+// something simple
 
 class GestureListenerWrapper : GestureDetector.SimpleOnGestureListener() {
 	private var mDelegate: GestureDetector.SimpleOnGestureListener

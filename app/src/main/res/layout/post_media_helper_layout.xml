@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:gravity="end"
     android:orientation="horizontal">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/media_item_counter"
         style="@style/AppTheme.OverlayItem.Text"

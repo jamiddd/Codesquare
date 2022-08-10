@@ -2,7 +2,7 @@
 <menu xmlns:tools="http://schemas.android.com/tools"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-
+    <!-- Something simple -->
     <item
         android:id="@+id/create_post"
         android:icon="@drawable/ic_round_add_24"

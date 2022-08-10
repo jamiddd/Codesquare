@@ -15,7 +15,7 @@ import kotlinx.serialization.Transient
 @Parcelize
 @Serializable
 @IgnoreExtraProperties
-@Keep
+@Keep// something simple
 data class InterestItem(
     @PrimaryKey
     @SerialName("itemId")

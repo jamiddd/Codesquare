@@ -15,7 +15,7 @@ import com.jamid.codesquare.data.QUERY_TYPE_USER
 import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.databinding.FragmentPreSearchBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
-
+// something simple
 class PreSearchFragment: BaseFragment<FragmentPreSearchBinding>(), SearchItemClickListener, SearchView.OnQueryTextListener {
 
     private lateinit var previousQueryAdapter: PreviousQueryAdapter

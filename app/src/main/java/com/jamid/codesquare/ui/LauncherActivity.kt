@@ -15,7 +15,7 @@ import com.google.firebase.auth.GoogleAuthProvider
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.data.Metadata
-
+// something simple
 abstract class LauncherActivity : LocationAwareActivity() {
 
     var loadingDialog: AlertDialog? = null

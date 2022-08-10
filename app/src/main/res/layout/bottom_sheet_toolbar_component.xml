@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     style="@style/AppTheme.SheetAppBar">
-
+    <!-- Something simple -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/bottom_sheet_toolbar"
         android:layout_width="match_parent"

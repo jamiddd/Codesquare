@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +16,9 @@ import com.jamid.codesquare.listeners.SearchItemClickListener
 
 class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener) :
     ListAdapter<SearchQuery, SearchResultsAdapter.SearchResultViewHolder>(PreviousQueryComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     var shouldShowRightIcon = true
 
     inner class SearchResultViewHolder(val view: View) : RecyclerView.ViewHolder(view) {

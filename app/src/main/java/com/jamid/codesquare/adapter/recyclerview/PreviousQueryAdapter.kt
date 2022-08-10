@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,9 @@ import com.jamid.codesquare.listeners.SearchItemClickListener
 class PreviousQueryAdapter(
     private val searchItemClickListener: SearchItemClickListener
 ): ListAdapter<SearchQuery, PreviousQueryAdapter.PreviousQueryViewHolder>(PreviousQueryComparator()){
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     inner class PreviousQueryViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         fun bind(query: SearchQuery) {
             val binding = SearchResultItemBinding.bind(view)

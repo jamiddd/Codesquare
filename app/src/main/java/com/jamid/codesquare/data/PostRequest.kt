@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "post_requests")
 @Parcelize
-@Keep
+@Keep// something simple
 data class PostRequest(
     @PrimaryKey(autoGenerate = false)
     var requestId: String,

@@ -5,7 +5,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import kotlin.math.abs
 import kotlin.math.hypot
-
+// something simple
 open class TapListener(zoomableDraweeView: ZoomableDraweeView):
 	GestureDetector.SimpleOnGestureListener() {
 

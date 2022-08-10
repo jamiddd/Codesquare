@@ -3,7 +3,7 @@ package com.jamid.codesquare.ui.zoomableView
 import android.graphics.Matrix
 import android.graphics.PointF
 import com.facebook.common.logging.FLog
-
+// something simple
 abstract class AbstractAnimatedZoomableController(private val transformGestureDetector: TransformGestureDetector) :
 	DefaultZoomableController(transformGestureDetector) {
 	protected var isAnimating = false

@@ -14,7 +14,7 @@ import com.jamid.codesquare.databinding.FragmentCropImagesBinding
 * 1. input - receives a list of images
 * 2. process - all the images can be cropped
 * 3. output - all images but cropped
-* */
+* */// something simple
 class CropImagesFragment: Fragment(){
 
     private val images = arrayListOf<String>()

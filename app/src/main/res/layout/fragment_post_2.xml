@@ -9,7 +9,7 @@
     android:fillViewport="true"
     android:overScrollMode="never"
     android:paddingBottom="@dimen/large_padding">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/post_data_container"
         android:layout_width="match_parent"

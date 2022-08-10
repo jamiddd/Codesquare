@@ -33,6 +33,9 @@ class UserViewHolder(
     private val associatedChatChannel: ChatChannel? = null,
     private val listener: UserClickListener? = null
 ): RecyclerView.ViewHolder(view) {
+    init {
+        Log.d("Something", "Simple: ")
+    }
 
     private val userClickListener: UserClickListener get() {
         return listener ?: view.context as UserClickListener

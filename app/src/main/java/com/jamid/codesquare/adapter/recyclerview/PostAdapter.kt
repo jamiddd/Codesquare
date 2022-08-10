@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
@@ -15,7 +16,9 @@ class PostAdapter(
 ): PagingDataAdapter<Post2, SuperPostViewHolder>(Post2Comparator()) {
 
     var shouldShowJoinButton = true
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onBindViewHolder(holderSuper: SuperPostViewHolder, position: Int) {
         holderSuper.bind(getItem(position))
     }

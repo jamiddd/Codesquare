@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:clipToPadding="false"
     android:fillViewport="true">
-
+    <!-- Something simple -->
 
     <LinearLayout
         android:id="@+id/private_chat_detail_container"

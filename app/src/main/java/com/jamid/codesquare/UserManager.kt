@@ -6,10 +6,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.MessageDialogFragment
-
+// something simple
 object UserManager {
 
     private val currentUserData = MutableLiveData<User>().apply { value = null }

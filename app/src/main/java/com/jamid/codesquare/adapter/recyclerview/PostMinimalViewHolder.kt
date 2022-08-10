@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.FireUtility
@@ -13,7 +14,9 @@ class PostMinimalViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     private val postClickListener = view.context as PostClickListener
     private lateinit var binding: PostMiniItemBinding
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     fun bind(post: PostMinimal2) {
 
         binding = PostMiniItemBinding.bind(view)

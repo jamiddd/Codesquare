@@ -19,7 +19,7 @@ import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.DefaultPagingFragment
 import kotlinx.coroutines.flow.map
-
+// something simple
 class PostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
     @OptIn(ExperimentalPagingApi::class)

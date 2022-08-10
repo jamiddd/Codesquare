@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.data.RankedRule
 
@@ -10,6 +11,10 @@ class RankedRulesComparator: DiffUtil.ItemCallback<RankedRule>() {
 
     override fun areContentsTheSame(oldItem: RankedRule, newItem: RankedRule): Boolean {
         return oldItem == newItem
+    }
+
+    init {
+        Log.d("Something", "Simple: ")
     }
 
 }

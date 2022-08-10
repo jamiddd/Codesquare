@@ -10,7 +10,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @Entity(tableName = "comment_channels")
 @Keep
-data class CommentChannel(
+data class CommentChannel(// something simple
     @PrimaryKey
     var commentChannelId: String,
     var parentId: String,

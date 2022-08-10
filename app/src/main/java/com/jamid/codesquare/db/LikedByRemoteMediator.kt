@@ -4,7 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.UserMinimal
-
+// something simple
 @ExperimentalPagingApi
 class LikedByRemoteMediator(
     q: Query,

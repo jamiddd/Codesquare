@@ -11,7 +11,7 @@ import com.jamid.codesquare.MainViewModel
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.viewpager.RankedPagerAdapter
 import com.jamid.codesquare.databinding.FragmentRankedBinding
-
+// something simple
 class RankedFragment: Fragment() {
 
     private lateinit var binding: FragmentRankedBinding

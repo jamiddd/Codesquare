@@ -9,7 +9,7 @@
     android:layout_margin="8dp"
     android:clickable="true"
     android:focusable="true">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/duration_header_text"
         android:layout_width="wrap_content"

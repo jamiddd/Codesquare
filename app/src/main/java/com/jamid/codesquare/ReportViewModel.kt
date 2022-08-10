@@ -8,7 +8,7 @@ import com.google.android.gms.tasks.Task
 import com.jamid.codesquare.data.Report
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+// something simple
 class ReportViewModel: ViewModel() {
 
     private val _currentReport = MutableLiveData<Report>().apply { value = Report() }

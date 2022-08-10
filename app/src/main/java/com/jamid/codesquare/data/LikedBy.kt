@@ -9,7 +9,7 @@ import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "liked_by")
 @Parcelize
-@Keep
+@Keep// something simple
 data class LikedBy(
     @PrimaryKey
     val id: String,

@@ -10,14 +10,15 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.comparators.PostInviteComparator
 import com.jamid.codesquare.data.PostInvite
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.PostListItemBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.PostMiniItemClickListener
 import com.jamid.codesquare.show
 
 class MyInviteAdapter(private val inviteClickListener: PostMiniItemClickListener): ListAdapter<PostInvite, MyInviteAdapter.MyInviteViewHolder>(PostInviteComparator()){
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     inner class MyInviteViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private lateinit var binding: PostListItemBinding

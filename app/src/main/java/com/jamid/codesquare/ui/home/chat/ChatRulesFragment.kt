@@ -13,7 +13,7 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.R
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatRulesBinding
-
+// something simple
 class ChatRulesFragment : BaseFragment<FragmentChatRulesBinding>() {
 
     private lateinit var chatChannel: ChatChannel

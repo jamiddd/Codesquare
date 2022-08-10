@@ -14,7 +14,7 @@ import com.jamid.codesquare.data.FeedOrder
 import com.jamid.codesquare.data.FeedSort
 import com.jamid.codesquare.data.FeedSort.*
 import com.jamid.codesquare.databinding.FilterLayoutBinding
-
+// something simple
 class FilterFragment : BaseBottomFragment<FilterLayoutBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FilterLayoutBinding {

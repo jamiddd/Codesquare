@@ -9,7 +9,7 @@ import androidx.fragment.app.DialogFragment
 import com.jamid.codesquare.BaseBottomFragment
 import com.jamid.codesquare.databinding.FragmentMessageDialogBinding
 import com.jamid.codesquare.listeners.MessageDialogInterface
-
+// something simple
 class MessageDialogFragment: BaseBottomFragment<FragmentMessageDialogBinding>() {
 
     private var title: String = "Collabme"

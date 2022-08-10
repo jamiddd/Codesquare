@@ -42,6 +42,8 @@ import kotlinx.serialization.Transient
  * @param premiumState A status flag for premium subscription by the current user
 *
 * */
+
+// something simple
 @IgnoreExtraProperties
 @Entity(tableName = "users")
 @Parcelize

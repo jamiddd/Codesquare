@@ -2,7 +2,6 @@ package com.jamid.codesquare.ui.zoomableView
 
 import android.view.GestureDetector
 import android.view.MotionEvent
-import java.util.*
 
 
 /**
@@ -14,7 +13,7 @@ import java.util.*
  * example, if one of the child listeners consumes [.onLongPress] (the listener
  * returned true), subsequent listeners will not be notified about the event any more since it has
  * been consumed.
- */
+ */// something simple
 class MultiGestureListener : GestureDetector.SimpleOnGestureListener() {
 	private val mListeners: MutableList<GestureDetector.SimpleOnGestureListener> =
 		ArrayList<GestureDetector.SimpleOnGestureListener>()

@@ -5,7 +5,7 @@
     android:id="@+id/default_profile_image_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/profile_images_select_container"
         android:layout_width="match_parent"

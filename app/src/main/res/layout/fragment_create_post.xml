@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     tools:ignore="SpeakableTextPresentCheck,DuplicateClickableBoundsCheck">
 
-
+    <!-- Something simple -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/create_post_container"
         style="@style/AppTheme.Fragment"

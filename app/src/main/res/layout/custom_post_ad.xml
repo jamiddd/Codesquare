@@ -5,7 +5,7 @@
     android:id="@+id/native_ad_view"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/ad_container"
         android:layout_width="match_parent"

@@ -52,7 +52,7 @@ import java.io.FileOutputStream
 /*enum class ChatSendMode {
     Reply, Normal
 }*/
-
+// something simple
 class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, MessageViewHolder2<Message2>>(),
     MessageListener3, OptionClickListener,
     ItemSelectResultListener<MediaItem> {

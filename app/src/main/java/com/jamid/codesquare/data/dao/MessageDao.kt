@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.Dao
@@ -14,7 +15,9 @@ import com.jamid.codesquare.video
 
 @Dao
 abstract class MessageDao: BaseDao<Message>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM messages ORDER BY createdAt DESC")
     abstract fun getPagedMessages(): PagingSource<Int, Message>
 

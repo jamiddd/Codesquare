@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
@@ -8,7 +9,9 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Notification
 
 class NotificationAdapter: PagingDataAdapter<Notification, NotificationViewHolder>(comparator){
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Notification>() {
             override fun areItemsTheSame(oldItem: Notification, newItem: Notification): Boolean {

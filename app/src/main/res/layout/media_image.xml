@@ -5,4 +5,4 @@
     android:id="@+id/media_item_image"
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/AppTheme.DraweeViewBackground" />
+    style="@style/AppTheme.DraweeViewBackground" /><!-- Something simple -->

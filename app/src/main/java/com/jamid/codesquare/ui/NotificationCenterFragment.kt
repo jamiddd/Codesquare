@@ -10,7 +10,7 @@ import com.jamid.codesquare.adapter.viewpager.NotificationPagerAdapter
 import com.jamid.codesquare.databinding.FragmentNotificationCenterBinding
 import kotlinx.coroutines.delay
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-
+// something simple
 class NotificationCenterFragment: BaseFragment<FragmentNotificationCenterBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentNotificationCenterBinding {

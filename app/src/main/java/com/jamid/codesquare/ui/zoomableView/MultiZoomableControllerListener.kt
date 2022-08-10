@@ -1,13 +1,12 @@
 package com.jamid.codesquare.ui.zoomableView
 
 import android.graphics.Matrix
-import java.util.*
 
 
 /**
  * An implementation of [ZoomableController.Listener] that allows multiple child listeners to
  * be added and notified about [ZoomableController] events.
- */
+ */// something simple
 class MultiZoomableControllerListener : ZoomableController.Listener {
 	private val mListeners: MutableList<ZoomableController.Listener> = ArrayList()
 

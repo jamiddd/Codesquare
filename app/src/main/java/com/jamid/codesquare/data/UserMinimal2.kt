@@ -3,7 +3,7 @@ package com.jamid.codesquare.data
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
-
+// something simple
 @Serializable
 @Keep
 data class UserMinimal2(

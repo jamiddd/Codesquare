@@ -15,7 +15,7 @@ import com.jamid.codesquare.data.Message
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+// something simple
 class ChatRepository(
     val db: CollabDatabase,
     private val scope: CoroutineScope,

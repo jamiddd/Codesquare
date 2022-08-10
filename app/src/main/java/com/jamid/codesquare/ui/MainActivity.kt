@@ -71,7 +71,7 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-
+// something simple
 class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteListener,
     PostClickListener, PostRequestListener, UserClickListener, ChatChannelClickListener,
     NotificationItemClickListener, CommentListener, OptionClickListener, NetworkStateListener,

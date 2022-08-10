@@ -17,7 +17,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.listeners.NetworkStateListener
-
+// something simple
 class MyNetworkManager(private val mContext: Context, private val networkStateListener: NetworkStateListener? = null): LifecycleEventObserver, ConnectivityManager.NetworkCallback() {
 
     private fun checkForNetworkPermissions(onCheck: (granted: Boolean) -> Unit) {

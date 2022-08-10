@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
@@ -18,7 +19,9 @@ class UserAdapter(
     var associatedChatChannel: ChatChannel? = null,
     private val userClickListener: UserClickListener? = null
 ): ListAdapter<User, UserViewHolder>(UserComparator()){
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         val layout = if (small) {
             R.layout.user_grid_item

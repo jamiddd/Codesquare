@@ -8,7 +8,7 @@ import com.google.firebase.firestore.IgnoreExtraProperties
 
 @IgnoreExtraProperties
 @Entity(tableName = "post_invites")
-@Keep
+@Keep// something simple
 data class PostInvite(
     @PrimaryKey
     var id: String,

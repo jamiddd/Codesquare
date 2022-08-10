@@ -4,6 +4,7 @@
     android:height="24dp"
     android:viewportWidth="50"
     android:viewportHeight="24">
+  <!-- Something simple -->
   <path
       android:pathData="M14228.9063,4869.7568m-3023.741,0a3023.741,3023.741 67.0798,1 1,6047.4819 0a3023.741,3023.741 67.0798,1 1,-6047.4819 0"
       android:strokeLineJoin="miter"

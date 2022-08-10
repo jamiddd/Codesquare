@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,9 @@ import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.show
 
 class ImageViewHolder(val view: View, private val imageClickListener: ImageClickListener? = null): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private var loadingProgress: LottieAnimationView? = null
 
 

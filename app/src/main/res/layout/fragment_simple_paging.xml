@@ -5,7 +5,7 @@
     android:id="@+id/paging_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/paging_recycler"
         android:layout_width="0dp"

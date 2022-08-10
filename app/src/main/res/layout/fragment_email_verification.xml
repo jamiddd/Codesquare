@@ -5,7 +5,7 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/linearLayout4"
         style="@style/AppTheme.GenericBackground2"

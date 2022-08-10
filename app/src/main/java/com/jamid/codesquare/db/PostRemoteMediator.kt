@@ -4,7 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Post
-
+// something simple
 @ExperimentalPagingApi
 class PostRemoteMediator(
     query: Query,

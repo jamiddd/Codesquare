@@ -5,7 +5,7 @@
     android:id="@+id/message_middle_image_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/message_image_container"
         style="@style/AppTheme.ChatBalloonLeft"

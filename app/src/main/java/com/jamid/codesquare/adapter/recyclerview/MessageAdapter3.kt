@@ -17,7 +17,9 @@ class MessageAdapter3(
 
     private val currentUserId = UserManager.currentUser.id
     var chatChannel: ChatChannel? = null
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onBindViewHolder(holder: MessageViewHolder2<Message2>, position: Int) {
         val item = getItem(position)
         if (item != null) {

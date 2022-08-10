@@ -3,7 +3,7 @@ package com.jamid.codesquare.ui.extras
 import android.view.View
 import androidx.viewpager2.widget.ViewPager2
 import kotlin.math.abs
-
+// something simple
 class DepthPageTransformer : ViewPager2.PageTransformer {
 
     companion object {

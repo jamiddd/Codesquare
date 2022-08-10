@@ -4,3 +4,4 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:color="@color/lightest_blue"
     tools:ignore="NewApi" />
+    <!-- Something simple -->

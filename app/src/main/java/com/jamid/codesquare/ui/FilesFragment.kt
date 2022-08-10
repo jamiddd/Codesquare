@@ -7,7 +7,7 @@ import com.jamid.codesquare.adapter.recyclerview.MediaDocumentAdapter
 import com.jamid.codesquare.adapter.recyclerview.SuperMediaAdapter
 import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.listeners.ItemSelectResultListener
-
+// something simple
 class FilesFragment(
     isMultiple: Boolean = true,
     type: ItemSelectType = ItemSelectType.DOCUMENT,

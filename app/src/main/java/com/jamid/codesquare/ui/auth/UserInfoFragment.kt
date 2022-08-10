@@ -29,7 +29,7 @@ import com.jamid.codesquare.listeners.InterestItemClickListener
 import com.jamid.codesquare.listeners.SearchItemClickListener
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
+// something simple
 class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClickListener, InterestItemClickListener {
 
     private lateinit var searchResultsAdapter: SearchResultsAdapter

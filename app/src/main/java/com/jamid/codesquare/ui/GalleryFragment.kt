@@ -339,7 +339,7 @@ class GalleryFragment(
     }
 
 }*/
-
+// something simple
 
 class GalleryFragment(
     isMultiple: Boolean = true,

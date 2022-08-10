@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Delete
@@ -9,7 +10,9 @@ import com.jamid.codesquare.data.SearchQuery
 
 @Dao
 abstract class SearchQueryDao: BaseDao<SearchQuery>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM search_query WHERE type = :type ORDER BY createdAt DESC LIMIT 5")
     abstract fun previousQueries(type: Int = QUERY_TYPE_POST): LiveData<List<SearchQuery>>
 

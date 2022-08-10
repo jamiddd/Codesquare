@@ -11,7 +11,7 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter
 import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
 import com.jamid.codesquare.data.Post2
-
+// something simple
 class RankedCategoryFragment(private val category: String): DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -18,7 +18,7 @@ import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
 import java.text.SimpleDateFormat
 import java.util.*
-
+// something simple
 class ImageViewFragment: BaseFragment<FragmentImageViewBinding>(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {

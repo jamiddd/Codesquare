@@ -1,6 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.view.View
+import android.util.Log
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -8,7 +8,9 @@ import com.jamid.codesquare.data.Metadata
 import com.jamid.codesquare.listeners.DocumentClickListener
 
 class SmallDocumentsAdapter(private val documentClickListener: DocumentClickListener): ListAdapter<Metadata, DocumentViewHolderSmall>(comparator) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     companion object {
         val comparator = object : DiffUtil.ItemCallback<Metadata>() {
             override fun areItemsTheSame(oldItem: Metadata, newItem: Metadata): Boolean {

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
@@ -8,7 +9,9 @@ import com.jamid.codesquare.data.User
 
 @Dao
 abstract class UserDao: BaseDao<User>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM users WHERE isCurrentUser = 1")
     abstract fun currentUser(): LiveData<User>
 

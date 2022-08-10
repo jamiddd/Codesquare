@@ -7,7 +7,7 @@ import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentClosedCompetitionsBinding
 import com.jamid.codesquare.isNightMode
-
+// something simple
 class ClosedCompetitionsFragment: BaseFragment<FragmentClosedCompetitionsBinding>() {
 
 

@@ -36,7 +36,7 @@ import com.jamid.codesquare.listeners.LocationStateListener
  * 2. check if location is enabled
  *
  * @param mContext The context must be of an AppCompatActivity and the activity must implement [LocationStateListener]
- * */
+ * */// something simple
 class LocationProvider2 {
 
     private var placesClient: PlacesClient? = null

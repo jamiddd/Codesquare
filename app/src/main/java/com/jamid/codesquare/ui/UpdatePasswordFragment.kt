@@ -12,7 +12,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentUpdatePasswordBinding
-
+// something simple
 class UpdatePasswordFragment: BaseFragment<FragmentUpdatePasswordBinding>() {
 
     private var actionModeDone: Boolean = false

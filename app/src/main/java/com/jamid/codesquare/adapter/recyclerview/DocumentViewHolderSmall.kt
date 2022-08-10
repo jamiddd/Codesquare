@@ -2,6 +2,7 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +16,9 @@ import com.jamid.codesquare.getTextForSizeInBytes
 import com.jamid.codesquare.listeners.DocumentClickListener
 
 class DocumentViewHolderSmall(val view: View, private val documentClickListener: DocumentClickListener): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private val name: TextView = view.findViewById(R.id.small_document_name)
     private val size: TextView = view.findViewById(R.id.small_document_size)
     private val removeBtn: Button = view.findViewById(R.id.document_small_remove)

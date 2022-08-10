@@ -9,7 +9,7 @@
     android:clipToPadding="false"
     android:paddingBottom="50dp"
     android:fillViewport="true">
-
+    <!-- Something simple -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/create_account_container"
         android:layout_width="match_parent"

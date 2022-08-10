@@ -5,7 +5,7 @@ import android.view.View
 import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
 import com.jamid.codesquare.hide
-
+// something simple
 class CommonImageListener(val progressBar: View? = null, val onComplete: ((w: Int, h:Int, err: Throwable?) -> Unit)? = null): BaseControllerListener<ImageInfo>()  {
 
     var finalWidth = 0

@@ -21,7 +21,7 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentSendInviteBinding
 import com.jamid.codesquare.listeners.PostMiniItemClickListener
 import kotlinx.coroutines.flow.map
-
+// something simple
 class SendInviteFragment: BottomSheetPagingFragment<FragmentSendInviteBinding, Post, SendInviteViewHolder>(), PostMiniItemClickListener {
 
     private lateinit var receiver: User

@@ -13,7 +13,7 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.databinding.FragmentSearchUsersBinding
 import com.jamid.codesquare.listeners.UserClickListener
-
+// something simple
 class SearchUsersFragment: BaseFragment<FragmentSearchUsersBinding>(), UserClickListener {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentSearchUsersBinding {

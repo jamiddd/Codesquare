@@ -2,4 +2,4 @@
     android:viewportWidth="24" android:width="32dp" xmlns:android="http://schemas.android.com/apk/res/android">
     <path android:fillColor="#6563ff" android:pathData="M21.207,11.2935l-3,-3A0.9999,0.9999 0,1 0,16.793 9.7075l1.293,1.293H12.5a1,1 0,0 0,0 2h5.5859l-1.293,1.293A0.9999,0.9999 0,1 0,18.207 15.7075l3,-3A0.9996,0.9996 0,0 0,21.207 11.2935Z"/>
     <path android:fillColor="#b2b1ff" android:pathData="M12.5,13.0005a1,1 0,0 1,0 -2h4V5a3.0033,3.0033 0,0 0,-3 -3h-8a3.0033,3.0033 0,0 0,-3 3V19a3.0033,3.0033 0,0 0,3 3h8a3.0033,3.0033 0,0 0,3 -3V13.0005Z"/>
-</vector>
+</vector><!-- Something simple -->

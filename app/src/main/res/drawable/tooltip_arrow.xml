@@ -3,4 +3,4 @@
     <solid android:color="?colorAccent" />
     <corners android:topLeftRadius="2dp" android:bottomRightRadius="2dp" />
     <size android:width="12dp" android:height="12dp" />
-</shape>
+</shape><!-- Something simple -->

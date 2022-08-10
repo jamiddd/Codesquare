@@ -10,7 +10,7 @@
     android:paddingVertical="50dp"
     android:layout_height="match_parent"
     android:animateLayoutChanges="true">
-
+    <!-- Something simple -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/login_items_contiainer"
         android:layout_width="match_parent"

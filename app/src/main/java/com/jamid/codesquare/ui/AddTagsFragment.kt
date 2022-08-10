@@ -27,7 +27,7 @@ import com.jamid.codesquare.listeners.InterestItemClickListener
 import com.jamid.codesquare.listeners.SearchItemClickListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+// something simple
 class AddTagsFragment :
     BottomSheetPagingFragment<FragmentAddTagBinding, InterestItem, InterestItemViewHolder>(),
     SearchItemClickListener, InterestItemClickListener {

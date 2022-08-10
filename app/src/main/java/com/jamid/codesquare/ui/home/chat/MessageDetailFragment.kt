@@ -16,7 +16,7 @@ import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.*
 import kotlinx.coroutines.launch
-
+// something simple
 class MessageDetailFragment: BaseFragment<FragmentMessageDetailBinding>() {
 
     private val readListAdapter = UserAdapter(min = true)

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,7 +17,9 @@ class MediaDocumentAdapter(
     private val isSelect: Boolean = false,
     private val mediaClickListener: MediaClickListener? = null
 ) : SuperMediaAdapter() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SuperMediaViewHolder {
         return MediaDocumentViewHolder(
             LayoutInflater.from(parent.context).inflate(R.layout.v_doc_layout, parent, false),

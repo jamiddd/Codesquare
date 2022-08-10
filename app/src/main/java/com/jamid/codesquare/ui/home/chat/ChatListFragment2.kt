@@ -13,7 +13,7 @@ import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
-
+// something simple
 class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
 
     private lateinit var chatChannelAdapter2: ChatChannelAdapter2

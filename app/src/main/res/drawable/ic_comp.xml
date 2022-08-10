@@ -199,4 +199,4 @@
         android:strokeColor="#263238" android:strokeLineCap="round"
         android:strokeLineJoin="round" android:strokeWidth="0.5"/>
     <path android:fillColor="#EBB376" android:pathData="M178.4,207.9c0,-1 -0.8,-2.6 -2.3,-2.4c-1.6,0.2 -2.4,4.1 1.4,4.9C178.1,210.6 178.4,209.9 178.4,207.9z"/>
-</vector>
+</vector><!-- Something simple -->

@@ -20,7 +20,7 @@ import com.google.firebase.storage.ktx.storage
 import com.jamid.codesquare.data.*
 import kotlinx.coroutines.tasks.await
 import java.io.File
-
+// something simple
 object FireUtility {
 
     private const val TAG = "FireUtility"

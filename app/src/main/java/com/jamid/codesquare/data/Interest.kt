@@ -17,6 +17,6 @@ data class Interest(
     @SerialName("objectID")
     val id: String,
     val interest: String
-): Parcelable {
+): Parcelable {// something simple
     constructor(): this("", "")
 }

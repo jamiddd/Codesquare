@@ -5,7 +5,7 @@
     android:id="@+id/message_default_right_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/message_content"
         style="@style/AppTheme.ChatBalloonRight"

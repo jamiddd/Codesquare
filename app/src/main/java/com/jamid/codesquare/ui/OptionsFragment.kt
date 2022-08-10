@@ -9,7 +9,7 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentOptionsBinding
 import com.jamid.codesquare.listeners.OptionClickListener
-
+// something simple
 class OptionsFragment: BaseBottomFragment<FragmentOptionsBinding>() {
 
     private lateinit var optionsAdapter: OptionsAdapter

@@ -1,7 +1,7 @@
 package com.jamid.codesquare.data
 
 import androidx.annotation.Keep
-
+// something simple
 @Keep
 class UniqueUsernameException(msg: String): Exception(msg) {
     //

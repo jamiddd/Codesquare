@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +15,9 @@ import com.jamid.codesquare.listeners.InterestItemClickListener
 class InterestItemViewHolder(private val view: View, private val interestItemClickListener: InterestItemClickListener): RecyclerView.ViewHolder(view) {
 
     private lateinit var binding: ActionChipBinding
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     fun bind(interestItem: InterestItem?) {
         if (interestItem != null) {
             binding = ActionChipBinding.bind(view)

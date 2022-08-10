@@ -2,7 +2,7 @@ package com.jamid.codesquare.listeners
 
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.UserMinimal
-
+// something simple
 interface CommentListener {
     fun onCommentLikeClicked(comment: Comment, onChange: (newComment: Comment) -> Unit)
     fun onCommentReply(comment: Comment)

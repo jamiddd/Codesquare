@@ -10,7 +10,7 @@ import com.jamid.codesquare.adapter.recyclerview.PostRequestAdapter
 import com.jamid.codesquare.adapter.recyclerview.PostRequestViewHolder
 import com.jamid.codesquare.data.PostRequest
 import com.jamid.codesquare.ui.DefaultPagingFragment
-
+// something simple
 class PostRequestFragment: DefaultPagingFragment<PostRequest, PostRequestViewHolder>() {
 
     @OptIn(ExperimentalPagingApi::class)

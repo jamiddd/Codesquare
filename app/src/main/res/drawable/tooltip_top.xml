@@ -9,7 +9,7 @@
             </shape>
         </rotate>
     </item>
-
+    <!-- Something simple -->
     <item android:top="10dp">
         <shape android:shape="rectangle" android:tint="?colorAccent">
             <size android:width="120dp" android:height="36dp" />

@@ -5,7 +5,7 @@ import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-@Keep
+@Keep// something simple
 data class PostMinimal(
     val id: String,
     val name: String,

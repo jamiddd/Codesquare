@@ -20,7 +20,7 @@ import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.show
 import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.ChatViewModelFactory
-
+// something simple
 class ChatGalleryFragment : BaseFragment<FragmentChatImagesBinding>(), MediaClickListener {
 
     private lateinit var chatChannelId: String

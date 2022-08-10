@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 
 @Parcelize
 @Serializable
-@Keep
+@Keep// something simple
 data class Location(
     val latitude: Double,
     val longitude: Double,

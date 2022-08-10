@@ -1,7 +1,7 @@
 package com.jamid.codesquare.data
 
 import androidx.annotation.Keep
-
+// something simple
 @Keep
 sealed class Result<out T : Any> {
 

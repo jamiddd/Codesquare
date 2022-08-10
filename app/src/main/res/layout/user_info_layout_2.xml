@@ -8,7 +8,7 @@
     android:layout_height="wrap_content"
     android:clipToPadding="false"
     android:paddingBottom="64dp">
-
+    <!-- Something simple -->
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/profile_img"
         style="@style/AppTheme.ProfileImage"

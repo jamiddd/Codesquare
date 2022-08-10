@@ -18,7 +18,7 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentChatDocumentsBinding
 import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.ui.MessageListener3
-
+// something simple
 class ChatDocumentsFragment: BaseFragment<FragmentChatDocumentsBinding>(), MessageListener3, MediaClickListener {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatDocumentsBinding {

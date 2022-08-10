@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentForwardBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 import com.jamid.codesquare.listeners.ItemSelectResultListener
-
+// something simple
 class ForwardFragment(private val itemSelectResultListener: ItemSelectResultListener<ChatChannel>) :
     BaseBottomFragment<FragmentForwardBinding>(),
     ChatChannelClickListener {

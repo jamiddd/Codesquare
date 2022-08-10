@@ -13,7 +13,7 @@ import kotlinx.parcelize.Parcelize
 @Entity(tableName = "comments")
 @Parcelize
 @Keep
-data class Comment(
+data class Comment(// something simple
     @PrimaryKey(autoGenerate = false)
     val commentId: String,
     var content: String,

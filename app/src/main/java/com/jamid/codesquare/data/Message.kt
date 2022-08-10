@@ -8,7 +8,7 @@ import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
-
+// something simple
 @IgnoreExtraProperties
 @Entity(tableName="messages")
 @Parcelize

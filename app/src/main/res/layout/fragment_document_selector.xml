@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:focusable="true">
-
+    <!-- Something simple -->
     <Button
         android:id="@+id/browse_more_docs"
         style="@style/AppTheme.TextButton"

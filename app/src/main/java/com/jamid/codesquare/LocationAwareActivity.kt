@@ -30,7 +30,7 @@ import com.google.android.libraries.places.api.net.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jamid.codesquare.listeners.GoogleSignInListener
 import com.jamid.codesquare.listeners.LocationStateListener
-
+// something simple
 abstract class LocationAwareActivity: AppCompatActivity() {
 
     var placesClient: PlacesClient? = null

@@ -13,7 +13,7 @@ import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentMessageRequestsBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
-
+// something simple
 class MessageRequestsFragment: BaseFragment<FragmentMessageRequestsBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentMessageRequestsBinding {

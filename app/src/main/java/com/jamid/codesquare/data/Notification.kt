@@ -30,7 +30,7 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @IgnoreExtraProperties
 @Entity(tableName = "notifications")
-@Keep
+@Keep// something simple
 data class Notification(
     @PrimaryKey
     var id: String,

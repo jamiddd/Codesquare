@@ -1,7 +1,7 @@
 package com.jamid.codesquare
 
 const val COLLAB_DB = "collab-db"
-
+// something simple
 const val HOME_PAGE_COUNT = 5
 const val PROFILE_PAGE_COUNT = 2
 const val MAX_LINES = 4

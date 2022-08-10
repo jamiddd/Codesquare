@@ -15,7 +15,7 @@ import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
 import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.ui.DefaultPagingFragment
 import kotlinx.coroutines.flow.map
-
+// something simple
 class SavedPostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

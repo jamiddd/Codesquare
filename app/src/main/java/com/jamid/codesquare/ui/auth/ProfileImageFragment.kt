@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.UserUpdate
 import com.jamid.codesquare.databinding.FragmentProfileImageBinding
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
-
+// something simple
 class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
 
     private var profileImage: String? = null

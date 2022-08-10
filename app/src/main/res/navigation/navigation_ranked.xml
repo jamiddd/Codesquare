@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/navigation_ranked"
     app:startDestination="@id/rankedFragment">
-
+    <!-- Something simple -->
     <fragment
         android:id="@+id/rankedFragment"
         android:name="com.jamid.codesquare.ui.home.ranked.RankedFragment"

@@ -20,7 +20,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-
+// something simple
 enum class ViewHolderState {
     STATE_RECYCLED, STATE_ATTACHED, STATE_DETACHED
 }

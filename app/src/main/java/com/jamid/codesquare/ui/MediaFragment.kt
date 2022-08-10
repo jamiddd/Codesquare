@@ -21,7 +21,7 @@ import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
 import java.text.SimpleDateFormat
 import java.util.*
-
+// something simple
 class MediaFragment: Fragment() {
 
     private lateinit var binding: FullscreenMediaBinding

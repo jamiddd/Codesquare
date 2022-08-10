@@ -59,7 +59,7 @@ data class ChatChannel(
         updatedAt = System.currentTimeMillis(),
         lastMessage = null
     )
-
+// something simple
 
     companion object {
         fun newInstance(post: Post): ChatChannel {

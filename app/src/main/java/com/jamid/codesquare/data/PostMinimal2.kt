@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 import kotlinx.serialization.Serializable
 
 @Serializable
-@Keep
+@Keep// something simple
 data class PostMinimal2(
     @SerializedName("objectID")
     var objectID: String,

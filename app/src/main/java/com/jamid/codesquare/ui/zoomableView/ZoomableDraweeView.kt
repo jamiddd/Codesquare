@@ -29,7 +29,7 @@ import com.facebook.drawee.view.DraweeView
  *
  *
  * Once the image loads, pinch-to-zoom and translation gestures are enabled.
- */
+ */// something simple
 @Suppress("UNCHECKED_CAST")
 class ZoomableDraweeView : DraweeView<GenericDraweeHierarchy?>, ScrollingView {
 

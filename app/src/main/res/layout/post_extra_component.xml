@@ -8,7 +8,7 @@
     android:animateLayoutChanges="true"
     android:orientation="vertical"
     android:paddingBottom="48dp">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/links_header"
         style="@style/AppTheme.ContentHeading"

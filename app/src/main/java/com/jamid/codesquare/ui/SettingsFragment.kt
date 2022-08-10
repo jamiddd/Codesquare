@@ -15,7 +15,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
-
+// something simple
 class SettingsFragment : PreferenceFragmentCompat() {
 
     private val viewModel: MainViewModel by activityViewModels()

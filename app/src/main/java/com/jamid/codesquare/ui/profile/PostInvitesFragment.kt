@@ -9,7 +9,7 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.PostInviteAdapter
 import com.jamid.codesquare.data.PostInvite
 import com.jamid.codesquare.ui.DefaultPagingFragment
-
+// something simple
 class PostInvitesFragment: DefaultPagingFragment<PostInvite, PostInviteAdapter.PostInviteViewHolder>() {
 
     @OptIn(ExperimentalPagingApi::class)

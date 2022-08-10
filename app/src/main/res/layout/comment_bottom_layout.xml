@@ -6,7 +6,7 @@
     android:id="@+id/comment_bottom_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/comment_bottom_linear_vertical"
         android:layout_width="match_parent"

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -16,7 +17,9 @@ abstract class SuperMediaViewHolder(
 ) : RecyclerView.ViewHolder(view) {
 
     private var mMediaItemWrapper: MediaItemWrapper? = null
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     open fun bind(item: MediaItemWrapper?) {
         mMediaItemWrapper = item
     }

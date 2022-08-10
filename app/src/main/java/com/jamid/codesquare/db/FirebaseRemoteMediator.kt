@@ -15,7 +15,7 @@ import com.jamid.codesquare.data.Result
 abstract class FirebaseRemoteMediator<K: Any, T: Any>(val query: Query, val ignoreTime: Boolean = false): RemoteMediator<K, T>() {
 
     open var lastSnapshot: DocumentSnapshot? = null
-
+    // something simple
     override suspend fun load(loadType: LoadType, state: PagingState<K, T>): MediatorResult {
         val itemQueryResult = when (loadType) {
             LoadType.REFRESH -> {

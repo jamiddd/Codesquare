@@ -9,7 +9,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.databinding.FragmentMaintenanceBinding
 import com.jamid.codesquare.toast
-
+// something simple
 class MaintenanceFragment: BaseFragment<FragmentMaintenanceBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentMaintenanceBinding {

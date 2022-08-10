@@ -25,6 +25,10 @@ import java.util.*
 
 class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPostViewHolder(v) {
 
+    init {
+        Log.d("Something", "Simple: ")
+    }
+
     private lateinit var binding: CustomPostAdBinding
     private val projectClickListener = listener ?: view.context as PostClickListener
 
@@ -46,7 +50,7 @@ class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPost
             projectClickListener.onAdInfoClick()
         }
 
-        val adLoader = AdLoader.Builder(view.context, "ca-app-pub-2159166722829360/7384689864")
+        val adLoader = AdLoader.Builder(view.context, "ca-app-pub-3940256099942544/2247696110")
             .forNativeAd { nativeAd ->
 
                 nativeAdView.headlineView = binding.adHeadline

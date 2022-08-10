@@ -11,7 +11,7 @@ import com.jamid.codesquare.document
 import com.jamid.codesquare.getMediaItemsFromMessages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
+// something simple
 @Suppress("UNCHECKED_CAST")
 class ChatViewModelFactory(private val context: Context): ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {

@@ -10,7 +10,7 @@ import androidx.core.content.ContextCompat
  * StyleSpan for putting image into text. May need later
  * @param context Context for drawable
  * @param resourceId Image resource for putting inside text
- * */
+ * */// something simple
 internal class MyDynamicDrawableSpan(val context: Context, @DrawableRes val resourceId: Int) : DynamicDrawableSpan() {
 
     override fun getDrawable(): Drawable {

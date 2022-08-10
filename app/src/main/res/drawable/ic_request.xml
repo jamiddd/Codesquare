@@ -9,4 +9,4 @@
     <path android:fillColor="#bad5f8" android:pathData="M28.5,34L28.5,34A1.5,1.5 0,0 1,30 35.5L30,35.5A1.5,1.5 0,0 1,28.5 37L28.5,37A1.5,1.5 0,0 1,27 35.5L27,35.5A1.5,1.5 0,0 1,28.5 34z"/>
     <path android:fillColor="#62768c" android:pathData="M2.5937,46.3584l0.8124,-1.8276l5.0002,2.2228l-0.8124,1.8276z"/>
     <path android:fillColor="#4f81c4" android:pathData="M18.185,57.337l-2.815,1.4a5.306,5.306 0,0 1,-2.424 0.576,5.246 5.246,0 0,1 -2.25,-0.489V56.37l0.674,0.369A3.25,3.25 0,0 0,14.4 56.8l2.815,-1.413Z"/>
-</vector>
+</vector><!-- Something simple -->

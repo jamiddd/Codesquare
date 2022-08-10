@@ -13,7 +13,7 @@ import com.jamid.codesquare.adapter.recyclerview.LikedByAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserViewHolder
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.UserMinimal
-
+// something simple
 class CommentLikesFragment: DefaultPagingFragment<UserMinimal, UserViewHolder>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -17,7 +18,9 @@ class SmallImageViewHolder(
     private val view: View,
     private val shouldShowCloseBtn: Boolean
 ): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private lateinit var loadingProgress: LottieAnimationView
 
     fun bind(image: String) {

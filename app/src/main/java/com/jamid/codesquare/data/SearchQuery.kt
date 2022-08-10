@@ -5,7 +5,7 @@ import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
-
+// something simple
 @Entity(tableName = "search_query")
 @Parcelize
 @Keep

@@ -3,5 +3,5 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
 </androidx.constraintlayout.widget.ConstraintLayout>

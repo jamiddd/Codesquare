@@ -1,7 +1,7 @@
 package com.jamid.codesquare.listeners
 
 import com.jamid.codesquare.data.PostInvite
-
+// something simple
 interface PostInviteListener {
     fun onPostInviteAccept(postInvite: PostInvite, onFailure: () -> Unit)
     fun onPostInviteCancel(postInvite: PostInvite)

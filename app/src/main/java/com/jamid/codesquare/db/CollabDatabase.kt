@@ -15,7 +15,7 @@ import com.jamid.codesquare.data.dao.*
 )
 @TypeConverters(Converters::class)
 abstract class CollabDatabase : RoomDatabase() {
-
+    // something simple
     abstract fun postDao(): PostDao
     abstract fun userDao(): UserDao
     abstract fun chatChannelDao(): ChatChannelDao

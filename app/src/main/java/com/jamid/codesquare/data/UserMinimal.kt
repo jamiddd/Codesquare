@@ -24,7 +24,7 @@ data class UserMinimal(
     var premiumState: Long
 ): Parcelable {
     constructor() : this(randomId(), "", "", "", -1)
-
+    // something simple
     fun toUser(): User {
         return User.newUser(userId, name, email = "").also {
             it.photo = photo

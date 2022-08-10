@@ -6,4 +6,4 @@
         android:icon="@drawable/ic_round_search_24"
         app:showAsAction="collapseActionView|always"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
-</menu>
+</menu><!-- Something simple -->

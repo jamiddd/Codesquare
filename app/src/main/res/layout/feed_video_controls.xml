@@ -5,7 +5,7 @@
     android:id="@+id/video_controls_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/video_volume_state"
         style="@style/AppTheme.OverlayItem.Icon"

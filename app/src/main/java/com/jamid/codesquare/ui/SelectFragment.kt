@@ -17,7 +17,7 @@ import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.FragmentSelectBinding
 import com.jamid.codesquare.listeners.ItemSelectResultListener
 import com.jamid.codesquare.listeners.MediaClickListener
-
+// something simple
 abstract class SelectFragment(
     private val isMultipleSelection: Boolean = true,
     protected val type: ItemSelectType = ItemSelectType.GALLERY

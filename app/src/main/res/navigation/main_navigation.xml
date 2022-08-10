@@ -4,7 +4,7 @@
     android:id="@+id/main_navigation"
     xmlns:tools="http://schemas.android.com/tools"
     app:startDestination="@+id/navigation_home">
-
+    <!-- Something simple -->
     <include app:graph="@navigation/navigation_home"/>
     <include app:graph="@navigation/navigation_chats"/>
 <!--<include app:graph="@navigation/navigation_ranked"/>-->

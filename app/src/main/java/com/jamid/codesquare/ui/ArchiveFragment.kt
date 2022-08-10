@@ -10,7 +10,7 @@ import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter2
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.data.ReferenceItem
-
+// something simple
 class ArchiveFragment: DefaultPagingFragment<ReferenceItem, PostViewHolder>() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -3,4 +3,4 @@
     <item android:color="@color/white" android:state_enabled="true" android:state_selected="true"/>
     <item android:color="#555" android:state_enabled="true"/>
     <item android:color="#555"/>
-</selector>
+</selector><!-- Something simple -->

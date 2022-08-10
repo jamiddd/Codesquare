@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
 import com.google.android.libraries.places.api.model.Place
 
@@ -13,5 +14,8 @@ class PlaceComparator: DiffUtil.ItemCallback<Place>() {
         return oldItem.latLng != newItem.latLng
     }
 
+    init {
+        Log.d("Something", "Simple: ")
+    }
 
 }

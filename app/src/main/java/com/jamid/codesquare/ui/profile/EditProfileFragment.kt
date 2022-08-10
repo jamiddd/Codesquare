@@ -21,7 +21,7 @@ import com.jamid.codesquare.ui.AddTagsFragment
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
 import com.jamid.codesquare.ui.MessageDialogFragment
 import kotlinx.coroutines.Job
-
+// something simple
 class EditProfileFragment : BaseFragment<FragmentEditProfileBinding>(), AddTagsListener, InterestItemClickListener {
 
     private var profileImage: String? = null

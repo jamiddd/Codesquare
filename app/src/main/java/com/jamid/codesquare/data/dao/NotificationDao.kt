@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.*
@@ -7,7 +8,9 @@ import com.jamid.codesquare.data.Notification
 
 @Dao
 abstract class NotificationDao: BaseDao<Notification>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertNotifications(notifications: List<Notification>)
 

@@ -23,7 +23,7 @@ import com.jamid.codesquare.databinding.FragmentLocation2Binding
 import com.jamid.codesquare.listeners.LocationItemClickListener
 import com.jamid.codesquare.listeners.LocationStateListener
 import com.jamid.codesquare.listeners.NetworkStateListener
-
+// something simple
 class LocationFragment : BaseBottomFragment<FragmentLocation2Binding>(), LocationItemClickListener,
     LocationStateListener, NetworkStateListener {
 

@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.paging.PagingSource
 import androidx.room.Dao
@@ -9,7 +10,9 @@ import com.jamid.codesquare.data.Comment
 
 @Dao
 abstract class CommentDao: BaseDao<Comment>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("SELECT * FROM comments WHERE commentId = :commentId")
     abstract suspend fun getCommentById(commentId: String): Comment?
 

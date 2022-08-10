@@ -10,7 +10,7 @@ import com.jamid.codesquare.adapter.recyclerview.PostMinimalAdapter
 import com.jamid.codesquare.databinding.FragmentSearchPostsBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
-
+// something simple
 class SearchPostsFragment: BaseFragment<FragmentSearchPostsBinding>() {
 
     private lateinit var postAdapter: PostMinimalAdapter

@@ -1,13 +1,15 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DiffUtil
 import com.jamid.codesquare.adapter.comparators.PostRequestComparator
 import com.jamid.codesquare.data.PostRequest
 
 class PostRequestAdapter(private val imr: Boolean = false) : PagingDataAdapter<PostRequest, PostRequestViewHolder>(PostRequestComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onBindViewHolder(holder: PostRequestViewHolder, position: Int) {
         holder.bind(getItem(position))
     }

@@ -5,7 +5,7 @@
     android:id="@+id/dialog_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/dialog_items_linear_container"
         android:layout_width="match_parent"

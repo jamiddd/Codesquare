@@ -43,7 +43,7 @@ import java.util.*
 import kotlin.collections.set
 
 typealias AlgoliaQuery = com.algolia.search.model.search.Query
-
+// something simple
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo: MainRepository

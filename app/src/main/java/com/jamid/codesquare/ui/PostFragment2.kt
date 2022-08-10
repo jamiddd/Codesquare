@@ -25,7 +25,7 @@ import com.jamid.codesquare.databinding.FragmentPost2Binding
 import com.jamid.codesquare.listeners.ChipClickListener
 import com.jamid.codesquare.listeners.CommentMiniListener
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-
+// something simple
 class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener, ChipClickListener {
 
     private lateinit var post: Post

@@ -15,7 +15,9 @@ import com.jamid.codesquare.listeners.SubscriptionListener
 import com.jamid.codesquare.show
 
 class SubscriptionAdapter(private val subscriptionListener: SubscriptionListener): ListAdapter<OneTimeProduct, SubscriptionAdapter.SubscriptionViewHolder>(SubscriptionComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     inner class SubscriptionViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private lateinit var binding: SubscriptionItemBinding

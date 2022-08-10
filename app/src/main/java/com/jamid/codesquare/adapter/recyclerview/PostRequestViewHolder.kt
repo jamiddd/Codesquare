@@ -15,7 +15,9 @@ import com.jamid.codesquare.listeners.NotificationItemClickListener
 import com.jamid.codesquare.listeners.PostRequestListener
 
 class PostRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private lateinit var binding: ViewBinding
     private val projectRequestListener = view.context as PostRequestListener
     private val notificationItemClickListener = view.context as NotificationItemClickListener

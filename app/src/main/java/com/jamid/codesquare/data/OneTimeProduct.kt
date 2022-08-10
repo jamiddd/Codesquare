@@ -8,7 +8,7 @@ import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 
 @IgnoreExtraProperties
-@Parcelize
+@Parcelize// something simple
 @Keep
 data class OneTimeProduct(
     var id: String,

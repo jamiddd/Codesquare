@@ -7,7 +7,7 @@
     android:layout_height="wrap_content"
     android:layout_marginVertical="4dp"
     android:hapticFeedbackEnabled="true">
-
+    <!-- Something simple -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_save_btn"
         style="@style/AppTheme.GenericIconBtn"

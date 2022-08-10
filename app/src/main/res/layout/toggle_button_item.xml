@@ -8,4 +8,4 @@
     app:iconGravity="start"
     android:textAllCaps="false"
     android:layout_height="wrap_content"
-    style="?attr/materialButtonOutlinedStyle" />
+    style="?attr/materialButtonOutlinedStyle" /><!-- Something simple -->

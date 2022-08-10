@@ -10,4 +10,4 @@
   <path
       android:fillColor="#FF000000"
       android:pathData="M12,16a1,1 0,0 1,-1 -1V5a1,1 0,0 1,2 0V15A1,1 0,0 1,12 16zM19,20H5a1,1 0,0 1,0 -2H19a1,1 0,0 1,0 2z"/>
-</vector>
+</vector><!-- Something simple -->

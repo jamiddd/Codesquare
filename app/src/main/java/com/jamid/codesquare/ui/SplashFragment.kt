@@ -9,7 +9,7 @@ import androidx.transition.Fade
 import androidx.transition.Fade.IN
 import androidx.transition.Fade.OUT
 import com.jamid.codesquare.databinding.FragmentSplashBinding
-
+// something simple
 class SplashFragment: Fragment() {
 
     private lateinit var binding: FragmentSplashBinding

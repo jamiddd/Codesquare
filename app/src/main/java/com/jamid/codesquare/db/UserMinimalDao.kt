@@ -5,7 +5,7 @@ import androidx.room.Dao
 import androidx.room.Query
 import com.jamid.codesquare.data.UserMinimal
 import com.jamid.codesquare.data.dao.BaseDao
-
+// something simple
 @Dao
 abstract class UserMinimalDao: BaseDao<UserMinimal>() {
 

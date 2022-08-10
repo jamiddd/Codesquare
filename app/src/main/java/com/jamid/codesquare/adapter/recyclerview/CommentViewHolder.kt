@@ -18,7 +18,9 @@ import com.jamid.codesquare.databinding.CommentItemBinding
 import com.jamid.codesquare.listeners.CommentListener
 
 class CommentViewHolder(val view: View, private val commentListener: CommentListener): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private lateinit var binding: CommentItemBinding
 
     fun bind(comment: Comment?) {

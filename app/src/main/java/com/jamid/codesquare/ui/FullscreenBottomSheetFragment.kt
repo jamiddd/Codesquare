@@ -8,7 +8,7 @@ import com.jamid.codesquare.getBottomSheetBehavior
 import com.jamid.codesquare.getFrameLayout
 import com.jamid.codesquare.getStatusBarHeight
 import com.jamid.codesquare.getWindowHeight
-
+// something simple
 abstract class FullscreenBottomSheetFragment(@LayoutRes layout: Int? = null): RoundedBottomSheetDialogFragment(layout) {
 
     fun setFullHeight() {

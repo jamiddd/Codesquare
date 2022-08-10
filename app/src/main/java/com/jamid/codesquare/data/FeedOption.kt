@@ -7,7 +7,7 @@ data class FeedOption(
     var filter: String?,
     var sort: FeedSort,
     var order: FeedOrder
-)
+)// something simple
 
 enum class FeedSort {
     CONTRIBUTORS, LIKES, MOST_VIEWED, MOST_RECENT, LOCATION

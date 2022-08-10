@@ -7,7 +7,7 @@
     android:background="?selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
-
+    <!-- Something simple -->
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/mini_project_user_img"
         android:layout_width="20dp"

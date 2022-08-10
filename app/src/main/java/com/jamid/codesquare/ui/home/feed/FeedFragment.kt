@@ -32,7 +32,7 @@ import com.jamid.codesquare.listeners.LocationStateListener
 import com.jamid.codesquare.ui.DefaultPagingFragment
 import kotlinx.coroutines.flow.map
 import java.util.*
-
+// something simple
 
 class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), LocationStateListener {
 

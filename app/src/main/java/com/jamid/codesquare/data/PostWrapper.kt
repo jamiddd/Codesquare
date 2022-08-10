@@ -3,7 +3,7 @@ package com.jamid.codesquare.data
 import androidx.annotation.Keep
 import androidx.recyclerview.widget.DiffUtil
 
-@Keep
+@Keep// something simple
 data class PostWrapper(
     val id: String,
     val post: Post,

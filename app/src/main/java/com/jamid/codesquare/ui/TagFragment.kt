@@ -13,7 +13,7 @@ import com.jamid.codesquare.adapter.recyclerview.PostAdapter
 import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
 import com.jamid.codesquare.data.Post2
 import java.util.*
-
+// something simple
 class TagFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
     private var tag1: String = ""

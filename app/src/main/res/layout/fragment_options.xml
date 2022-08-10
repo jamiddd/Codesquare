@@ -6,7 +6,7 @@
     android:id="@+id/options_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <TextView
         android:id="@+id/options_handle"
         android:layout_width="40dp"

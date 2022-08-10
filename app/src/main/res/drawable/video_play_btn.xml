@@ -2,4 +2,4 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@drawable/play_btn_bg" android:top="5dp" android:bottom="5dp" android:start="5dp" android:end="5dp" />
     <item android:drawable="@drawable/ic_round_play_circle_24" />
-</layer-list>
+</layer-list><!-- Something simple -->

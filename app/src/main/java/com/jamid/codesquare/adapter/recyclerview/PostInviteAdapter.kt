@@ -16,7 +16,9 @@ import com.jamid.codesquare.listeners.NotificationItemClickListener
 import com.jamid.codesquare.listeners.PostInviteListener
 
 class PostInviteAdapter : PagingDataAdapter<PostInvite, PostInviteViewHolder>(PostInviteComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     inner class PostInviteViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private lateinit var binding: RequestItemBinding

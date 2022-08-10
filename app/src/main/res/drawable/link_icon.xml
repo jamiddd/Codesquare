@@ -5,4 +5,4 @@
     android:pivotX="50%"
     android:pivotY="50%"
     android:drawable="@drawable/ic_round_link_24">
-</rotate>
+</rotate><!-- Something simple -->

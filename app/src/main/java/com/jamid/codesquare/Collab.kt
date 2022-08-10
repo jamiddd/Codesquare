@@ -1,5 +1,5 @@
 package com.jamid.codesquare
-
+// something simple
 import android.app.Application
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.google.android.libraries.places.api.Places

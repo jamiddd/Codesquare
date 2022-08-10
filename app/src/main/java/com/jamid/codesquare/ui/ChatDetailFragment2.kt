@@ -17,7 +17,7 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentChatDetail2Binding
 import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.ui.home.chat.ChatDetailFragment
-
+// something simple
 class ChatDetailFragment2: BaseFragment<FragmentChatDetail2Binding>(), MediaClickListener {
 
     private lateinit var chatChannel: ChatChannel

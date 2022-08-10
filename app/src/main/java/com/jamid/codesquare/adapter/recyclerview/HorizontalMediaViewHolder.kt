@@ -10,15 +10,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.facebook.imagepipeline.request.ImageRequest
-import com.jamid.codesquare.*
+import com.jamid.codesquare.ViewHolderState
 import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.databinding.FullscreenMediaBinding
 import com.jamid.codesquare.databinding.MediaItemBinding
+import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.HorizontalMediaItemClickListener
+import com.jamid.codesquare.show
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
 import com.jamid.codesquare.ui.zoomableView.ZoomableDraweeView
+import com.jamid.codesquare.video
 
 class HorizontalMediaViewHolder(
     val view: View,
@@ -28,7 +31,9 @@ class HorizontalMediaViewHolder(
     private val lifecycleOwner: LifecycleOwner,
     private val fragmentTag: String
 ): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     companion object {
         private const val TAG = "HorizontalMediaViewHolder"
     }

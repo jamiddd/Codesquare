@@ -2,4 +2,4 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
     <corners android:radius="24dp" />
     <solid android:color="?colorAccent"/>
-</shape>
+</shape><!-- Something simple -->

@@ -4,7 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.Notification
-
+// something simple
 @ExperimentalPagingApi
 class NotificationRemoteMediator(q: Query, private val repository: MainRepository): FirebaseRemoteMediator<Int, Notification>(q) {
 

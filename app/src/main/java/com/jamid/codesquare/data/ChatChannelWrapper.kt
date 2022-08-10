@@ -9,4 +9,4 @@ data class ChatChannelWrapper(
     val id: String = randomId(),
     var isSelected: Boolean = false,
     var selectCount: Int = -1
-)
+)// something simple

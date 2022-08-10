@@ -19,7 +19,7 @@ import com.jamid.codesquare.data.PostInvite
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentInvitesBinding
 import com.jamid.codesquare.listeners.PostMiniItemClickListener
-
+// something simple
 class InvitesFragment: Fragment(), PostMiniItemClickListener {
 
     private lateinit var binding: FragmentInvitesBinding

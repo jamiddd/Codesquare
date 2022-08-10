@@ -4,7 +4,7 @@
     android:id="@+id/crop_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+   <!-- Something simple -->
    <include
        android:id="@+id/crop_toolbar_comp"
        layout="@layout/bottom_sheet_toolbar_component" />

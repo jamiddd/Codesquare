@@ -8,7 +8,7 @@ import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentAdvertiseInfoBinding
-
+// something simple
 class AdvertiseInfoFragment: BaseFragment<FragmentAdvertiseInfoBinding>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

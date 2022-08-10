@@ -17,7 +17,7 @@ import com.jamid.codesquare.databinding.FragmentOnBoardingBinding
 import com.jamid.codesquare.hideKeyboard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
+// something simple
 class OnBoardingFragment: Fragment() {
 
     private lateinit var binding: FragmentOnBoardingBinding

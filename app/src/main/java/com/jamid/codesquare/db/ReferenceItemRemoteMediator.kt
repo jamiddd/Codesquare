@@ -4,7 +4,7 @@ import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.jamid.codesquare.data.ReferenceItem
-
+// something simple
 @OptIn(ExperimentalPagingApi::class)
 class ReferenceItemRemoteMediator(q: Query, private val repo: MainRepository, private val filter: (ReferenceItem) -> Boolean): FirebaseRemoteMediator<Int, ReferenceItem>(q) {
     override suspend fun onLoadComplete(items: QuerySnapshot) {

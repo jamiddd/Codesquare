@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import com.jamid.codesquare.adapter.comparators.InterestItemComparator
@@ -10,7 +11,9 @@ class InterestItemAdapter(private val interestItemClickListener: InterestItemCli
     override fun onBindViewHolder(holder: InterestItemViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): InterestItemViewHolder {
         return InterestItemViewHolder.newInstance(parent, interestItemClickListener)
     }

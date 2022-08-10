@@ -22,7 +22,7 @@ import com.jamid.codesquare.data.User
  * [UserManager] are
  * already initialized and ready for action.
  *
- * */
+ * */// something simple
 @OptIn(ExperimentalPagingApi::class)
 class SnapshotListenerContainer(private val viewModel: MainViewModel): LifecycleEventObserver {
 

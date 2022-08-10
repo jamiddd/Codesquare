@@ -11,7 +11,7 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentEmailVerificationBinding
-
+// something simple
 class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentEmailVerificationBinding {

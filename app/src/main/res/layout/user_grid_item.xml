@@ -8,7 +8,7 @@
     android:clickable="true"
     android:focusable="true"
     android:minWidth="150dp">
-
+    <!-- Something simple -->
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/user_img_small"
         android:layout_width="60dp"

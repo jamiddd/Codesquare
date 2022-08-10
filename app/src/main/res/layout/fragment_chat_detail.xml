@@ -9,7 +9,7 @@
     android:clipToPadding="false"
     android:fillViewport="true"
     android:overScrollMode="never">
-
+    <!-- Something simple -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/chat_detail_container"
         android:layout_width="match_parent"

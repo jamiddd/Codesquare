@@ -14,7 +14,7 @@ import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPostContributorsBinding
-
+// something simple
 class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding>() {
 
     override val viewModel: MainViewModel by activityViewModels()

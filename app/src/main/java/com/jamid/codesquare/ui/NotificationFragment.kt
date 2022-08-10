@@ -10,7 +10,7 @@ import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.NotificationAdapter
 import com.jamid.codesquare.adapter.recyclerview.NotificationViewHolder
 import com.jamid.codesquare.data.Notification
-
+// something simple
 class NotificationFragment: DefaultPagingFragment<Notification, NotificationViewHolder>() {
 
     private val simpleCallback = object: ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.RIGHT) {

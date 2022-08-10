@@ -11,7 +11,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 /**
  * "Use [com.jamid.codesquare.BaseBottomFragment] instead"
  *
- * */
+ * */// something simple
 @Deprecated("")
 open class RoundedBottomSheetDialogFragment(@LayoutRes val layout: Int? = null) : BottomSheetDialogFragment() {
 

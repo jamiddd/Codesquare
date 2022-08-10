@@ -5,7 +5,7 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
 
     <TextView
         android:id="@+id/upload_warning_info2"

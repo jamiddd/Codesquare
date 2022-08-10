@@ -3,7 +3,7 @@ package com.jamid.codesquare.ui.zoomableView
 import android.view.MotionEvent
 import kotlin.math.atan2
 import kotlin.math.hypot
-
+// something simple
 
 class TransformGestureDetector(multiPointerGestureDetector: MultiPointerGestureDetector) :
 	MultiPointerGestureDetector.Listener {

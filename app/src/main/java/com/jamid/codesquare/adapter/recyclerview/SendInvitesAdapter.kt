@@ -18,7 +18,9 @@ class SendInvitesAdapter(
     private val receiverId: String,
     private val postMiniItemClickListener: PostMiniItemClickListener
 ) : PagingDataAdapter<Post, SendInviteViewHolder>(PostComparator()) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SendInviteViewHolder {
         return SendInviteViewHolder(
             LayoutInflater.from(parent.context).inflate(R.layout.post_list_item, parent, false),

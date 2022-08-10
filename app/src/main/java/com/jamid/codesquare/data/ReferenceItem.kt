@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
 @Entity(tableName = "liked_item")
-@Parcelize
+@Parcelize// something simple
 @Keep
 data class ReferenceItem(
     @PrimaryKey

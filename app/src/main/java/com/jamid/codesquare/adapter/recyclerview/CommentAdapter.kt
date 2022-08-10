@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
@@ -7,7 +8,9 @@ import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.listeners.CommentListener
 
 class CommentAdapter(private val commentListener: CommentListener): PagingDataAdapter<Comment, CommentViewHolder>(comparator) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<Comment>() {
             override fun areItemsTheSame(oldItem: Comment, newItem: Comment): Boolean {

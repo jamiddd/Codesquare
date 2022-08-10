@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
@@ -12,7 +13,9 @@ class UserMinimalAdapter(private val listener: UserClickListener? = null): ListA
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
         return UserViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.user_vertical_item, parent, false), listener = listener)
     }
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         holder.bind(getItem(position))
     }

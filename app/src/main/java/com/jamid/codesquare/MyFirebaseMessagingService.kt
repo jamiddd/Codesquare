@@ -7,7 +7,7 @@ import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import android.content.Intent
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-
+// something simple
 class MyFirebaseMessagingService: FirebaseMessagingService() {
 
     private val auth = Firebase.auth

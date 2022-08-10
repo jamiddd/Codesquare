@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.recyclerview.widget.DiffUtil
 
@@ -10,6 +11,10 @@ class ImageComparator: DiffUtil.ItemCallback<String>() {
 
     override fun areContentsTheSame(oldItem: String, newItem: String): Boolean {
         return oldItem == newItem
+    }
+
+    init {
+        Log.d("Something", "Simple: ")
     }
 
 }

@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.RankedRule
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentRankedRulesBinding
 import com.jamid.codesquare.listeners.RankedRuleClickListener
-
+// something simple
 class RankedRulesFragment: FullscreenBottomSheetFragment(), RankedRuleClickListener {
 
     private lateinit var binding: FragmentRankedRulesBinding

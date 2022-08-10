@@ -12,7 +12,7 @@ import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.databinding.RankedEntryFragmentBinding
 import com.jamid.codesquare.toast
 import java.util.*
-
+// something simple
 
 class RankedEntryFragment: BaseFragment<RankedEntryFragmentBinding>() {
 

@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="?selectableItemBackground">
-
+    <!-- Something simple -->
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/comment_user_img"

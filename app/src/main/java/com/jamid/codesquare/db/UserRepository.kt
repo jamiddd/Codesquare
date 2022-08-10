@@ -14,7 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
+// something simple
 class UserRepository(db: CollabDatabase, private val scope: CoroutineScope) {
 
     private val _isSignedIn = MutableLiveData<Boolean>().apply { value = false }

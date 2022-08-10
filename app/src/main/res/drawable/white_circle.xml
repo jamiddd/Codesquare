@@ -3,4 +3,4 @@
     <corners android:radius="12dp" />
     <solid android:color="@color/white" />
     <size android:height="24dp" android:width="24dp" />
-</shape>
+</shape><!-- Something simple -->

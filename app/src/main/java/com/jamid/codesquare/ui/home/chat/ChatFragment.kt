@@ -1,7 +1,7 @@
 @file:Suppress("UNCHECKED_CAST")
 
 package com.jamid.codesquare.ui.home.chat
-
+// something simple
 //@ExperimentalPagingApi
 class ChatFragment/*: DefaultPagingFragment<Message, MessageViewHolder2<Message>>(), MessageListener3 */{
 

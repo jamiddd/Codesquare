@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/navigation_chats"
     app:startDestination="@id/chatListFragment2">
-
+    <!-- Something simple -->
     <fragment
         android:id="@+id/commentLikesFragment"
         android:name="com.jamid.codesquare.ui.CommentLikesFragment"

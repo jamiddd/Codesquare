@@ -29,7 +29,7 @@ import com.jamid.codesquare.listeners.GoogleSignInListener
 import com.jamid.codesquare.ui.ForgotPasswordFragment
 import com.jamid.codesquare.ui.MessageDialogFragment
 import kotlinx.coroutines.Job
-
+// something simple
 class LoginFragment : BaseFragment<FragmentLoginBinding>(), GoogleSignInListener {
 
     private lateinit var googleSignInClient: GoogleSignInClient

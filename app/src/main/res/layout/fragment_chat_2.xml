@@ -6,7 +6,7 @@
     style="@style/AppTheme.Fragment"
     android:layout_height="match_parent"
     xmlns:tools="http://schemas.android.com/tools">
-
+    <!-- Something simple -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/page_chat_recycler"
         android:layout_width="match_parent"

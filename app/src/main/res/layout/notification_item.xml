@@ -7,7 +7,7 @@
     android:background="?selectableItemBackground"
     android:clickable="true"
     android:focusable="true">
-
+    <!-- Something simple -->
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/notification_img"
         android:layout_width="50dp"

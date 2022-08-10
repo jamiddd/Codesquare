@@ -1,7 +1,7 @@
 package com.jamid.codesquare.listeners
 
 import com.jamid.codesquare.data.PostRequest
-
+// something simple
 interface PostRequestListener {
     fun onPostRequestAccept(postRequest: PostRequest, onFailure: () -> Unit)
     fun onPostRequestCancel(postRequest: PostRequest)

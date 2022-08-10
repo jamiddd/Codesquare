@@ -10,7 +10,7 @@
         <item name="colorPrimaryVariant">@color/variant_blue</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorPrimarySurface">@color/chip_back_blue_night</item>
-
+        <!-- Something simple -->
         <item name="android:forceDarkAllowed">false</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/secondary_night</item>

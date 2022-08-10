@@ -15,7 +15,7 @@ import com.jamid.codesquare.databinding.SubscriptionLayout2Binding
 import com.jamid.codesquare.disappear
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
-
+// something simple
 class SubscriptionFragment : RoundedBottomSheetDialogFragment() {
 
     private lateinit var binding: SubscriptionLayout2Binding

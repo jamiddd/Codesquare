@@ -12,7 +12,7 @@ import androidx.navigation.fragment.findNavController
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.databinding.PostFragmentContainerBinding
-
+// something simple
 class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding>() {
 
     private lateinit var post: Post

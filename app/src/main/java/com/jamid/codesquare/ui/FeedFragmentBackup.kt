@@ -1,5 +1,5 @@
 package com.jamid.codesquare.ui
-/*
+/*// something simple
 import android.animation.LayoutTransition
 import android.annotation.SuppressLint
 import android.content.IntentSender

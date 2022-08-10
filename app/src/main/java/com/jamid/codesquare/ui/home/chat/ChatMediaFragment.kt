@@ -13,7 +13,7 @@ import com.jamid.codesquare.CHAT_CHANNEL
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.databinding.FragmentChatMediaBinding
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-
+// something simple
 class ChatMediaFragment : BaseFragment<FragmentChatMediaBinding>() {
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatMediaBinding {

@@ -1,6 +1,7 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.net.Uri
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
@@ -23,7 +24,9 @@ class MessageViewHolder2<T: Any>(
     val view: View,
     private val itemType: Int,
 ): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private val controllerListener = FrescoImageControllerListener()
     private val currentUserId = UserManager.currentUser.id
     var listener: MessageListener3? = null

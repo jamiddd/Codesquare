@@ -17,7 +17,7 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
 import com.jamid.codesquare.ui.MessageDialogFragment
 import kotlinx.coroutines.Job
-
+// something simple
 @ExperimentalPagingApi
 class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding>() {
 

@@ -21,7 +21,7 @@ import com.jamid.codesquare.adapter.recyclerview.PostAdapter3
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.databinding.FragmentCommentsBinding
-
+// something simple
 class CommentsFragment :
     PagingDataFragment<FragmentCommentsBinding, Comment, CommentViewHolder>() {
 

@@ -11,7 +11,9 @@ import com.jamid.codesquare.listeners.NotificationItemClickListener
 
 
 class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private val notificationItemClickListener = view.context as NotificationItemClickListener
 
     private val notificationTime = view.findViewById<TextView>(R.id.notification_time)

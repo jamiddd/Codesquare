@@ -1,8 +1,8 @@
 package com.jamid.codesquare.adapter.viewpager
 
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.HOME_PAGE_COUNT
 import com.jamid.codesquare.ui.NotificationCenterFragment
@@ -12,7 +12,9 @@ import com.jamid.codesquare.ui.home.ranked.RankedFragment
 import com.jamid.codesquare.ui.profile.ProfileFragment
 
 class MainViewPagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(activity) {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     private val fragmentList = mutableListOf(
         FeedFragment(),
         ChatListFragment2(),

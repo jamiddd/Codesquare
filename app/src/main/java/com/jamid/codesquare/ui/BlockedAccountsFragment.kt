@@ -11,7 +11,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.BlockedAccountItemBinding
 import com.jamid.codesquare.databinding.FragmentBlockedAccountsBinding
-
+// something simple
 class BlockedAccountsFragment: BaseFragment<FragmentBlockedAccountsBinding>() {
 
     private val blockedList = mutableListOf<String>()

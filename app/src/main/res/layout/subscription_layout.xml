@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <LinearLayout
         android:id="@+id/subscription_container"
         android:layout_width="match_parent"

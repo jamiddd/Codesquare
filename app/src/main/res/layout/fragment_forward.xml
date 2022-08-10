@@ -6,7 +6,7 @@
     android:id="@+id/forward_fragment_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
+    <!-- Something simple -->
     <include
         android:id="@+id/sheet_top_comp"
         layout="@layout/bottom_sheet_toolbar_component" />

@@ -1,7 +1,7 @@
 package com.jamid.codesquare.ui
 
 import com.jamid.codesquare.data.Message
-
+// something simple
 interface MessageListener3 {
 
     fun onMessageThumbnailNotDownload(message: Message) {}

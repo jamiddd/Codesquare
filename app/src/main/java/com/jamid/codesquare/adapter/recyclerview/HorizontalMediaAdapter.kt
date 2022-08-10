@@ -20,7 +20,9 @@ class HorizontalMediaAdapter(
     private val lifecycleOwner: LifecycleOwner,
     private val fragmentTag: String,
 ): ListAdapter<MediaItem, HorizontalMediaViewHolder>(MediaItemComparator()){
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HorizontalMediaViewHolder {
         return if (isFullscreen) {
             HorizontalMediaViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.fullscreen_media, parent, false), horizontalMediaItemClickListener, shouldShowControls, parentEventEmitter, lifecycleOwner, fragmentTag)

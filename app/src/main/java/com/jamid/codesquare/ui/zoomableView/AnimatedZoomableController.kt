@@ -8,7 +8,7 @@ import android.graphics.Matrix
 import android.view.animation.DecelerateInterpolator
 import com.facebook.common.internal.Preconditions
 import com.facebook.common.logging.FLog
-
+// something simple
 
 class AnimatedZoomableController @SuppressLint("NewApi") constructor(val transformGestureDetector: TransformGestureDetector?) :
 	AbstractAnimatedZoomableController(transformGestureDetector!!) {

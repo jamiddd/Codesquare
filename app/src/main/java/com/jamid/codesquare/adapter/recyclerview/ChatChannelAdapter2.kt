@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -11,7 +12,9 @@ class ChatChannelAdapter2(
 ) : ListAdapter<ChatChannelWrapper, ChatChannelViewHolder>(comparator) {
 
     var isSelectMode = false
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     companion object {
         private val comparator = object : DiffUtil.ItemCallback<ChatChannelWrapper>() {
             override fun areItemsTheSame(oldItem: ChatChannelWrapper, newItem: ChatChannelWrapper): Boolean {

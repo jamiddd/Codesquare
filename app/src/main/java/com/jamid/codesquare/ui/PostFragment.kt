@@ -43,7 +43,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
-
+// something simple
 class PostFragment : BaseFragment<FragmentPostBinding>(), ImageClickListener, CommentMiniListener, HorizontalMediaItemClickListener {
 
     private lateinit var post: Post

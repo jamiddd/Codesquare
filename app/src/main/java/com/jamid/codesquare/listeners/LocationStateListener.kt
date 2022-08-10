@@ -5,7 +5,7 @@ import android.location.Location
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.net.FetchPlaceResponse
 import com.google.android.libraries.places.api.net.FindCurrentPlaceResponse
-
+// something simple
 interface LocationStateListener {
     fun onLocationSettingsReady()
     fun onLocationTurnOnRequestRejected()

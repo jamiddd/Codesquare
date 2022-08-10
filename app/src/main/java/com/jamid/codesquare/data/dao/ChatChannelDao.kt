@@ -1,5 +1,6 @@
 package com.jamid.codesquare.data.dao
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.room.Dao
 import androidx.room.Query
@@ -7,7 +8,9 @@ import com.jamid.codesquare.data.ChatChannel
 
 @Dao
 abstract class ChatChannelDao: BaseDao<ChatChannel>() {
-
+    init {
+        Log.d("Something", "Simple: ")
+    }
     @Query("DELETE FROM chat_channels")
     abstract suspend fun clearTable()
 

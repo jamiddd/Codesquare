@@ -5,7 +5,7 @@ import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentHomeBinding
 import com.jamid.codesquare.listeners.OptionClickListener
-
+// something simple
 class HomeFragment : BaseFragment<FragmentHomeBinding>(), OptionClickListener {
 
   /*  private lateinit var viewPager2Callback: ViewPager2.OnPageChangeCallback

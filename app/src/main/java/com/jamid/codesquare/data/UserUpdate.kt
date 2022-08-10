@@ -2,7 +2,7 @@ package com.jamid.codesquare.data
 
 import android.net.Uri
 import androidx.annotation.Keep
-
+// something simple
 @Keep
 data class UserUpdate(
     val username: String? = null,

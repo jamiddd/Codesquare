@@ -1,5 +1,5 @@
 package com.jamid.codesquare
-
+// something simple
 import android.os.Bundle
 import android.view.*
 import androidx.core.content.ContextCompat

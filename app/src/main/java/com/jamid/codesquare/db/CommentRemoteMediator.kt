@@ -7,7 +7,7 @@ import com.jamid.codesquare.data.Comment
 
 @ExperimentalPagingApi
 class CommentRemoteMediator(query: Query, private val repository: MainRepository, private val filter: (comment: Comment) -> Boolean): FirebaseRemoteMediator<Int, Comment>(query) {
-
+    // something simple
     override suspend fun onLoadComplete(items: QuerySnapshot) {
         if (!items.isEmpty) {
             val comments = items.toObjects(Comment::class.java)

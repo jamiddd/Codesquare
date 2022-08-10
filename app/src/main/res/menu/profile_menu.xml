@@ -3,4 +3,4 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item android:id="@+id/profile_option" android:icon="@drawable/ic_round_more_horiz_24"  app:showAsAction="always"
         android:title="" />
-</menu>
+</menu><!-- Something simple -->

@@ -4,4 +4,4 @@
         android:state_selected="true"/>
 
     <item android:drawable="@drawable/default_dot"/>
-</selector>
+</selector><!-- Something simple -->

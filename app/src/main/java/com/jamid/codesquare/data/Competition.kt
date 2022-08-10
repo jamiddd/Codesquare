@@ -6,7 +6,7 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 @Keep
-data class Competition(
+data class Competition(// something simple
     var id: String,
     var name: String,
     var type: String,
