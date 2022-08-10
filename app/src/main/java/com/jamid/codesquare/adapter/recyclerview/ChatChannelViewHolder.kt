@@ -6,111 +6,120 @@ import android.text.style.StyleSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.ChatChannelItemBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
 class ChatChannelViewHolder(
-    val uid: String,
     val view: View,
     private val channelListener: ChatChannelClickListener
 ) : RecyclerView.ViewHolder(view) {
 
-    var isSelectAvailable = false
+    var isSelectMode = false
 
-    fun bind(chatChannel: ChatChannel?) {
-        if (chatChannel != null) {
-
+    fun bind(chatChannelWrapper: ChatChannelWrapper?) {
+        if (chatChannelWrapper != null) {
+            val chatChannel = chatChannelWrapper.chatChannel
             val binding = ChatChannelItemBinding.bind(view)
 
-            binding.channelImg.setImageURI(chatChannel.postImage)
+            val lastMessage = chatChannel.lastMessage
+            binding.channelTime.text = getTextForTime(chatChannel.updatedAt)
 
-            binding.channelName.text = chatChannel.postTitle
-
-            val message = chatChannel.lastMessage
-
-            binding.channelTime.text = getTextForChatTime(chatChannel.updatedAt)
-
-            if (message != null) {
-                val content = when (message.type) {
-                    image -> {
-                        image
-                    }
-                    document -> {
-                        document
-                    }
-                    else -> {
-                        message.content
-                    }
+            if (chatChannel.type == "private") {
+                val data1 = chatChannel.data1!!
+                val data2 = chatChannel.data2!!
+                if (data1.userId != UserManager.currentUserId) {
+                    binding.channelName.text = data1.name
+                    binding.channelImg.setImageURI(data1.photo)
+                } else {
+                    binding.channelName.text = data2.name
+                    binding.channelImg.setImageURI(data2.photo)
                 }
+            } else {
+                binding.channelImg.setImageURI(chatChannel.postImage)
+                binding.channelName.text = chatChannel.postTitle
+            }
 
-                if (message.senderId != uid) {
+            if (lastMessage != null) {
+                if (chatChannel.type == "private") {
+                    val content = when (lastMessage.type) {
+                        image -> "Image"
+                        document -> "Document"
+                        video -> "Video"
+                        else -> lastMessage.content
+                    }
 
-                    val lastMessageText = "${message.sender.name}: $content"
-                    if (message.readList.contains(uid)) {
-                        binding.channelLastMessage.text = lastMessageText
-                        binding.channelTime.text = getTextForTime(chatChannel.updatedAt)
-                        binding.channelTime.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            0,
-                            0,
-                            0,
-                            0
-                        )
+                    if (lastMessage.readList.contains(UserManager.currentUserId)) {
+                        binding.channelLastMessage.text = content
                     } else {
-                        val sp = SpannableString(lastMessageText)
+                        val sp = SpannableString(content)
                         sp.setSpan(
                             StyleSpan(Typeface.BOLD),
                             0,
-                            lastMessageText.length,
+                            content.length,
                             SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
                         )
                         binding.channelLastMessage.text = sp
-                        binding.channelTime.text = ""
-                        binding.channelTime.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                            0,
-                            0,
-                            R.drawable.ic_baseline_full_moon_24,
-                            0
-                        )
                     }
+
                 } else {
-                    val lastMessageText = "You: $content"
-                    binding.channelLastMessage.text = lastMessageText
+                    val content = when (lastMessage.type) {
+                        image -> "Image"
+                        document -> "Document"
+                        video -> "Video"
+                        else -> lastMessage.content
+                    }
+
+                    if (lastMessage.senderId != UserManager.currentUserId) {
+
+                        val lastMessageText = "${lastMessage.sender.name}: $content"
+
+                        if (lastMessage.readList.contains(UserManager.currentUserId)) {
+                            binding.channelLastMessage.text = lastMessageText
+                        } else {
+                            val sp = SpannableString(lastMessageText)
+                            sp.setSpan(
+                                StyleSpan(Typeface.BOLD),
+                                0,
+                                lastMessageText.length,
+                                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+                            )
+                            binding.channelLastMessage.text = sp
+                        }
+                    } else {
+                        val lastMessageText = "You: $content"
+                        binding.channelLastMessage.text = lastMessageText
+                    }
                 }
             } else {
-                binding.channelLastMessage.text = view.context.getString(R.string.no_messages)
+                binding.channelTime.hide()
+                binding.channelLastMessage.text = "No messages yet"
             }
 
-            view.setOnClickListener {
-                channelListener.onChannelClick(chatChannel)
-                binding.chatSelectRadioBtn.isChecked = !binding.chatSelectRadioBtn.isChecked
-            }
+            if (isSelectMode) {
 
-            if (isSelectAvailable) {
                 binding.channelTime.hide()
                 binding.channelLastMessage.hide()
                 binding.chatSelectRadioBtn.show()
-
-                val a = view.context.resources.getDimension(R.dimen.unit_len).toInt()
-
-                binding.linearLayout8.updateLayoutParams<ConstraintLayout.LayoutParams> {
-                    setMargins(0, a, a * 20, a)
-                }
-
                 binding.chatSelectRadioBtn.isClickable = false
 
-                binding.chatSelectRadioBtn.setOnCheckedChangeListener { _, b ->
-                    if (b) {
-                        channelListener.onChatChannelSelected(chatChannel)
-                    } else {
-                        channelListener.onChatChannelDeSelected(chatChannel)
-                    }
+                binding.chatSelectRadioBtn.isChecked = chatChannelWrapper.isSelected
+
+                view.setOnClickListener {
+                    channelListener.onChannelClick(chatChannel, bindingAdapterPosition)
                 }
 
+            } else {
+
+                binding.channelTime.show()
+                binding.channelLastMessage.show()
+                binding.chatSelectRadioBtn.hide()
+
+                view.setOnClickListener {
+                    channelListener.onChannelClick(chatChannel, bindingAdapterPosition)
+                }
             }
 
         }
@@ -118,18 +127,16 @@ class ChatChannelViewHolder(
 
     companion object {
         fun newInstance(
-            uid: String,
             parent: ViewGroup,
-            isSelectAvailable: Boolean,
+            isSelectMode: Boolean,
             channelListener: ChatChannelClickListener
         ): ChatChannelViewHolder {
             val vh = ChatChannelViewHolder(
-                uid,
                 LayoutInflater.from(parent.context)
                     .inflate(R.layout.chat_channel_item, parent, false),
                 channelListener
             )
-            vh.isSelectAvailable = isSelectAvailable
+            vh.isSelectMode = isSelectMode
             return vh
         }
     }

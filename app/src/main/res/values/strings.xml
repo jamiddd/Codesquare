@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">CollabMe</string>
+    <string name="app_name">Collabme</string>
     <string name="create_post">Create post</string>
     <string name="web_client_id">39101350371-gpoo1j5m3l972tloq1dov43ckd8s11f3.apps.googleusercontent.com</string>
     <string name="about_me">An Android Developer is a Software Developer who specializes in designing applications for the Android marketplace. The Android marketplace is the direct competitor to Apple’s app store. This means most of an Android Developer’s job revolves around creating the apps we use on our smartphones and tablets. Android Developers can either work in-house for a large organization, or they can be employed by an App Development agency.</string>
 
-    <string name="large_text">Google LLC is an American multinational technology company that specializes
+    <string name="large_text" formatted="false">Google LLC is an American multinational technology company that specializes
         in Internet-related services and products, which include online advertising technologies, a search
         engine, cloud computing, software, and hardware. It is considered one of the Big Five companies in
         the American information technology industry, along with Amazon, Facebook, Apple, and Microsoft.
@@ -51,7 +51,7 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
-    <string name="no_messages">No messages</string>
+    <string name="no_messages">No messages yet. Be the first one to send a message …</string>
 
     <string name="empty_messages_greet">Be the first one to send a message. Say \"hi\" to other collaborators.</string>
     <string name="empty_post_requests_greet">No post requests at the moment. When someone requests you to join in your post, they appear here.</string>
@@ -129,7 +129,7 @@
     <string name="upgrade_plan">Upgrade plan</string>
     <string name="remove_subscription">Remove subscription</string>
     <string name="empty_subscriptions">No active subscription</string>
-    <string name="empty_subscripitons_desc">You have no active subscriptions. To remove ads and limitations subscribe to a premium plan.</string>
+    <string name="empty_subscriptions_desc">You have no active subscriptions. To remove ads and limitations subscribe to a premium plan.</string>
     <string name="base_subscription">Base Subscription</string>
     <string name="base_subscription_desc">(To upgrade to Premium Subscription, the previous subscription must be ended. Once started, it will finish after it\'s period completes regardless if you choose to end it now. Subscriptions can be cancelled in play store.)</string>
     <string name="premium_subscriptions">Premium subscription</string>
@@ -268,10 +268,37 @@
     <string name="error_prompt_location_setting_request">Unknown error occurred while trying to request for location settings. If location is not turned on, please turn on location.</string>
     <string name="error_location_off">We cannot get location if the location settings are turned off. Please turn on location in settings.</string>
 
-
+    <string name="add_photo_videos">Add photos &amp; videos</string>
+    <string name="add_more">Add more</string>
     <string name="sort_contributors">Contributors</string>
     <string name="sort_relevance">Most viewed</string>
     <string name="sort_time">Most recent</string>
     <string name="sort_likes">Likes</string>
     <string name="sort_location">Location</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="eligibility_criteria_rules">1. The post must contain images or videos describing the project.\n2. The post must contain sanitized and easily understandable content that describes the project.\n3. The post must contain relevant tags that are related to the project.\n4. The project must follow the general theme of the competition.\n5. All entries must be submitted in digital format.</string>
+    <string name="how_to_enter">1. Select a post that you have already created or create a new post which fulfills the required eligibility criteria.\n2. Entry fee of Rs 375.00 must be paid prior to submission of the post via online payment.\n3. The post will be sent for review and upon acceptance will be visible in the feed. On rejection, the amount will be refunded and the post will not be uploaded.</string>
+
+    <string name="general_rules">• The Contest begins at 12:00 AM, Monday and ends 12:00 AM, Saturday.\n• Posts can only be submitted on Monday and the results will be as per the standings after the deadline.\n• The winners can claim their reward on Sunday through online payment.\n• The post will be removed from the ranked/competition environment after the competition is over. The post will still be visible in the feed and will not be deleted.</string>
+
+    <string name="violation_rules">• Violate any third party rights, including, but not limited to, copyrights, trademark rights, or rights of privacy and publicity\n• Contain defamatory statements\n• Include threats to any person, place, business, or group; or\n• Be obscene or indecent.</string>
+    <string name="intellectual_property_rules">• You are the creator of the submission\n• You own all rights to the submission\n• The submission does not infringe upon or violate the intellectual property, privacy, or other rights of any third party.</string>
+    <string name="invalid_email">Email is invalid</string>
+    <string name="invalid_password">Password is invalid</string>
+    <string name="name_too_short_error">Name should contain at least 5 letters</string>
+    <string name="name_too_long_error">Name is too long</string>
+    <string name="invalid_confirm_password">Passwords do not match</string>
+    <string name="default_terms_url">https://www.collabmee.com/terms</string>
+    <string name="default_privacy_url">https://www.collabmee.com/privacy</string>
+    <string name="empty_name_error">Must provide a name.</string>
+    <string name="empty_username">Must provide a username</string>
+    <string name="username_too_short">Username must have more than 5 letters</string>
+    <string name="username_too_long">Username is too long</string>
+    <string name="tag_too_long">The provided tag is too long</string>
+    <string name="about_too_long">Try to keep the about section less than 200 letters</string>
+    <string name="username_search_error">Something went wrong while checking for username uniqueness</string>
+    <string name="username_exists_error">Username already exists</string>
+
 </resources>

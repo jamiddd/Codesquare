@@ -17,6 +17,7 @@ class MessageRemoteMediator(
         val toBeSavedMessages = messages.filter {
             filter(it)
         }
+
         chatRepository.insertChannelMessages(toBeSavedMessages)
     }
 

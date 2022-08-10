@@ -70,13 +70,9 @@ object UserManager {
         val currentUser = mAuth.currentUser ?: return
 
         val uid = currentUser.uid
-        FireUtility.getUser(uid) {
-            val userResult = it ?: return@getUser
-            when (userResult) {
-                is Result.Error -> errors.postValue(userResult.exception)
-                is Result.Success -> {
-                    updateUser(userResult.data)
-                }
+        FireUtility.getUser(uid) { user ->
+            if (user != null) {
+                updateUser(user)
             }
         }
     }

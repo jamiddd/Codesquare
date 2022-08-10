@@ -1,18 +1,24 @@
 import { Message } from "./Message";
+import { UserMinimal } from "./UserMinimal";
 
 export interface ChatChannel {
     chatChannelId: string;
     postId: string;
     postTitle: string;
     postImage: string;
-    contributorsCount: number;
+    type: string;
+    rules: string;
     administrators: string[];
     contributors: string[];
-    rules: string;
-    createdAt: number;
-    updatedAt: number;
-    lastMessage?: Message;
     tokens: string[];
     blockedUsers: string[];
-    archived: boolean
+    contributorsCount: number;
+    createdAt: number;
+    updatedAt: number;
+    mute: boolean;
+    archived: boolean;
+    authorized: boolean;
+    lastMessage?: Message;
+    data1?: UserMinimal;
+    data2?: UserMinimal;
 }

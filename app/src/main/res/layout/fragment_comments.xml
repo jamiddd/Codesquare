@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment_comment_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/comment_fragment_scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingBottom="56dp">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/recycler_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/comment_post_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="2dp"
+                android:overScrollMode="never"
+                app:layout_constraintBottom_toTopOf="@id/comments_header"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0"
+                app:layout_constraintVertical_chainStyle="packed"
+                tools:itemCount="0"
+                tools:listitem="@layout/post_item" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/comments_recycler"
+                style="@style/AppTheme.GenericBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="200dp"
+                android:overScrollMode="never"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/comments_header"
+                tools:itemCount="0"
+                tools:listitem="@layout/comment_item" />
+
+            <TextView
+                android:id="@+id/no_comments_text"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:layout_marginBottom="56dp"
+                android:gravity="center"
+                android:text="No comments yet. Be the first one to comment. 👋"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@+id/comments_recycler"
+                app:layout_constraintEnd_toEndOf="@+id/comments_recycler"
+                app:layout_constraintStart_toStartOf="@+id/comments_recycler"
+                app:layout_constraintTop_toBottomOf="@+id/comment_post_recycler" />
+
+            <TextView
+                android:id="@+id/comments_header"
+                style="@style/AppTheme.GenericBackground2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:paddingHorizontal="24dp"
+                android:paddingVertical="16dp"
+                android:text="Comments"
+                android:textSize="16sp"
+                app:layout_constraintBottom_toTopOf="@+id/comments_recycler"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/comment_post_recycler" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/constraintLayout3"
+        style="@style/AppTheme.GenericBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <TextView
+            android:id="@+id/replying_to_text"
+            style="@style/AppTheme.GenericBackground"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/lightest_grey"
+            android:drawablePadding="16dp"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp"
+            android:text="@string/replying_to"
+            android:visibility="gone"
+            app:drawableEndCompat="@drawable/ic_round_close_24"
+            app:drawableStartCompat="@drawable/ic_round_reply_24"
+            app:layout_constraintBottom_toTopOf="@+id/comment_input_layout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/divider17"
+            tools:visibility="visible" />
+
+        <com.facebook.drawee.view.SimpleDraweeView
+            android:id="@+id/sender_img"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ic_round_account_circle_24"
+            app:layout_constraintBottom_toBottomOf="@+id/comment_input_layout"
+            app:layout_constraintEnd_toStartOf="@+id/comment_input_layout"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/comment_input_layout"
+            app:roundAsCircle="true" />
+
+        <EditText
+            android:id="@+id/comment_input_layout"
+            style="@style/AppTheme.ChatBottomText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_weight="1"
+            android:background="@drawable/chat_edittext_background"
+            android:ems="10"
+            android:hint="@string/write_something_here"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine"
+            android:minHeight="48dp"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/comment_send_btn"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/sender_img"
+            app:layout_constraintTop_toBottomOf="@+id/replying_to_text" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/comment_send_btn"
+            style="@style/AppTheme.Button.IconOnly"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:backgroundTint="?colorAccent"
+            android:contentDescription="@string/comment_send_button_info"
+            android:paddingStart="6dp"
+            android:paddingEnd="0dp"
+            app:icon="@drawable/ic_round_arrow_forward_24"
+            app:iconTint="@color/white"
+            app:layout_constraintBottom_toBottomOf="@+id/comment_input_layout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/comment_input_layout"
+            app:layout_constraintTop_toTopOf="@+id/comment_input_layout"
+            tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
+
+        <View
+            android:id="@+id/divider17"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toTopOf="@+id/replying_to_text"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <!--<com.google.android.material.card.MaterialCardView
+        android:id="@+id/comment_bottom_root"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:translationY="0dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="20dp"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:id="@+id/comment_bottom_linear_vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            &lt;!&ndash; app:adUnitId="ca-app-pub-2159166722829360/8589960328" For play store version &ndash;&gt;
+            &lt;!&ndash; app:adUnitId="ca-app-pub-3940256099942544/6300978111" For test version &ndash;&gt;
+            <com.google.android.gms.ads.AdView
+                android:id="@+id/adView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                app:adSize="FULL_BANNER"
+                app:adUnitId="ca-app-pub-3940256099942544/6300978111"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <TextView
+                android:id="@+id/replying_to_text"
+                style="@style/AppTheme.GenericBackground"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/lightest_grey"
+                android:drawablePadding="16dp"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="16dp"
+                android:paddingBottom="8dp"
+                android:text="@string/replying_to"
+                android:visibility="gone"
+                app:drawableEndCompat="@drawable/ic_round_close_24"
+                app:drawableStartCompat="@drawable/ic_round_reply_24"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/linearLayout9"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.facebook.drawee.view.SimpleDraweeView
+                    android:id="@+id/sender_img"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/ic_round_account_circle_24"
+                    app:roundAsCircle="true" />
+
+                <EditText
+                    android:id="@+id/comment_input_layout"
+                    style="@style/AppTheme.ChatBottomText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/chat_edittext_background"
+                    android:ems="10"
+                    android:hint="@string/write_something_here"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine"
+                    android:minHeight="48dp"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/comment_send_btn"
+                    style="@style/AppTheme.Button.IconOnly"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_marginBottom="4dp"
+                    android:backgroundTint="?colorAccent"
+                    android:contentDescription="@string/comment_send_button_info"
+                    android:paddingStart="6dp"
+                    android:paddingEnd="0dp"
+                    app:icon="@drawable/ic_round_arrow_forward_24"
+                    app:iconTint="@color/white"
+                    tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+    </com.google.android.material.card.MaterialCardView>-->
+
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

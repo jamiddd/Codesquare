@@ -2,12 +2,11 @@ package com.jamid.codesquare.ui
 
 import android.os.Bundle
 import android.util.Log
-import android.view.*
-import androidx.fragment.app.Fragment
+import android.view.LayoutInflater
+import android.view.View
 import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
-import androidx.recyclerview.widget.GridLayoutManager
-import com.google.android.material.transition.MaterialSharedAxis
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -16,31 +15,14 @@ import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPostContributorsBinding
 
-@ExperimentalPagingApi
-class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, MainViewModel>() {
+class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding>() {
 
     override val viewModel: MainViewModel by activityViewModels()
     private lateinit var post: Post
     private lateinit var userAdapter: UserAdapter
 
-    override fun getViewBinding(): FragmentPostContributorsBinding {
-        return FragmentPostContributorsBinding.inflate(layoutInflater)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        if (parentFragment is PostFragmentContainer) {
-            if ((parentFragment as PostFragmentContainer).getCurrentFragmentTag() == TAG) {
-                activity.binding.mainToolbar.menu.clear()
-            }
-        }
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentPostContributorsBinding {
+        return FragmentPostContributorsBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -53,11 +35,12 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
         activity.binding.mainToolbar.title = title
         activity.binding.mainToolbar.subtitle = subtitle
 
-        userAdapter = UserAdapter(small = true, grid = true)
+        userAdapter = UserAdapter()
 
         binding.contributorsRecycler.apply {
             adapter = userAdapter
-            layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
+            layoutManager = LinearLayoutManager(activity)
+            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
         }
 
         getContributors()
@@ -75,9 +58,13 @@ class PostContributorsFragment: BaseFragment<FragmentPostContributorsBinding, Ma
             .whereArrayContains(CHAT_CHANNELS, post.chatChannel)
             .get()
             .addOnSuccessListener {
+
                 binding.contributorsRefresher.isRefreshing = false
+
                 if (it != null && !it.isEmpty) {
+
                     val contributors = mutableListOf<User>()
+
                     val users = it.toObjects(User::class.java)
                     contributors.addAll(users)
                     userAdapter.submitList(contributors)

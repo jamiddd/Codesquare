@@ -47,14 +47,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:gravity="center"
         android:text="@string/no_posts"
-        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/pager_action_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/no_data_image"
-        tools:visibility="visible" />
+        app:layout_constraintTop_toBottomOf="@+id/no_data_image" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/pager_action_btn"
@@ -62,12 +61,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:contentDescription="@string/rerty_the_current_request"
-        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/pager_no_items_text"
-        tools:visibility="visible" />
+        app:layout_constraintTop_toBottomOf="@+id/pager_no_items_text" />
 
 
     <com.google.android.material.chip.Chip

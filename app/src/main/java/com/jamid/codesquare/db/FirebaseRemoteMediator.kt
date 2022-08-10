@@ -12,22 +12,21 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.data.Result
 
 @ExperimentalPagingApi
-abstract class FirebaseRemoteMediator<K: Any, T: Any>(val query: Query): RemoteMediator<K, T>() {
+abstract class FirebaseRemoteMediator<K: Any, T: Any>(val query: Query, val ignoreTime: Boolean = false): RemoteMediator<K, T>() {
 
     open var lastSnapshot: DocumentSnapshot? = null
 
     override suspend fun load(loadType: LoadType, state: PagingState<K, T>): MediatorResult {
-
         val itemQueryResult = when (loadType) {
             LoadType.REFRESH -> {
                 onRefresh()
-                FireUtility.fetchItems(query)
+                FireUtility.fetchItems(query, ignoreTime = ignoreTime, lim = state.config.pageSize)
             }
             LoadType.PREPEND -> {
                 return MediatorResult.Success(true)
             }
             LoadType.APPEND -> {
-                FireUtility.fetchItems(query, lastSnapshot = lastSnapshot)
+                FireUtility.fetchItems(query, lastSnapshot = lastSnapshot, ignoreTime = ignoreTime, lim = state.config.pageSize)
             }
         }
 

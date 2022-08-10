@@ -10,8 +10,8 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.data.dao.*
 
 @Database(
-    entities = [InterestItem::class, ReferenceItem::class, LikedBy::class, Post::class, User::class, Interest::class, PostInvite::class, ChatChannel::class, Message::class, PostRequest::class, Comment::class, Notification::class, SearchQuery::class],
-    version = 20
+    entities = [UserMinimal::class, InterestItem::class, ReferenceItem::class, LikedBy::class, Post::class, User::class, Interest::class, PostInvite::class, ChatChannel::class, Message::class, PostRequest::class, Comment::class, Notification::class, SearchQuery::class],
+    version = 39
 )
 @TypeConverters(Converters::class)
 abstract class CollabDatabase : RoomDatabase() {
@@ -29,6 +29,7 @@ abstract class CollabDatabase : RoomDatabase() {
     abstract fun likedByDao(): LikedByDao
     abstract fun referenceItemDao(): ReferenceItemDao
     abstract fun interestItemDao(): InterestItemDao
+    abstract fun userMinimalDao(): UserMinimalDao
 
     companion object {
 

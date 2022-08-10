@@ -2,43 +2,41 @@ package com.jamid.codesquare.ui
 
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
-import android.widget.ProgressBar
-import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.preference.*
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
 
-@ExperimentalPagingApi
 class SettingsFragment : PreferenceFragmentCompat() {
 
     private val viewModel: MainViewModel by activityViewModels()
     private lateinit var sharedPreference: SharedPreferences
     private lateinit var editor: SharedPreferences.Editor
 
-    private var mScroll = 0
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         listView.overScrollMode = View.OVER_SCROLL_NEVER
 
-        val currentUser = UserManager.currentUser
+       /* val currentUser = UserManager.currentUser
         if (currentUser.premiumState.toInt() == 1) {
-
+            //
         } else {
             listView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -49,7 +47,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     }
                 }
             })
-        }
+        }*/
 
     }
 
@@ -70,14 +68,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         setOtherFunctions()
 
-        val addInterest = findPreference<Preference>("admin_add_interest")
-        val acceptedEmails = listOf("jamiddeka1@gmail.com", "lunabarua1@gmail.com")
+        val addInterest = findPreference<Preference>("admin_functions")
+        val acceptedEmails = listOf("jamiddeka1@gmail.com", "lunabarua1@gmail.com", "lunabarua1@icloud.com")
         if (!acceptedEmails.contains(UserManager.currentUser.email)) {
             val adminSection = findPreference<PreferenceCategory>("admin_section")
             adminSection?.isVisible = false
         } else {
             addInterest?.setOnPreferenceClickListener {
-                findNavController().navigate(R.id.extraFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.extraFragment, null)
                 true
             }
         }
@@ -89,97 +87,97 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     }
 
-    private fun setSubscriptionSetting(v: RecyclerView) {
-
-        val context = v.context
-        val accentColor = context.accentColor()
-        val mainActivity = context as MainActivity
-
-
-        val parent = v.findViewById<ConstraintLayout>(R.id.upgrade_plan_layout)
-        val upgradePlanBtn = v.findViewById<MaterialButton>(R.id.upgrade_plan_btn)
-        val currentPlanHeader = v.findViewById<TextView>(R.id.current_plan_header)
-        val currentPlanDesc = v.findViewById<TextView>(R.id.current_plan_text)
-        val progress = v.findViewById<ProgressBar>(R.id.subscription_setting_progress_bar)
-
-        progress?.hide()
-
-        val currentUser = UserManager.currentUser
-        when (currentUser.premiumState.toInt()) {
-            -1 -> {
-                upgradePlanBtn?.text = getString(R.string.upgrade_plan)
-
-                upgradePlanBtn?.show()
-
-                mainActivity.subscriptionFragment = SubscriptionFragment()
-
-                upgradePlanBtn?.setOnClickListener {
-                    mainActivity.subscriptionFragment?.show(
-                        mainActivity.supportFragmentManager,
-                        "SubscriptionFragment"
-                    )
-                }
-                currentPlanHeader?.text = getString(R.string.empty_subscriptions)
-                currentPlanDesc?.text = getString(R.string.empty_subscripitons_desc)
-            }
-            0 -> {
-                // just some changes that needs to be done if the button is visible
-                upgradePlanBtn?.rippleColor = ColorStateList.valueOf(
-                    ContextCompat.getColor(
-                        context,
-                        R.color.lightest_red
-                    )
-                )
-                upgradePlanBtn?.text = getString(R.string.remove_subscription)
-                upgradePlanBtn.setTextColor(
-                    ContextCompat.getColor(
-                        context,
-                        R.color.error_color
-                    )
-                )
-
-                upgradePlanBtn?.hide()
-
-                currentPlanHeader?.text =
-                    getString(R.string.base_subscription).uppercase()
-                currentPlanHeader?.setTextColor(accentColor)
-                currentPlanDesc?.text =
-                    getString(R.string.base_subscription_desc)
-            }
-            1 -> {
-
-                val pref = findPreference<PreferenceCategory>("subscription_category")
-                pref?.isVisible = false
-
-                /*// just some changes that needs to be done if the button is visible
-                upgradePlanBtn?.rippleColor = ColorStateList.valueOf(
-                    ContextCompat.getColor(
-                        context,
-                        R.color.lightest_red
-                    )
-                )
-                upgradePlanBtn?.setTextColor(
-                    ContextCompat.getColor(
-                        context,
-                        R.color.error_color
-                    )
-                )
-                upgradePlanBtn?.text = getString(R.string.remove_subscription)
-
-                upgradePlanBtn?.hide()
-
-                currentPlanHeader?.text =
-                    getString(R.string.premium_subscriptions).uppercase()
-                currentPlanHeader?.setTextColor(accentColor)
-                currentPlanDesc?.text =
-                    getString(R.string.premium_subscription_desc)*/
-            }
-        }
-
-        currentPlanHeader?.show()
-        currentPlanDesc?.show()
-
-    }
+//    private fun setSubscriptionSetting(v: RecyclerView) {
+//
+//        val context = v.context
+//        val accentColor = context.accentColor()
+//        val mainActivity = context as MainActivity
+//
+//
+//        val parent = v.findViewById<ConstraintLayout>(R.id.upgrade_plan_layout)
+//        val upgradePlanBtn = v.findViewById<MaterialButton>(R.id.upgrade_plan_btn)
+//        val currentPlanHeader = v.findViewById<TextView>(R.id.current_plan_header)
+//        val currentPlanDesc = v.findViewById<TextView>(R.id.current_plan_text)
+//        val progress = v.findViewById<ProgressBar>(R.id.subscription_setting_progress_bar)
+//
+//        progress?.hide()
+//
+//        val currentUser = UserManager.currentUser
+//        when (currentUser.premiumState.toInt()) {
+//            -1 -> {
+//                upgradePlanBtn?.text = getString(R.string.upgrade_plan)
+//
+//                upgradePlanBtn?.show()
+//
+//                mainActivity.subscriptionFragment = SubscriptionFragment()
+//
+//                upgradePlanBtn?.setOnClickListener {
+//                    mainActivity.subscriptionFragment?.show(
+//                        mainActivity.supportFragmentManager,
+//                        "SubscriptionFragment"
+//                    )
+//                }
+//                currentPlanHeader?.text = getString(R.string.empty_subscriptions)
+//                currentPlanDesc?.text = getString(R.string.empty_subscriptions_desc)
+//            }
+//            0 -> {
+//                // just some changes that needs to be done if the button is visible
+//                upgradePlanBtn?.rippleColor = ColorStateList.valueOf(
+//                    ContextCompat.getColor(
+//                        context,
+//                        R.color.lightest_red
+//                    )
+//                )
+//                upgradePlanBtn?.text = getString(R.string.remove_subscription)
+//                upgradePlanBtn.setTextColor(
+//                    ContextCompat.getColor(
+//                        context,
+//                        R.color.error_color
+//                    )
+//                )
+//
+//                upgradePlanBtn?.hide()
+//
+//                currentPlanHeader?.text =
+//                    getString(R.string.base_subscription).uppercase()
+//                currentPlanHeader?.setTextColor(accentColor)
+//                currentPlanDesc?.text =
+//                    getString(R.string.base_subscription_desc)
+//            }
+//            1 -> {
+//
+//                val pref = findPreference<PreferenceCategory>("subscription_category")
+//                pref?.isVisible = false
+//
+//                /*// just some changes that needs to be done if the button is visible
+//                upgradePlanBtn?.rippleColor = ColorStateList.valueOf(
+//                    ContextCompat.getColor(
+//                        context,
+//                        R.color.lightest_red
+//                    )
+//                )
+//                upgradePlanBtn?.setTextColor(
+//                    ContextCompat.getColor(
+//                        context,
+//                        R.color.error_color
+//                    )
+//                )
+//                upgradePlanBtn?.text = getString(R.string.remove_subscription)
+//
+//                upgradePlanBtn?.hide()
+//
+//                currentPlanHeader?.text =
+//                    getString(R.string.premium_subscriptions).uppercase()
+//                currentPlanHeader?.setTextColor(accentColor)
+//                currentPlanDesc?.text =
+//                    getString(R.string.premium_subscription_desc)*/
+//            }
+//        }
+//
+//        currentPlanHeader?.show()
+//        currentPlanDesc?.show()
+//
+//    }
 
     private fun setPostSection() {
         /*val expiryS = sharedPreference.getString(PROJECT_EXPIRY, "0")
@@ -237,40 +235,39 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateProfile?.setOnPreferenceClickListener {
 
             val currentUser = UserManager.currentUser
-            viewModel.setUserEditForm(currentUser)
             viewModel.setCurrentImage(currentUser.photo.toUri())
 
-            findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.editProfileFragment)
             true
         }
 
         val savedPosts = findPreference<Preference>(PROFILE_SAVED)
         savedPosts?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.savedPostsFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.savedPostsFragment)
             true
         }
 
         val archivedPosts = findPreference<Preference>(PROFILE_ARCHIVED)
         archivedPosts?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.archiveFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.archiveFragment)
             true
         }
 
         val myRequests = findPreference<Preference>("my_requests")
         myRequests?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.myRequestsFragment)
             true
         }
 
         val sentInvites = findPreference<Preference>("profile_sent_invites")
         sentInvites?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.invitesFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.invitesFragment, null)
             true
         }
 
         val blockedAccounts = findPreference<Preference>("profile_blocked_accounts")
         blockedAccounts?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.blockedAccountsFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.blockedAccountsFragment, null)
             true
         }
     }
@@ -280,13 +277,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val updatePasswordItem = findPreference<Preference>(ACCOUNT_UPDATE_PASSWORD)
         updatePasswordItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.updatePasswordFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.updatePasswordFragment)
             true
         }
 
         val forgotPasswordItem = findPreference<Preference>(ACCOUNT_FORGOT_PASSWORD)
         forgotPasswordItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.forgotPasswordFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.forgotPasswordFragment)
             true
         }
 
@@ -334,7 +331,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val logoutItem = findPreference<Preference>("logout")
         logoutItem?.setOnPreferenceClickListener {
             UserManager.logOut(requireContext()) {
-                findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.action_settingsFragment_to_navigation_auth)
                 viewModel.signOut {}
             }
             true
@@ -342,7 +339,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         val feedbackItem = findPreference<Preference>("feedback")
         feedbackItem?.setOnPreferenceClickListener {
-            findNavController().navigate(R.id.feedbackFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.feedbackFragment)
             true
         }
 

@@ -17,7 +17,9 @@ data class Metadata(
     @Exclude @set: Exclude @get: Exclude
     var height: Long, // in px TODO("Make it int for next uninstallation")
     @Exclude @set: Exclude @get: Exclude
-    var width: Long // in px TODO("Make it int for next uninstallation")
+    var width: Long, // in px TODO("Make it int for next uninstallation")
+    @Exclude @set: Exclude @get: Exclude
+    var thumbnail: String? = null
 ): Parcelable {
     constructor(): this(0, "", "", "", 0, 0)
 }

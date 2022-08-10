@@ -7,9 +7,13 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
-import android.view.*
-import androidx.lifecycle.coroutineScope
-import androidx.lifecycle.findViewTreeLifecycleOwner
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -19,34 +23,50 @@ import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.R
 import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.databinding.PostItemBinding
 import com.jamid.codesquare.listeners.ImageClickListener
+import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.listeners.PostClickListener
-import kotlinx.coroutines.Dispatchers
+import com.jamid.codesquare.listeners.PostVideoListener
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+import kotlin.math.abs
 
-class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
+class PostViewHolder(
+    val v: View,
+    private val lifecycleOwner: LifecycleOwner,
+    private val mediaClickListener: MediaClickListener,
+    listener: PostClickListener? = null
+) : SuperPostViewHolder(v), ImageClickListener, PostVideoListener {
 
     // just for external use cases
     lateinit var post: Post
     private lateinit var binding: PostItemBinding
-
-    private var isTextExpanded = false
+    var shouldShowJoinBtn = true
+    var shouldAllowContentClick = true
+    private var mediaAdapter: MediaAdapter? = null
 
     // a click listener for all post related actions
-    private val postClickListener = view.context as PostClickListener
+    private val postClickListener = listener ?: view.context as PostClickListener
     var hasAttachedOnce = false
 
+    @Deprecated("All updates must come through database itself")
     var isPartialUpdate = false
 
 
     var likeListener: ListenerRegistration? = null
     var saveListener: ListenerRegistration? = null
     var joinListener: ListenerRegistration? = null
+
+    private var counterHideJob: Job? = null
+
+
 
     /**
      * To save or un-save the post. This function saves or un-saves the post and also requests the viewHolder
@@ -55,9 +75,7 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
      * */
     fun onSaveBtnClick() {
         isPartialUpdate = true
-        postClickListener.onPostSaveClick(post.copy()) {
-            //
-        }
+        postClickListener.onPostSaveClick(post.copy())
     }
 
     /**
@@ -67,10 +85,7 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
      * */
     private fun onLikeBtnClick() {
         isPartialUpdate = true
-        postClickListener.onPostLikeClick(post.copy()) {
-            post = it
-            setLikeCommentStats()
-        }
+        postClickListener.onPostLikeClick(post.copy())
     }
 
     /**
@@ -90,7 +105,12 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
         }
 
         if (post.location.address.isNotBlank()) {
+            binding.postLocation.show()
+
             binding.postLocation.text = post.location.address
+            binding.postLocation.show()
+
+            binding.userContainer.invalidate()
 
             binding.postLocation.setOnClickListener {
                 postClickListener.onPostLocationClick(post.copy())
@@ -101,118 +121,202 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
     }
 
 
-    /**
-     * To implement a recyclerView with post images
-     *
-     * */
-    private fun setImagesRecycler() {
+    private fun setCountText(counterText: TextView) {
 
-        val imageAdapter = ImageAdapter(this)
-        val helper = LinearSnapHelper()
-
-        val manager = LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
-
-        binding.postImagesRecycler.apply {
-            adapter = imageAdapter
-            layoutManager = manager
-            OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
-            if (onFlingListener == null) {
-                helper.attachToRecyclerView(this)
-            }
+        if (post.mediaString.length == 1) {
+            counterText.hide()
+            return
         }
 
-        val imagePipeline = Fresco.getImagePipeline()
+        val cText = "1/${post.mediaString.length}"
+        counterText.text = cText
+        counterText.show()
 
-        for (image in post.images) {
-            val imageRequest = ImageRequest.fromUri(image)
-            imagePipeline.prefetchToDiskCache(imageRequest, view.context)
-        }
 
-        imageAdapter.submitList(post.images)
+        /*recyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
 
-        if (post.images.size == 1) {
-            binding.postImagesCounter.hide()
-        } else {
-            binding.postImagesCounter.show()
-        }
+            var totalScroll = 0
 
-        binding.postImagesRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                val pos = manager.findFirstCompletelyVisibleItemPosition()
-                if (pos != -1) {
-                     val counterText = "${pos + 1}/${post.images.size}"
-                    binding.postImagesCounter.text = counterText
+                totalScroll += abs(dx)
 
-                    binding.rightBtn.setOnClickListener {
-                        binding.postImagesRecycler.smoothScrollToPosition(pos + 1)
-                    }
+                if (totalScroll > recyclerView.measuredWidth/3) {
 
-                    binding.leftBtn.setOnClickListener {
-                        binding.postImagesRecycler.smoothScrollToPosition(pos - 1)
-                    }
-
-                    if (post.images.size == 1) {
-                        binding.leftBtn.hide()
-                        binding.rightBtn.hide()
-                        binding.postImagesCounter.hide()
+                    val pos = if (sign(dx.toFloat()) == 1f) {
+                        (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
                     } else {
-                        if (pos == 0) {
-                            binding.leftBtn.hide()
-                        } else {
-                            binding.leftBtn.show()
-                        }
+                        (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
+                    }
 
-                        if (pos == post.images.size - 1) {
-                            binding.rightBtn.hide()
-                        } else {
-                            binding.rightBtn.show()
+                    if (pos != -1) {
+                        cText = "${pos + 1}/${post.mediaString.length}"
+                        counterText.text = cText
+                    } else {
+                        Log.d(TAG, "onScrolled: Couldn't get position")
+                    }
+                } else {
+                    Log.d(TAG, "onScrolled: $totalScroll - ${recyclerView.measuredWidth/5}")
+                }
+            }
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                super.onScrollStateChanged(recyclerView, newState)
+                when (newState) {
+                    RecyclerView.SCROLL_STATE_DRAGGING -> {
+                        counterText.fadeIn().doOnEnd {
+                            fadeOutCounterText(counterText)
+                        }
+                    }
+                    RecyclerView.SCROLL_STATE_IDLE -> {
+                        Log.d(TAG, "onScrollStateChanged: state idle")
+                        totalScroll = 0
+
+                        val pos = (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
+                        if (pos != -1) {
+                            cText = "${pos + 1}/${post.mediaString.length}"
+                            counterText.text = cText
                         }
                     }
                 }
             }
-        })
+
+        })*/
+
+        fadeOutCounterText(counterText)
+
+    }
+
+
+    private fun fadeOutCounterText(counterText: TextView) {
+        counterHideJob?.cancel()
+        counterHideJob = lifecycleOwner.lifecycleScope.launch {
+            delay(5000)
+
+            // after 5 seconds fadeout the text
+            counterText.fadeOut()
+        }
+    }
+
+
+   private var mScrollTouchListener: RecyclerView.OnItemTouchListener =
+        object : RecyclerView.OnItemTouchListener {
+            var x1 = 0f
+            var x2 = 0f
+            var y1 = 0f
+            var y2 = 0f
+            var dx = 0f
+            var dy = 0f
+
+            override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
+                when (e.action) {
+                    MotionEvent.ACTION_DOWN -> {
+                        x1 = e.x
+                        y1 = e.y
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        x2 = e.x
+                        y2 = e.y
+                        dx = x2-x1
+                        dy = y2-y1
+
+                        // Use dx and dy to determine the direction of the move
+                        if(abs(dx) > abs(dy)) {
+                            rv.parent.requestDisallowInterceptTouchEvent(true)
+                        } else {
+                            rv.parent.requestDisallowInterceptTouchEvent(false)
+                        }
+                    }
+                }
+//                    MotionEvent.ACTION_MOVE -> rv.parent.parent.requestDisallowInterceptTouchEvent(true)
+                return false
+            }
+
+            override fun onTouchEvent(rv: RecyclerView, e: MotionEvent) {}
+            override fun onRequestDisallowInterceptTouchEvent(disallowIntercept: Boolean) {}
+        }
+
+    /**
+     * To implement a recyclerView with post images
+     *
+     * */
+    private fun setMediaRecycler() {
+        fun set() {
+            val helper = LinearSnapHelper()
+            val manager = LinearLayoutManager(view.context, LinearLayoutManager.HORIZONTAL, false)
+
+            manager.recycleChildrenOnDetach = true
+
+            binding.postMediaRecycler.apply {
+
+                layoutManager = manager
+                mLifecycleOwner = lifecycleOwner
+
+                setMediaCounterText(binding.postImagesCounter)
+                setMediaObjects(post.mediaList)
+
+                adapter = mediaAdapter
+                itemAnimator = null
+                addOnItemTouchListener(mScrollTouchListener)
+
+                OverScrollDecoratorHelper.setUpOverScroll(
+                    this,
+                    OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL
+                )
+
+                if (onFlingListener == null) {
+                    helper.attachToRecyclerView(this)
+                }
+            }
+        }
+
+        mediaAdapter = MediaAdapter(post.id, mediaClickListener =  mediaClickListener)
+        set()
+
+        setCountText(binding.postImagesCounter)
+
+        val mediaItems = convertMediaListToMediaItemList(post.mediaList, post.mediaString)
+        prefetchImages(mediaItems)
+
+        mediaAdapter?.submitList(mediaItems)
+
+    }
+
+    private fun prefetchImages(mediaItems: List<MediaItem>) {
+        val imagePipeline = Fresco.getImagePipeline()
+
+        for (item in mediaItems) {
+            if (item.type != image) {
+                val imageRequest = ImageRequest.fromUri(item.url)
+                imagePipeline.prefetchToDiskCache(imageRequest, view.context)
+            }
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun bind(mPost: Post?) {
+    override fun bind(mPost: Post2?) {
         if (isPartialUpdate) {
             isPartialUpdate = false
             return
         }
 
-        if (mPost != null) {
-
+        if (mPost is Post2.Collab) {
             binding = PostItemBinding.bind(view)
-            view.tag = mPost.id
-
-            post = mPost
+            view.tag = mPost.post.id
+            post = mPost.post
             hasAttachedOnce = true
 
-            Log.d(TAG, "bind: Invoked ${post.isLiked}")
-
-
             setPostCreatorInfo()
-
-            setImagesRecycler()
-
+            setMediaRecycler()
             setStaticContent()
-
             setMutableContent()
 
-            checkForStaleData()
-
         }
+
     }
 
-    private fun checkForStaleData() = view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch (Dispatchers.IO) {
-        postClickListener.onCheckForStaleData(post.copy()) {
-            bind(it)
-        }
-    }
-
-    fun setLikeBtn2() {
-        Log.d(TAG, "setLikeButton2: Setting like btn called")
+    private fun setLikeBtn2() {
+        setLikeCommentStats()
         likeListener?.remove()
         likeListener = Firebase.firestore.collection(USERS)
             .document(UserManager.currentUserId)
@@ -226,12 +330,6 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
 
                 post.isLiked = value != null && value.exists()
 
-                /*
-                no need for this as this is handled by external functions
-
-                postClickListener.onPostUpdate(post.copy())
-                */
-
                 binding.postLikeBtn.isSelected = post.isLiked
 
                 binding.postLikeBtn.setOnClickListener {
@@ -242,30 +340,10 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
             }
     }
 
-    /*private fun setLikeButton() {
-        Firebase.firestore.collection(USERS)
-            .document(UserManager.currentUserId)
-            .collection(LIKED_POSTS)
-            .document(post.id)
-            .get()
-            .addOnSuccessListener {
-                post.isLiked = it.exists()
-                postClickListener.onPostUpdate(post)
-                binding.postLikeBtn.isSelected = post.isLiked
-
-                binding.postLikeBtn.setOnClickListener {
-                    onLikeBtnClick()
-                }
-
-                setLikeCommentStats()
-            }.addOnFailureListener {
-                Log.e(TAG, "setMutableContent: ${it.localizedMessage}")
-            }
-    }*/
-
-    fun setSaveBtn2() {
+    private fun setSaveBtn2() {
         saveListener?.remove()
-        saveListener = Firebase.firestore.collection(USERS).document(UserManager.currentUserId)
+        saveListener = Firebase.firestore.collection(USERS)
+            .document(UserManager.currentUserId)
             .collection(SAVED_POSTS)
             .document(post.id)
             .addSnapshotListener { value, error ->
@@ -275,32 +353,11 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
                 }
 
                 post.isSaved = value != null && value.exists()
-
-//                postClickListener.onPostUpdate(post.copy())
-
                 binding.postSaveBtn.isSelected = post.isSaved
 
                 binding.postSaveBtn.setOnClickListener {
                     onSaveBtnClick()
                 }
-            }
-    }
-
-    private fun setSaveButton() {
-        Firebase.firestore.collection(USERS).document(UserManager.currentUserId)
-            .collection(SAVED_POSTS)
-            .document(post.id)
-            .get()
-            .addOnSuccessListener {
-                post.isSaved = it.exists()
-                postClickListener.onPostUpdate(post.copy())
-                binding.postSaveBtn.isSelected = post.isSaved
-
-                binding.postSaveBtn.setOnClickListener {
-                    onSaveBtnClick()
-                }
-            }.addOnFailureListener {
-                Log.e(TAG, "setMutableContent: ${it.localizedMessage}")
             }
     }
 
@@ -318,106 +375,14 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
      * */
     private fun setStaticContent() {
 
-//        post.content = view.context.getString(R.string.large_text)
-
         binding.postTitle.text = post.name
         binding.postContent.text = post.content
 
         binding.postContent.setOnClickListener {
-            postClickListener.onPostClick(post.copy())
-        }
-
-        /*binding.postContent.doOnLayout {
-            if (binding.postContent.lineCount > MAX_LINES && !isTextExpanded) {
-                val lastCharShown = binding.postContent.layout.getLineVisibleEnd(MAX_LINES - 1)
-                binding.postContent.maxLines = MAX_LINES
-                val moreString = "Show more"
-                val suffix = "  $moreString"
-
-                val actionDisplayText: String = post.content.substring(0, lastCharShown - suffix.length - 3) + "..." + suffix
-                val truncatedSpannableString = SpannableString(actionDisplayText)
-                val startIndex = actionDisplayText.indexOf(moreString)
-
-                val cs = object: ClickableSpan() {
-
-                    override fun onClick(p0: View) {
-                        postClickListener.onPostClick(post.copy())
-                    }
-
-                    override fun updateDrawState(ds: TextPaint) {
-                        super.updateDrawState(ds)
-                        ds.isUnderlineText = false
-                        val color = if (view.context.isNightMode()) {
-                            Color.WHITE
-                        } else {
-                            Color.BLACK
-                        }
-                        ds.color = color
-                    }
-
-                }
-
-                val cs1 = object : ClickableSpan() {
-                    override fun onClick(p0: View) {
-
-                        isTextExpanded = true
-
-                        binding.postContent.maxLines = Int.MAX_VALUE
-                        binding.postContent.text = post.content
-
-                        view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
-
-                            delay(200)
-
-                            binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
-                                height = ViewGroup.LayoutParams.WRAP_CONTENT
-                            }
-
-                            binding.postContent.text = post.content
-
-                            delay(200)
-
-                            binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
-                                height = ViewGroup.LayoutParams.WRAP_CONTENT
-                            }
-
-                            binding.postContent.setOnClickListener {
-                                postClickListener.onPostClick(post.copy())
-                            }
-                        }
-                    }
-
-                    override fun updateDrawState(ds: TextPaint) {
-                        super.updateDrawState(ds)
-                        ds.isUnderlineText = false
-                        val greyColor = ContextCompat.getColor(view.context, R.color.darker_grey)
-                        ds.color = greyColor
-                    }
-
-                }
-
-                truncatedSpannableString.setSpan(cs,
-                    0,
-                    startIndex - 1,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-                truncatedSpannableString.setSpan(cs1,
-                    startIndex,
-                    startIndex + moreString.length,
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-                binding.postContent.movementMethod = LinkMovementMethod.getInstance()
-
-                binding.postContent.text = truncatedSpannableString
-
-                view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
-                    delay(200)
-                    binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
-                        height = ViewGroup.LayoutParams.WRAP_CONTENT
-                    }
-                }
+            if (shouldAllowContentClick) {
+                postClickListener.onPostClick(post.copy())
             }
-        }*/
+        }
 
         val timeText = " • " + getTextForTime(post.createdAt)
         binding.postTime.text = timeText
@@ -426,17 +391,38 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
             postClickListener.onPostCommentClick(post.copy())
         }
 
-        binding.postOption.setOnClickListener {
-            postClickListener.onPostOptionClick(post.copy())
-        }
 
         binding.root.setOnClickListener {
-            postClickListener.onPostClick(post.copy())
+            if (shouldAllowContentClick) {
+                postClickListener.onPostClick(post.copy())
+            }
         }
 
-        binding.root.setOnLongClickListener {
-            postClickListener.onPostOptionClick(post.copy())
-            true
+        FireUtility.getUser(post.creator.userId) { creator ->
+            if (creator != null) {
+                binding.root.setOnLongClickListener {
+                    if (shouldAllowContentClick) {
+                        postClickListener.onPostOptionClick(post.copy(), creator)
+                    }
+                    true
+                }
+
+                binding.postOption.setOnClickListener {
+                    postClickListener.onPostOptionClick(post.copy(), creator)
+                }
+
+            }
+        }
+
+        if (post.rank == -1L) {
+            binding.rankedText.hide()
+        } else {
+            binding.rankedText.show()
+            if (post.rank == -2L) {
+                binding.rankedText.text = "IN REVIEW"
+            } else {
+                binding.rankedText.text = "Ranked #${post.rank}"
+            }
         }
 
     }
@@ -452,7 +438,7 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
         val contributorsString = getContributorsString(post.contributors.size)
         val likeCommentText = "$likesString • $commentsString • $contributorsString"
 
-        val cs1 = object: ClickableSpan() {
+        val cs1 = object : ClickableSpan() {
             override fun onClick(p0: View) {
                 postClickListener.onPostSupportersClick(post)
             }
@@ -469,7 +455,7 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
             }
         }
 
-        val cs2 = object: ClickableSpan() {
+        val cs2 = object : ClickableSpan() {
             override fun onClick(p0: View) {
                 postClickListener.onPostCommentClick(post)
             }
@@ -486,7 +472,7 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
             }
         }
 
-        val cs3 = object: ClickableSpan() {
+        val cs3 = object : ClickableSpan() {
             override fun onClick(p0: View) {
                 postClickListener.onPostContributorsClick(post)
             }
@@ -540,9 +526,9 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
 
     private fun getContributorsString(size: Int): String {
         return if (size == 1) {
-            "1 Contributor"
+            "1 Person"
         } else {
-            "$size Contributors"
+            "$size People"
         }
     }
 
@@ -552,51 +538,55 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
      * */
     private fun setJoinBtn() {
 
-        when {
-            post.isMadeByMe -> {
+        if (shouldShowJoinBtn) {
+            when {
+                post.isMadeByMe -> {
+                    binding.postJoinBtn.hide()
+                }
+                post.isCollaboration -> {
+                    binding.postJoinBtn.hide()
+                }
+                post.isRequested -> {
+                    binding.postJoinBtn.show()
+                    binding.postJoinBtn.text = view.context.getString(R.string.undo)
+                }
+                else -> binding.postJoinBtn.show()
+            }
+
+            if (post.isBlocked) {
                 binding.postJoinBtn.hide()
+            } else {
+                if (post.isRequested) {
+                    binding.postJoinBtn.text = view.context.getString(R.string.undo)
+                } else {
+                    binding.postJoinBtn.text = view.context.getString(R.string.join)
+                }
+
+                binding.postJoinBtn.setOnClickListener {
+                    isPartialUpdate = true
+                    postClickListener.onPostJoinClick(post.copy())
+                }
             }
-            post.isCollaboration -> {
-                binding.postJoinBtn.hide()
-            }
-            post.isRequested -> {
-                binding.postJoinBtn.show()
-                binding.postJoinBtn.text = view.context.getString(R.string.undo)
-            }
-            else -> binding.postJoinBtn.show()
+        } else {
+            binding.postJoinBtn.hide()
         }
 
-        if (post.isBlocked) {
-            binding.postJoinBtn.hide()
-        } else {
-            if (post.isRequested) {
-                binding.postJoinBtn.text = view.context.getString(R.string.undo)
-                binding.postJoinBtn.setOnClickListener {
-                    isPartialUpdate = true
-                    postClickListener.onPostUndoClick(post.copy()) { newPost ->
-                        post = newPost
-                        setJoinBtn()
-                    }
-                }
-            } else {
-                binding.postJoinBtn.text = view.context.getString(R.string.join)
-                binding.postJoinBtn.setOnClickListener {
-                    isPartialUpdate = true
-                    postClickListener.onPostJoinClick(post.copy()) { newPost ->
-                        post = newPost
-                        setJoinBtn()
-                    }
-                }
-            }
-        }
     }
 
     companion object {
 
-        private const val TAG = "PostViewHolder"
+        const val TAG = "PostViewHolder"
 
-        fun newInstance(parent: ViewGroup): PostViewHolder {
-            return PostViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.post_item, parent, false))
+        fun newInstance(
+            parent: ViewGroup,
+            lifecycleOwner: LifecycleOwner,
+            mediaClickListener: MediaClickListener
+        ): PostViewHolder {
+            return PostViewHolder(
+                LayoutInflater.from(parent.context).inflate(R.layout.post_item, parent, false),
+                lifecycleOwner,
+                mediaClickListener
+            )
         }
 
     }
@@ -606,7 +596,45 @@ class PostViewHolder(val v: View): SuperPostViewHolder(v), ImageClickListener {
     }
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
-        //
     }
+
+    override fun onVideoBeingPlayed() {
+    }
+
+    override fun onVideoPaused() {
+    }
+
+    /*fun pause() {
+        if (!::binding.isInitialized){
+            Log.d(TAG, "pause: Binding is not initialized")
+            return
+        }
+
+        if (::binding.isInitialized) {
+            for (child in binding.postMediaRecycler.children) {
+                val vh = binding.postMediaRecycler.findContainingViewHolder(child)
+                (vh as? MediaViewHolder)?.pause()
+            }
+        }
+    }*/
+
+    /*fun play() {
+        *//*if (!::binding.isInitialized){
+            Log.d(TAG, "play: Binding is not initialized")
+            return
+        }
+
+        if (!binding.root.isVisibleOnScreen()) {
+            Log.d(TAG, "play: The view itself is not visible on screen")
+            return
+        }
+
+        if (::binding.isInitialized) {
+            for (child in binding.postMediaRecycler.children) {
+                val vh = binding.postMediaRecycler.findContainingViewHolder(child)
+                (vh as? MediaViewHolder)?.play()
+            }
+        }*//*
+    }*/
 
 }

@@ -3,31 +3,20 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.adapter.recyclerview.PostMinimalAdapter
 import com.jamid.codesquare.databinding.FragmentSearchPostsBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
 
-@ExperimentalPagingApi
-class SearchPostsFragment: Fragment() {
+class SearchPostsFragment: BaseFragment<FragmentSearchPostsBinding>() {
 
-    private lateinit var binding: FragmentSearchPostsBinding
-    private val viewModel: MainViewModel by activityViewModels()
     private lateinit var postAdapter: PostMinimalAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentSearchPostsBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentSearchPostsBinding {
+        return FragmentSearchPostsBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -36,6 +25,8 @@ class SearchPostsFragment: Fragment() {
         postAdapter = PostMinimalAdapter()
 
         binding.searchPostsRecycler.apply {
+            val decoration = DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL)
+            addItemDecoration(decoration)
             adapter = postAdapter
             layoutManager = LinearLayoutManager(requireContext())
         }

@@ -27,7 +27,7 @@ data class Report(
         fun getReportForPost(post: Post): Report {
             val report = Report()
             report.title = post.name
-            report.image = post.images.first()
+            report.image = post.mediaList.first()
             report.contextId = post.id
             report.type = ReportType.REPORT_PROJECT
             return report

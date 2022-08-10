@@ -11,6 +11,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <View
+            android:id="@+id/divider31"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <com.facebook.drawee.view.SimpleDraweeView
             android:id="@+id/ad_app_icon"
             android:layout_width="50dp"
@@ -34,7 +42,7 @@
             app:layout_constraintBottom_toTopOf="@+id/ad_media_container"
             app:layout_constraintEnd_toStartOf="@+id/ad_info_icon"
             app:layout_constraintStart_toEndOf="@+id/ad_app_icon"
-            app:layout_constraintTop_toBottomOf="@+id/divider28"
+            app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.0"
             app:layout_constraintVertical_chainStyle="packed">
 
@@ -92,9 +100,10 @@
 
             <com.google.android.gms.ads.nativead.MediaView
                 android:id="@+id/ad_media_view"
+                style="@style/AppTheme.GenericBackground2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="100dp">
+                android:minHeight="160dp">
 
             </com.google.android.gms.ads.nativead.MediaView>
         </FrameLayout>
@@ -106,7 +115,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp"
-            app:icon="@drawable/ic_round_more_horiz_24"
+            app:icon="@drawable/ic_outline_info_24"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/ad_title_container"
             app:layout_constraintTop_toTopOf="@+id/ad_title_container"
@@ -118,7 +127,7 @@
             android:layout_height="wrap_content"
             android:padding="16dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-            app:layout_constraintBottom_toTopOf="@+id/ad_divider"
+            app:layout_constraintBottom_toTopOf="@+id/divider33"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ad_primary_action"
@@ -138,28 +147,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ad_media_container"
             tools:visibility="visible" />
-
-        <ProgressBar
-            android:id="@+id/ad_progress"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/ad_media_container"
-            app:layout_constraintEnd_toEndOf="@+id/ad_media_container"
-            app:layout_constraintStart_toStartOf="@+id/ad_media_container"
-            app:layout_constraintTop_toTopOf="@+id/ad_media_container" />
-
-        <View
-            android:id="@+id/ad_divider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/ad_secondary_text" />
 
         <Button
             android:id="@+id/ad_volume_btn"
@@ -197,18 +184,6 @@
             app:layout_constraintBottom_toBottomOf="@+id/ad_media_container"
             app:layout_constraintEnd_toEndOf="@+id/ad_media_container" />
 
-        <View
-            android:id="@+id/divider28"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintBottom_toTopOf="@+id/ad_title_container"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.0"
-            app:layout_constraintVertical_chainStyle="packed" />
-
         <TextView
             android:id="@+id/loading_ad_text"
             android:layout_width="wrap_content"
@@ -218,6 +193,16 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ad_title_container" />
+
+        <View
+            android:id="@+id/divider33"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/ad_secondary_text" />
 
 
     </androidx.constraintlayout.widget.ConstraintLayout>

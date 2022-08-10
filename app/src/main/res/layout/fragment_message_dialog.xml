@@ -23,11 +23,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:fontFamily="sans-serif-medium"
+            android:fontFamily="@font/title_semi"
             android:gravity="center"
             android:padding="8dp"
             android:text="Hello World"
-            android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="16sp" />
 
         <ViewStub
             android:id="@+id/dialog_extra_container"
@@ -45,13 +46,16 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             tools:maxLines="1" />
 
-        <ProgressBar
+        <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/dialog_progress_bar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="match_parent"
+            style="@style/AppTheme.MessageProgress"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_marginBottom="12dp"
+            android:indeterminate="true"
             android:visibility="gone"
+            app:trackCornerRadius="4dp"
             tools:visibility="visible" />
 
     </LinearLayout>

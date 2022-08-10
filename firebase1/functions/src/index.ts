@@ -7,9 +7,16 @@ import { UserMinimal2 } from "./data/UserMinimal2";
 import { MyNotification } from "./data/MyNotification";
 import { NotificationPayload } from "./data/NotificationPayload";
 import { MessagingDevicesResponse } from "firebase-admin/messaging";
-import { chatChannelConverter, convertSnapshotToComment, convertSnapshotToCommentChannel, convertSnapshotToInterestItem, convertSnapshotToMessage, convertSnapshotToNotification, convertSnapshotToPostMinimal, convertSnapshotToUserMinimal, getPurchaseInfoFromObject, userConverter } from "./extras/Utilities";
-import { FieldValue } from "firebase-admin/firestore";
+import { chatChannelConverter, convertSnapshotToComment, convertSnapshotToCommentChannel, convertSnapshotToInterestItem, convertSnapshotToMessage, convertSnapshotToNotification, convertSnapshotToPost, convertSnapshotToPostMinimal, convertSnapshotToUserMinimal, getPurchaseInfoFromObject, userConverter } from "./extras/Utilities";
+import { FieldValue, Query } from "firebase-admin/firestore";
 import { InterestItem } from "./data/InterestItem";
+import { UserMinimal } from "./data/UserMinimal";
+// import * as spawn from "child-process-promise";
+// import * as path from "path";
+// import * as os from "os";
+// import * as fs from "fs";
+// import { uuid } from "uuidv4";
+// import { getStorage, ref, getDownloadURL } from "firebase/storage";
 
 admin.initializeApp();
 
@@ -43,24 +50,182 @@ export const onPostCreated = functions.firestore.document(postPath).onCreate(asy
     return await postIndex.saveObject(postMinimal);
 });
 
+
+export const isCriticalPostChange = (before: PostMinimal, after: PostMinimal) => {
+    if (before.name == after.name &&
+        before.content == after.content &&
+        before.tags == after.tags &&
+        before.mediaList == after.mediaList &&
+        before.creator == after.creator &&
+        before.location == after.location &&
+        before.rank == after.rank) {
+        return false;
+    } else {
+        return true;
+    }
+};
+
+/**
+ * 
+ * 1. algolia
+ * 2. update chatchannel based on the post
+ * 
+ */
 export const onPostUpdated = functions.firestore.document(postPath).onUpdate(async (change, _context) => {
     const oldP = convertSnapshotToPostMinimal(change.before);
     const newP = convertSnapshotToPostMinimal(change.after);
 
-    if (oldP.name == newP.name &&
-        oldP.content == newP.content &&
-        oldP.tags == newP.tags &&
-        oldP.images == newP.images &&
-        oldP.creator == newP.creator &&
-        oldP.location == newP.location) {
-        return {
-            response: "No critical changes are made that needs to be updated to algolia."
-        };
-    } else {
+    if (isCriticalPostChange(oldP, newP)) {
+        /* Algolia changes */
         const postIndex = client.initIndex(ALGOLIA_POSTS_INDEX);
-        return await postIndex.partialUpdateObjects([newP], {
+        await postIndex.partialUpdateObjects([newP], {
             createIfNotExists: true,
         });
+
+        /* Algolia changes end */
+
+        /* Ranked changes */ /* To be implemented in the future */
+        /* if (oldP.rank != newP.rank) {
+            // lets figure out if the change is upvote or downvote
+            if (newP.upvoteCount > oldP.upvoteCount) {
+                const upperRankedPostList = await admin.firestore()
+                    .collection("posts")
+                    .where("rank", ">", newP.rank)
+                    .limit(1)
+                    .get();
+
+                if (upperRankedPostList.empty) {
+                    // rank 1
+                    return {
+                        response: "Upper ranked post list empty."
+                    };
+                } else {
+                    const topPost = convertSnapshotToPost(upperRankedPostList.docs[0]);
+
+                    if (topPost.upvoteCount < newP.upvoteCount) {
+                        // switch rank
+
+                        const now = Date.now();
+
+                        const batch = admin.firestore().batch();
+
+                        const currentPostRef = admin.firestore().collection("posts").doc(newP.id);
+                        const topPostRef = admin.firestore().collection("posts").doc(topPost.id);
+
+                        batch.update(currentPostRef, {
+                            rank: topPost.rank,
+                            updatedAt: now
+                        });
+
+                        batch.update(topPostRef, {
+                            rank: newP.rank,
+                            updatedAt: now
+                        });
+
+                        return batch.commit();
+                    } else {
+                        // do nothing
+                        return {
+                            response: "Top post upvote count is greater than new post upvote count"
+                        };
+                    }
+                }
+            } else if (newP.upvoteCount < oldP.upvoteCount) {
+                const lowerRankedPostList = await admin.firestore()
+                    .collection("posts")
+                    .where("rank", "<", newP.rank)
+                    .limit(1)
+                    .get();
+
+                if (lowerRankedPostList.empty) {
+                    // most bottom rank
+                    return {
+                        response: "Most bottom rank"
+                    };
+                } else {
+                    const bottomPost = convertSnapshotToPost(lowerRankedPostList.docs[0]);
+
+                    if (bottomPost.upvoteCount > newP.upvoteCount) {
+                        // switch rank
+
+                        const now = Date.now();
+
+                        const batch = admin.firestore().batch();
+
+                        const currentPostRef = admin.firestore().collection("posts").doc(newP.id);
+                        const bottomPostRef = admin.firestore().collection("posts").doc(bottomPost.id);
+
+                        batch.update(currentPostRef, {
+                            rank: bottomPost.rank,
+                            updatedAt: now
+                        });
+
+                        batch.update(bottomPostRef, {
+                            rank: newP.rank,
+                            updatedAt: now
+                        });
+
+                        return batch.commit();
+                    } else {
+                        // do nothing
+                        return {
+                            response: "Bottom post upvote count is greater than new post upvote count"
+                        };
+                    }
+                } 
+            } else {
+                return {
+                    response: "To implement something in the future, where for equal upvotes, what should be the next criteria to decide"
+                };
+            }
+        } /*
+
+        /* Ranked changes end */
+
+        /* Chat channel changes */
+
+        const changes = {
+            postTitle: newP.name,
+            postImage: newP.thumbnail,
+            updatedAt: newP.updatedAt
+        };
+
+
+        await admin.firestore()
+            .collection("chatChannels")
+            .doc(newP.chatChannel)
+            .update(changes);
+
+        /* Chat channel changes end */
+
+        const updatedData = convertSnapshotToPost(change.after);
+
+        const changes1 = [
+            {
+                query: admin.firestore().collectionGroup("savedPosts")
+                    .where("id", "==", newP.objectID)
+                    .orderBy("createdAt", "desc"),
+                updatedData: updatedData
+            },
+            {
+                query: admin.firestore().collectionGroup("likedPosts")
+                    .where("id", "==", newP.objectID)
+                    .orderBy("createdAt", "desc"),
+                updatedData: updatedData
+            }
+        ];
+
+        changes1.forEach(async (value) => {
+            await batchUpdate(value.query, value.updatedData);
+        });
+    
+        return {
+            response: "All user references updated."
+        };
+    } else {
+        return {
+            response: "No critical changes found to make changes in the database."
+        };
     }
 });
 
@@ -235,31 +400,155 @@ export const addInterestsBySelection = async (interests: string[]) => {
     }
 };
 
+export const isCriticalUserChange = (before: UserMinimal2, after: UserMinimal2) => {
+    if (before.name == after.name &&
+        before.about == after.about &&
+        before.tag == after.tag &&
+        before.photo == after.photo &&
+        before.username == after.username) {
+        return false;
+    } else {
+        return true;
+    }
+};
 
+
+export const batchUpdate = async (baseQuery: Query, updatedData: any) => {
+    let hasReachedEnd = false;
+    let lastDocument: admin.firestore.DocumentSnapshot<admin.firestore.DocumentData> | undefined;
+
+    while (!hasReachedEnd) {
+        const batch = admin.firestore().batch();
+        let readItems: admin.firestore.QuerySnapshot<admin.firestore.DocumentData>;
+
+        if (lastDocument) {
+            readItems = await baseQuery
+                .startAfter(lastDocument)
+                .limit(500)
+                .get();
+        } else {
+            readItems = await baseQuery
+                .limit(500)
+                .get();
+        }
+        
+        readItems.forEach((doc) => {
+            batch.update(doc.ref, updatedData);
+        });  
+
+        await batch.commit();
+
+        if (readItems.size < 500) {
+            hasReachedEnd = true;
+        } else {
+            lastDocument = readItems.docs.at(-1);
+        }
+    }
+};
+
+
+/**
+ * 
+ * Things to do after a user document is updated
+ * 1. update in algolia
+ * 2. update all posts
+ * 3. update all comments
+ * 4. update all messages
+ * 
+ */
 export const onUserUpdated = functions.firestore.document(userPath).onUpdate(async (change, _context) => {
     const oldU = convertSnapshotToUserMinimal(change.before);
     const newU = convertSnapshotToUserMinimal(change.after);
 
-    if (oldU.name == newU.name &&
-        oldU.about == newU.about &&
-        oldU.tag == newU.tag &&
-        oldU.photo == newU.photo &&
-        oldU.username == newU.username &&
-        oldU.premiumState == newU.premiumState) {
-        return {
-            response: "No critical changes are made that needs to be updated to algolia."
-        };
-    } else {
+    if (isCriticalUserChange(oldU, newU)) {
+        /* Updating algoila document */
+
         const response = await addInterestsBySelection(newU.interests);
         console.log(response);
 
         const userIndex = client.initIndex(ALGOLIA_USERS_INDEX);
-        return await userIndex.partialUpdateObjects([newU], {
+        await userIndex.partialUpdateObjects([newU], {
             createIfNotExists: true,
         });
+
+        /* Alogolia update end */
+
+        const userMinimal: UserMinimal = {
+            userId: newU.objectID,
+            name: newU.name,
+            photo: newU.photo!,
+            username: newU.username,
+            premiumState: newU.premiumState
+        };
+
+
+        const changes = [
+            {
+                query: admin.firestore().collectionGroup("posts")
+                    .where("creator.userId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+
+                updatedData: {
+                    creator: userMinimal
+                }
+            }, 
+            {
+                query: admin.firestore().collectionGroup("comments")
+                    .where("senderId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+                
+                updatedData: {
+                    sender: userMinimal
+                }
+            },
+            {
+                query: admin.firestore().collectionGroup("messages")
+                    .where("senderId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+
+                updatedData: {
+                    sender: userMinimal
+                }
+            },
+            {
+                query: admin.firestore().collectionGroup("likedBy")
+                    .where("userId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+
+                updatedData: userMinimal
+            }, {
+                query: admin.firestore().collection("chatChannels")
+                    .where("data1.userId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+                updatedData: {
+                    data1: userMinimal
+                }    
+            }, {
+                query: admin.firestore().collection("chatChannels")
+                    .where("data2.userId", "==", newU.objectID)
+                    .orderBy("createdAt", "desc"),
+                updatedData: {
+                    data2: userMinimal
+                }    
+            }
+        ];
+
+        changes.forEach(async (value) => {
+            await batchUpdate(value.query, value.updatedData);
+        });
+
+        return {
+            response: "Updated all messages, posts and comments, and likedBys"
+        };
+    } else {
+        return {
+            response: "No critical changes were noticed. Not updating anything based on user document change"
+        };
     }
 });
 
+
+/* TODO("all comments, posts and messages by the user should also be deleted") */
 export const onUserDeleted = functions.firestore.document(userPath).onDelete(async (_snap, context) => {
     const userIndex = client.initIndex(ALGOLIA_USERS_INDEX);
     return userIndex.deleteObject(context.params.userId);
@@ -277,19 +566,19 @@ export const onNewNotification = functions.firestore.document(`${userPath}/${not
         type: notification.type.toString()
     };
 
-    if (notification.postId != undefined) {
+    if (notification.postId) {
         notificationPayload.postId = notification.postId;
     }
 
-    if (notification.commentChannelId != undefined) {
+    if (notification.commentChannelId) {
         notificationPayload.commentChannelId = notification.commentChannelId;
     }
 
-    if (notification.userId != undefined) {
+    if (notification.userId) {
         notificationPayload.userId = notification.userId;
     }
 
-    if (notification.commentId != undefined) {
+    if (notification.commentId) {
         notificationPayload.commentId = notification.commentId;
     }
 
@@ -305,7 +594,7 @@ export const onNewNotification = functions.firestore.document(`${userPath}/${not
         };
     } else {
         const receiver = receiverSnapshot.data();
-        if (receiver !== undefined) {
+        if (receiver) {
             if (receiver.token.length > 0) {
                 return await sendNotification(receiver.token, notificationPayload);
             } else {
@@ -406,7 +695,7 @@ export const onNewMessage = functions.firestore.document(channelMessagesPath).on
         const senderRegistrationToken = sender?.token;
 
         const chatChannel = chatChannelSnap.data();
-        if (chatChannel !== undefined) {
+        if (chatChannel) {
             const data: Record<string, string> = {
                 title: chatChannel.postTitle,
                 senderId: message.senderId,
@@ -417,13 +706,15 @@ export const onNewMessage = functions.firestore.document(channelMessagesPath).on
                 data.content = message.sender.name + ": Image";
             } else if (message.type == "document") {
                 data.content = message.sender.name + ": Document";
+            } else if (message.type == "video") {
+                data.content = message.sender.name + ": Video";
             } else {
                 data.content = message.sender.name + ": " + snap.get("content");
             }
 
             const tokens: string[] = chatChannel.tokens;
 
-            if (senderRegistrationToken !== undefined) {
+            if (senderRegistrationToken) {
                 const index = tokens.indexOf(senderRegistrationToken);
                 if (index !== -1) {
                     tokens.splice(index, 1);
@@ -442,7 +733,6 @@ export const onNewMessage = functions.firestore.document(channelMessagesPath).on
             if (staleTokens.length > 0) {
                 // await deleteSessionForDevices(staleTokens, pgdb)
                 // debug('deleted sessions for stale firebase device tokens', staleTokens)
-
                 const goodTokens = tokens.filter((t) => staleTokens.indexOf(t) === -1);
 
                 return await admin.firestore()
@@ -773,3 +1063,69 @@ export const verifyPurchase = functions.https.onCall(async (data, _context) => {
 });
 
 
+// export const createVideoThumb = functions.storage.object()
+//     .onFinalize(async (object, context) => {
+//         const fileBucket = object.bucket;
+//         const filePath = object.name;
+//         const contentType = object.contentType;
+
+
+//         if (filePath && contentType) {
+//             const dir = path.dirname(filePath);
+//             const fileName = path.basename(filePath);
+
+//             const name = fileName.split(".")[0];
+
+//             functions.logger.log(fileBucket, filePath, contentType, dir, fileName);
+
+//             if (!contentType.startsWith("video/")) {
+//                 return {
+//                     response: "Not a video"
+//                 };
+//             }
+
+//             if (fileName.startsWith("thumb_")) {
+//                 return {
+//                     response: "Video is already a thumbnail"
+//                 };
+//             }
+                 
+//             const token = uuid();
+//             const bucket = admin.storage().bucket(fileBucket);
+//             const tempFilePath = path.join(os.tmpdir(), fileName);
+
+//             try {
+//                 const upRes = await bucket.file(filePath)
+//                     .download({ destination: tempFilePath });
+                
+//                 console.log("UP_RES", JSON.stringify(upRes));
+//                 functions.logger.log("Video has been download to: ", tempFilePath);    
+//             } catch (error) {
+//                 console.log("Error at download bucket", error);
+//             }
+
+//             const thumbFileName = `thumb_${name}.jpg`;
+//             const locThumbFilePath = path.join(os.tmpdir(), thumbFileName);
+//             const remoteThumbFilePath = path.join(dir, thumbFileName);
+
+//             await spawn.spawn("ffmpeg", ["-i", tempFilePath, "-vframes", "1", "-an", "-s", "400X300", "-ss", "10", locThumbFilePath]);
+        
+//             functions.logger.log("Thumbnail has been created");
+
+//             await bucket.upload(locThumbFilePath, {
+//                 destination: remoteThumbFilePath,
+//                 metadata: {
+//                     contentType: "image/jpg",
+//                     metadata: {
+//                         firebaseStorageDownloadTokens: token
+//                     }
+//                 },
+//                 public: true,
+//             });
+
+//             functions.logger.log("Thumbnail uploaded to the bucket");
+
+//             fs.unlinkSync(locThumbFilePath);
+//             return fs.unlinkSync(tempFilePath);
+//         }
+//     });

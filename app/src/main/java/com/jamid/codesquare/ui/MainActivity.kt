@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui
 
+import android.animation.Animator
 import android.animation.AnimatorInflater
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
@@ -8,20 +9,24 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.drawable.Drawable
-import android.net.*
+import android.graphics.Typeface
+import android.net.ConnectivityManager
+import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
+import android.provider.MediaStore
+import android.text.SpannableString
+import android.text.style.StyleSpan
 import android.transition.TransitionManager
 import android.util.Log
 import android.view.View
-import androidx.activity.addCallback
+import androidx.annotation.AnimatorRes
+import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
+import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
 import androidx.core.view.*
 import androidx.lifecycle.lifecycleScope
@@ -30,10 +35,9 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
-import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.RecyclerView
-import com.android.billingclient.api.PurchasesUpdatedListener
+import androidx.viewpager2.widget.ViewPager2
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
 import com.firebase.geofire.GeoFireUtils
@@ -42,8 +46,6 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.Place
 import com.google.android.material.appbar.AppBarLayout
-import com.google.android.material.badge.BadgeDrawable
-import com.google.android.material.badge.BadgeUtils.attachBadgeDrawable
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.transition.platform.MaterialArcMotion
 import com.google.android.material.transition.platform.MaterialContainerTransform
@@ -55,27 +57,28 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.FireUtility.dislikeUser2
 import com.jamid.codesquare.FireUtility.likeUser2
-import com.jamid.codesquare.PlayBillingController.PremiumState.*
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.data.*
-import com.jamid.codesquare.data.ImageSelectType.*
-import com.jamid.codesquare.databinding.ActivityMainBinding
+import com.jamid.codesquare.databinding.ActivityMain2Binding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
+import com.jamid.codesquare.databinding.TopSnackBinding
 import com.jamid.codesquare.listeners.*
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import java.io.File
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 
-@ExperimentalPagingApi
 class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteListener,
-    PostClickListener, PostRequestListener, UserClickListener, ChatChannelClickListener, NotificationItemClickListener, CommentListener, OptionClickListener, NetworkStateListener {
+    PostClickListener, PostRequestListener, UserClickListener, ChatChannelClickListener,
+    NotificationItemClickListener, CommentListener, OptionClickListener, NetworkStateListener,
+    MediaClickListener {
 
-    lateinit var binding: ActivityMainBinding
+    var shouldDelay = true
+    lateinit var binding: ActivityMain2Binding
     private lateinit var navController: NavController
     private var previouslyFetchedLocation: Location? = null
     private var currentImageViewer: View? = null
@@ -85,18 +88,74 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     private var currentIndefiniteSnackbar: Snackbar? = null
     private lateinit var networkManager: MyNetworkManager
     lateinit var playBillingController: PlayBillingController
-    var subscriptionFragment: SubscriptionFragment? = null
+
+    var splashFragment: SplashFragment? = null
+
+    private var justStarted = true
+
+    private var subscriptionFragment: SubscriptionFragment? = null
     var optionsFragment: OptionsFragment? = null
     private var isNetworkAvailable = false
 
+    var currentBottomAnchor: View? = null
 
-    var initialLoadWaitFinished = false
+    private val authFragments = arrayOf(
+        R.id.loginFragment,
+        R.id.onBoardingFragment,
+        R.id.splashFragment1,
+        R.id.createAccountFragment,
+        R.id.profileImageFragment,
+        R.id.emailVerificationFragment,
+        R.id.userInfoFragment,
+        R.id.forgotPasswordFragment2
+    )
+    /*private val bottomBarLessFragments = mutableListOf(
+        R.id.commentsFragment,
+        R.id.createPostFragment,
+        R.id.editProfileFragment,
+        R.id.settingsFragment
+    ).apply {
+        addAll(authFragments)
+    }*/
 
+    private val tabbedFragments = arrayOf(
+        R.id.searchFragment,
+        R.id.notificationCenterFragment,
+        R.id.profileFragment,
+        R.id.profileFragment2,
+        R.id.chatMediaFragment
+    )
+
+    private val settingsFragments = arrayOf(
+        R.id.settingsFragment,
+        R.id.editProfileFragment,
+        R.id.savedPostsFragment,
+        R.id.testFragment,
+        R.id.extraFragment,
+        R.id.forgotPasswordFragment,
+        R.id.savedPostsFragment,
+        R.id.archiveFragment,
+        R.id.myRequestsFragment,
+        R.id.invitesFragment,
+        R.id.blockedAccountsFragment,
+        R.id.updatePasswordFragment,
+        R.id.feedbackFragment,
+        R.id.reportFragment
+    )
+
+    private val chatFragments = arrayOf(
+        R.id.chatFragment2,
+        R.id.chatDetailFragment,
+        R.id.chatDetailFragment2,
+        R.id.chatMediaFragment,
+        R.id.channelGuidelinesFragment,
+        R.id.chatContributorsFragment,
+        R.id.messageDetailFragment
+    )
 
     private val chatReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             if (p1 != null) {
-
                 // checking if the message is sent by current user
                 val senderId = p1.getStringExtra(SENDER_ID)
                 if (senderId == Firebase.auth.currentUser?.uid)
@@ -104,30 +163,40 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
                 val chatChannelId = p1.getStringExtra(CHANNEL_ID)
                 chatChannelId?.let {
-                    FireUtility.getChatChannel(chatChannelId) {
-                        val result = it ?: return@getChatChannel
-                        when (result) {
-                            is Result.Error -> Log.e(TAG, result.exception.localizedMessage.orEmpty())
-                            is Result.Success -> {
-                                val chatChannel = result.data
+                    FireUtility.getChatChannel(chatChannelId) { chatChannel ->
+                        if (chatChannel != null) {
+                            // check if the current destination is chat container
+                            if (binding.mainPrimaryBottom.selectedItemId == R.id.navigation_chats) {
+                                return@getChatChannel
+                            }
 
-                                // check if the current destination is chat container
-                                if (navController.currentDestination?.id == R.id.chatContainerSample)
-                                    return@getChatChannel
+                            if (!chatChannel.authorized)
+                                return@getChatChannel
 
-                                if (navController.currentDestination?.id == R.id.homeFragment && binding.mainTabLayout.selectedTabPosition == 1) {
-                                    return@getChatChannel
+                            val lastMessage = chatChannel.lastMessage
+                            if (lastMessage != null) {
+                                val content = when (lastMessage.type) {
+                                    image -> "Image"
+                                    document -> "Document"
+                                    video -> "Video"
+                                    else -> lastMessage.content
                                 }
 
-                                val lastMessage = chatChannel.lastMessage
-                                if (lastMessage != null) {
-                                    showCustomChipNotification("${chatChannel.postTitle}: ${lastMessage.sender.name} has sent a message", chatChannel.postImage) {
-                                        onChannelClick(chatChannel)
+                                val ss = if (chatChannel.type == CHANNEL_PRIVATE) {
+                                    SpannableString("${lastMessage.sender.name}: $content").apply {
+                                        setSpan(StyleSpan(Typeface.BOLD), 0, lastMessage.sender.name.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
                                     }
-                                    /*Snackbar.make(binding.root, "${chatChannel.postTitle}: ${lastMessage.sender.name} has sent a message", Snackbar.LENGTH_INDEFINITE).setAction("View"){
-                                        onChannelClick(chatChannel)
-                                    }.setBehavior(NoSwipeBehavior()).show()*/
+                                } else {
+                                    SpannableString("${chatChannel.postTitle}\n${lastMessage.sender.name}: $content").apply {
+                                        setSpan(StyleSpan(Typeface.BOLD), 0, chatChannel.postTitle.length, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                    }
                                 }
+                                showTopSnack(ss, lastMessage.sender.photo, action = {
+                                    binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
+                                    runDelayed(400) {
+                                        onChannelClick(chatChannel, 0)
+                                    }
+                                })
                             }
                         }
                     }
@@ -136,67 +205,22 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    private fun getBitmapDrawable(bitmap: Bitmap): Drawable {
-        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.height, bitmap.height, false)
-        val length = resources.getDimension(R.dimen.unit_len) * 6
-        val drawable = RoundedBitmapDrawableFactory.create(resources, scaledBitmap).also {
-            it.cornerRadius = length
+
+    /*fun stringForTime(timeMs: Float): String {
+        val totalSeconds = (timeMs / 1000).toInt()
+        val seconds = totalSeconds % 60
+        val minutes = totalSeconds / 60 % 60
+        val hours = totalSeconds / 3600
+        val mFormatter = Formatter()
+        return if (hours > 0) {
+            mFormatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
+        } else {
+            mFormatter.format("%02d:%02d", minutes, seconds).toString()
         }
-        return drawable
-    }
+    }*/
 
-    fun showCustomChipNotification(msg: String, image: String? = null, onClick: () -> Unit) {
-        binding.mainNotifyChip.text = msg
 
-        var dy = resources.getDimension(R.dimen.action_height)
-        // default 56dp
-
-        if (binding.mainTabLayout.isVisible) {
-            // add extra 64 dp
-            dy += resources.getDimension(R.dimen.large_padding)
-        }
-
-        if (image != null) {
-            binding.mainNotifyChip.isChipIconVisible = true
-            downloadBitmapUsingFresco(this, image) { i ->
-                runOnUiThread {
-                    if (i != null) {
-                        binding.mainNotifyChip.chipIcon = getBitmapDrawable(i)
-                    }
-                }
-            }
-        }
-
-        binding.mainNotifyChip.show()
-
-        fun slideReset() {
-            val slideResetAni = binding.mainNotifyChip.slideReset()
-            slideResetAni.doOnEnd {
-                binding.mainNotifyChip.hide()
-            }
-        }
-
-        // auto
-        val slideDownAni = binding.mainNotifyChip.slideDown(dy)
-        slideDownAni.doOnEnd {
-            lifecycleScope.launch {
-                delay(5000)
-
-                runOnUiThread {
-                    if (binding.mainNotifyChip.translationY != 0f) {
-                       slideReset()
-                    }
-                }
-            }
-        }
-
-        binding.mainNotifyChip.setOnClickListener {
-            slideReset()
-            onClick()
-        }
-
-    }
-
+    /* Notifications that arrive when the app is in foreground*/
     private val notificationReceiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             if (p1 != null) {
@@ -211,24 +235,24 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     FireUtility.getNotification(currentUserId, notificationId) {
                         val notificationResult = it ?: return@getNotification
                         when (notificationResult) {
-                            is Result.Error -> Log.e(TAG, "onReceive: ${notificationResult.exception.localizedMessage}")
+                            is Result.Error -> Log.e(
+                                TAG,
+                                "onReceive: ${notificationResult.exception.localizedMessage}"
+                            )
                             is Result.Success -> {
                                 viewModel.insertNotifications(notificationResult.data)
+                                showTopSnack(notificationResult.data.content, notificationResult.data.image) {
+                                    binding.mainPrimaryBottom.selectedItemId = R.id.navigation_notifications
+                                    runDelayed(500) {
+                                        findViewById<ViewPager2>(R.id.notification_pager)?.setCurrentItem(notificationResult.data.type, false)
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-
-    private fun selectChatUploadDocuments() {
-        val intent = Intent().apply {
-            type = "*/*"
-            action = Intent.ACTION_GET_CONTENT
-            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-        }
-        selectChatDocumentsUploadLauncher.launch(intent)
     }
 
     // needs checking
@@ -245,16 +269,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         editor.apply()
     }
 
+    var initialNavColor = Color.BLACK
+
     @SuppressLint("UnsafeOptInUsageError")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        binding = ActivityMainBinding.inflate(layoutInflater)
+        binding = ActivityMain2Binding.inflate(layoutInflater)
         setContentView(binding.root)
         setSupportActionBar(binding.mainToolbar)
 
+        initialNavColor = window.navigationBarColor
+
         // initialize all nodes
         MobileAds.initialize(this) {}
+//        ExoPlayerProvider.initialize(this)
 
         if (!isNetworkConnected()) {
             onNetworkNotAvailable()
@@ -285,39 +314,19 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
         }
 
-        viewModel.allUnreadNotifications.observe(this) {
-            if (!it.isNullOrEmpty()) {
-                if (navController.currentDestination?.id == R.id.homeFragment) {
-                    val badgeDrawable = BadgeDrawable.create(this)
-                    badgeDrawable.number = it.size
-                    badgeDrawable.badgeTextColor = getColorResource(R.color.white)
-                    attachBadgeDrawable(badgeDrawable, binding.mainToolbar, R.id.notifications)
-                }
-            }
-        }
-
         UserManager.currentUserLive.observe(this) {
             if (it != null) {
-
-                viewModel.currentUserBitmap = null
-                viewModel.insertCurrentUser(it)
-
-                if (it.premiumState.toInt() != -1) {
-                    viewModel.deleteAdPosts()
-                }
-
                 setMessagesListener(it.chatChannels)
-
-                viewModel.checkAndUpdateLocalPosts(it)
+                viewModel.onUserUpdate(it)
             }
         }
 
         UserManager.authState.observe(this) { isSignedIn ->
             if (isSignedIn != null) {
                 if (isSignedIn) {
-                   /* if (UserManager.isEmailVerified) {
-                        TODO("Do all actions that require current user to be legit")
-                    }*/
+                    /*if (UserManager.isEmailVerified) {
+                         TODO("Do all actions that require current user to be legit")
+                     }*/
                 } else {
                     viewModel.isNetworkAvailable.removeObservers(this)
                 }
@@ -330,8 +339,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
 
         playBillingController = PlayBillingController(this)
-
-
         lifecycle.addObserver(SnapshotListenerContainer(viewModel))
         networkManager = MyNetworkManager(this, this)
         lifecycle.addObserver(networkManager)
@@ -353,40 +360,44 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         setBroadcastReceivers()
 
 //        binding.navHostFragment
-    }
 
-    private fun getCurrentFragmentInfo(navHostFragment: NavHostFragment) {
-        val lastFragment = navHostFragment.childFragmentManager.fragments.lastOrNull()
-        if (lastFragment != null) {
-            /*when (lastFragment) {
-                is ChatFragment -> {
-                    Log.d(TAG, "onViewCreated: Last Fragment is Chat Fragment")
+//        tempTest()
+
+
+        viewModel.allUnreadNotifications.observe(this) { un ->
+            if (!un.isNullOrEmpty()) {
+                binding.mainPrimaryBottom.getOrCreateBadge(R.id.navigation_notifications).let {
+                    it.number = un.size
+                    it.backgroundColor = ContextCompat.getColor(this, R.color.pink)
+                    it.badgeTextColor = Color.WHITE
                 }
-                is ChatDetailFragment -> {
-                    Log.d(TAG, "onViewCreated: Last Fragment is Chat Detail Fragment")
-                }
-                is MessageDetailFragment -> {
-                    Log.d(TAG, "onViewCreated: Last Fragment is Message Detail Fragment")
-                }
-                is ChannelGuidelinesFragment -> {
-                    Log.d(TAG, "onViewCreated: Last Fragment is ChannelGuidelinesFragment")
-                }
-                else -> {
-                    Log.d(TAG, "onViewCreated: ${lastFragment::class.java.simpleName}")
-                }
-            }*/
-            Log.d(TAG, "onViewCreated: ${lastFragment::class.java.simpleName}")
-        } else {
-            Log.d(TAG, "onViewCreated: Last fragment is null")
+            } else {
+                binding.mainPrimaryBottom.removeBadge(R.id.navigation_notifications)
+            }
         }
+
+        viewModel.getUnreadChatChannels().observe(this) { uc ->
+            if (!uc.isNullOrEmpty()) {
+                binding.mainPrimaryBottom.getOrCreateBadge(R.id.navigation_chats).let {
+                    it.number = uc.size
+                    it.backgroundColor = ContextCompat.getColor(this, R.color.pink)
+                    it.badgeTextColor = Color.WHITE
+                }
+            } else {
+                binding.mainPrimaryBottom.removeBadge(R.id.navigation_chats)
+            }
+        }
+
     }
 
     private fun setBroadcastReceivers() {
-        LocalBroadcastManager.getInstance(this).registerReceiver(chatReceiver, IntentFilter("chat_receiver"))
-        LocalBroadcastManager.getInstance(this).registerReceiver(notificationReceiver, IntentFilter("notification_receiver"))
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(chatReceiver, IntentFilter("chat_receiver"))
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(notificationReceiver, IntentFilter("notification_receiver"))
     }
 
-    private fun prefetchProfileImages() = lifecycleScope.launch (Dispatchers.IO) {
+    private fun prefetchProfileImages() = lifecycleScope.launch(Dispatchers.IO) {
         val imagePipeline = Fresco.getImagePipeline()
 
         for (image in userImages) {
@@ -400,7 +411,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             Firebase.firestore.collection(CHAT_CHANNELS)
                 .document(channel)
                 .collection(MESSAGES)
-                .limit(10)
+                .limit(5)
                 .orderBy(CREATED_AT, Query.Direction.DESCENDING)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
@@ -409,11 +420,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
                     if (value != null && !value.isEmpty) {
                         val messages = value.toObjects(Message::class.java)
-                        Log.d(TAG, "setMessagesListener: ${messages.map { it.content }}")
-                        val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
-                        val documentsDir =  getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
-
-                        viewModel.insertMessages(imagesDir, documentsDir, messages)
+                        viewModel.chatRepository.insertChannelMessages(messages)
                     }
 
                 }
@@ -426,109 +433,223 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         navController = navHostFragment.navController
 
-        val appBarConfiguration = AppBarConfiguration(setOf(R.id.homeFragment, R.id.loginFragment))
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration)
-
-        updateUi(
-            shouldShowAppBar = false,
-            baseFragmentBehavior = null
+        val primary = setOf(
+            R.id.splashFragment,
+            R.id.onBoardingFragment,
+            R.id.loginFragment,
+            R.id.feedFragment,
+            R.id.chatListFragment2,
+            R.id.rankedFragment,
+            R.id.notificationCenterFragment,
+            R.id.profileFragment
         )
+
+        val appBarConfiguration = AppBarConfiguration(
+            primary
+        )
+
+        // very important in case of fullscreen
+        binding.mainPrimaryBottom.setOnApplyWindowInsetsListener(null)
+
+        binding.mainPrimaryBottom.setOnItemReselectedListener {
+            when (it.itemId) {
+                R.id.navigation_home -> {
+                    if (navController.currentDestination?.id == R.id.feedFragment) {
+                        binding.root.findViewById<RecyclerView>(R.id.pager_items_recycler)
+                            ?.smoothScrollToPosition(0)
+                    } else {
+                        navController.popBackStack(R.id.feedFragment, false)
+                    }
+                }
+                R.id.navigation_profile -> {
+                    if (navController.currentDestination?.id == R.id.profileFragment) {
+                        findViewById<AppBarLayout>(R.id.profile_app_bar)?.setExpanded(false, true)
+                    } else {
+                        navController.popBackStack(R.id.profileFragment, false)
+                    }
+                }
+            }
+        }
+
+        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration)
+        NavigationUI.setupWithNavController(binding.mainPrimaryBottom, navController)
+
+        layoutChangesOnStart()
+
+        val logo = if (isNightMode()) {
+            R.drawable.ic_logo_xy_night
+        } else {
+            R.drawable.ic_logo_xy
+        }
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
 
-            invalidateOptionsMenu()
+            invalidateDefaultFragmentChanges()
 
-            invalidateTabLayoutBadges()
+            when (val frag = destination.id) {
+                in primary -> {
+                    when (frag) {
+                        R.id.feedFragment -> {
+                            updateUi(
+                                UiConfig.ToolbarUiConfig(
+                                    title = "",
+                                    logo = logo
+                                ),
+                                UiConfig.PrimaryActionUiConfig(
+                                    isVisible = true
+                                ) {
+                                    val filterFrag = FilterFragment()
+                                    filterFrag.show(supportFragmentManager, FilterFragment.TAG)
+                                }
+                            )
 
-            binding.mainToolbar.setNavigationOnClickListener {
-                navController.navigateUp()
-            }
-
-            binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(this,
-                R.animator.app_bar_elevation)
-
-            val dy = resources.getDimension(R.dimen.comment_layout_translation)
-            binding.commentBottomRoot.slideDown(dy)
-
-            binding.mainProgressBar.hide()
-
-            if (destination.id != R.id.homeFragment) {
-                binding.mainPrimaryBtn.hide()
-            }
-
-            onBackPressedDispatcher.addCallback {
-                if (isImageViewMode) {
-                    removeImageViewFragment()
-                } else {
-                    navController.navigateUp()
-                }
-            }
-
-            binding.mainToolbar.isTitleCentered = destination.id != R.id.homeFragment
-            binding.mainToolbar.logo = if (destination.id != R.id.homeFragment) {
-                null
-            } else {
-                if (isNightMode()) {
-                    ContextCompat.getDrawable(this, R.drawable.ic_logo_xy_night)
-                } else {
-                    ContextCompat.getDrawable(this, R.drawable.ic_logo_xy)
-                }
-            }
-
-            val authFragments = arrayOf(
-                R.id.splashFragment1,
-                R.id.onBoardingFragment,
-                R.id.loginFragment,
-                R.id.createAccountFragment,
-                R.id.emailVerificationFragment,
-                R.id.profileImageFragment,
-                R.id.userInfoFragment
-            )
-
-            when (destination.id) {
-                R.id.notificationCenterFragment -> updateUi(shouldShowTabLayout = true)
-                in authFragments -> updateUi(
-                    shouldShowAppBar = false,
-                    baseFragmentBehavior = null
-                )
-                R.id.homeFragment -> {
-                    hideKeyboard(binding.root)
-                    lifecycleScope.launch {
-                        delay(300)
-                        updateUi(
-                            shouldShowTabLayout = true
-                        )
+                        }
+                        in authFragments -> {
+                            updateUi(
+                                UiConfig.AppBarUiConfig(
+                                    isVisible = false
+                                ), UiConfig.ContainerUiConfig(
+                                    behavior = null
+                                ), UiConfig.BottomNavUiConfig(
+                                    isVisible = false
+                                )
+                            )
+                        }
+                        in tabbedFragments -> {
+                            updateUi(
+                                UiConfig.AppBarUiConfig(
+                                    elevationState = R.animator.app_bar_elevation_reverse,
+                                )
+                            )
+                        }
+                        else -> {
+                            updateUi()
+                        }
                     }
                 }
-                R.id.profileFragment -> {
-                    hideKeyboard(binding.root)
-                    updateUi()
+                in authFragments -> {
+                    when (frag) {
+                        R.id.loginFragment, R.id.createAccountFragment, R.id.emailVerificationFragment, R.id.profileImageFragment, R.id.userInfoFragment -> {
+                            updateUi(
+                                UiConfig.AppBarUiConfig(
+                                    isVisible = false
+                                ), UiConfig.ContainerUiConfig(
+                                    behavior = null
+                                ), UiConfig.BottomNavUiConfig(
+                                    isVisible = false
+                                )
+                            )
+                        }
+                        R.id.forgotPasswordFragment2, R.id.updatePasswordFragment2 -> {
+                            updateUi(
+                                UiConfig.BottomNavUiConfig(
+                                    isVisible = false
+                                )
+                            )
+                        }
+                    }
                 }
-                R.id.chatMediaFragment -> updateUi(shouldShowTabLayout = true)
-                R.id.imageViewFragment -> updateUi(baseFragmentBehavior = null)
-                R.id.searchFragment -> updateUi(
-                    shouldShowTabLayout = true, toolbarAdjustment = ToolbarAdjustment(
-                        true,
-                        R.color.normal_grey,
-                        false
+                R.id.imageViewFragment -> {
+                    updateUi(
+                        UiConfig.ContainerUiConfig(
+                            behavior = null
+                        )
                     )
-                )
-                R.id.subscriberFragment -> updateUi(
-                    shouldShowAppBar = false,
-                    baseFragmentBehavior = null
-                )
+                }
+                in tabbedFragments -> {
+                    updateUi(
+                        UiConfig.AppBarUiConfig(
+                            elevationState = R.animator.app_bar_elevation_reverse,
+                        )
+                    )
+
+                    if (frag in chatFragments) {
+                        updateUi(
+                            UiConfig.BottomNavUiConfig(
+                                isVisible = false
+                            )
+                        )
+                    }
+
+                    if (frag == R.id.searchFragment) {
+                        updateUi(
+                            UiConfig.ToolbarUiConfig(
+                                isTitleCentered = false
+                            ),
+                            UiConfig.BottomNavUiConfig(
+                                isVisible = false
+                            )
+                        )
+                    }
+
+                }
+                R.id.commentsFragment, R.id.preSearchFragment, R.id.createPostFragment, in settingsFragments, in chatFragments -> {
+                    updateUi(
+                        UiConfig.BottomNavUiConfig(
+                            isVisible = false
+                        )
+                    )
+
+                    when (frag) {
+                        R.id.commentsFragment, R.id.createPostFragment, R.id.chatFragment2 -> {
+                            updateUi(UiConfig.KeyboardUiConfig(true))
+                        }
+                    }
+                }
+                R.id.mediaViewerFragment -> {
+                    updateUi(
+                        UiConfig.BottomNavUiConfig(false),
+                        UiConfig.AppBarUiConfig(R.animator.app_bar_elevation_reverse, false),
+                        UiConfig.ContainerUiConfig(null)
+                    )
+                }
                 else -> updateUi()
             }
         }
+
+
+        // just adding a fragment to show for the first time
+        if (justStarted) {
+            justStarted = false
+
+            splashFragment = SplashFragment()
+
+            supportFragmentManager.beginTransaction()
+                .add(android.R.id.content, splashFragment!!, "SplashFragment")
+                .commit()
+
+        }
+
     }
 
-    private fun invalidateTabLayoutBadges() {
-        val acceptedFragments = listOf(R.id.homeFragment, R.id.notificationCenterFragment)
-        if (!acceptedFragments.contains(navController.currentDestination?.id)) {
-            for (i in 0 until binding.mainTabLayout.tabCount) {
-                binding.mainTabLayout.getTabAt(i)?.removeBadge()
-            }
+    private fun layoutChangesOnStart() {
+        updateUi(
+            UiConfig.AppBarUiConfig(
+                isVisible = false
+            ), UiConfig.ContainerUiConfig(
+                behavior = null
+            ), UiConfig.BottomNavUiConfig(
+                isVisible = false
+            )
+        )
+    }
+
+    private fun invalidateDefaultFragmentChanges() {
+        invalidateOptionsMenu()
+        setDefaultUiConfig()
+
+        currentBottomAnchor = null
+
+        binding.mainToolbar.setNavigationOnClickListener {
+            navController.navigateUp()
         }
+
+        binding.mainToolbar.setOnClickListener {
+            //
+        }
+
+        binding.mainProgressBar.hide()
+
     }
 
     private fun onReceiveData() {
@@ -537,8 +658,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             when {
                 extras.containsKey(CHANNEL_ID) -> {
                     // chat notification
-                    binding.mainPrimaryBtn.hide()
-
                     val senderId = extras[SENDER_ID] ?: return
 
                     if (senderId == Firebase.auth.currentUser?.uid)
@@ -547,42 +666,23 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     val chatChannelId = extras[CHANNEL_ID] as String?
                     if (chatChannelId != null) {
                         FireUtility.getChatChannel(chatChannelId) {
-                            val result = it ?: return@getChatChannel
-                            when (result) {
-                                is Result.Error -> Log.e(TAG, "onReceiveData: ${result.exception}")
-                                is Result.Success -> onChannelClick(result.data)
+                            if (it != null) {
+                                onChannelClick(it, 0)
                             }
                         }
                     }
                 }
                 extras.containsKey(NOTIFICATION_ID) -> {
-                    binding.mainPrimaryBtn.hide()
-
                     if (extras.containsKey(TYPE)) {
-                        val type = extras[TYPE] as String?
+                        val type = extras[TYPE] as String? ?: return
+                        val ch = type.first()
+                        val pos = ch.digitToInt()
 
-                        Log.d(TAG, "onReceiveData: $type")
+                        binding.mainPrimaryBottom.selectedItemId = R.id.navigation_notifications
 
-                        val pos = when (type) {
-                            "0" -> {
-                                0
-                            }
-                            "1" -> {
-                                1
-                            }
-                            "-1" -> {
-                                2
-                            }
-                            else -> {
-                                0
-                            }
+                        runDelayed(500) {
+                            findViewById<ViewPager2>(R.id.notification_pager)?.setCurrentItem(pos, false)
                         }
-
-                        navController.navigate(
-                            R.id.notificationCenterFragment,
-                            bundleOf(TYPE to pos),
-                            slideRightNavOptions()
-                        )
                     }
                 }
                 else -> {
@@ -592,7 +692,114 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    private fun updateUi(
+    fun runDelayed(duration: Long, scope: () -> Unit) {
+        lifecycleScope.launch {
+            delay(duration)
+            runOnUiThread{
+                scope()
+            }
+        }
+    }
+
+    sealed class UiConfig {
+        data class ToolbarUiConfig(
+            val title: String? = null,
+            val subtitle: String? = null,
+            @DrawableRes val logo: Int? = null,
+            val isTitleCentered: Boolean = true
+        ) : UiConfig()
+
+        data class BottomNavUiConfig(
+            val isVisible: Boolean = true
+        ) : UiConfig()
+
+        data class AppBarUiConfig(
+            @AnimatorRes val elevationState: Int = R.animator.app_bar_elevation,
+            val isVisible: Boolean = true
+        ) : UiConfig()
+
+        data class PrimaryActionUiConfig(
+            val isVisible: Boolean = false,
+            val action: (() -> Unit)? = null
+        ) : UiConfig()
+
+        data class KeyboardUiConfig(
+            val isVisible: Boolean = false
+        ) : UiConfig()
+
+        data class ContainerUiConfig(
+            val behavior: CoordinatorLayout.Behavior<View>? = AppBarLayout.ScrollingViewBehavior()
+        ) : UiConfig()
+    }
+
+    private fun setDefaultUiConfig() {
+        updateUi(
+            UiConfig.AppBarUiConfig(),
+            UiConfig.BottomNavUiConfig(),
+            UiConfig.ContainerUiConfig(),
+            UiConfig.KeyboardUiConfig(),
+            UiConfig.PrimaryActionUiConfig(),
+            UiConfig.ToolbarUiConfig()
+        )
+    }
+
+    private fun updateUi(vararg uiConfigs: UiConfig) {
+
+        for (change in uiConfigs) {
+            when (change) {
+                is UiConfig.AppBarUiConfig -> {
+                    binding.mainAppbar.isVisible = change.isVisible
+                    binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(
+                        this,
+                        change.elevationState
+                    )
+                }
+                is UiConfig.BottomNavUiConfig -> {
+                    lifecycleScope.launch {
+                        delay(300)
+                        runOnUiThread {
+                            if (change.isVisible) {
+                                binding.mainPrimaryBottom.slideReset()
+                            } else {
+                                val dy = resources.getDimension(R.dimen.appbar_slide_translation)
+                                binding.mainPrimaryBottom.slideDown(dy)
+                            }
+                        }
+                    }
+                }
+                is UiConfig.ContainerUiConfig -> {
+                    binding.navHostFragment.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                        behavior = change.behavior
+                    }
+                }
+                is UiConfig.KeyboardUiConfig -> {
+                    if (change.isVisible) {
+                        showKeyboard()
+                    } else {
+                        hideKeyboard(binding.root)
+                    }
+                }
+                is UiConfig.PrimaryActionUiConfig -> {
+                    binding.mainActionBtn.isVisible = change.isVisible
+                    binding.mainActionBtn.setOnClickListener {
+                        change.action?.let { it1 -> it1() }
+                    }
+                }
+                is UiConfig.ToolbarUiConfig -> {
+                    if (!change.title.isNullOrBlank()) {
+                        binding.mainToolbar.title = change.title
+                    }
+
+                    binding.mainToolbar.isTitleCentered = change.isTitleCentered
+
+                    binding.mainToolbar.subtitle = change.subtitle
+                    binding.mainToolbar.logo = change.logo?.let { getImageResource(it) }
+                }
+            }
+        }
+    }
+
+    /*private fun updateUi(
         shouldShowAppBar: Boolean = true,
         shouldShowToolbar: Boolean = true,
         shouldShowTabLayout: Boolean = false,
@@ -602,9 +809,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         binding.mainAppbar.isVisible = shouldShowAppBar
         binding.mainToolbar.isVisible = shouldShowToolbar
-        binding.mainTabLayout.isVisible = shouldShowTabLayout
 
-        binding.mainTabLayout.isVisible = shouldShowTabLayout
 
         if (shouldShowAppBar) {
             if (binding.mainAppbar.translationY != 0f) {
@@ -612,7 +817,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
             if (shouldShowToolbar) {
                 binding.mainToolbar.apply {
-                    isTitleCentered = toolbarAdjustment.isTitleCentered
 
                     if (isNightMode()) {
                         if (toolbarAdjustment.titleTextColor == R.color.black) {
@@ -656,7 +860,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             binding.mainToolbar.subtitle = null
         }
 
-    }
+    }*/
 
 
     private fun clearActiveNotifications() {
@@ -689,26 +893,26 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     override fun onPostClick(post: Post) {
         val bundle = bundleOf(POST to post, "image_pos" to 0)
-        viewModel.insertPosts(post)
-        viewModel.insertPostToCache(post)
-        navController.navigate(R.id.postFragmentContainer, bundle, slideRightNavOptions())
+        viewModel.insertPost(post)
+        navController.navigate(R.id.postFragment2, bundle)
     }
 
     override fun onPostClick(postMinimal2: PostMinimal2) {
-        getPostImpulsive(postMinimal2.objectID) {
-            onPostClick(it)
+        FireUtility.getPost(postMinimal2.objectID) {
+            it?.let {
+                onPostClick(it)
+            }
         }
     }
 
-    override fun onPostLikeClick(post: Post, onChange: (newPost: Post) -> Unit) {
+    override fun onPostLikeClick(post: Post) {
 
         val currentUser = UserManager.currentUser
 
         if (post.isLiked) {
-            FireUtility.dislikePost2(post) { newPost, it ->
+            FireUtility.dislikePost2(post) {
                 if (it.isSuccessful) {
-                    onChange(newPost)
-                    viewModel.insertPost(newPost)
+                    viewModel.insertPost(post)
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
@@ -722,12 +926,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 postId = post.id,
                 title = title
             )
-            FireUtility.likePost2(post) { newPost, it ->
+            FireUtility.likePost2(post) {
                 if (it.isSuccessful) {
-                    // check if notification already exists
-                    onChange(newPost)
-                    viewModel.insertPost(newPost)
-                    sendNotificationImpulsive(notification)
+                    viewModel.insertPost(post)
+                    sendNotification(notification)
                 } else {
                     viewModel.setCurrentError(it.exception)
                 }
@@ -735,53 +937,47 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    override fun onPostSaveClick(post: Post, onChange: (newPost: Post) -> Unit) {
+    override fun onPostSaveClick(post: Post) {
         if (post.isSaved) {
-            // un-save
-            FireUtility.undoSavePost(post) { newPost, it ->
+            FireUtility.unsavePost(post) {
                 if (it.isSuccessful) {
-                    onChange(newPost)
-                    viewModel.insertPost(newPost)
-                   /* viewModel.insertPostToCache(newPost)
-                    viewModel.insertPosts(newPost)*/
-                    viewModel.deleteReferenceItem(newPost.id)
-                } else {
-                    viewModel.setCurrentError(it.exception)
+                    viewModel.insertPost(post.apply { isSaved = false })
                 }
             }
         } else {
-            // save
-            FireUtility.savePost2(post) { newPost, it ->
+            FireUtility.savePost(post) {
                 if (it.isSuccessful) {
-                    onChange(newPost)
-                    viewModel.insertPost(newPost)
-                    /*viewModel.insertPostToCache(newPost)
-                    viewModel.insertPosts(newPost)*/
-                    Snackbar.make(binding.root, "Saved this post", Snackbar.LENGTH_LONG)
-                        .setAction("View all") {
-                            navController.navigate(R.id.savedPostsFragment, null, slideRightNavOptions())
-                        }
-                        .setBehavior(NoSwipeBehavior())
-                        .show()
-                } else {
-                    viewModel.setCurrentError(it.exception)
+                    viewModel.insertPost(post.apply { isSaved = true })
+                    showSnackMessage("Saved this post", "View all") {
+                        navController.navigate(
+                            R.id.savedPostsFragment
+                        )
+                    }
                 }
             }
         }
     }
 
-    private fun setLiveDataObservers() {
+    private fun showSnackMessage(
+        message: String,
+        label: String? = null,
+        action: View.OnClickListener? = null
+    ) {
+        val snackbar = Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
 
-        playBillingController.isPurchaseAcknowledged.observe(this) { isPurchaseAcknowledged ->
-            if (isPurchaseAcknowledged == true) {
-                if (subscriptionFragment != null && subscriptionFragment!!.isVisible) {
-                    subscriptionFragment!!.dismiss()
-                }
-                navController.navigate(R.id.subscriberFragment, null, slideRightNavOptions())
-            }
+        if (binding.mainPrimaryBottom.isVisible) {
+            snackbar.anchorView = binding.mainPrimaryBottom
         }
 
-        playBillingController.premiumState.observe(this) {
+        if (label != null) {
+            snackbar.setAction(label, action)
+        }
+
+        snackbar.show()
+    }
+
+    private fun setLiveDataObservers() {
+        /*playBillingController.premiumState.observe(this) {
             val premiumState = it ?: return@observe
 
             when (premiumState) {
@@ -797,9 +993,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     //
                 }
             }
-        }
+        }*/
 
-        playBillingController.purchaseDetails.observe(this) {p1 ->
+        playBillingController.purchaseDetails.observe(this) { p1 ->
             if (!p1.isNullOrEmpty()) {
                 viewModel.setProductDetailsList(p1)
             }
@@ -813,10 +1009,33 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     }
 
-    override fun onPostJoinClick(post: Post, onChange: (newPost: Post) -> Unit) {
+    override fun onPostJoinClick(post: Post) {
         if (post.isRequested) {
             // undo request
-            onPostUndoClick(post, onChange)
+            FireUtility.getPostRequest(post.id, UserManager.currentUserId) {
+                val postRequestResult = it ?: return@getPostRequest
+
+                when (postRequestResult) {
+                    is Result.Error -> Log.e(
+                        TAG,
+                        "onPostUndoClick: ${postRequestResult.exception.localizedMessage}"
+                    )
+                    is Result.Success -> {
+                        val postRequest = postRequestResult.data
+                        FireUtility.undoJoinPost(postRequest) { it1 ->
+                            if (it1.isSuccessful) {
+                                post.isRequested = false
+                                val newList = post.requests.removeItemFromList(postRequest.requestId)
+                                post.requests = newList
+                                viewModel.insertPost(post)
+                                viewModel.deletePostRequest(postRequest)
+                            } else {
+                                viewModel.setCurrentError(it1.exception)
+                            }
+                        }
+                    }
+                }
+            }
         } else {
             // send request
             val currentUser = UserManager.currentUser
@@ -835,22 +1054,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 post.requests = requestsList
                 post.isRequested = true
 
-                viewModel.updateLocalPost(post)
+                viewModel.insertPost(post)
                 viewModel.insertPostRequests(postRequest)
-
-                onChange(post)
             }
 
             FireUtility.joinPost(notification.id, post) { task, postRequest ->
                 if (task.isSuccessful) {
-
-                    Snackbar.make(binding.root, "Post request sent", Snackbar.LENGTH_LONG)
-                        .setBehavior(NoSwipeBehavior())
-                        .show()
-
+                    showSnackMessage("Post request sent")
                     onRequestSent(postRequest)
-
-                    sendNotificationImpulsive(notification)
+                    sendNotification(notification)
                 } else {
                     viewModel.setCurrentError(task.exception)
                 }
@@ -872,80 +1084,17 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         // recording the time of update locally
         post.updatedAt = System.currentTimeMillis()
 
-        val processedPost = processPosts(arrayOf(post)).first()
+        processPost(post)
 
-        viewModel.updateLocalPost(processedPost)
+        viewModel.insertPost(post)
     }
 
-    fun isEligibleToCreateProject(): Boolean {
-        val currentUser = UserManager.currentUser
-        return if (currentUser.posts.size + currentUser.archivedProjects.size > 0) {
-            // check if premium user
-            currentUser.premiumState.toInt() == 1
-        } else {
-            true
-        }
-    }
-
-    fun isEligibleToAddContributor(post: Post): Boolean {
-        val currentUser = UserManager.currentUser
-        return if (post.contributors.size < 5) {
-            true
-        } else {
-            currentUser.premiumState.toInt() == 1
-        }
-    }
-
-    fun isEligibleToCollaborate(): Boolean {
-        val currentUser = UserManager.currentUser
-        return currentUser.collaborationsCount.toInt() < 1
-    }
-
-    fun showLimitDialog(cause: AdLimit) {
-        when (cause) {
-            AdLimit.MAX_POSTS -> showMaxPostsLimitUi()
-            AdLimit.MAX_CONTRIBUTORS -> showMaxContributorsLimitUi()
-            AdLimit.MAX_COLLABORATIONS -> showMaxCollaborationsLimitUi()
-        }
-    }
-
-    private fun showPreSubscriptionDialog(msg: String) {
-        val frag = MessageDialogFragment.builder(msg)
-            .setPositiveButton("Upgrade") { _, _ ->
-                showSubscriptionFragment()
-            }.setNegativeButton("Cancel") { a, _ ->
-                a.dismiss()
-            }.build()
-
-        frag.show(supportFragmentManager, MessageDialogFragment.TAG)
-    }
-
-    private fun showMaxPostsLimitUi() {
-        val currentUser = UserManager.currentUser
-        val msg = if (currentUser.archivedProjects.isNotEmpty()) {
-            "You have created a post and archived it. To create more, upgrade your subscription plan"
-        } else {
-            "You have already created 1 post. To create more, upgrade your subscription plan!"
-        }
-
-        showPreSubscriptionDialog(msg)
-    }
-
-    private fun showMaxContributorsLimitUi() {
-        val msg = "This post already has 5 contributors. To add more, upgrade your subscription plan."
-        showPreSubscriptionDialog(msg)
-    }
-
-    private fun showMaxCollaborationsLimitUi() {
-        val msg = "You have already collaborated once. To collaborate with more posts, upgrade your subscription plan."
-        showPreSubscriptionDialog(msg)
-    }
 
     override fun onPostRequestAccept(postRequest: PostRequest, onFailure: () -> Unit) {
         val currentUser = UserManager.currentUser
 
-        getPostImpulsive(postRequest.postId) { post ->
-            if (isEligibleToAddContributor(post)) {
+        FireUtility.getPost(postRequest.postId) { post ->
+            post?.let {
                 FireUtility.acceptPostRequest(post, postRequest) { it1 ->
                     if (it1.isSuccessful) {
                         // 1. update the local post
@@ -969,7 +1118,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                             title = title
                         )
 
-                        sendNotificationImpulsive(notification)
+                        sendNotification(notification)
 
                     } else {
                         Log.e(
@@ -978,14 +1127,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                         )
                     }
                 }
-            } else {
-                showLimitDialog(AdLimit.MAX_CONTRIBUTORS)
             }
         }
     }
 
     private fun getNewContributorOnRequestAccept(userId: String) {
-        getUser(userId) {}
+        FireUtility.getUser(userId) {
+            if (it != null) {
+                viewModel.insertUser(it)
+            }
+        }
     }
 
     // post request must have post included inside it
@@ -1008,7 +1159,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 viewModel.deleteLocalPostRequest(postRequest)
                 viewModel.deleteNotificationById(postRequest.notificationId)
 
-                sendNotificationImpulsive(notification)
+                sendNotification(notification)
             }
         }
     }
@@ -1042,23 +1193,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    fun showSubscriptionFragment() {
-        subscriptionFragment = SubscriptionFragment()
-        subscriptionFragment?.show(supportFragmentManager, "SubscriptionFragment")
-    }
-
     override fun onAdInfoClick() {
-
-        val frag = MessageDialogFragment.builder("Argh \uD83D\uDE24! These ads are annoying. ❌ Remove ads from the app ? \uD83D\uDE04")
-            .setPositiveButton("Remove ads") { _, _ ->
-                showSubscriptionFragment()
-            }.setNegativeButton("Cancel") { dialog, _ ->
-                dialog.dismiss()
-            }
-            .build()
-
-        frag.show(supportFragmentManager, MessageDialogFragment.TAG)
-
+        navController.navigate(R.id.advertiseInfoFragment)
     }
 
     override fun onAdError(post: Post) {
@@ -1066,14 +1202,22 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     }
 
     override fun onPostLocationClick(post: Post) {
-        navController.navigate(R.id.locationPostsFragment, bundleOf(TITLE to "Showing posts near", SUB_TITLE to post.location.address, "location" to post.location), slideRightNavOptions())
+        navController.navigate(
+            R.id.locationPostsFragment,
+            bundleOf(
+                TITLE to "Showing posts near",
+                SUB_TITLE to post.location.address,
+                "location" to post.location
+            )
+        )
     }
 
-    @Suppress("LABEL_NAME_CLASH")
+    /*@Suppress("LABEL_NAME_CLASH")
     override suspend fun onCheckForStaleData(post: Post, onUpdate: (newPost: Post) -> Unit) {
 
         fun onChangeNeeded(creator: User) {
-            val changes = mapOf(CREATOR to creator.minify(), UPDATED_AT to System.currentTimeMillis())
+            val changes =
+                mapOf(CREATOR to creator.minify(), UPDATED_AT to System.currentTimeMillis())
 
             FireUtility.updatePost(post.id, changes) { it1 ->
                 if (it1.isSuccessful) {
@@ -1086,7 +1230,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     viewModel.insertPost(post)
                 } else {
                     Log.e(
-                        PostFragment.TAG,
+                        TAG,
                         "setCreatorRelatedUi: ${it1.exception?.localizedMessage}"
                     )
                 }
@@ -1098,19 +1242,24 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 onChangeNeeded(UserManager.currentUser)
             }
         } else {
-            getUserImpulsive(post.creator.userId) { creator ->
-                if (creator.minify() != post.creator) {
+            FireUtility.getUser(post.creator.userId) { creator ->
+                if (creator != null && creator.minify() != post.creator) {
                     onChangeNeeded(creator)
                 }
             }
+            *//*getUserImpulsive(post.creator.userId) { creator ->
+                if (creator.minify() != post.creator) {
+                    onChangeNeeded(creator)
+                }
+            }*//*
         }
-    }
+    }*/
 
     override fun onPostUpdate(newPost: Post) {
         viewModel.insertPost(newPost)
     }
 
-    fun getPostImpulsive(postId: String, onPostFetch: (Post) -> Unit) {
+    /*fun getPostImpulsive(postId: String, onPostFetch: (Post) -> Unit) {
         val cachedPost = viewModel.getCachedPost(postId)
         if (cachedPost == null) {
             viewModel.getPost(postId) { localPost ->
@@ -1128,9 +1277,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         } else {
             onPostFetch(cachedPost)
         }
-    }
+    }*/
 
-    fun getUserImpulsive(userId: String, onUserFound: (User) -> Unit) {
+    /*fun getUserImpulsive(userId: String, onUserFound: (User) -> Unit) {
         val cachedUser = viewModel.getCachedUser(userId)
         if (cachedUser == null) {
             viewModel.getUser(userId) { localUser ->
@@ -1148,10 +1297,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         } else {
             onUserFound(cachedUser)
         }
-    }
+    }*/
 
-    fun getPost(postId: String, onFetch: (Post) -> Unit) {
-        FireUtility.getPost(postId) child@ {
+    /*fun getPost(postId: String, onFetch: (Post) -> Unit) {
+        FireUtility.getPost(postId) { post ->
+
+        } child@{
             val postResult = it ?: return@child
             when (postResult) {
                 is Result.Error -> Log.e(
@@ -1166,10 +1317,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
         }
-    }
+    }*/
 
-    fun getUser(userId: String, onFetch: (User) -> Unit) {
-        FireUtility.getUser(userId) child@ {
+    /*fun getUser(userId: String, onFetch: (User) -> Unit) {
+        FireUtility.getUser(userId) child@{
             val userResult = it ?: return@child
             when (userResult) {
                 is Result.Error -> Log.e(
@@ -1184,7 +1335,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
         }
-    }
+    }*/
 
 
     override fun onPostRequestPostDeleted(postRequest: PostRequest) {
@@ -1213,11 +1364,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         FireUtility.undoJoinPost(postRequest) {
             if (it.isSuccessful) {
                 viewModel.deletePostRequest(postRequest)
-                getPostImpulsive(postRequest.postId) { post ->
-                    val requestsList = post.requests.removeItemFromList(postRequest.requestId)
-                    post.requests = requestsList
-                    post.isRequested = false
-                    viewModel.insertPosts(post)
+                FireUtility.getPost(postRequest.postId) { post ->
+                    post?.let {
+                        val requestsList = post.requests.removeItemFromList(postRequest.requestId)
+                        post.requests = requestsList
+                        post.isRequested = false
+                    }
                 }
             } else {
                 viewModel.setCurrentError(it.exception)
@@ -1226,16 +1378,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     }
 
     override fun onPostRequestClick(postRequest: PostRequest) {
-        getPostImpulsive(postRequest.postId) { post ->
-            onPostClick(post)
+        FireUtility.getUser(postRequest.senderId) { user ->
+            if (user != null) {
+                onUserClick(user)
+            }
         }
     }
 
-    @Suppress("LABEL_NAME_CLASH")
+
     override fun onCheckForStaleData(postRequest: PostRequest) {
 
         fun updatePostRequest(changes: Map<String, Any?>) {
-            FireUtility.updatePostRequest(postRequest.requestId, changes) { postRequestUpdateResult ->
+            FireUtility.updatePostRequest(
+                postRequest.requestId,
+                changes
+            ) { postRequestUpdateResult ->
                 if (postRequestUpdateResult.isSuccessful) {
                     viewModel.insertPostRequests(postRequest)
                 }
@@ -1250,20 +1407,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
 
         fun onChangeNeeded(user: User) {
-            val changes = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
+            val changes =
+                mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
             postRequest.sender = user.minify()
             postRequest.updatedAt = System.currentTimeMillis()
             updatePostRequest(changes)
         }
 
-        getPostImpulsive(postRequest.postId) { post ->
-            if (post.updatedAt > postRequest.updatedAt) {
+        FireUtility.getPost(postRequest.postId) { post ->
+            if (post != null && post.updatedAt > postRequest.updatedAt) {
                 onChangeNeeded(post)
             }
         }
 
-        getUserImpulsive(postRequest.senderId) { user ->
-            if (user.minify() != postRequest.sender) {
+        FireUtility.getUser(postRequest.senderId) { user ->
+            if (user != null && user.minify() != postRequest.sender) {
                 onChangeNeeded(user)
             }
         }
@@ -1273,14 +1431,17 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onPostCreatorClick(post: Post) {
         if (post.creator.userId == UserManager.currentUserId) {
             navController.navigate(
-                R.id.profileFragment,
-                null,
-                slideRightNavOptions()
+                R.id.profileFragment, null
             )
         } else {
-            getUserImpulsive(post.creator.userId) {
-                onUserClick(it)
+            FireUtility.getUser(post.creator.userId) { user ->
+                if (user != null) {
+                    onUserClick(user)
+                }
             }
+            /*getUserImpulsive(post.creator.userId) {
+                onUserClick(it)
+            }*/
         }
     }
 
@@ -1289,13 +1450,14 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val bundle = bundleOf(
             COMMENT_CHANNEL_ID to post.commentChannel,
             PARENT to post,
-            TITLE to post.name
+            TITLE to post.name,
+            POST to post
         )
 
-        navController.navigate(R.id.commentsFragment, bundle, slideRightNavOptions())
+        navController.navigate(R.id.commentsFragment, bundle)
     }
 
-    override fun onPostOptionClick(post: Post) {
+    override fun onPostOptionClick(post: Post, creator: User) {
         val currentUser = UserManager.currentUser
         val creatorId = post.creator.userId
         val isCurrentUser = creatorId == currentUser.id
@@ -1313,53 +1475,57 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         } else {
             option2
         }
+
         val archiveToggleText = if (post.archived) {
             option5
         } else {
             option4
         }
+
         val (choices, icons) = if (isCurrentUser) {
-            arrayListOf(saveUnSaveText, archiveToggleText, option7) to arrayListOf(if (post.isSaved) {R.drawable.ic_round_bookmark_remove_24} else {R.drawable.ic_round_bookmark_add_24}, R.drawable.ic_round_archive_24, R.drawable.ic_round_edit_note_24)
+            arrayListOf(
+                saveUnSaveText,
+                archiveToggleText,
+                option7
+            ) to arrayListOf(
+                if (post.isSaved) {
+                    R.drawable.ic_round_bookmark_remove_24
+                } else {
+                    R.drawable.ic_round_bookmark_add_24
+                }, R.drawable.ic_round_archive_24, R.drawable.ic_round_edit_note_24
+            )
         } else {
-            arrayListOf(option1, saveUnSaveText, option6) to arrayListOf(R.drawable.ic_round_account_circle_24, if (post.isSaved) {R.drawable.ic_round_bookmark_remove_24} else {R.drawable.ic_round_bookmark_add_24}, R.drawable.ic_round_report_24)
+            arrayListOf(
+                option1,
+                saveUnSaveText,
+                option6
+            ) to arrayListOf(
+                R.drawable.ic_round_account_circle_24, if (post.isSaved) {
+                    R.drawable.ic_round_bookmark_remove_24
+                } else {
+                    R.drawable.ic_round_bookmark_add_24
+                }, R.drawable.ic_round_report_24
+            )
         }
 
-        optionsFragment = OptionsFragment.newInstance(post.name, choices, icons, post = post, user = post.creator.toUser())
+        optionsFragment = OptionsFragment.newInstance(
+            post.name,
+            choices,
+            icons,
+            post = post,
+            user = creator
+        ).apply {
+            fullscreen = false
+        }
         optionsFragment?.show(supportFragmentManager, OptionsFragment.TAG)
-
     }
 
-    override fun onPostOptionClick(postMinimal2: PostMinimal2) {
-        getPostImpulsive(postMinimal2.objectID) {
-            onPostOptionClick(it)
-        }
-    }
-
-    override fun onPostUndoClick(post: Post, onChange: (newPost: Post) -> Unit) {
-        FireUtility.getPostRequest(post.id, UserManager.currentUserId) {
-            val postRequestResult = it ?: return@getPostRequest
-
-            when (postRequestResult) {
-                is Result.Error -> Log.e(TAG, "onPostUndoClick: ${postRequestResult.exception.localizedMessage}")
-                is Result.Success -> {
-                    val postRequest = postRequestResult.data
-                    FireUtility.undoJoinPost(postRequest) { it1 ->
-                        if (it1.isSuccessful) {
-                            post.isRequested = false
-                            val newList = post.requests.removeItemFromList(postRequest.requestId)
-                            post.requests = newList
-                            viewModel.updateLocalPost(post)
-                            onChange(post)
-                            viewModel.deletePostRequest(postRequest)
-                        } else {
-                            viewModel.setCurrentError(it1.exception)
-                        }
-                    }
-                }
+    override fun onPostOptionClick(postMinimal2: PostMinimal2, creator: User) {
+        FireUtility.getPost(postMinimal2.objectID) { post ->
+            if (post != null) {
+                onPostOptionClick(post, creator)
             }
         }
-
-
     }
 
     override fun onPostContributorsClick(post: Post) {
@@ -1367,19 +1533,18 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val bundle = bundleOf(
             POST to post,
             TITLE to CONTRIBUTORS.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-            SUB_TITLE to post.name.uppercase()
+            SUB_TITLE to post.name
         )
 
         navController.navigate(
             R.id.postContributorsFragment,
-            bundle,
-            slideRightNavOptions()
+            bundle
         )
     }
 
     override fun onPostSupportersClick(post: Post) {
         val bundle = bundleOf(POST_ID to post.id)
-        navController.navigate(R.id.postLikesFragment, bundle, slideRightNavOptions())
+        navController.navigate(R.id.postLikesFragment, bundle)
     }
 
     override fun onPostNotFound(post: Post) {
@@ -1392,18 +1557,40 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         } else {
             bundleOf("user" to user)
         }
-        navController.navigate(R.id.profileFragment, bundle, slideRightNavOptions())
+
+        if (user.isCurrentUser) {
+
+            /*navController.navigate(R.id.profileFragment, bundle)*/
+        } else {
+            if (user.blockedUsers.contains(UserManager.currentUserId)) {
+                val frag = MessageDialogFragment.builder("You have been blocked by ${user.name}. You cannot access ${user.name}'s profile.")
+                    .setTitle("Blocked")
+                    .setPositiveButton("Done") { _, _ ->
+                        //
+                    }
+                    .build()
+
+                frag.show(supportFragmentManager, "BlockedUserFrag")
+            } else {
+                navController.navigate(R.id.profileFragment2, bundle)
+            }
+        }
+
     }
 
     override fun onUserClick(userId: String) {
-        getUserImpulsive(userId) {
-            onUserClick(it)
+        FireUtility.getUser(userId) { user ->
+            if (user != null) {
+                onUserClick(user)
+            }
         }
     }
 
     override fun onUserClick(userMinimal: UserMinimal2) {
-        getUserImpulsive(userMinimal.objectID) {
-            onUserClick(it)
+        FireUtility.getUser(userMinimal.objectID) { user ->
+            if (user != null) {
+                onUserClick(user)
+            }
         }
     }
 
@@ -1412,8 +1599,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     }
 
     override fun onUserOptionClick(userMinimal: UserMinimal2) {
-        getUserImpulsive(userMinimal.objectID) {
-            onUserOptionClick(it)
+        FireUtility.getUser(userMinimal.objectID) {
+            if (it != null) {
+                onUserOptionClick(it)
+            }
         }
     }
 
@@ -1427,22 +1616,21 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    private fun likeUser(userId: String) {
+    private fun likeUser(userMinimal: UserMinimal) {
         val currentUser = UserManager.currentUser
-        likeUser2(userId) {
+        likeUser2(userMinimal) {
             if (it.isSuccessful) {
-
-                viewModel.likeLocalUserById(userId)
+                viewModel.likeLocalUserById(userMinimal.userId)
 
                 val content = currentUser.name + " liked your profile"
                 val notification = Notification.createNotification(
                     content,
-                    userId,
-                    userId = userId,
+                    userMinimal.userId,
+                    userId = userMinimal.userId,
                     title = currentUser.name
                 )
 
-                sendNotificationImpulsive(notification)
+                sendNotification(notification)
             } else {
                 viewModel.setCurrentError(it.exception)
             }
@@ -1452,28 +1640,28 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onUserLikeClick(user: User) {
         if (user.isLiked) {
             dislikeUser2(user.id) {
-                Snackbar.make(binding.root, "Disliked ${user.name}", Snackbar.LENGTH_LONG)
-                    .setBehavior(NoSwipeBehavior())
-                    .show()
+                showSnackMessage("Disliked ${user.name}")
             }
         } else {
-            likeUser2(user.id) {
-                Snackbar.make(binding.root, "Liked ${user.name}", Snackbar.LENGTH_LONG)
-                    .setBehavior(NoSwipeBehavior())
-                    .show()
+            likeUser2(user.minify()) {
+                showSnackMessage("Liked ${user.name}")
             }
         }
     }
 
     override fun onUserLikeClick(userId: String) {
-        getUserImpulsive(userId) {
-            onUserLikeClick(it)
+        FireUtility.getUser(userId) { user ->
+            if (user != null) {
+                onUserLikeClick(user)
+            }
         }
     }
 
     override fun onUserLikeClick(userMinimal: UserMinimal2) {
-        getUserImpulsive(userMinimal.objectID) {
-            onUserLikeClick(it)
+        FireUtility.getUser(userMinimal.objectID) { user ->
+            if (user != null) {
+                onUserLikeClick(user)
+            }
         }
     }
 
@@ -1525,7 +1713,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         navController.navigate(
             R.id.commentsFragment,
             bundle,
-            slideRightNavOptions()
+
         )
     }
 
@@ -1557,13 +1745,15 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val bundle = bundleOf(REPORT to report)
 
         navController.navigate(
-            R.id.reportFragment, bundle, slideRightNavOptions()
+            R.id.reportFragment, bundle
         )
     }
 
     override fun onCommentUserClick(userMinimal: UserMinimal) {
-        getUserImpulsive(userMinimal.userId) {
-            onUserClick(it)
+        FireUtility.getUser(userMinimal.userId) {
+            if (it != null) {
+                onUserClick(it)
+            }
         }
     }
 
@@ -1573,18 +1763,26 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         val (choices, icons) = if (isCommentByMe) {
             name = "You"
-            arrayListOf(OPTION_29, OPTION_30) to arrayListOf(R.drawable.ic_round_report_24, R.drawable.ic_round_delete_24)
+            arrayListOf(OPTION_29, OPTION_30) to arrayListOf(
+                R.drawable.ic_round_report_24,
+                R.drawable.ic_round_delete_24
+            )
         } else {
             name = comment.sender.name
             arrayListOf(OPTION_29) to arrayListOf(R.drawable.ic_round_report_24)
         }
 
-        optionsFragment = OptionsFragment.newInstance(title = "Comment by $name", options = choices, icons = icons, comment = comment)
+        optionsFragment = OptionsFragment.newInstance(
+            title = "Comment by $name",
+            options = choices,
+            icons = icons,
+            comment = comment
+        )
         optionsFragment?.show(supportFragmentManager, OptionsFragment.TAG)
 
     }
 
-    override fun onCheckForStaleData(comment: Comment, onUpdate: (newComment: Comment) -> Unit) {
+    /*override fun onCheckForStaleData(comment: Comment, onUpdate: (newComment: Comment) -> Unit) {
 
         fun onChangeNeeded(user: User) {
             val changes = mapOf(SENDER to user.minify(), UPDATED_AT to System.currentTimeMillis())
@@ -1600,66 +1798,42 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
         }
 
-        getUserImpulsive(comment.senderId) { user ->
-            if (user.minify() != comment.sender) {
+        FireUtility.getUser(comment.senderId) { user ->
+            if (user != null && user.minify() != comment.sender) {
                 onChangeNeeded(user)
             }
         }
 
-    }
+    }*/
 
     override fun onCommentInfoClick(comment: Comment) {
         val bundle = bundleOf(COMMENT to comment)
-        navController.navigate(R.id.commentLikesFragment, bundle, slideRightNavOptions())
+        navController.navigate(R.id.commentLikesFragment, bundle)
     }
 
-    override fun onChannelClick(chatChannel: ChatChannel) {
-        chatChannel.isNewLastMessage = false
-        viewModel.updateChatChannel(chatChannel)
 
-        val bundle = bundleOf(
-            CHAT_CHANNEL to chatChannel,
-            TITLE to chatChannel.postTitle
-        )
-
-        navController.navigate(
-            R.id.chatContainerSample,
-            bundle,
-            slideRightNavOptions()
-        )
-    }
-
-    override fun onChatChannelSelected(chatChannel: ChatChannel) {
-
-    }
-
-    override fun onChatChannelDeSelected(chatChannel: ChatChannel) {
-
-    }
-
-    override fun onBackPressed() {
+    /*override fun onBackPressed() {
         if (isImageViewMode) {
+            Log.d(TAG, "onBackPressed: non super")
             removeImageViewFragment()
         } else {
+            Log.d(TAG, "onBackPressed: super")
             super.onBackPressed()
         }
-    }
+    }*/
 
     fun hideSystemUI() {
-        val view = currentImageViewer?.findViewById<View>(R.id.image_view_appbar)
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        if (view != null) {
-            val controller = ViewCompat.getWindowInsetsController(view)
-            controller?.hide(WindowInsetsCompat.Type.systemBars())
-            controller?.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
+        val controller = WindowCompat.getInsetsController(window, binding.root)
+        controller.hide(WindowInsetsCompat.Type.systemBars())
+        controller.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     }
 
     fun showSystemUI() {
         WindowCompat.setDecorFitsSystemWindows(window, true)
-        val controller = ViewCompat.getWindowInsetsController(binding.root)
-        controller?.show(WindowInsetsCompat.Type.systemBars())
+        val controller = WindowCompat.getInsetsController(window, binding.root)
+        controller.show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun removeImageViewFragment() {
@@ -1691,12 +1865,40 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         binding.root.removeView(currentImageViewer)
     }
 
+
+    fun showMediaFragment(mediaList: List<MediaItem>, currentPosition: Int = 0) {
+//        val transaction = supportFragmentManager.beginTransaction()
+
+        val arrayList = arrayListOf<MediaItem>()
+        arrayList.addAll(mediaList)
+
+        navController.navigate(R.id.mediaViewerFragment, bundleOf("list" to arrayList, "current_position" to currentPosition))
+        /*
+        val fragment = MediaViewerFragment()
+        fragment.arguments = bundleOf("list" to arrayList, "current_position" to currentPosition)
+        transaction.add(android.R.id.content, fragment, "MediaViewerFragment")
+            .addToBackStack("MediaViewerFragment")
+            .commit()*/
+    }
+
+    private fun showMediaFragment(message: Message) {
+
+        if (message.type == video || message.type == image) {
+            val mediaList = listOf(MediaItem().apply {
+                url = message.metadata!!.url
+                type = message.type
+            })
+
+            showMediaFragment(mediaList)
+        }
+
+    }
+
     fun showImageViewFragment(
         v1: View,
         image: Image,
         message: Message? = null
     ) {
-
         if (isImageViewMode)
             return
 
@@ -1819,6 +2021,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         isImageViewMode = true
     }
 
+
     override fun onSupportNavigateUp(): Boolean {
         return navController.navigateUp() || super.onSupportNavigateUp()
     }
@@ -1859,19 +2062,29 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         ) { exists, error ->
 
             if (error != null) {
+                Log.d(TAG, "onNotificationRead: ${error.localizedMessage}")
                 viewModel.setCurrentError(error)
                 return@checkIfNotificationExistsById
             }
 
             if (!exists) {
                 viewModel.deleteNotification(notification)
+
+                Log.d(TAG, "onNotificationRead: It doesn't exist")
             } else {
+
+                Log.d(TAG, "onNotificationRead: It exists")
+
                 if (!notification.read) {
+                    Log.d(TAG, "onNotificationRead: But not read")
+
                     FireUtility.updateNotification(notification) {
                         if (it.isSuccessful) {
                             notification.read = true
+                            Log.d(TAG, "onNotificationRead: Successfully updated notification")
                             viewModel.updateNotification(notification)
                         } else {
+                            Log.d(TAG, "onNotificationRead: ${it.exception?.localizedMessage}")
                             viewModel.setCurrentError(it.exception)
                         }
                     }
@@ -1883,8 +2096,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onNotificationClick(notification: Notification) {
         val userId = notification.userId
         if (userId != null) {
-            getUserImpulsive(userId) {
-                onUserClick(it)
+            FireUtility.getUser(userId) { user ->
+                if (user != null) {
+                    onUserClick(user)
+                }
             }
         } else {
             Log.i(TAG, "Notification with notification id: ${notification.id} doesn't have user Id")
@@ -1892,8 +2107,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         val postId = notification.postId
         if (postId != null) {
-            getPostImpulsive(postId) { post ->
-                onPostClick(post)
+            FireUtility.getPost(postId) { post ->
+                post?.let {
+                    onPostClick(post)
+                }
             }
         } else {
             Log.i(TAG, "Notification with notification id: ${notification.id} doesn't have post Id")
@@ -1908,21 +2125,28 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                         val comment = it.data
                         if (comment.commentLevel.toInt() == 0) {
 
-                            getPostImpulsive(comment.postId) { post ->
-                                onPostCommentClick(post)
+                            FireUtility.getPost(comment.postId) { post ->
+                                if (post != null) {
+                                    onPostCommentClick(post)
+                                }
                             }
-
                         } else {
                             onClick(comment)
                         }
                     }
                     null -> {
-                        Log.w(TAG, "Something went wrong while trying to get comment with comment id: $commentId")
+                        Log.w(
+                            TAG,
+                            "Something went wrong while trying to get comment with comment id: $commentId"
+                        )
                     }
                 }
             }
         } else {
-            Log.i(TAG, "Notification with notification id: ${notification.id} doesn't have comment Id")
+            Log.i(
+                TAG,
+                "Notification with notification id: ${notification.id} doesn't have comment Id"
+            )
         }
     }
 
@@ -1940,7 +2164,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
             viewModel.insertUserToCache(user)
 
-            val changes = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
+            val changes =
+                mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
             notification.sender = user.minify()
             notification.updatedAt = System.currentTimeMillis()
 
@@ -1951,14 +2176,18 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     Log.e(TAG, "onChangeNeeded: ${it.exception?.localizedMessage}")
                 }
             }
-
         }
 
-        getUserImpulsive(notification.senderId) { user ->
-            if (user.minify() != notification.sender) {
+        FireUtility.getUser(notification.senderId) { user ->
+            if (user != null && user.minify() != notification.sender) {
                 onChangeNeeded(user)
             }
         }
+        /*getUserImpulsive(notification.senderId) { user ->
+            if (user.minify() != notification.sender) {
+                onChangeNeeded(user)
+            }
+        }*/
 
     }
 
@@ -1979,6 +2208,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     companion object {
         private const val TAG = "MyMainActivity"
+
     }
 
     @Suppress("LABEL_NAME_CLASH")
@@ -2003,59 +2233,31 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 )
             sender.postInvites = newList
 
-            sendNotificationImpulsive(notification)
+            sendNotification(notification)
 
         }
 
-        Firebase.firestore.collection(POSTS)
-            .document(postInvite.postId)
-            .get()
-            .addOnSuccessListener { postDocument ->
-                if (postDocument.exists()) {
+        FireUtility.acceptPostInvite(currentUser, postInvite) {
+            if (it.isSuccessful) {
 
-                    val post = postDocument.toObject(Post::class.java)!!
+                // current user was added to post successfully
+                viewModel.deletePostInvite(postInvite)
+                viewModel.deleteNotificationById(postInvite.notificationId)
 
-                    if (post.contributors.size < 5 || currentUser.premiumState.toInt() == 1) {
-                        FireUtility.acceptPostInvite(currentUser, postInvite) {
-                            if (it.isSuccessful) {
-
-                                // current user was added to post successfully
-                                viewModel.deletePostInvite(postInvite)
-                                viewModel.deleteNotificationById(postInvite.notificationId)
-
-                                // extra
-                                getUserImpulsive(postInvite.senderId) { user ->
-                                    onPostAccept(user)
-                                }
-                            } else {
-                                // something went wrong while trying to add the current user to the post
-                                viewModel.setCurrentError(it.exception)
-                            }
-                        }
-                    } else {
-                        onFailure()
-
-                        val upgradeMsg = getString(R.string.upgrade_plan_imsg)
-                        val frag = MessageDialogFragment.builder(upgradeMsg)
-                            .setPositiveButton(getString(R.string.upgrade)) { _, _ ->
-                                showSubscriptionFragment()
-                            }
-                            .setNegativeButton(getString(R.string.cancel)){ a, _ ->
-                                a.dismiss()
-                            }.build()
-
-                        frag.show(supportFragmentManager, MessageDialogFragment.TAG)
-
+                // extra
+                FireUtility.getUser(postInvite.senderId) { user ->
+                    if (user != null) {
+                        onPostAccept(user)
                     }
-                } else {
-                    onPostInvitePostDeleted(postInvite)
                 }
-            }.addOnFailureListener {
-                Log.e(TAG, "onPostInviteAccept: ${it.localizedMessage}")
+            } else {
+                // something went wrong while trying to add the current user to the post
+                viewModel.setCurrentError(it.exception)
             }
+        }
     }
 
-    private fun sendNotificationImpulsive(notification: Notification) {
+    private fun sendNotification(notification: Notification) {
         if (notification.senderId != notification.receiverId) {
             FireUtility.checkIfNotificationExistsByContent(notification) { exists, error ->
                 if (error != null) {
@@ -2068,9 +2270,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                             }
                         }
                     } else {
-                        FireUtility.updateNotification(notification.receiverId, notification.id, mapOf("read" to false, UPDATED_AT to System.currentTimeMillis())) { it1 ->
+                        FireUtility.updateNotification(
+                            notification.receiverId,
+                            notification.id,
+                            mapOf("read" to false, UPDATED_AT to System.currentTimeMillis())
+                        ) { it1 ->
                             if (!it1.isSuccessful) {
-                                Log.e(TAG, "onPostRequestAccept: ${it1.exception?.localizedMessage}")
+                                Log.e(
+                                    TAG,
+                                    "onPostRequestAccept: ${it1.exception?.localizedMessage}"
+                                )
                             }
                         }
                     }
@@ -2103,7 +2312,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 )
             sender.postInvites = newList
 
-            sendNotificationImpulsive(notification)
+            sendNotification(notification)
         }
 
         FireUtility.cancelPostInvite(postInvite) {
@@ -2112,8 +2321,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 viewModel.deletePostInvite(postInvite)
                 viewModel.deleteNotificationById(postInvite.notificationId)
 
-                getUserImpulsive(postInvite.senderId) { user ->
-                    onPostCancel(user)
+
+                FireUtility.getUser(postInvite.senderId) { user ->
+                    if (user != null) {
+                        onPostCancel(user)
+                    }
                 }
             } else {
                 viewModel.setCurrentError(it.exception)
@@ -2138,8 +2350,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             if (it.isSuccessful) {
                 viewModel.deletePostInvite(postInvite)
 
-                getUserImpulsive(postInvite.senderId) { user ->
-                    onPostDelete(user)
+                FireUtility.getUser(postInvite.senderId) { user ->
+                    if (user != null) {
+                        onPostDelete(user)
+                    }
                 }
             } else {
                 viewModel.setCurrentError(it.exception)
@@ -2151,7 +2365,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onCheckForStaleData(postInvite: PostInvite) {
 
         fun updatePostInvite(changes: Map<String, Any?>) {
-            FireUtility.updatePostInvite(postInvite.receiverId, postInvite.id, changes) { postInviteUpdateResult ->
+            FireUtility.updatePostInvite(
+                postInvite.receiverId,
+                postInvite.id,
+                changes
+            ) { postInviteUpdateResult ->
                 if (postInviteUpdateResult.isSuccessful) {
                     viewModel.insertPostInvites(postInvite)
                 }
@@ -2166,20 +2384,23 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
 
         fun onChangeNeeded(user: User) {
-            val changes = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
+            val changes =
+                mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
             postInvite.sender = user.minify()
             postInvite.updatedAt = System.currentTimeMillis()
             updatePostInvite(changes)
         }
 
-        getPostImpulsive(postInvite.postId) { post ->
-            if (post.updatedAt > postInvite.updatedAt) {
-                onChangeNeeded(post)
+        FireUtility.getPost(postInvite.postId) { post ->
+            if (post != null) {
+                if (post.updatedAt > postInvite.updatedAt) {
+                    onChangeNeeded(post)
+                }
             }
         }
 
-        getUserImpulsive(postInvite.senderId) { user ->
-            if (user.minify() != postInvite.sender) {
+        FireUtility.getUser(postInvite.senderId) { user ->
+            if (user != null && user.minify() != postInvite.sender) {
                 onChangeNeeded(user)
             }
         }
@@ -2187,26 +2408,37 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     }
 
 
-    fun selectImage(type: ImageSelectType) {
-        imageSelectType = type
+//    fun selectMedia() {
+//        val intent = Intent()
+//        intent.type = "*/*"
+//        intent.action = Intent.ACTION_GET_CONTENT
+//
+//        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png", "video/mp4")
+//        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+//        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+//        sml.launch(intent)
+//    }
 
-        val intent = Intent()
-        intent.type = "image/*"
-        intent.action = Intent.ACTION_GET_CONTENT
-
-        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
-
-        when (type) {
-            IMAGE_PROFILE, IMAGE_TEST -> {
-                sil.launch(intent)
-            }
-            IMAGE_CHAT, IMAGE_POST, IMAGE_REPORT -> {
-                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                sil.launch(intent)
-            }
-        }
-    }
+//    fun selectImage(type: ImageSelectType) {
+//        imageSelectType = type
+//
+//        val intent = Intent()
+//        intent.type = "image/*"
+//        intent.action = Intent.ACTION_GET_CONTENT
+//
+//        val mimeTypes = arrayOf("image/bmp", "image/jpeg", "image/png")
+//        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+//
+//        when (type) {
+//            IMAGE_PROFILE, IMAGE_TEST -> {
+//                sil.launch(intent)
+//            }
+//            IMAGE_CHAT, IMAGE_POST, IMAGE_REPORT -> {
+//                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+//                sil.launch(intent)
+//            }
+//        }
+//    }
 
     override fun onOptionClick(
         option: Option,
@@ -2214,7 +2446,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         post: Post?,
         chatChannel: ChatChannel?,
         comment: Comment?,
-        tag: String?
+        tag: String?,
+        message: Message?
     ) {
 
         optionsFragment?.dismiss()
@@ -2231,10 +2464,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                         if (!it.isSuccessful) {
                             viewModel.setCurrentError(it.exception)
                         } else {
-                            Snackbar.make(binding.root,
-                                "Successfully set ${user.name} as admin", Snackbar.LENGTH_LONG)
-                                .setBehavior(NoSwipeBehavior())
-                                .show()
+                            showSnackMessage("Successfully set ${user.name} as admin")
                         }
                     }
                 } else {
@@ -2252,10 +2482,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
             option3 -> {
                 if (user != null) {
-                    likeUser(user.id)
-                    Snackbar.make(binding.root, "Liked ${user.name}", Snackbar.LENGTH_LONG)
-                        .setBehavior(NoSwipeBehavior())
-                        .show()
+                    likeUser(user.minify())
+                    showSnackMessage("Liked ${user.name}")
                 }
             }
             option4 -> {
@@ -2269,7 +2497,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     navController.navigate(
                         R.id.reportFragment,
                         bundleOf("report" to report),
-                        slideRightNavOptions()
+
                     )
 
                 }
@@ -2277,13 +2505,14 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
             OPTION_6 -> {
                 if (chatChannel != null && user != null) {
-                    val frag = MessageDialogFragment.builder("Are you sure you want to remove ${user.name} from the post?")
-                        .setTitle("Removing user from post")
-                        .setPositiveButton("Remove") { _, _ ->
-                            removeUserFromPost(user, chatChannel)
-                        }.setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }.build()
+                    val frag =
+                        MessageDialogFragment.builder("Are you sure you want to remove ${user.name} from the post?")
+                            .setTitle("Removing user from post")
+                            .setPositiveButton("Remove") { _, _ ->
+                                removeUserFromPost(user, chatChannel)
+                            }.setNegativeButton("Cancel") { a, _ ->
+                                a.dismiss()
+                            }.build()
 
                     frag.show(supportFragmentManager, MessageDialogFragment.TAG)
                 }
@@ -2305,17 +2534,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                                 user
                             )
 
-
-                            getPostImpulsive(chatChannel.postId) { it1 ->
-                                val contributors =
-                                    it1.contributors.removeItemFromList(
-                                        UserManager.currentUserId
-                                    )
-                                it1.contributors =
-                                    contributors
-                                viewModel.updateLocalPost(
-                                    it1
-                                )
+                            FireUtility.getPost(chatChannel.postId) { post ->
+                                if (post != null) {
+                                    val contributors =
+                                        post.contributors.removeItemFromList(
+                                            UserManager.currentUserId
+                                        )
+                                    post.contributors =
+                                        contributors
+                                    viewModel.insertPost(post)
+                                }
                             }
 
                             // notifying other users that the current user has left the post
@@ -2340,10 +2568,16 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
             OPTION_8 -> {
-                selectImage(IMAGE_CHAT)
+                /*if (chatChannel != null) {
+                    *//*navController.navigate(
+                        R.id.gallerySelectorFragment,
+                        bundleOf("chatChannelId" to chatChannel.chatChannelId),
+
+                    )*//*
+                }*/
             }
             OPTION_9 -> {
-                selectChatUploadDocuments()
+
             }
             OPTION_10, OPTION_11 -> {
                 if (post != null) {
@@ -2360,28 +2594,30 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
             OPTION_12 -> {
                 if (post != null && !post.archived) {
-                    val frag = MessageDialogFragment.builder("Are you sure you want to archive this post?")
-                        .setTitle("Archiving post ...")
-                        .setPositiveButton("Archive") { _, _ ->
-                            archivePost(post)
-                        }.setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }.build()
+                    val frag =
+                        MessageDialogFragment.builder("Are you sure you want to archive this post?")
+                            .setTitle("Archiving post ...")
+                            .setPositiveButton("Archive") { _, _ ->
+                                archivePost(post)
+                            }.setNegativeButton("Cancel") { a, _ ->
+                                a.dismiss()
+                            }.build()
 
                     frag.show(supportFragmentManager, MessageDialogFragment.TAG)
                 }
             }
             OPTION_13 -> {
-                if (post != null && post.archived ) {
-                    val frag = MessageDialogFragment.builder("Are you sure you want to un-archive this post?")
-                        .setTitle("Un-archiving post ... ")
-                        .setPositiveButton("Un-Archive") { _, _ ->
-                            unArchivePost(post)
-                        }
-                        .setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }
-                        .build()
+                if (post != null && post.archived) {
+                    val frag =
+                        MessageDialogFragment.builder("Are you sure you want to un-archive this post?")
+                            .setTitle("Un-archiving post ... ")
+                            .setPositiveButton("Un-Archive") { _, _ ->
+                                unArchivePost(post)
+                            }
+                            .setNegativeButton("Cancel") { a, _ ->
+                                a.dismiss()
+                            }
+                            .build()
 
                     frag.show(supportFragmentManager, MessageDialogFragment.TAG)
                     /*FireUtility.unArchivePost(post) {
@@ -2396,28 +2632,35 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
             OPTION_14 -> {
-                // TODO("Simplify")
-                if (post != null) {
-                    val report = Report.getReportForPost(post)
-                    val bundle = bundleOf(REPORT to report)
-                    navController.navigate(R.id.reportFragment, bundle, slideRightNavOptions())
-                } else if (user != null) {
-                    val report = Report.getReportForUser(user)
-                    val bundle = bundleOf(REPORT to report)
-                    navController.navigate(R.id.reportFragment, bundle, slideRightNavOptions())
+                val report = when {
+                    post != null -> {
+                        Report.getReportForPost(post)
+                    }
+                    user != null -> {
+                        Report.getReportForUser(user)
+                    }
+                    else -> {
+                        return
+                    }
                 }
+                val bundle = bundleOf(REPORT to report)
+                navController.navigate(R.id.reportFragment, bundle)
 
             }
             OPTION_15 -> {
                 val bundle = bundleOf(PREVIOUS_POST to post)
-                navController.navigate(R.id.createPostFragment, bundle, slideRightNavOptions())
+                navController.navigate(R.id.createPostFragment, bundle)
             }
             OPTION_16 -> {
-                navController.navigate(R.id.postFragmentContainer, bundleOf(POST to post), slideRightNavOptions())
+                navController.navigate(
+                    R.id.postFragmentContainer,
+                    bundleOf(POST to post),
+
+                )
             }
-            OPTION_17 -> {
+            /*OPTION_17 -> {
                 selectImage(IMAGE_PROFILE)
-            }
+            }*/
             OPTION_18 -> {
                 viewModel.setCurrentImage(null)
             }
@@ -2427,34 +2670,32 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             OPTION_23 -> {
                 // log out
                 UserManager.logOut(this) {
-                    navController.navigate(R.id.loginFragment, null, slideRightNavOptions())
+                    navController.navigate(R.id.loginFragment, null)
                     viewModel.signOut {}
                 }
             }
             OPTION_24 -> {
                 // saved pr
-                navController.navigate(R.id.savedPostsFragment, null, slideRightNavOptions())
+                navController.navigate(R.id.savedPostsFragment, null)
             }
             OPTION_25 -> {
                 // archive
-                navController.navigate(R.id.archiveFragment, null, slideRightNavOptions())
+                navController.navigate(R.id.archiveFragment, null)
             }
             OPTION_26 -> {
                 // requests
-                navController.navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
+                navController.navigate(R.id.myRequestsFragment, null)
             }
             OPTION_27 -> {
                 // settings
-                navController.navigate(R.id.settingsFragment, null, slideRightNavOptions())
+                navController.navigate(R.id.settingsFragment, null)
             }
             OPTION_28 -> {
                 if (tag != null) {
                     val changes = mapOf(INTERESTS to FieldValue.arrayUnion(tag))
                     FireUtility.updateUser2(changes) {
                         if (it.isSuccessful) {
-                            Snackbar.make(binding.root, "Added $tag to your interests", Snackbar.LENGTH_LONG)
-                                .setBehavior(NoSwipeBehavior())
-                                .show()
+                            showSnackMessage("Added $tag to your interests")
                         } else {
                             viewModel.setCurrentError(it.exception)
                         }
@@ -2472,14 +2713,13 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             }
             OPTION_31 -> {
-                navController.navigate(R.id.invitesFragment, null, slideRightNavOptions())
+                navController.navigate(R.id.invitesFragment, null)
             }
             OPTION_32 -> {
                 if (user != null) {
                     onUserClick(user)
                 }
             }
-
             OPTION_34 -> {
                 if (user != null) {
                     FireUtility.unblockUser(user) {
@@ -2494,6 +2734,64 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
+//    private fun selectChatVideos() {
+//        val intent = Intent().apply {
+//            type = "video/*"
+//            val mimeTypes = arrayOf("video/mp4")
+//            action = Intent.ACTION_GET_CONTENT
+//            putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+//            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+//        }
+//        chatVideosLauncher.launch(intent)
+//    }
+
+    /*fun setPrimaryBtn(btn: ExtendedFloatingActionButton, @IntRange(from = 0, to = 2) fragmentPos: Int, shouldShowEnterButton: Boolean = true) {
+
+        if (navController.currentDestination?.id != R.id.homeFragment) {
+            Log.d(com.jamid.codesquare.TAG, "setPrimaryBtn: Current destination is not HomeFragment")
+            return
+        }
+
+        if (!initialLoadWaitFinished) {
+            Log.d(com.jamid.codesquare.TAG, "setPrimaryBtn: Initial load has not finished")
+            return
+        }
+
+        Log.d(com.jamid.codesquare.TAG, "setPrimaryBtn: Setting primary btn $fragmentPos")
+
+        when (fragmentPos) {
+            0 -> {
+                btn.show()
+                btn.extend()
+                btn.text = "Filter"
+                btn.icon = getImageResource(R.drawable.ic_round_filter_list_24)
+                btn.setOnClickListener {
+                    val frag = FilterFragment()
+                    frag.show(supportFragmentManager, FilterFragment.TAG)
+                }
+            }
+            1 -> {
+                btn.hide()
+                btn.text = ""
+                btn.icon = null
+                btn.setOnClickListener {}
+            }
+            2 -> {
+                if (shouldShowEnterButton) {
+                    btn.show()
+                    btn.extend()
+                    btn.text = "Enter"
+                    btn.icon = getImageResource(R.drawable.ic_round_login_24)
+                    btn.setOnClickListener {
+                        navController.navigate(R.id.rankedEntryFragment, null)
+                    }
+                } else {
+                    btn.hide()
+                }
+            }
+        }
+    }*/
+
     private fun removeUserFromPost(user: User, chatChannel: ChatChannel) {
         FireUtility.removeUserFromPost(
             user,
@@ -2502,11 +2800,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         ) {
             if (it.isSuccessful) {
 
-                Snackbar.make(
-                    binding.root,
-                    "Removed ${user.name} from post",
-                    Snackbar.LENGTH_LONG
-                ).setBehavior(NoSwipeBehavior()).show()
+                showSnackMessage("Removed ${user.name} from post")
 
                 val content =
                     "${user.name} has left the post"
@@ -2516,10 +2810,12 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                         chatChannel.chatChannelId
                     )
 
-                getPostImpulsive(chatChannel.postId) { it1 ->
-                    val contributors = it1.contributors.removeItemFromList(user.id)
-                    it1.contributors = contributors
-                    viewModel.insertPosts(it1)
+                FireUtility.getPost(chatChannel.postId) { post ->
+                    if (post != null) {
+                        val contributors = post.contributors.removeItemFromList(user.id)
+                        post.contributors = contributors
+                        viewModel.insertPosts(post)
+                    }
                 }
 
                 viewModel.removePostFromUserLocally(
@@ -2548,12 +2844,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 viewModel.insertPosts(newPost)
                 viewModel.insertPostToCache(newPost)
 
-                Snackbar.make(
-                    binding.root,
-                    "Archived post successfully",
-                    Snackbar.LENGTH_LONG
-                ).setBehavior(NoSwipeBehavior())
-                    .show()
+                showSnackMessage("Archived post successfully")
+
                 // notify the other contributors that the post has been archived
                 val content = "${post.name} has been archived."
                 val notification = Notification.createNotification(
@@ -2564,7 +2856,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     if (it1.isSuccessful) {
                         // updating post locally
                         post.archived = true
-                        viewModel.updateLocalPost(post)
+                        viewModel.insertPost(post)
                     } else {
                         viewModel.setCurrentError(it.exception)
                     }
@@ -2583,19 +2875,17 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 viewModel.insertPosts(newPost)
                 viewModel.insertPostToCache(newPost)
 
-                Snackbar.make(
-                    binding.root,
-                    "Un-archived post successfully",
-                    Snackbar.LENGTH_LONG
-                ).setBehavior(NoSwipeBehavior()).show()
+                showSnackMessage("Un-archived post successfully")
+
                 post.archived = false
-                viewModel.updateLocalPost(post)
+                viewModel.insertPost(post)
             } else {
                 viewModel.setCurrentError(it.exception)
             }
         }
     }
 
+    @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
     fun isNetworkConnected(): Boolean {
         val cm = getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -2610,18 +2900,263 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onNetworkNotAvailable() {
         isNetworkAvailable = false
 
-        val (bgColor, txtColor) = if (isNightMode()) {
-            ContextCompat.getColor(this, R.color.error_color) to Color.WHITE
-        } else {
-            Color.BLACK to Color.WHITE
-        }
+        /* val (bgColor, txtColor) = if (isNightMode()) {
+             ContextCompat.getColor(this, R.color.error_color) to Color.WHITE
+         } else {
+             Color.BLACK to Color.WHITE
+         }*/
 
-        currentIndefiniteSnackbar = Snackbar.make(binding.root, "Network not available", Snackbar.LENGTH_INDEFINITE)
-            .setBackgroundTint(bgColor)
-            .setTextColor(txtColor)
+        showSnackMessage("Network not available")
 
-        currentIndefiniteSnackbar?.show()
+        /* currentIndefiniteSnackbar = Snackbar.make(binding.root, "Network not available", Snackbar.LENGTH_INDEFINITE)
+             .setBackgroundTint(bgColor)
+             .setTextColor(txtColor)
+
+         currentIndefiniteSnackbar?.show()*/
     }
 
+    override fun onMediaPostItemClick(mediaItems: List<MediaItem>, currentPos: Int) {
+        showMediaFragment(mediaItems, currentPos)
+    }
+
+    override fun onMediaMessageItemClick(message: Message) {
+        showMediaFragment(message)
+    }
+
+    override fun onMediaClick(mediaItemWrapper: MediaItemWrapper, pos: Int) {
+
+    }
+
+    fun selectMediaItems(
+        isMultipleAllowed: Boolean = true,
+        type: String,
+        mimeTypes: Array<String>?
+    ) {
+        val intent = Intent()
+        intent.type = type
+        intent.action = Intent.ACTION_GET_CONTENT
+
+        if (mimeTypes != null) {
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes)
+        }
+
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, isMultipleAllowed)
+        gallerySelectLauncher.launch(intent)
+    }
+
+    private fun block(user: User) {
+        FireUtility.blockUser(user) {
+
+            if (it.isSuccessful) {
+                // delete all posts that belong to that user
+                // delete all comments that belong to that user
+                viewModel.deleteCommentsByUserId(user.id)
+                viewModel.deletePostsByUserId(user.id)
+                viewModel.deletePreviousSearchByUserId(user.id)
+
+                val frag = MessageDialogFragment.builder("${user.name} is blocked. A blocked user cannot see your profile. They cannot see your work. To unblock any blocked users, go to, Settings-Blocked accounts.")
+                    .setTitle("This user is blocked.")
+                    .setPositiveButton("Done") { a, _ ->
+                        a.dismiss()
+                        navController.navigateUp()
+                    }.build()
+
+                frag.show(supportFragmentManager, MessageDialogFragment.TAG)
+            } else {
+                it.exception?.localizedMessage?.let { msg ->
+                    onIssueWhileBlocking(msg)
+                }
+            }
+        }
+    }
+
+    private fun onIssueWhileBlocking(msg: String) {
+        val f = MessageDialogFragment.builder(msg)
+            .setTitle("Could not block ...")
+            .build()
+
+        f.show(supportFragmentManager, MessageDialogFragment.TAG)
+    }
+
+    fun blockUser(user: User) {
+        val d = MessageDialogFragment.builder("Are you sure you want to block ${user.name}")
+            .setPositiveButton("Block") { _, _ ->
+
+                val hits = user.collaborations.intersect(UserManager.currentUser.posts)
+                if (hits.isNotEmpty()) {
+                    // there are posts where the blocked user is a collaborator, ask the current user to remove them first
+                    val msg = "Cannot block ${user.name} because he/she is a collaborator in one of your posts. Remove them before blocking."
+                    onIssueWhileBlocking(msg)
+                } else {
+                    block(user)
+                }
+
+            }.setNegativeButton("Cancel") { a, _ ->
+                a.dismiss()
+            }.build()
+
+        d.show(supportFragmentManager, MessageDialogFragment.TAG)
+    }
+
+    override fun onChannelClick(chatChannel: ChatChannel, pos: Int) {
+        chatChannel.isNewLastMessage = false
+        viewModel.updateChatChannel(chatChannel)
+
+        val title = if (chatChannel.type == "private") {
+            val data1 = chatChannel.data1!!
+            val data2 = chatChannel.data2!!
+
+            if (data1.userId != UserManager.currentUserId) {
+                data1.name
+            } else {
+                data2.name
+            }
+        } else {
+            chatChannel.postTitle
+        }
+
+        val bundle = bundleOf(
+            CHAT_CHANNEL to chatChannel,
+            TITLE to title
+        )
+
+        navController.navigate(
+            R.id.chatFragment2,
+            bundle
+        )
+    }
+
+    override fun onChannelUnread(chatChannel: ChatChannel) {
+
+    }
+
+    fun dispatchTakePictureIntent() {
+        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+            // Ensure that there's a camera activity to handle the intent
+            takePictureIntent.resolveActivity(packageManager)?.also {
+                // Create the File where the photo should go
+
+                val root = filesDir
+                val photoFile: File? = try {
+                    val dir = getNestedDir(root, "images/camera")
+                    if (dir != null) {
+                        getFile(dir, randomId() + ".jpg")
+                    } else {
+                        null
+                    }
+                } catch (ex: IOException) {
+                    // Error occurred while creating the File
+                    Log.e(TAG, "dispatchTakePictureIntent: ${ex.localizedMessage}")
+                    null
+                }
+
+                // Continue only if the File was successfully created
+                photoFile?.also {
+                    val photoURI: Uri = FileProvider.getUriForFile(
+                        this,
+                        FILE_PROV_AUTH,
+                        it
+                    )
+
+                    cameraPhotoUri = photoURI
+                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+                    cameraLauncher.launch(takePictureIntent)
+                }
+            }
+        }
+    }
+
+    fun setNavigationBarColor(color: Int?) {
+        if (color != null) {
+            window.navigationBarColor = color
+        } else {
+            window.navigationBarColor = initialNavColor
+        }
+    }
+
+    private fun runOnBackgroundThread(block: suspend CoroutineScope.() -> Unit): Job {
+        return lifecycleScope.launch {
+            block()
+        }
+    }
+
+    fun showTopSnack(msg: CharSequence, img: String? = null, bitmap: Bitmap? = null, label: String? = null, action: (() -> Unit)? = null) {
+        val topSnackBinding = TopSnackBinding.inflate(layoutInflater)
+        binding.root.addView(topSnackBinding.root)
+
+        var job: Job? = null
+
+        topSnackBinding.topSnackText.text= msg
+        if (img != null) {
+            topSnackBinding.topSnackImg.show()
+            topSnackBinding.topSnackImg.setImageURI(img)
+        }
+
+        if (bitmap != null) {
+            val file = convertBitmapToFile(bitmap)
+            if (file != null) {
+                val uri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
+                if (uri != null) {
+                    topSnackBinding.topSnackImg.show()
+                    topSnackBinding.topSnackImg.setImageURI(uri.toString())
+                }
+            }
+        }
+
+        var returnAnimation: Animator?
+
+        if (binding.mainAppbar.isVisible) {
+            topSnackBinding.root.updateLayoutParams<CoordinatorLayout.LayoutParams> {
+                width = CoordinatorLayout.LayoutParams.MATCH_PARENT
+                height = CoordinatorLayout.LayoutParams.WRAP_CONTENT
+                topMargin = binding.mainAppbar.measuredHeight
+            }
+
+            topSnackBinding.root.translationY = -200f
+            topSnackBinding.root.show()
+            val anim = topSnackBinding.root.slideReset()
+
+            anim.doOnEnd {
+                job = runOnBackgroundThread {
+                    delay(6000)
+                    runOnUiThread {
+                        returnAnimation = topSnackBinding.root.slideUp(200f)
+                        returnAnimation?.doOnEnd {
+                            binding.root.removeView(topSnackBinding.root)
+                        }
+                    }
+                }
+            }
+        }
+
+
+        if (action != null) {
+
+            fun onClick() {
+                job?.cancel()
+                returnAnimation = topSnackBinding.root.slideUp(200f)
+                returnAnimation?.doOnEnd {
+                    binding.root.removeView(topSnackBinding.root)
+                }
+                action()
+            }
+
+            if (label != null) {
+                topSnackBinding.topSnackAction.text = label
+                topSnackBinding.topSnackAction.show()
+                topSnackBinding.topSnackAction.setOnClickListener {
+                    onClick()
+                }
+            } else {
+                topSnackBinding.root.setOnClickListener {
+                    onClick()
+                }
+            }
+
+        } else {
+            topSnackBinding.topSnackAction.hide()
+        }
+
+    }
 
 }

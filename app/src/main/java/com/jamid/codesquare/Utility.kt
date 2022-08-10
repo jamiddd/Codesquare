@@ -3,45 +3,55 @@ package com.jamid.codesquare
 import android.animation.Animator
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.media.ThumbnailUtils
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
+import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.text.format.DateUtils
 import android.util.Log
 import android.util.Patterns
+import android.util.Size
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.webkit.MimeTypeMap
 import android.widget.EditText
-import android.widget.TextView
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.net.toUri
 import androidx.core.text.isDigitsOnly
+import androidx.core.view.ViewCompat
 import androidx.core.view.children
-import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
-import androidx.navigation.NavOptions
-import androidx.navigation.navOptions
 import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.airbnb.lottie.LottieAnimationView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.IndexQuery
@@ -55,29 +65,103 @@ import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.chip.Chip
+import com.google.android.material.textfield.TextInputLayout
+import com.jamid.codesquare.adapter.recyclerview.HorizontalMediaAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.TooltipLayoutBinding
-import com.jamid.codesquare.ui.*
-import com.jamid.codesquare.ui.home.chat.*
+import com.jamid.codesquare.listeners.ChipClickListener
+import java.io.ByteArrayOutputStream
 import java.io.File
-import java.text.SimpleDateFormat
+import java.io.FileOutputStream
 import java.util.*
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
-import kotlin.math.abs
+import kotlin.collections.set
+import kotlin.math.roundToInt
 
-val colorPalettesDay = mutableListOf(
-    Pair(R.color.chip_back_blue_day, R.color.chip_front_blue_day),
-    Pair(R.color.chip_back_pink_day, R.color.chip_front_pink_day),
-    Pair(R.color.chip_back_purple_day, R.color.chip_front_purple_day),
-    Pair(R.color.chip_back_teal_day, R.color.chip_front_teal_day)
-)
+fun TextInputLayout.removeError() {
+    this.error = null
+    this.isErrorEnabled = false
+}
 
-fun TextView.setDrawableColor(color: Int) {
+fun TextInputLayout.showError(error: String) {
+    this.isErrorEnabled = true
+    this.error = error
+}
+
+fun TextInputLayout.showError(error: Throwable?) {
+    error?.localizedMessage?.let {
+        showError(it)
+    }
+}
+
+fun isSameDay(date1: Date, date2: Date): Boolean {
+    val calendar1 = Calendar.getInstance()
+    calendar1.time = date1
+    val calendar2 = Calendar.getInstance()
+    calendar2.time = date2
+    return calendar1[Calendar.YEAR] == calendar2[Calendar.YEAR] && calendar1[Calendar.MONTH] == calendar2[Calendar.MONTH] && calendar1[Calendar.DAY_OF_MONTH] == calendar2[Calendar.DAY_OF_MONTH]
+}
+
+fun isYesterday(date: Date): Boolean {
+    val currentDate = Date(System.currentTimeMillis())
+    val currentCalendar = Calendar.getInstance()
+    currentCalendar.time = currentDate
+
+    val nextCalendar = Calendar.getInstance()
+    nextCalendar.time = date
+
+    return currentCalendar[Calendar.DAY_OF_MONTH] - nextCalendar[Calendar.DAY_OF_MONTH] == 1
+}
+
+fun isThisWeek(date: Date): Boolean {
+    val currentDate = Date(System.currentTimeMillis())
+    val currentCalendar = Calendar.getInstance()
+    currentCalendar.time = currentDate
+
+    val nextCalendar = Calendar.getInstance()
+    nextCalendar.time = date
+
+    return currentCalendar[Calendar.WEEK_OF_MONTH] == nextCalendar[Calendar.WEEK_OF_MONTH]
+}
+
+fun compressImage(context: Context, item: Uri): Uri? {
+    return try {
+        val inputStream = context.contentResolver.openInputStream(item)
+        val imageBitmap = BitmapFactory.decodeStream(inputStream)
+
+        val file = context.convertBitmapToFile(imageBitmap, 60)
+        /*
+        val mWidth = imageBitmap.width.toFloat()
+        val mHeight = imageBitmap.height.toFloat()
+
+        val fWidth = minOf(mWidth, 600f).toInt()
+        val fHeight = ((mHeight / mWidth) * fWidth).toInt()
+
+        val scaledBitmap = Bitmap.createScaledBitmap(imageBitmap, fWidth, fHeight, true)
+        val file = File.createTempFile(randomId(), ".jpg", context.cacheDir)
+
+        storeBitmapToFile(file, scaledBitmap)*/
+        if (file != null) {
+            FileProvider.getUriForFile(context, FILE_PROV_AUTH, file)
+        } else {
+            null
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "compressImage: ${e.localizedMessage}")
+        null
+    }
+
+}
+
+/*fun TextView.setDrawableColor(color: Int) {
     for (drawable in compoundDrawables) {
         drawable?.setTint(color)
     }
-}
+}*/
 
 fun Context.getOrderFromString(s: String?): FeedOrder {
     return when (s) {
@@ -108,12 +192,26 @@ fun Context.getSortFromString(s: String?): FeedSort {
 }
 
 
-val colorPalettesNight = mutableListOf(
-    Pair(R.color.chip_back_blue_night, R.color.chip_front_blue_night),
-    Pair(R.color.chip_back_pink_night, R.color.chip_front_pink_night),
-    Pair(R.color.chip_back_purple_night, R.color.chip_front_purple_night),
-    Pair(R.color.chip_back_teal_night, R.color.chip_front_teal_night)
-)
+fun darkenColor(color: Int): Int {
+    return ColorUtils.blendARGB(color, Color.BLACK, 0.5f)
+}
+
+/*fun lightenColor(color: Int): Int {
+    return ColorUtils.blendARGB(color, Color.WHITE, 0.5f)
+}*/
+
+/*fun manipulateColor(color: Int, factor: Float): Int {
+    val a = Color.alpha(color)
+    val r = (Color.red(color) * factor).roundToInt()
+    val g = (Color.green(color) * factor).roundToInt()
+    val b = (Color.blue(color) * factor).roundToInt()
+    return Color.argb(
+        a,
+        r.coerceAtMost(255),
+        g.coerceAtMost(255),
+        b.coerceAtMost(255)
+    )
+}*/
 
 fun getWindowWidth() = Resources.getSystem().displayMetrics.widthPixels
 
@@ -123,28 +221,40 @@ fun View.show() {
     this.visibility = View.VISIBLE
 }
 
-fun View.showWithAnimations() {
-
-    if (!this.isVisible) {
-        this.scaleX = 0f
-        this.scaleY = 0f
-
-        this.show()
-
-        val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f, 1f)
-        val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f, 1f)
-
-        AnimatorSet().apply {
-            duration = 250
-            interpolator = AccelerateDecelerateInterpolator()
-            playTogether(objAnimator, objAnimator1)
-            start()
-        }
-    }
-
+fun View.fadeOut(): Animator {
+    val objAnimator = ObjectAnimator.ofFloat(this, View.ALPHA, 0f)
+    objAnimator.duration = 250
+    objAnimator.start()
+    return objAnimator
 }
 
-fun View.isVisibleOnScreen(): Boolean {
+fun View.fadeIn(): Animator {
+    this.visibility = View.VISIBLE
+    val objAnimator = ObjectAnimator.ofFloat(this, View.ALPHA, 1f)
+    objAnimator.duration = 250
+    objAnimator.start()
+    return objAnimator
+}
+
+
+fun View.showWithAnimations(): AnimatorSet {
+    this.scaleX = 0f
+    this.scaleY = 0f
+
+    this.show()
+
+    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f, 1f)
+    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f, 1f)
+
+    return AnimatorSet().apply {
+        duration = 250
+        interpolator = AccelerateDecelerateInterpolator()
+        playTogether(objAnimator, objAnimator1)
+        start()
+    }
+}
+
+/*fun View.isVisibleOnScreen(): Boolean {
     if (!this.isShown) {
         return false
     }
@@ -152,32 +262,76 @@ fun View.isVisibleOnScreen(): Boolean {
     this.getGlobalVisibleRect(actualPosition)
     val screen = Rect(0, 0, getWindowWidth(), getWindowHeight())
     return actualPosition.intersect(screen)
-}
+}*/
 
 fun View.hide() {
     this.visibility = View.GONE
 }
 
-fun View.hideWithAnimation() {
+fun Fragment.getMimeType(uri: Uri) = requireContext().getMimeType(uri)
 
-    if (this.isVisible) {
-        val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f)
-        val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f )
-
-        AnimatorSet().apply {
-            duration = 250
-            interpolator = AccelerateDecelerateInterpolator()
-            playTogether(objAnimator, objAnimator1)
-            start()
-        }
-
-        this.disappear()
+fun Context.getMimeType(uri: Uri): String? {
+    return if (ContentResolver.SCHEME_CONTENT == uri.scheme) {
+        contentResolver.getType(uri)
+    } else {
+        val fileExtension = MimeTypeMap.getFileExtensionFromUrl(
+            uri
+                .toString()
+        )
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+            fileExtension.lowercase(Locale.getDefault())
+        )
     }
-
 }
 
+fun View.hideWithAnimation(): AnimatorSet {
+    val objAnimator = ObjectAnimator.ofFloat(this, View.SCALE_X, 0f)
+    val objAnimator1 = ObjectAnimator.ofFloat(this, View.SCALE_Y, 0f)
+
+    return AnimatorSet().apply {
+        duration = 250
+        interpolator = AccelerateDecelerateInterpolator()
+        playTogether(objAnimator, objAnimator1)
+        start()
+    }
+}
+
+fun Fragment.getStatusBarHeight() = requireActivity().getStatusBarHeight()
+
+fun Activity.getStatusBarHeight(): Int {
+    val rectangle = Rect()
+    window.decorView.getWindowVisibleDisplayFrame(rectangle)
+    return rectangle.top
+}
+
+fun Fragment.checkPermission(permission: String, onCheck: (isGranted: Boolean) -> Unit) =
+    requireActivity().checkPermission(permission, onCheck)
+
+fun Activity.checkPermission(permission: String, onCheck: (isGranted: Boolean) -> Unit) {
+    when {
+        ContextCompat.checkSelfPermission(
+            this,
+            permission
+        ) == PackageManager.PERMISSION_GRANTED -> {
+            onCheck(true)
+        }
+        shouldShowRequestPermissionRationale(permission) -> {
+            toast("Grant permission: $permission")
+        }
+        else -> {
+            onCheck(false)
+        }
+    }
+}
+
+
 @OptIn(ExperimentalPagingApi::class)
-fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, side: AnchorSide): View? {
+fun Fragment.showTooltip(
+    msg: String,
+    container: ViewGroup,
+    anchorView: View,
+    side: AnchorSide
+): View? {
     // the parameters for this function should be the anchorView and gravity
 
     var v: View? = null
@@ -189,7 +343,7 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
     // 5. set scrim click to dismiss the tooltip
 
     val pos = intArrayOf(0, 0)
-    
+
     anchorView.getLocationInWindow(pos)
 
     val anchorX = pos[0]
@@ -201,19 +355,16 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
     val anchorCenterX = anchorX + widthRadius
     val anchorCenterY = anchorY + heightRadius
 
-    Log.d(TAG, "showTooltip: $msg, ($anchorX, $anchorY), ($anchorCenterX, $anchorCenterY)")
-
     when (side) {
         AnchorSide.Left -> {}
         AnchorSide.Top -> {}
         AnchorSide.Right -> {}
         AnchorSide.Bottom -> {
-            val arrowY = anchorY /*+ anchorView.measuredHeight*/ + resources.getDimension(R.dimen.generic_len_2)
+            val arrowY =
+                anchorY /*+ anchorView.measuredHeight*/ + resources.getDimension(R.dimen.generic_len_2)
 
             val hb = anchorCenterX.toFloat() / getWindowWidth()
-            val vb = arrowY/ getWindowHeight()
-
-            Log.d(TAG, "showTooltip: hb=$hb, vb=$vb")
+            val vb = arrowY / getWindowHeight()
 
             v = layoutInflater.inflate(R.layout.tooltip_layout, container, false)
             val b = TooltipLayoutBinding.bind(v)
@@ -243,11 +394,7 @@ fun Fragment.showTooltip(msg: String, container: ViewGroup, anchorView: View, si
             }
 
             b.root.setOnClickListener {
-                val fadeAnimation = ObjectAnimator.ofFloat(b.root, View.ALPHA, 0f)
-                fadeAnimation.duration = 300
-                fadeAnimation.start()
-
-                fadeAnimation.doOnEnd {
+                b.root.fadeOut().doOnEnd {
                     container.removeView(b.root)
                 }
             }
@@ -271,7 +418,7 @@ fun Context.toast(msg: String, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, msg, duration).show()
 }
 
-fun slideRightNavOptions(): NavOptions {
+/*fun slideRightNavOptions(): NavOptions {
     return navOptions {
         anim {
             enter = R.anim.slide_in_right
@@ -280,7 +427,7 @@ fun slideRightNavOptions(): NavOptions {
             popExit = R.anim.slide_out_right
         }
     }
-}
+}*/
 
 fun randomId(): String {
     return UUID.randomUUID().toString().replace("-", "")
@@ -294,10 +441,14 @@ fun CharSequence?.isValidPassword() =
         .matcher(this).matches()
 
 fun getTextForTime(time: Long): String {
-    return DateUtils.getRelativeTimeSpanString(time, Calendar.getInstance().timeInMillis, DateUtils.MINUTE_IN_MILLIS).toString()
+    return DateUtils.getRelativeTimeSpanString(
+        time,
+        Calendar.getInstance().timeInMillis,
+        DateUtils.MINUTE_IN_MILLIS
+    ).toString()
 }
 
-fun getTextForChatTime(time: Long): String {
+/*fun getTextForChatTime(time: Long): String {
     val oneDay = 24 * 60 * 60 * 1000
     val oneWeek = 7 * oneDay
     val now = System.currentTimeMillis()
@@ -308,7 +459,8 @@ fun getTextForChatTime(time: Long): String {
     nowDate.time = Date(time)
 
     val diff = abs(now - time)
-    val isDifferentDay = messageDate.get(Calendar.DAY_OF_MONTH) != nowDate.get(Calendar.DAY_OF_MONTH)
+    val isDifferentDay =
+        messageDate.get(Calendar.DAY_OF_MONTH) != nowDate.get(Calendar.DAY_OF_MONTH)
     return when {
         diff > oneWeek -> {
             SimpleDateFormat("hh:mm a dd/MM/yyyy", Locale.UK).format(time)
@@ -323,15 +475,15 @@ fun getTextForChatTime(time: Long): String {
             SimpleDateFormat("hh:mm a", Locale.UK).format(time)
         }
     }
-}
+}*/
 
-fun <T: Any> List<T>.addItemToList(item: T): List<T> {
+fun <T : Any> List<T>.addItemToList(item: T): List<T> {
     val newList = this.toMutableList()
     newList.add(item)
     return newList
 }
 
-fun <T: Any> List<T>.removeItemFromList(item: T): List<T> {
+fun <T : Any> List<T>.removeItemFromList(item: T): List<T> {
     return if (this.isEmpty()) {
         emptyList()
     } else {
@@ -370,7 +522,7 @@ fun Fragment.showKeyboard() {
 }
 
 @Suppress("DEPRECATION")
-private fun Context.showKeyboard() {
+fun Context.showKeyboard() {
     val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
     if (Build.VERSION.SDK_INT > 30) {
         inputMethodManager.showSoftInput((this as Activity).window.decorView, 0)
@@ -456,25 +608,17 @@ fun Context.isNightMode(): Boolean {
     }
 }*/
 
-fun getTextForSizeInBytes(size: Long): String {
-    return when {
-        size > (1024 * 1024) -> {
-            val sizeInMB = size.toFloat()/(1024 * 1024)
-            sizeInMB.toString().take(4) + " MB"
-        }
-        size/1024 > 100 -> {
-            val sizeInMB = size.toFloat()/(1024 * 1024)
-            sizeInMB.toString().take(4) + " MB"
-        }
-        else -> {
-            val sizeInKB = size.toFloat()/1024
-            sizeInKB.toString().take(4) + " KB"
-        }
-    }
+fun Fragment.getTextForSizeInBytes(size: Long) = requireContext().getTextForSizeInBytes(size)
+
+fun Context.getTextForSizeInBytes(size: Long): String {
+    return android.text.format.Formatter.formatShortFileSize(
+        this,
+        size
+    )
 }
 
 // must be in the form [a, b, c]
-fun String.toList() : List<Any> {
+fun String.toList(): List<Any> {
 
     if (this.first() != '[') {
         return emptyList()
@@ -649,7 +793,11 @@ fun search() {
 
 }
 
-fun search(client: Client, queries: List<IndexQuery>, onComplete: (Result<List<SearchQuery>>) -> Unit) {
+fun search(
+    client: Client,
+    queries: List<IndexQuery>,
+    onComplete: (Result<List<SearchQuery>>) -> Unit
+) {
     client.multipleQueriesAsync(queries, Client.MultipleQueriesStrategy.NONE) { jsonObject, exc ->
         if (exc != null) {
             onComplete(Result.Error(exc))
@@ -721,6 +869,17 @@ fun EditText.onDone(callback: () -> Unit) {
     }
 }
 
+fun processUser(user: User) {
+    val currentUser = UserManager.currentUser
+    user.isCurrentUser = currentUser.id == user.id
+}
+
+fun processUsers(users: List<User>) {
+    for (user in users) {
+        processUser(user)
+    }
+}
+
 fun processUsers(vararg users: User): Array<out User> {
     val currentUser = UserManager.currentUser
     val usersList = mutableListOf<User>()
@@ -731,7 +890,8 @@ fun processUsers(vararg users: User): Array<out User> {
     return usersList.toTypedArray()
 }
 
-fun processPosts(posts: Array<out Post>): Array<out Post> {
+/* isSaved and isLiked is not checked here */
+/*fun processPosts(posts: Array<out Post>): Array<out Post> {
     val currentUser = UserManager.currentUser
     for (post in posts) {
         post.isMadeByMe = post.creator.userId == currentUser.id
@@ -746,7 +906,25 @@ fun processPosts(posts: Array<out Post>): Array<out Post> {
     }
 
     return posts
+}*/
+
+fun processPosts(posts: List<Post>) {
+    for (post in posts) {
+        processPost(post)
+    }
 }
+
+fun processPost(post: Post) {
+    val currentUser = UserManager.currentUser
+    post.isMadeByMe = post.creator.userId == currentUser.id
+    post.isBlocked = post.blockedList.contains(currentUser.id)
+    val set1 = post.requests.toSet()
+    val set2 = currentUser.postRequests.toSet()
+    val intersection = set1.intersect(set2)
+    post.isRequested = intersection.isNotEmpty()
+    post.isCollaboration = currentUser.collaborations.contains(post.id)
+}
+
 
 fun View.enable() {
     this.isEnabled = true
@@ -764,7 +942,7 @@ fun View.setBackgroundTint(@ColorInt color: Int) {
 }
 
 fun LottieAnimationView.doOnAnimationEnd(onAnimationEnd: (p: Animator?) -> Unit) {
-    this.addAnimatorListener(object: Animator.AnimatorListener {
+    this.addAnimatorListener(object : Animator.AnimatorListener {
         override fun onAnimationStart(p0: Animator?) {}
 
         override fun onAnimationEnd(p0: Animator?) {
@@ -789,14 +967,18 @@ fun LottieAnimationView.doOnAnimationEnd(onAnimationEnd: (p: Animator?) -> Unit)
     return Bitmap.createBitmap(bitmap, cropW, cropH, newWidth, newHeight)
 }*/
 
-fun downloadBitmapUsingFresco(context: Context, photo: String, onComplete: (bitmap: Bitmap?) -> Unit) {
+fun downloadBitmapUsingFresco(
+    context: Context,
+    photo: String,
+    onComplete: (bitmap: Bitmap?) -> Unit
+) {
     val imagePipeline = Fresco.getImagePipeline()
     val imageRequest = ImageRequestBuilder.newBuilderWithSource(photo.toUri())
         .build()
 
     val dataSource = imagePipeline.fetchDecodedImage(imageRequest, context)
 
-    dataSource.subscribe(object: BaseBitmapDataSubscriber() {
+    dataSource.subscribe(object : BaseBitmapDataSubscriber() {
         override fun onNewResultImpl(bitmap: Bitmap?) {
             onComplete(bitmap)
         }
@@ -810,19 +992,19 @@ fun downloadBitmapUsingFresco(context: Context, photo: String, onComplete: (bitm
 
 @OptIn(ExperimentalPagingApi::class)
 fun getFragmentByTag(tag: String, bundle: Bundle): Fragment {
-    return when (tag) {
-        ChatFragment.TAG -> ChatFragment.newInstance(bundle)
-        ChatDetailFragment.TAG -> ChatDetailFragment.newInstance(bundle)
-        ChatMediaFragment.TAG -> ChatMediaFragment.newInstance(bundle)
-        ChannelGuidelinesFragment.TAG -> ChannelGuidelinesFragment.newInstance(bundle)
-        PostContributorsFragment.TAG -> PostContributorsFragment.newInstance(bundle)
-        MessageDetailFragment.TAG -> MessageDetailFragment.newInstance(bundle)
-        PostFragment.TAG -> PostFragment.newInstance(bundle)
-        CommentsFragment.TAG -> CommentsFragment.newInstance(bundle)
-        TagFragment.TAG -> TagFragment.newInstance(bundle)
-        ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
-        else -> ChatFragment.newInstance(bundle)
-    }
+    /* return when (tag) {
+         ChatDetailFragment.TAG -> ChatDetailFragment.newInstance(bundle)
+         ChatMediaFragment.TAG -> ChatMediaFragment.newInstance(bundle)
+         ChannelGuidelinesFragment.TAG -> ChannelGuidelinesFragment.newInstance(bundle)
+         PostContributorsFragment.TAG -> PostContributorsFragment.newInstance(bundle)
+         MessageDetailFragment.TAG -> MessageDetailFragment.newInstance(bundle)
+         PostFragment.TAG -> PostFragment.newInstance(bundle)
+         CommentsFragment.TAG -> CommentsFragment.newInstance(bundle)
+         TagFragment.TAG -> TagFragment.newInstance(bundle)
+ //        ForwardFragment.TAG -> ForwardFragment.newInstance(bundle)
+         else -> throw java.lang.NullPointerException("")
+     }*/
+    TODO("To return some fragment based on tag @Deprecated")
 }
 
 
@@ -845,15 +1027,197 @@ fun shouldShowAd(currentDestinationId: Int, isInternetAvailable: Boolean): Boole
     return true
 }
 
-fun Context.getImageUriFromMessage(message: Message): Uri {
-    val imagesDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-    val name = message.content + message.metadata!!.ext
-    val destination = File(imagesDir, message.chatChannelId)
-    val file = File(destination, name)
-    return Uri.fromFile(file)
+fun Context.getAppSpecificFileUri(fullPath: String, name: String): Uri? {
+    val destDir = getNestedDir(filesDir, fullPath) ?: return null
+    val destFile = getFile(destDir, name) ?: return null
+    return FileProvider.getUriForFile(this, FILE_PROV_AUTH, destFile)
 }
 
-fun Fragment.getImageUriFromMessage(message: Message): Uri {
+fun Fragment.getMetadataForFile(uri: Uri) = requireActivity().getMetadataForFile(uri)
+
+fun Context.getMetadataForFile(uri: Uri): Metadata? {
+    val cursor = contentResolver.query(uri, null, null, null, null)
+
+    return try {
+        cursor?.moveToFirst()
+        val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+        val name =
+            cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $uri is null")
+
+        val size = (cursor.getLong(sizeIndex ?: 0))
+        cursor.close()
+        val ext = "." + name.split('.').last()
+
+        Metadata(size, name, uri.toString(), ext, 0, 0)
+    } catch (e: Exception) {
+        Log.e(TAG, "getMetadataForFile: ${e.localizedMessage}")
+        null
+    }
+}
+
+
+fun Fragment.getFileAsMediaItem(fullPath: String, name: String) =
+    requireContext().getFileAsMediaItem(fullPath, name)
+
+fun Context.getFileAsMediaItem(fullPath: String, name: String): MediaItem? {
+
+    val destDir = getNestedDir(filesDir, fullPath) ?: return null
+    val destFile = getFile(destDir, name) ?: return null
+
+    val destUri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, destFile)
+    val mimeType = getMimeType(destUri) ?: ""
+    val (type, thumbnail) = when {
+        mimeType.contains(video) -> {
+            video to getObjectThumbnail(fullPath, name)
+        }
+        mimeType.contains(image) -> {
+            image to getObjectThumbnail(fullPath, name)
+        }
+        mimeType.contains("application") -> {
+            document to null
+        }
+        else -> {
+            document to null
+        }
+    }
+
+    val ext = "." + name.substringAfterLast('.', "")
+    val size = destFile.length() / 1024
+
+    return MediaItem(
+        destUri.toString(), name, type,
+        mimeType, size, ext, destFile.path, thumbnail
+    )
+
+}
+
+fun Fragment.getObjectThumbnail(fullPath: String, name: String) =
+    requireContext().getObjectThumbnail(fullPath, name)
+
+@SuppressLint("NewApi")
+@Suppress("DEPRECATION")
+fun Context.getObjectThumbnail(fullPath: String, name: String): Bitmap? {
+    val destDir = getNestedDir(filesDir, fullPath) ?: return null
+    val destFile = getFile(destDir, name) ?: return null
+
+    val destUri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, destFile)
+    val mimeType = getMimeType(destUri)
+
+    return if (Build.VERSION.SDK_INT >= 29) {
+        try {
+            if (mimeType?.contains(video) == true) {
+                ThumbnailUtils.createVideoThumbnail(destFile, Size(400, 300), null)
+            } else {
+                ThumbnailUtils.createImageThumbnail(destFile, Size(200, 200), null)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    } else {
+        try {
+            if (mimeType?.contains(video) == true) {
+                ThumbnailUtils.createVideoThumbnail(
+                    destFile.path,
+                    MediaStore.Video.Thumbnails.MICRO_KIND
+                )
+            } else {
+                ThumbnailUtils.createImageThumbnail(
+                    destFile.path,
+                    MediaStore.Video.Thumbnails.MICRO_KIND
+                )
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
+
+fun Fragment.getObjectThumbnail(uri: Uri) = requireContext().getObjectThumbnail(uri)
+
+@Suppress("DEPRECATION")
+fun Context.getObjectThumbnail(uri: Uri): Bitmap? {
+    val mimeType = getMimeType(uri) ?: return null
+
+    return if (Build.VERSION.SDK_INT >= 29) {
+        return try {
+            contentResolver.loadThumbnail(uri, Size(200, 200), null)
+        } catch (e: Exception) {
+            val file = File(uri.path!!)
+            Log.e(TAG, "getObjectThumbnail: ${file.path} ---- ${e.localizedMessage}")
+            null
+        }
+    } else {
+        val id = ContentUris.parseId(uri)
+        if (mimeType.contains(video)) {
+            MediaStore.Video.Thumbnails.getThumbnail(
+                contentResolver,
+                id,
+                MediaStore.Video.Thumbnails.MICRO_KIND,
+                BitmapFactory.Options()
+            )
+        } else {
+            MediaStore.Images.Thumbnails.getThumbnail(
+                contentResolver,
+                id,
+                MediaStore.Images.Thumbnails.MICRO_KIND,
+                BitmapFactory.Options()
+            )
+        }
+    }
+}
+
+
+fun Context.getVideoThumbnailFromMessage(message: Message): Uri? {
+    val name = "thumb_" + message.content + ".jpg"
+    val fullPath = "images/thumbnails/${message.chatChannelId}"
+    val fileDest = getNestedDir(filesDir, fullPath)
+    return if (fileDest != null) {
+        val f = getFile(fileDest, name)
+        if (f != null) {
+            FileProvider.getUriForFile(this, FILE_PROV_AUTH, f)
+        } else {
+            null
+        }
+    } else {
+        null
+    }
+}
+
+fun convertMediaListToMediaItemList(
+    list: List<String>,
+    mediaString: String
+): List<MediaItem> {
+    return list.mapIndexed { index, s ->
+        val type = if (mediaString[index] == '0') {
+            image
+        } else {
+            video
+        }
+        MediaItem(s, type = type)
+    }
+}
+
+fun Context.getImageUriFromMessage(message: Message): Uri? {
+
+    val fullPath = "images/${message.chatChannelId}"
+    val name = message.content + message.metadata!!.ext
+
+    val dest = getNestedDir(filesDir, fullPath)
+    return if (dest != null) {
+        val f = getFile(dest, name)
+        if (f != null) {
+            FileProvider.getUriForFile(this, FILE_PROV_AUTH, f)
+        } else {
+            null
+        }
+    } else {
+        null
+    }
+
+}
+
+fun Fragment.getImageUriFromMessage(message: Message): Uri? {
     return requireContext().getImageUriFromMessage(message)
 }
 
@@ -879,7 +1243,7 @@ fun Context.attachAd(adView: AdView, removeBtn: View?) {
 
     adView.loadAd(adRequest)
 
-    adView.adListener = object: AdListener() {
+    adView.adListener = object : AdListener() {
         override fun onAdFailedToLoad(p0: LoadAdError) {
             super.onAdFailedToLoad(p0)
             adView.hide()
@@ -922,5 +1286,457 @@ fun ViewGroup.onChildrenChanged(onChange: (Sequence<View>) -> Unit) {
         }
     })
 }
+
+fun setHorizontalMediaRecycler(
+    recyclerView: RecyclerView,
+    horizontalMediaAdapter: HorizontalMediaAdapter
+) {
+    recyclerView.apply {
+        adapter = horizontalMediaAdapter
+        layoutManager =
+            LinearLayoutManager(recyclerView.context, LinearLayoutManager.HORIZONTAL, false)
+    }
+}
+
+fun Fragment.getMediaDir(name: String) = requireContext().getMediaDir(name)
+
+fun Context.getMediaDir(name: String): File? {
+    val root = filesDir
+    val imagesDir = File(root, name)
+    return if (imagesDir.exists()) {
+        imagesDir
+    } else {
+        try {
+            if (imagesDir.mkdir()) {
+                imagesDir
+            } else {
+                throw Exception("Could not create $name directory")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "getImagesDir: ${e.localizedMessage}")
+            null
+        }
+    }
+}
+
+fun getNestedDir(parent: File, fullPath: String): File? {
+    val args = fullPath.split('/')
+    var dir = parent
+
+    return try {
+        for (arg in args) {
+            if (arg.length > 1) {
+                dir = File(dir, arg)
+                if (dir.exists())
+                    continue
+                else
+                    if (dir.mkdir())
+                        continue
+                    else
+                        throw Exception("Couldn't create a dir")
+            }
+        }
+        dir
+    } catch (e: Exception) {
+        Log.e(TAG, "getNestedDir: ${e.localizedMessage}")
+        null
+    }
+}
+
+fun checkFileExists(parent: File, name: String): Boolean {
+    val file = File(parent, name)
+    return file.exists() && file.length() > 0
+}
+
+fun getFile(parent: File, name: String): File? {
+    val file = File(parent, name)
+    return try {
+        if (file.exists()) {
+            file
+        } else {
+            if (file.createNewFile()) {
+                file
+            } else {
+                throw Exception("Couldn't create new file.")
+            }
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "getFile: ${e.localizedMessage}")
+        null
+    }
+}
+
+fun String.toPlural(): String {
+    return if (this == "child") {
+        "children"
+    } else {
+        this + "s"
+    }
+}
+
+fun Fragment.getMediaItemsFromMessages(messages: List<Message>) =
+    requireContext().getMediaItemsFromMessages(messages)
+
+fun Context.getMediaItemsFromMessages(messages: List<Message>): List<MediaItemWrapper> {
+    return messages.map { message ->
+        val fullPath = "${message.type.toPlural()}/${message.chatChannelId}"
+        val name = message.content + message.metadata!!.ext
+
+        getFileAsMediaItem(fullPath, name)?.apply {
+            this.name = message.metadata!!.name
+            dateCreated = message.createdAt
+            dateModified = message.updatedAt
+            type = message.type
+        }
+    }.mapNotNull {
+        it?.let {
+            MediaItemWrapper(it, false, -1)
+        }
+    }
+}
+
+
+
+fun View.setSelectableItemBackground() {
+    val outValue = TypedValue()
+    this.context.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+    this.setBackgroundResource(outValue.resourceId)
+}
+
+
+fun Fragment.getAllImagesInChannel(channelId: String) =
+    requireContext().getAllImagesInChannel(channelId)
+
+fun Context.getAllImagesInChannel(channelId: String): List<MediaItem> {
+
+    val path = "images/$channelId"
+    val files = getAllFilesInDir(path)
+    val mediaItems = mutableListOf<MediaItem>()
+
+    for (file in files) {
+        val uri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
+        val name = file.name
+
+        val mimeType = getMimeType(uri)!!
+        val size = file.length() / 1024
+
+        val ext = "." + name.substringAfterLast('.', "")
+        val thumbnail = getObjectThumbnail(uri)
+
+        mediaItems.add(
+            MediaItem(
+                uri.toString(),
+                name,
+                image,
+                mimeType,
+                size,
+                ext,
+                file.path,
+                thumbnail
+            )
+        )
+    }
+
+    return mediaItems
+
+}
+
+fun Context.getAllFilesInDir(fullPath: String): List<File> {
+    val dir = getNestedDir(filesDir, fullPath)
+    return if (dir != null) {
+        val files = dir.listFiles() ?: emptyArray()
+        files.toList()
+    } else {
+        emptyList()
+    }
+}
+
+fun BottomSheetDialogFragment.getFrameLayout(): FrameLayout? {
+    return dialog?.window!!.decorView.findViewById(com.google.android.material.R.id.design_bottom_sheet)
+}
+
+fun BottomSheetDialogFragment.getBottomSheetBehavior(): BottomSheetBehavior<FrameLayout>? {
+    val frame = getFrameLayout()
+    return if (frame != null) BottomSheetBehavior.from(frame) else null
+}
+
+fun BottomSheetDialogFragment.getTouchOutsideView(): View? {
+    return dialog?.window?.decorView?.findViewById(com.google.android.material.R.id.touch_outside)
+}
+
+fun showMoreSomething() {
+    /*binding.postContent.doOnLayout {
+            if (binding.postContent.lineCount > MAX_LINES && !isTextExpanded) {
+                val lastCharShown = binding.postContent.layout.getLineVisibleEnd(MAX_LINES - 1)
+                binding.postContent.maxLines = MAX_LINES
+                val moreString = "Show more"
+                val suffix = "  $moreString"
+
+                val actionDisplayText: String = post.content.substring(0, lastCharShown - suffix.length - 3) + "..." + suffix
+                val truncatedSpannableString = SpannableString(actionDisplayText)
+                val startIndex = actionDisplayText.indexOf(moreString)
+
+                val cs = object: ClickableSpan() {
+
+                    override fun onClick(p0: View) {
+                        postClickListener.onPostClick(post.copy())
+                    }
+
+                    override fun updateDrawState(ds: TextPaint) {
+                        super.updateDrawState(ds)
+                        ds.isUnderlineText = false
+                        val color = if (view.context.isNightMode()) {
+                            Color.WHITE
+                        } else {
+                            Color.BLACK
+                        }
+                        ds.color = color
+                    }
+
+                }
+
+                val cs1 = object : ClickableSpan() {
+                    override fun onClick(p0: View) {
+
+                        isTextExpanded = true
+
+                        binding.postContent.maxLines = Int.MAX_VALUE
+                        binding.postContent.text = post.content
+
+                        view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
+
+                            delay(200)
+
+                            binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
+                                height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            }
+
+                            binding.postContent.text = post.content
+
+                            delay(200)
+
+                            binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
+                                height = ViewGroup.LayoutParams.WRAP_CONTENT
+                            }
+
+                            binding.postContent.setOnClickListener {
+                                postClickListener.onPostClick(post.copy())
+                            }
+                        }
+                    }
+
+                    override fun updateDrawState(ds: TextPaint) {
+                        super.updateDrawState(ds)
+                        ds.isUnderlineText = false
+                        val greyColor = ContextCompat.getColor(view.context, R.color.darker_grey)
+                        ds.color = greyColor
+                    }
+
+                }
+
+                truncatedSpannableString.setSpan(cs,
+                    0,
+                    startIndex - 1,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+                truncatedSpannableString.setSpan(cs1,
+                    startIndex,
+                    startIndex + moreString.length,
+                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+                binding.postContent.movementMethod = LinkMovementMethod.getInstance()
+
+                binding.postContent.text = truncatedSpannableString
+
+                view.findViewTreeLifecycleOwner()?.lifecycle?.coroutineScope?.launch {
+                    delay(200)
+                    binding.postContent.updateLayoutParams<ViewGroup.LayoutParams> {
+                        height = ViewGroup.LayoutParams.WRAP_CONTENT
+                    }
+                }
+            }
+        }*/
+}
+
+
+/*fun Activity.setStatusBarColor() {
+    val window = window
+    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+
+// finally change the color
+
+// finally change the color
+    window.setStatusBarColor(ContextCompat.getColor(activity, R.color.my_statusbar_color))
+}*/
+
+fun Activity.setLightStatusBar() {
+    val decorView = window.decorView
+    val wic = ViewCompat.getWindowInsetsController(decorView)
+    if (!isNightMode()) {
+        wic?.isAppearanceLightStatusBars = true // true or false as desired.
+        window.statusBarColor = Color.TRANSPARENT
+    }
+}
+
+fun Activity.removeLightStatusBar() {
+    val decorView = window.decorView
+    val wic = ViewCompat.getWindowInsetsController(decorView)
+    wic?.isAppearanceLightStatusBars = false // true or false as desired.
+    window.statusBarColor = Color.BLACK
+}
+
+fun storeBitmapToFile(file: File, bitmap: Bitmap, quality: Int = 100) {
+    try {
+        if (!file.isDirectory) {
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream)
+            val byteArray = byteArrayOutputStream.toByteArray()
+            val fos = FileOutputStream(file)
+            fos.write(byteArray)
+            fos.flush()
+            fos.close()
+        } else {
+            Log.e(TAG, "storeBitmapToFile: File is a directory.")
+        }
+    } catch (e: Exception) {
+        Log.e(TAG, "storeBitmapToFile: ${e.localizedMessage}")
+    }
+}
+
+fun Fragment.convertBitmapToFile(bitmap: Bitmap, quality: Int = 100) =
+    requireContext().convertBitmapToFile(bitmap, quality)
+
+fun Context.convertBitmapToFile(bitmap: Bitmap, quality: Int = 100): File? {
+    return try {
+        val file = File.createTempFile(randomId(), ".jpg", cacheDir)
+        storeBitmapToFile(file, bitmap, quality)
+        file
+    } catch (e: Exception) {
+        Log.e(TAG, "convertBitmapToFile: ${e.localizedMessage}")
+        null
+    }
+}
+
+fun ViewGroup.addTagChips(
+    labels: List<String>,
+    isMutable: Boolean = false,
+    isDefaultTheme: Boolean = true,
+    chipIcon: Drawable? = null,
+    shortenText: Boolean = false,
+    insertAtStart: Boolean = false,
+    checkable: Boolean = false,
+    chipClickListener: ChipClickListener? = null,
+    tag: String? = null
+) {
+    removeAllViews()
+    for (label in labels) {
+        addTagChip(
+            label,
+            isMutable,
+            isDefaultTheme,
+            chipIcon,
+            shortenText,
+            insertAtStart,
+            checkable,
+            chipClickListener,
+            tag
+        )
+    }
+}
+
+fun ViewGroup.addTagChip(
+    label: String,
+    isMutable: Boolean = false,
+    isDefaultTheme: Boolean = true,
+    chipIcon: Drawable? = null,
+    shortenText: Boolean = false,
+    insertAtStart: Boolean = false,
+    checkable: Boolean = false,
+    chipClickListener: ChipClickListener? = null,
+    tag: String? = ""
+) {
+    label.trim()
+
+    val chip = if (isDefaultTheme) {
+        View.inflate(this.context, R.layout.default_chip, null) as Chip
+    } else {
+        // change this later
+        View.inflate(this.context, R.layout.default_chip, null) as Chip
+    }
+
+    chip.apply {
+        if (tag != null) {
+            this.tag = tag
+        }
+
+        text = if (shortenText) {
+            val (requireDots, len) = if (label.length > 16) {
+                true to 16
+            } else {
+                false to label.length
+            }
+            label.take(len) + if (requireDots) "..." else ""
+        } else {
+            label
+        }
+
+        this.chipIcon = chipIcon
+
+        isCheckedIconVisible = chipIcon != null
+        isCheckable = checkable
+
+        if (isMutable) {
+            isCloseIconVisible = true
+
+            setOnCloseIconClickListener {
+                chipClickListener?.onCloseIconClick(chip)
+            }
+        } else {
+            isCloseIconVisible = false
+
+            setOnClickListener {
+                chipClickListener?.onClick(chip)
+            }
+
+            setOnLongClickListener {
+                chipClickListener?.onLongClick(chip)
+                true
+            }
+        }
+    }
+
+    if (insertAtStart) {
+        this.addView(chip, 0)
+    } else {
+        this.addView(chip)
+    }
+
+}
+
+//exp
+fun Activity.getRootView(): View {
+    return findViewById(android.R.id.content)
+}
+
+fun Context.convertDpToPx(dp: Float): Float {
+    return TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        dp,
+        this.resources.displayMetrics
+    )
+}
+
+fun Activity.isKeyboardOpen(): Boolean {
+    val visibleBounds = Rect()
+    this.getRootView().getWindowVisibleDisplayFrame(visibleBounds)
+    val heightDiff = getRootView().height - visibleBounds.height()
+    val marginOfError = this.convertDpToPx(50F).roundToInt()
+    return heightDiff > marginOfError
+}
+
+fun Activity.isKeyboardClosed(): Boolean {
+    return !this.isKeyboardOpen()
+}
+
 
 const val TAG = "CodesquareLog"

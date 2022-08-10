@@ -3,19 +3,16 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.annotation.LayoutRes
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.jamid.codesquare.BaseBottomFragment
 import com.jamid.codesquare.databinding.FragmentMessageDialogBinding
 import com.jamid.codesquare.listeners.MessageDialogInterface
 
-class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
+class MessageDialogFragment: BaseBottomFragment<FragmentMessageDialogBinding>() {
 
-    private lateinit var binding: FragmentMessageDialogBinding
-    private var title: String = "CollabMe"
+    private var title: String = "Collabme"
     private var message: String? = null
     private var positiveLabel: String = "Yes"
     private var negativeLabel: String = "No"
@@ -23,40 +20,18 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
     private var onNegativeClickListener: MessageDialogInterface.OnClickListener? = null
     private var onInflateListener: MessageDialogInterface.OnInflateListener? = null
     private var shouldShowProgress: Boolean = false
-    private var isDraggable: Boolean = true
-    private var isHideable: Boolean = true
-    private var isScrimVisible: Boolean = true
     private var layoutId: Int = -1
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentMessageDialogBinding.inflate(inflater)
-        return binding.root
+    init {
+        // be default let all message dialog be non cancellable if there is progress
+        if (shouldShowProgress) {
+            cancellable = false
+        }
+        fullscreen = false
     }
-
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        if (!isScrimVisible) {
-            setScrimVisibility(false)
-        }
-
-        val dialog = dialog!!
-        val frame = dialog.window!!.decorView.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-        val behavior = BottomSheetBehavior.from(frame)
-        behavior.isDraggable = isDraggable
-        behavior.isHideable = isHideable
-
-        if (!isHideable) {
-            val to = dialog.window!!.decorView.findViewById<View>(com.google.android.material.R.id.touch_outside)
-            to.setOnClickListener {
-
-            }
-        }
 
         binding.dialogTitleText.text = title
         binding.dialogMessageText.text = message
@@ -87,7 +62,6 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
     }
 
     companion object {
-
 
         const val TAG = "MessageDialogFragment"
 
@@ -132,25 +106,10 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
                 return this
             }
 
-            fun shouldShowProgress(a: Boolean): Builder {
-                messageDialogFragment.shouldShowProgress = a
+            fun setProgress(): Builder {
+                messageDialogFragment.shouldShowProgress = true
                 return this
             }
-
-            fun setIsHideable(isHideable: Boolean): Builder {
-                messageDialogFragment.isHideable = isHideable
-                return this
-            }
-
-            fun setIsDraggable(isDraggable: Boolean): Builder {
-                messageDialogFragment.isDraggable = isDraggable
-                return this
-            }
-
-           /* fun setScrimVisibility(isVisible: Boolean): Builder {
-                messageDialogFragment.isScrimVisible = isVisible
-                return this
-            }*/
 
             fun build(): MessageDialogFragment {
                 return messageDialogFragment
@@ -168,6 +127,10 @@ class MessageDialogFragment: RoundedBottomSheetDialogFragment() {
             return s
         }
 
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentMessageDialogBinding {
+        return FragmentMessageDialogBinding.inflate(inflater)
     }
 
 }

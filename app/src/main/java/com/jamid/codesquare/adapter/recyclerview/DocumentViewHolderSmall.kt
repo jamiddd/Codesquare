@@ -29,7 +29,7 @@ class DocumentViewHolderSmall(val view: View, private val documentClickListener:
             name.text = newText
         }
 
-        size.text = getTextForSizeInBytes(metadata.size)
+        size.text = view.context.getTextForSizeInBytes(metadata.size)
 
         removeBtn.setOnClickListener {
             documentClickListener.onCloseBtnClick(it, metadata, absoluteAdapterPosition)

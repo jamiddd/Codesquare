@@ -3,20 +3,22 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
-import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
-class ChatChannelAdapter2(private val uid: String, private val channelListener: ChatChannelClickListener): ListAdapter<ChatChannel, ChatChannelViewHolder>(comparator) {
+class ChatChannelAdapter2(
+    private val channelListener: ChatChannelClickListener
+) : ListAdapter<ChatChannelWrapper, ChatChannelViewHolder>(comparator) {
 
-    var isSelectAvailable = false
+    var isSelectMode = false
 
     companion object {
-        private val comparator = object : DiffUtil.ItemCallback<ChatChannel>() {
-            override fun areItemsTheSame(oldItem: ChatChannel, newItem: ChatChannel): Boolean {
-                return oldItem.chatChannelId == newItem.chatChannelId
+        private val comparator = object : DiffUtil.ItemCallback<ChatChannelWrapper>() {
+            override fun areItemsTheSame(oldItem: ChatChannelWrapper, newItem: ChatChannelWrapper): Boolean {
+                return oldItem.id == newItem.id
             }
 
-            override fun areContentsTheSame(oldItem: ChatChannel, newItem: ChatChannel): Boolean {
+            override fun areContentsTheSame(oldItem: ChatChannelWrapper, newItem: ChatChannelWrapper): Boolean {
                 return oldItem == newItem
             }
         }
@@ -27,7 +29,7 @@ class ChatChannelAdapter2(private val uid: String, private val channelListener: 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatChannelViewHolder {
-        return ChatChannelViewHolder.newInstance(uid, parent, isSelectAvailable, channelListener)
+        return ChatChannelViewHolder.newInstance(parent, isSelectMode, channelListener)
     }
 
 }

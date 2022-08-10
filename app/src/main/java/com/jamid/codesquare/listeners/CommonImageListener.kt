@@ -6,7 +6,7 @@ import com.facebook.drawee.controller.BaseControllerListener
 import com.facebook.imagepipeline.image.ImageInfo
 import com.jamid.codesquare.hide
 
-class CommonImageListener(val progressBar: View? = null): BaseControllerListener<ImageInfo>()  {
+class CommonImageListener(val progressBar: View? = null, val onComplete: ((w: Int, h:Int, err: Throwable?) -> Unit)? = null): BaseControllerListener<ImageInfo>()  {
 
     var finalWidth = 0
     var finalHeight = 0
@@ -17,6 +17,8 @@ class CommonImageListener(val progressBar: View? = null): BaseControllerListener
         if (imageInfo != null) {
             finalWidth = imageInfo.width
             finalHeight = imageInfo.height
+
+            onComplete?.let { it(finalWidth, finalHeight, null) }
         }
 
     }
@@ -24,6 +26,7 @@ class CommonImageListener(val progressBar: View? = null): BaseControllerListener
     override fun onFailure(id: String?, throwable: Throwable?) {
         super.onFailure(id, throwable)
         progressBar?.hide()
+        onComplete?.let { it(0, 0, throwable) }
     }
 
 }

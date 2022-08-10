@@ -6,10 +6,13 @@ export interface PostMinimal {
     type: string;
     name: string;
     content: string;
+    thumbnail: string;
+    chatChannel: string;
     createdAt: number;
-    creator: UserMinimal;
-    images: string[];
-    location: MyLocation;
-    tags: string[];
     updatedAt: number;
+    rank: number;
+    mediaList: string[];
+    tags: string[];
+    creator: UserMinimal;
+    location: MyLocation;
 }

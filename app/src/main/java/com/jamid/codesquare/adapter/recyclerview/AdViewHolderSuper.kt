@@ -1,30 +1,34 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.graphics.Bitmap
+import android.graphics.drawable.BitmapDrawable
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup.OnHierarchyChangeListener
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.RatingBar
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.palette.graphics.Palette
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.nativead.NativeAdOptions
-import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.darkenColor
+import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.databinding.CustomPostAdBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.PostClickListener
 import com.jamid.codesquare.show
 import java.util.*
 
-class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
+
+class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPostViewHolder(v) {
 
     private lateinit var binding: CustomPostAdBinding
-    private val projectClickListener = view.context as PostClickListener
+    private val projectClickListener = listener ?: view.context as PostClickListener
 
-    override fun bind(mPost: Post?) {
-        Log.d(TAG, mPost?.isAd.toString())
-
+    override fun bind(mPost: Post2?) {
         binding = CustomPostAdBinding.bind(view)
 
         val videoOptions = VideoOptions.Builder().setStartMuted(true).build()
@@ -42,7 +46,7 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
             projectClickListener.onAdInfoClick()
         }
 
-        val adLoader = AdLoader.Builder(view.context, "ca-app-pub-3940256099942544/2247696110")
+        val adLoader = AdLoader.Builder(view.context, "ca-app-pub-2159166722829360/7384689864")
             .forNativeAd { nativeAd ->
 
                 nativeAdView.headlineView = binding.adHeadline
@@ -56,8 +60,30 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
 
                 (nativeAdView.headlineView as TextView).text = nativeAd.headline
                 nativeAd.mediaContent?.let {
-                    nativeAdView.mediaView?.setImageScaleType(ImageView.ScaleType.FIT_CENTER)
                     nativeAdView.mediaView?.setMediaContent(it)
+                    nativeAdView.mediaView?.setOnHierarchyChangeListener(object : OnHierarchyChangeListener {
+                        override fun onChildViewAdded(parent: View, child: View) {
+                            if (child is ImageView) {
+                                child.adjustViewBounds = true
+
+                                val bitmap = (child.drawable as BitmapDrawable).bitmap
+                                if (bitmap != null) {
+                                    val palette = createPaletteSync(bitmap)
+                                    val vc = palette.vibrantSwatch
+
+                                    vc?.rgb?.let { it1 ->
+                                        nativeAdView.callToActionView?.setBackgroundColor(
+                                            darkenColor(it1)
+                                        )
+                                    }
+                                } else {
+                                    Log.d(TAG, "onChildViewAdded: Bitmap is null")
+                                }
+                            }
+                        }
+
+                        override fun onChildViewRemoved(parent: View, child: View) {}
+                    })
                 }
 
                 if (nativeAd.icon != null) {
@@ -108,6 +134,7 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
 
             }
             .withAdListener(object: AdListener() {
+
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     super.onAdFailedToLoad(loadAdError)
 
@@ -117,7 +144,9 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
                     Log.e(TAG, error)
 
                     if (mPost != null) {
-                        projectClickListener.onAdError(mPost)
+                        if (mPost is Post2.Collab) {
+                            projectClickListener.onAdError(mPost.post)
+                        }
                     }
                 }
 
@@ -138,6 +167,9 @@ class AdViewHolderSuper(v: View): SuperPostViewHolder(v) {
         adLoader.loadAd(AdRequest.Builder().build())
 
     }
+
+    fun createPaletteSync(bitmap: Bitmap): Palette = Palette.from(bitmap).generate()
+
 
     companion object {
         private const val TAG = "AdViewHolder"

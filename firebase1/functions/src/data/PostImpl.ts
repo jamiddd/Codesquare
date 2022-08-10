@@ -9,26 +9,32 @@ import { UserMinimal } from "./UserMinimal";
 export class PostImpl {
     /**
      * 
-     * @param {string} id Id of the post
-     * @param {string} name Name of the post
-     * @param {string} content Content of the post
-     * @param {string} commentChannel Comment channel associated with the post
-     * @param {string} chatChannel Chat channel associated with the post
-     * @param {UserMinimal} creator Creator of the post
-     * @param {number} likesCount Count of number of likes for this post
-     * @param {number} commentsCount Count of number of comments in this post
-     * @param {string[]} contributors Number of people contributing to this post 
-     * @param {string[]} images List of images of this post
-     * @param {string[]} tags List of tags associated with this post
-     * @param {string[]} sources List of sources associated with this post
-     * @param {string[]} requests List of requests sent by other users
-     * @param {MyLocation} location Location of this post
-     * @param {number} createdAt Time of creation of this post
-     * @param {number} updatedAt Time of updation of this post
-     * @param {number} expiredAt Time of expiry of this post
-     * @param {number} viewsCount Count of number of views of this post
-     * @param {boolean} archived State of the project of being archived
-     * @param {string[]} blockedList List of users who are blocked for this post
+     * @param {string} id {string} id 
+     * @param {string} name  name 
+     * @param {string} content content 
+     * @param {string} commentChannel commentChannel 
+     * @param {string} chatChannel chatChannel 
+     * @param {string} rankCategory rankCategory 
+     * @param {string} thumbnail thumbnail 
+     * @param {string} mediaString mediaString 
+     * @param {number} likesCount likesCount 
+     * @param {number} commentsCount commentsCount 
+     * @param {number} contributorsCount contributorsCount 
+     * @param {number} createdAt createdAt 
+     * @param {number} updatedAt updatedAt 
+     * @param {number} expiredAt expiredAt 
+     * @param {number} viewsCount viewsCount 
+     * @param {number} rank rank 
+     * @param {number} points points 
+     * @param {string[]} blockedList blockedList 
+     * @param {string[]} mediaList mediaList 
+     * @param {string[]} tags tags 
+     * @param {string[]} sources sources 
+     * @param {string[]} contributors contributors 
+     * @param {string[]} requests requests 
+     * @param {boolean} archived archived 
+     * @param {UserMinimal} creator creator 
+     * @param {MyLocation} location location 
      */
     constructor(
         readonly id: string,
@@ -36,20 +42,26 @@ export class PostImpl {
         readonly content: string,
         readonly commentChannel: string,
         readonly chatChannel: string,
-        readonly creator: UserMinimal,
+        readonly rankCategory: string,
+        readonly thumbnail: string,
+        readonly mediaString: string,
         readonly likesCount: number,
         readonly commentsCount: number,
-        readonly contributors: string[],
-        readonly images: string[],
-        readonly tags: string[],
-        readonly sources: string[],
-        readonly requests: string[],
-        readonly location: MyLocation,
+        readonly contributorsCount: number,
         readonly createdAt: number,
         readonly updatedAt: number,
         readonly expiredAt: number,
         readonly viewsCount: number,
+        readonly rank: number,
+        readonly points: number,
+        readonly blockedList: string[],
+        readonly mediaList: string[],
+        readonly tags: string[],
+        readonly sources: string[],
+        readonly contributors: string[],
+        readonly requests: string[],
         readonly archived: boolean,
-        readonly blockedList: string[]
+        readonly creator: UserMinimal,
+        readonly location: MyLocation,
         ) {}
 }

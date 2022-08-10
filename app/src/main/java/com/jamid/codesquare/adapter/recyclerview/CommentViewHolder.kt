@@ -56,11 +56,6 @@ class CommentViewHolder(val view: View, private val commentListener: CommentList
             binding.commentOptionBtn.setOnClickListener {
                 commentListener.onOptionClick(comment)
             }
-
-            commentListener.onCheckForStaleData(comment) {
-                bind(it)
-            }
-
         }
     }
 

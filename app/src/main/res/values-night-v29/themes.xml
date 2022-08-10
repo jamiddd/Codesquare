@@ -32,6 +32,7 @@
         <item name="textInputStyle">@style/AppTheme.TextInputLayout</item>
         <item name="materialButtonStyle">@style/AppTheme.Button</item>
         <item name="chipStyle">@style/AppTheme.YoutubeChip</item>
+        <item name="snackbarTextViewStyle">@style/AppTheme.Snackbar.Text</item>
         <item name="searchViewStyle">@style/AppTheme.SearchView</item>
         <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>
         <!--<item name="snackbarStyle">@style/AppTheme.Snackbar</item>
@@ -40,6 +41,8 @@
         <item name="popupMenuStyle">@style/AppTheme.PopupMenu</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
         <item name="materialCardViewStyle">@style/AppTheme.CardView</item>
+        <item name="bottomSheetDialogTheme">@style/AppTheme.BottomSheet</item>
+        <item name="actionButtonStyle">@style/AppTheme.Widget.ActionButton</item>
     </style>
 
 </resources>

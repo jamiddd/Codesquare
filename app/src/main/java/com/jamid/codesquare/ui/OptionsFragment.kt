@@ -3,7 +3,6 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.*
@@ -11,24 +10,17 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentOptionsBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 
-class OptionsFragment: RoundedBottomSheetDialogFragment() {
+class OptionsFragment: BaseBottomFragment<FragmentOptionsBinding>() {
 
-    private lateinit var binding: FragmentOptionsBinding
     private lateinit var optionsAdapter: OptionsAdapter
-
     var listener: OptionClickListener? = null
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentOptionsBinding.inflate(inflater)
-        return binding.root
+    init {
+        fullscreen = false
     }
 
-    fun setOptionsListener(mListener: OptionClickListener?) {
-        listener = mListener
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentOptionsBinding {
+        return FragmentOptionsBinding.inflate(inflater)
     }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -44,6 +36,7 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         val chatChannel = arguments?.getParcelable<ChatChannel>(ARG_OPTION_CHAT_CHANNEL)
         val comment = arguments?.getParcelable<Comment>(ARG_OPTION_COMMENT)
         val tag = arguments?.getString(ARG_STRING)
+        val message = arguments?.getParcelable<Message>(ARG_OPTION_MESSAGE)
 
         binding.optionsTitle.text = title
 
@@ -54,9 +47,9 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         }
 
         optionsAdapter = if (listener != null) {
-            OptionsAdapter(listener!!, user, project, chatChannel, comment, tag)
+            OptionsAdapter(listener!!, user, project, chatChannel, comment, tag, message)
         } else {
-            OptionsAdapter(requireActivity() as MainActivity, user, project, chatChannel, comment, tag)
+            OptionsAdapter(requireActivity() as MainActivity, user, project, chatChannel, comment, tag, message)
         }
 
 
@@ -91,8 +84,9 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
         const val ARG_OPTION_CHAT_CHANNEL = "ARG_OPTION_CHAT_CHANNEL"
         const val ARG_OPTION_COMMENT = "ARG_OPTION_COMMENT"
         const val ARG_STRING = "ARG_STRING"
+        const val ARG_OPTION_MESSAGE = "ARG_OPTION_MESSAGE"
 
-        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null, user: User? = null, post: Post? = null, chatChannel: ChatChannel? = null, comment: Comment? = null, tag: String? = null) = OptionsFragment().apply {
+        fun newInstance(title: String? = null, options: ArrayList<String>, icons: ArrayList<Int>? = null, listener: OptionClickListener? = null, user: User? = null, post: Post? = null, chatChannel: ChatChannel? = null, comment: Comment? = null, tag: String? = null, message: Message? = null) = OptionsFragment().apply {
             arguments = Bundle().apply {
                 putString(TITLE, title)
                 putStringArrayList(ARG_OPTIONS, options)
@@ -101,9 +95,10 @@ class OptionsFragment: RoundedBottomSheetDialogFragment() {
                 putParcelable(ARG_OPTION_PROJECT, post)
                 putParcelable(ARG_OPTION_CHAT_CHANNEL, chatChannel)
                 putParcelable(ARG_OPTION_COMMENT, comment)
+                putParcelable(ARG_OPTION_MESSAGE, message)
                 putString(ARG_STRING, tag)
             }
-            setOptionsListener(listener)
+            this.listener = listener
         }
     }
 

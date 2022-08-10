@@ -79,10 +79,16 @@ data class User(
     var likedCommentsCount: Long = 0,
     @SerializedName("savedPostsCount")
     var savedPostsCount: Long = 0,
+    @SerializedName("upvotedPostsCount")
+    var upvotedPostsCount: Long = 0,
+    @SerializedName("downvotedPostsCount")
+    var downvotedPostsCount: Long = 0,
     @SerializedName("createdAt")
     var createdAt: Long = -1,
     @SerializedName("updatedAt")
     var updatedAt: Long = -1,
+    @SerializedName("premiumState")
+    var premiumState: Long = -1,
     @Exclude @set: Exclude @get: Exclude
     @Transient
     @SerializedName("isBlocked")
@@ -95,13 +101,10 @@ data class User(
     @Transient
     @SerializedName("isCurrentUser")
     var isCurrentUser: Boolean = false,
-    @SerializedName("premiumState")
-    var premiumState: Long = -1,
     @SerializedName("online")
     var online: Boolean = false,
-    @Embedded(prefix = "user_")
-    @SerializedName("location")
-    var location: Location = Location(),
+    @SerializedName("hasTicket")
+    var hasTicket: Boolean = false,
     @SerializedName("interests")
     var interests: List<String> = emptyList(),
     @SerializedName("archivedProjects")
@@ -119,7 +122,10 @@ data class User(
     @SerializedName("blockedUsers")
     var blockedUsers: List<String> = emptyList(),
     @SerializedName("blockedBy")
-    var blockedBy: List<String> = emptyList()
+    var blockedBy: List<String> = emptyList(),
+    @Embedded(prefix = "user_")
+    @SerializedName("location")
+    var location: Location = Location()
 ): Parcelable {
     constructor(): this("", "", "", "", "", "", "", "", 0, 0, 0, 0, 0)
 

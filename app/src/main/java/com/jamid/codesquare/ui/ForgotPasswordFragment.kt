@@ -2,30 +2,26 @@ package com.jamid.codesquare.ui
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentForgotPasswordBinding
 
-@OptIn(ExperimentalPagingApi::class)
-class ForgotPasswordFragment: BaseFragment<FragmentForgotPasswordBinding, MainViewModel>() {
+class ForgotPasswordFragment: BaseFragment<FragmentForgotPasswordBinding>() {
 
-    override val viewModel: MainViewModel by activityViewModels()
-
-    override fun getViewBinding(): FragmentForgotPasswordBinding {
-        return FragmentForgotPasswordBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentForgotPasswordBinding {
+        return FragmentForgotPasswordBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val prevEmail = arguments?.getString("email")
+        val prevEmail = arguments?.getString(ARG_EMAIL)
         binding.emailText.editText?.setText(prevEmail)
 
         binding.forgotPasswordBtn.isEnabled = !prevEmail.isNullOrBlank()
@@ -64,6 +60,19 @@ class ForgotPasswordFragment: BaseFragment<FragmentForgotPasswordBinding, MainVi
             binding.forgotPasswordBtn.isEnabled = !it.isNullOrBlank() && it.trim().toString().isValidEmail()
         }
 
+        runDelayed(300) {
+            binding.emailText.editText?.requestFocus()
+
+            if (keyboardState.value != true) {
+                showKeyboard()
+            }
+
+        }
+
+    }
+
+    companion object {
+        const val ARG_EMAIL = "ARG_EMAIL"
     }
 
 }

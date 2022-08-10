@@ -2,24 +2,29 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/edit_profile_root"
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:clipToPadding="false"
     android:fillViewport="true"
-    android:overScrollMode="never">
+    android:overScrollMode="never"
+    android:paddingBottom="100dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/edit_profile_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <com.facebook.drawee.view.SimpleDraweeView
             android:id="@+id/user_img"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
+            style="@style/AppTheme.ProfileImage"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
             android:layout_marginTop="32dp"
-            android:layout_marginBottom="32dp"
+            android:layout_marginBottom="8dp"
             android:background="@drawable/ic_round_account_circle_24"
-            app:layout_constraintBottom_toTopOf="@+id/name_text"
+            app:layout_constraintBottom_toTopOf="@+id/change_photo_btn"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
@@ -33,13 +38,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
+            android:layout_marginTop="32dp"
             android:layout_marginEnd="20dp"
-            app:counterEnabled="true"
-            app:counterMaxLength="30"
+            app:counterMaxLength="50"
             app:layout_constraintBottom_toTopOf="@+id/username_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/user_img">
+            app:layout_constraintTop_toBottomOf="@+id/change_photo_btn">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
@@ -55,7 +60,6 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            app:counterEnabled="true"
             app:counterMaxLength="16"
             app:layout_constraintBottom_toTopOf="@+id/tag_text"
             app:layout_constraintEnd_toEndOf="@+id/name_text"
@@ -79,6 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:layout_marginBottom="16dp"
+            app:counterMaxLength="20"
             app:helperText="Add a tag that is visible directly below your name that corresponds to your work"
             app:layout_constraintBottom_toTopOf="@+id/about_text"
             app:layout_constraintEnd_toEndOf="@+id/username_text"
@@ -98,8 +103,7 @@
             android:id="@+id/about_text"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:counterEnabled="true"
-            app:counterMaxLength="240"
+            app:counterMaxLength="200"
             app:layout_constraintBottom_toTopOf="@+id/interests_group"
             app:layout_constraintEnd_toEndOf="@+id/tag_text"
             app:layout_constraintStart_toStartOf="@+id/tag_text"
@@ -108,7 +112,8 @@
             <com.google.android.material.textfield.TextInputEditText
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/about"
+                android:gravity="start|top"
+                android:hint="Write something about yourself ..."
                 android:imeOptions="actionDone"
                 android:inputType="textMultiLine"
                 android:minHeight="100dp"
@@ -119,9 +124,9 @@
             android:id="@+id/interests_group"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:padding="8dp"
             app:flexDirection="row"
             app:flexWrap="wrap"
-            android:padding="8dp"
             app:justifyContent="center"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="@+id/about_text"
@@ -141,17 +146,16 @@
                 tools:layout_editor_absoluteY="8dp" />
         </com.google.android.flexbox.FlexboxLayout>
 
-        <ProgressBar
-            android:id="@+id/user_image_progress"
-            style="?android:attr/progressBarStyle"
+        <Button
+            android:id="@+id/change_photo_btn"
+            style="@style/AppTheme.GenericTextBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:indeterminateTint="@color/white"
-            android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@+id/user_img"
+            android:text="Change profile photo"
+            app:layout_constraintBottom_toTopOf="@+id/name_text"
             app:layout_constraintEnd_toEndOf="@+id/user_img"
             app:layout_constraintStart_toStartOf="@+id/user_img"
-            app:layout_constraintTop_toTopOf="@+id/user_img" />
+            app:layout_constraintTop_toBottomOf="@+id/user_img" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

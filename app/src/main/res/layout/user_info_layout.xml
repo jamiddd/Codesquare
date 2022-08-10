@@ -77,7 +77,7 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/posts_count"
-        style="@style/AppTheme.MyChip"
+        style="@style/AppTheme.DefaultChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:checkable="false"
@@ -91,7 +91,7 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/collaborations_count"
-        style="@style/AppTheme.MyChip"
+        style="@style/AppTheme.DefaultChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -109,7 +109,7 @@
 
     <com.google.android.material.chip.Chip
         android:id="@+id/likes_count"
-        style="@style/AppTheme.MyChip"
+        style="@style/AppTheme.DefaultChip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:checkable="false"

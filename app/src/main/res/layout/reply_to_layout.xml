@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/AppTheme.GenericBackground2"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/reply_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Replying to Jamid Deka"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toTopOf="@+id/reply_message_content"
+        app:layout_constraintEnd_toEndOf="@+id/reply_message_content"
+        app:layout_constraintStart_toStartOf="@+id/reply_message_content"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/reply_message_content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="78dp"
+        android:layout_marginBottom="8dp"
+        android:text="k"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/reply_title" />
+
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/reply_img"
+        style="@style/AppTheme.DraweeViewBackground"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="30dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/reply_message_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/reply_title" />
+
+    <Button
+        android:id="@+id/cancel_reply"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:paddingStart="4dp"
+        android:paddingEnd="0dp"
+        app:icon="@drawable/ic_round_close_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/divider16"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

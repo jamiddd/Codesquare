@@ -30,9 +30,12 @@ data class Post(
     var commentChannel: String,
     @SerializedName("chatChannel")
     var chatChannel: String,
-    @Embedded(prefix = "post_")
-    @SerializedName("creator")
-    var creator: UserMinimal = UserMinimal(),
+    @SerializedName("rankCategory")
+    var rankCategory: String = "none",
+    @SerializedName("thumbnail")
+    var thumbnail: String = "",
+    @SerializedName("mediaString")
+    var mediaString: String = "",
     @SerializedName("likesCount")
     var likesCount: Long = 0,
     @SerializedName("commentsCount")
@@ -47,10 +50,14 @@ data class Post(
     var expiredAt: Long = -1,
     @SerializedName("viewsCount")
     var viewsCount: Long = 0,
+    @SerializedName("ranked")
+    var rank: Long = -1,
+    @SerializedName("points")
+    var points: Long = 0,
     @SerializedName("blockedList")
     var blockedList: List<String> = emptyList(),
     @SerializedName("images")
-    var images: List<String> = emptyList(),
+    var mediaList: List<String> = emptyList(),
     @SerializedName("tags")
     var tags: List<String> = emptyList(),
     @SerializedName("sources")
@@ -59,9 +66,6 @@ data class Post(
     var contributors: List<String> = emptyList(),
     @SerializedName("requests")
     var requests: List<String> = emptyList(),
-    @Embedded(prefix = "post_")
-    @SerializedName("location")
-    var location: Location = Location(),
     @Exclude @set: Exclude @get: Exclude
     @Transient
     @SerializedName("isLiked")
@@ -95,14 +99,29 @@ data class Post(
     var archived: Boolean = false,
     @Exclude @set: Exclude @get: Exclude
     @Transient
+    @SerializedName("isUpvote")
+    var isUpvote: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    @Transient
+    @SerializedName("isDownvote")
+    var isDownvote: Boolean = false,
+    @Exclude @set: Exclude @get: Exclude
+    @Transient
     @SerializedName("isAd")
     var isAd: Boolean = false,
-): Parcelable {
+    @Embedded(prefix = "post_")
+    @SerializedName("creator")
+    var creator: UserMinimal = UserMinimal(),
+    @Embedded(prefix = "post_")
+    @SerializedName("location")
+    var location: Location = Location(),
+    ): Parcelable {
+
     constructor(): this("", "", "", "", "")
 
     @Exclude
     fun minify(): PostMinimal {
-        return PostMinimal(id, name, images.first(), creator.userId, chatChannel, commentChannel)
+        return PostMinimal(id, name, mediaList.first(), creator.userId, chatChannel, commentChannel)
     }
 
     companion object {

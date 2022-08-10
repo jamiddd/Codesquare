@@ -9,7 +9,6 @@ import com.jamid.codesquare.data.User
 import com.jamid.codesquare.ui.profile.CollaborationsFragment
 import com.jamid.codesquare.ui.profile.PostsFragment
 
-@ExperimentalPagingApi
 class ProfilePagerAdapter(activity: FragmentActivity, val user: User? = null): FragmentStateAdapter(activity) {
     override fun getItemCount() = PROFILE_PAGE_COUNT
 

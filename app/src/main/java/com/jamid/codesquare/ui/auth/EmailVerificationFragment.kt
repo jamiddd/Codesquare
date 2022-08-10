@@ -2,27 +2,26 @@ package com.jamid.codesquare.ui.auth
 
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
-import androidx.activity.addCallback
-import androidx.fragment.app.activityViewModels
+import androidx.activity.OnBackPressedCallback
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentEmailVerificationBinding
 
-@ExperimentalPagingApi
-class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, MainViewModel>() {
+class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding>() {
 
-    override val viewModel: MainViewModel by activityViewModels()
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentEmailVerificationBinding {
+        return FragmentEmailVerificationBinding.inflate(inflater)
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val currentUser = Firebase.auth.currentUser
-
         binding.emailVerificationProgress.show()
 
         if (currentUser != null) {
@@ -31,7 +30,6 @@ class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, 
                 binding.emailVerificationProgress.hide()
 
                 if (it.isSuccessful) {
-
                     viewModel.setListenerForEmailVerification()
 
                     binding.emailVerificationMessage.text = getString(R.string.email_verification_message)
@@ -42,12 +40,15 @@ class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, 
             }
         } else {
             // going back to login fragment
-            findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.loginFragment, null)
         }
 
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
-            requireActivity().finish()
-        }
+        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner, object :
+            OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                activity.finish()
+            }
+        })
 
         viewModel.userVerificationResult.observe(viewLifecycleOwner) {
             val result = it ?: return@observe
@@ -61,7 +62,7 @@ class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, 
                 is Result.Success -> {
                     val isEmailVerified = result.data
                     if (isEmailVerified) {
-                        findNavController().navigate(R.id.profileImageFragment, null, slideRightNavOptions())
+                        findNavController().navigate(R.id.profileImageFragment)
                     } else {
                         Log.d(TAG, "onViewCreated: Waiting for email to be verified")
                     }
@@ -74,8 +75,5 @@ class EmailVerificationFragment: BaseFragment<FragmentEmailVerificationBinding, 
         private const val TAG = "EmailVerification"
     }
 
-    override fun getViewBinding(): FragmentEmailVerificationBinding {
-        return FragmentEmailVerificationBinding.inflate(layoutInflater)
-    }
 
 }

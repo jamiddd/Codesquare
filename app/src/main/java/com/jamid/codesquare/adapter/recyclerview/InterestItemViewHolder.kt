@@ -3,7 +3,6 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.FlexboxLayoutManager
@@ -43,7 +42,7 @@ class InterestItemViewHolder(private val view: View, private val interestItemCli
 
     companion object {
         fun newInstance(parent: ViewGroup, interestItemClickListener: InterestItemClickListener)
-            = InterestItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.choice_chip, parent, false), interestItemClickListener)
+            = InterestItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.default_chip, parent, false), interestItemClickListener)
 
     }
 

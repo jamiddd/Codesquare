@@ -3,12 +3,9 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.UserMinimalAdapter
@@ -17,19 +14,10 @@ import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.databinding.FragmentSearchUsersBinding
 import com.jamid.codesquare.listeners.UserClickListener
 
-@ExperimentalPagingApi
-class SearchUsersFragment: Fragment(), UserClickListener {
+class SearchUsersFragment: BaseFragment<FragmentSearchUsersBinding>(), UserClickListener {
 
-    private lateinit var binding: FragmentSearchUsersBinding
-    private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentSearchUsersBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentSearchUsersBinding {
+        return FragmentSearchUsersBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -38,7 +26,9 @@ class SearchUsersFragment: Fragment(), UserClickListener {
         val userAdapter = UserMinimalAdapter(listener = this)
 
         binding.searchUsersRecycler.apply {
-            layoutManager = LinearLayoutManager(requireContext())
+            val decoration = DividerItemDecoration(activity, DividerItemDecoration.VERTICAL)
+            addItemDecoration(decoration)
+            layoutManager = LinearLayoutManager(activity)
             adapter = userAdapter
         }
 
@@ -59,18 +49,22 @@ class SearchUsersFragment: Fragment(), UserClickListener {
         } else {
             bundleOf("user" to user)
         }
-        findNavController().navigate(R.id.profileFragment, bundle, slideRightNavOptions())
+        findNavController().navigate(R.id.profileFragment2, bundle)
     }
 
     override fun onUserClick(userId: String) {
-        (activity as MainActivity).getUserImpulsive(userId) {
-            onUserClick(it)
+        FireUtility.getUser(userId) { user ->
+            if (user != null) {
+                onUserClick(user)
+            }
         }
     }
 
     override fun onUserClick(userMinimal: UserMinimal2) {
-        (activity as MainActivity).getUserImpulsive(userMinimal.objectID) {
-            onUserClick(it)
+        FireUtility.getUser(userMinimal.objectID) {
+            if (it != null) {
+                onUserClick(it)
+            }
         }
     }
 

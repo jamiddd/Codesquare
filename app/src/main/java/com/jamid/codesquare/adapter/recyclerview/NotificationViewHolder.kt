@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -23,6 +24,8 @@ class NotificationViewHolder(val view: View): RecyclerView.ViewHolder(view) {
     fun bind(notification: Notification?) {
         if (notification == null)
             return
+
+        Log.d(TAG, "bind: $notification")
 
         notificationCopy = notification
 

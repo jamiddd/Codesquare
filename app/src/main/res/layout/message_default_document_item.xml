@@ -29,6 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="2dp"
+        android:maxWidth="270dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toTopOf="@+id/message_created_at"
         app:layout_constraintEnd_toEndOf="parent"
@@ -37,17 +38,22 @@
         app:layout_constraintTop_toTopOf="parent">
 
 
-        <View
+        <androidx.appcompat.widget.AppCompatTextView
             android:id="@+id/document_icon"
-            style="@style/AppTheme.ChatBalloonLeftIcon"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginTop="8dp"
-            android:background="@drawable/ic_document"
+            android:background="@drawable/ic_file"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textAllCaps="true"
             app:layout_constraintBottom_toTopOf="@+id/document_name"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:textAllCaps="true" />
 
         <TextView
             android:id="@+id/document_name"
@@ -55,8 +61,12 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginEnd="24dp"
+            android:ellipsize="middle"
+            android:fontFamily="@font/title_semi"
             android:gravity="center"
-            android:textSize="16sp"
+            android:maxWidth="240dp"
+            android:maxLines="1"
+            android:text="275015647_151930207227739_7108664160582368173.mp4"
             app:layout_constraintBottom_toTopOf="@+id/document_size"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -69,6 +79,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:gravity="center"
+            android:textSize="12sp"
             app:layout_constraintBottom_toTopOf="@+id/document_download_btn"
             app:layout_constraintEnd_toEndOf="@+id/document_name"
             app:layout_constraintStart_toStartOf="@+id/document_name"

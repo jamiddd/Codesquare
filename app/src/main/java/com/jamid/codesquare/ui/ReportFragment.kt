@@ -1,33 +1,30 @@
 package com.jamid.codesquare.ui
 
-import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Report
 import com.jamid.codesquare.databinding.FragmentReportBinding
 import com.jamid.codesquare.listeners.ImageClickListener
+import com.jamid.codesquare.listeners.ItemSelectResultListener
 
-@ExperimentalPagingApi
-class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), ImageClickListener {
+class ReportFragment: BaseFragment<FragmentReportBinding>(), ImageClickListener, ItemSelectResultListener<MediaItem> {
 
-    override val viewModel: MainViewModel by activityViewModels()
     private val reportViewModel: ReportViewModel by viewModels()
 
-    override fun getViewBinding(): FragmentReportBinding {
-        return FragmentReportBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentReportBinding {
+        return FragmentReportBinding.inflate(inflater)
     }
 
-    @SuppressLint("InflateParams")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -38,21 +35,18 @@ class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), Imag
 
         reportViewModel.setReportContext(report.contextId)
 
-        viewModel.reportUploadImages.observe(viewLifecycleOwner) { reportImages ->
+        /*viewModel.reportUploadImages.observe(viewLifecycleOwner) { reportImages ->
             if (!reportImages.isNullOrEmpty()) {
                 reportViewModel.addImagesToReport(reportImages.map { it.toString() })
             }
-        }
+        }*/
 
         binding.reportBtn.setOnClickListener {
-
             val reason = binding.reportReasonText.editText?.text.toString()
             reportViewModel.setReportContent(reason)
 
             val frag = MessageDialogFragment.builder("Sending report. Please wait for a while ... ")
-                .setIsDraggable(false)
-                .setIsHideable(false)
-                .shouldShowProgress(true)
+                .setProgress()
                 .build()
 
             frag.show(childFragmentManager, MessageDialogFragment.TAG)
@@ -62,9 +56,8 @@ class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), Imag
                 frag.dismiss()
 
                 if (it.isSuccessful) {
-                    requireActivity().runOnUiThread {
-                        val mainRoot = requireActivity().findViewById<CoordinatorLayout>(R.id.main_container_root)
-                        Snackbar.make(mainRoot, "Report sent successfully. We will look into the matter asap!", Snackbar.LENGTH_LONG).show()
+                    runOnMainThread {
+                        Snackbar.make(activity.binding.root, "Report sent successfully. We will look into the matter asap!", Snackbar.LENGTH_LONG).show()
                         findNavController().navigateUp()
                     }
                 } else {
@@ -80,18 +73,18 @@ class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), Imag
             binding.reportReasonText.error = null
         }
 
-        init()
+        initialize()
 
     }
 
-    private fun init() {
+    private fun initialize() {
 
         binding.reportBtn.isEnabled = false
 
         val smallImagesAdapter = SmallImagesAdapter(this)
         binding.reportImagesRecycler.apply {
             adapter = smallImagesAdapter
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
         }
 
         reportViewModel.currentReport.observe(viewLifecycleOwner) { currentReport ->
@@ -117,14 +110,12 @@ class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), Imag
         } else {
             binding.reportAddScreenshots.text = getString(R.string.add_images)
             binding.reportAddScreenshots.setOnClickListener {
-                activity.selectImage(ImageSelectType.IMAGE_REPORT)
+                val frag = GalleryFragment(type = ItemSelectType.GALLERY_ONLY_IMG, itemSelectResultListener = this)
+                frag.title = "Select images"
+                frag.primaryActionLabel = "Select"
+                frag.show(activity.supportFragmentManager, "GalleryFrag")
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        viewModel.setReportUploadImages(emptyList())
     }
 
     override fun onImageClick(view: View, image: Image) {
@@ -133,5 +124,11 @@ class ReportFragment: BaseFragment<FragmentReportBinding, MainViewModel>(), Imag
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
         //
+    }
+
+    override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
+        if (!items.isNullOrEmpty()) {
+            reportViewModel.addImagesToReport(items.map { it.url })
+        }
     }
 }

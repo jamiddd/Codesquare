@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/post_scroller"
+    style="@style/AppTheme.Fragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:fillViewport="true"
+    android:overScrollMode="never"
+    android:paddingBottom="@dimen/large_padding">
+
+    <LinearLayout
+        android:id="@+id/post_data_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:overScrollMode="never">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/static_post_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="350dp"
+            android:overScrollMode="never"
+            tools:itemCount="2"
+            tools:listitem="@layout/post_item"
+            tools:visibility="gone" />
+
+        <include
+            android:id="@+id/post_extra_item"
+            layout="@layout/post_extra_component"
+            android:visibility="gone" />
+
+        <View
+            android:id="@+id/d23"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/similar_posts_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/title_semi"
+            android:gravity="center"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp"
+            android:text="Similar posts"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:textSize="16sp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <View
+            android:id="@+id/divider21"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="?android:attr/listDivider"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/related_posts_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:overScrollMode="never"
+            android:visibility="gone"
+            tools:itemCount="2"
+            tools:listitem="@layout/post_item"
+            tools:visibility="visible" />
+
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

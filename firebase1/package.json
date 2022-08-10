@@ -1,5 +1,8 @@
 {
   "dependencies": {
-    "firebase": "^9.6.11"
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@types/child-process-promise": "^2.2.2",
+    "firebase": "^9.6.11",
+    "firebase-functions": "^3.21.2"
   }
 }

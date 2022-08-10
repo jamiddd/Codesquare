@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/options_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
 
     <TextView
         android:id="@+id/options_handle"
@@ -14,6 +14,7 @@
         android:layout_marginTop="16dp"
         android:background="@drawable/chat_edittext_background"
         android:backgroundTint="@color/darker_grey"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/options_title"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,6 +27,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:overScrollMode="never"
         app:layout_constraintBottom_toTopOf="@+id/dismiss_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -38,11 +40,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:padding="12dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textSize="15sp"
+        android:textAppearance="@style/AppTheme.BottomSheet.Toolbar.TextAppearance"
+        android:textSize="17sp"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/options_list"
         app:layout_constraintEnd_toEndOf="parent"

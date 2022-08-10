@@ -1,30 +1,38 @@
 package com.jamid.codesquare.ui.profile
 
+import android.os.Bundle
+import android.view.View
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DividerItemDecoration
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.recyclerview.PostInviteAdapter
 import com.jamid.codesquare.data.PostInvite
-import com.jamid.codesquare.ui.PagerListFragment
+import com.jamid.codesquare.ui.DefaultPagingFragment
 
-@ExperimentalPagingApi
-class PostInvitesFragment: PagerListFragment<PostInvite, PostInviteAdapter.PostInviteViewHolder>() {
+class PostInvitesFragment: DefaultPagingFragment<PostInvite, PostInviteAdapter.PostInviteViewHolder>() {
 
-    override fun onViewLaidOut() {
-        super.onViewLaidOut()
+    @OptIn(ExperimentalPagingApi::class)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        getItems {
+        binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+        binding.noDataImage.setAnimation(R.raw.empty_notification)
+
+        getItems(viewLifecycleOwner) {
             viewModel.getPostInvites()
         }
 
-        binding.pagerItemsRecycler.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
-        binding.pagerNoItemsText.text = getString(R.string.empty_post_invites_greet)
-        binding.noDataImage.setAnimation(R.raw.empty_notification)
+        val padding = resources.getDimension(R.dimen.large_padding).toInt()
+        binding.pagerItemsRecycler.setPadding(0, 0, 0, padding)
 
     }
 
-    override fun getAdapter(): PagingDataAdapter<PostInvite, PostInviteAdapter.PostInviteViewHolder> {
+    override fun getDefaultInfoText(): String {
+        return getString(R.string.empty_post_invites_greet)
+    }
+
+    override fun getPagingAdapter(): PagingDataAdapter<PostInvite, PostInviteAdapter.PostInviteViewHolder> {
         return PostInviteAdapter()
     }
 

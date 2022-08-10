@@ -4,19 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?selectableItemBackground"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp">
+    android:background="?selectableItemBackground">
 
     <com.facebook.drawee.view.SimpleDraweeView
         android:id="@+id/user_img"
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:background="@drawable/ic_round_account_circle_24"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/user_name"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintEnd_toStartOf="@+id/linearLayout8"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -24,64 +25,66 @@
         app:roundAsCircle="true"
         tools:ignore="ImageContrastCheck" />
 
-    <TextView
-        android:id="@+id/user_name"
-        style="@style/AppTheme.Header1"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/user_like_btn"
+        style="@style/AppTheme.LikeBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:drawablePadding="8dp"
-        app:drawableTint="?colorAccent"
-        app:layout_constraintBottom_toTopOf="@+id/user_tag"
-        app:layout_constraintStart_toEndOf="@+id/user_img"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.5"
-        app:layout_constraintVertical_chainStyle="packed"
-        tools:text="@string/sample_name" />
-
-    <TextView
-        android:id="@+id/user_about"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="56dp"
-        android:layout_marginBottom="8dp"
-        android:maxLines="5"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/user_name"
-        app:layout_constraintTop_toBottomOf="@+id/user_tag"
-        tools:text="@string/about_me"
-        tools:visibility="visible" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/user_like_btn"
-        style="@style/AppTheme.Button.IconOnly"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
         android:contentDescription="@string/like_the_user"
         android:visibility="gone"
-        app:icon="@drawable/thumb_selector"
+        app:icon="@drawable/like_selector"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/linearLayout8"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0"
         tools:visibility="visible" />
 
-    <TextView
-        android:id="@+id/user_tag"
+    <LinearLayout
+        android:id="@+id/linearLayout8"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/user_about"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/user_like_btn"
-        app:layout_constraintStart_toStartOf="@+id/user_name"
-        app:layout_constraintTop_toBottomOf="@+id/user_name"
-        tools:text="@string/sample_tag"
-        tools:visibility="visible" />
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/user_img"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/user_name"
+            style="@style/AppTheme.Header1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:drawablePadding="8dp"
+            app:drawableTint="?colorAccent"
+            tools:text="@string/sample_name" />
+
+        <TextView
+            android:id="@+id/user_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:text="@string/sample_tag"
+            tools:visibility="gone" />
+
+        <TextView
+            android:id="@+id/user_about"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+            android:visibility="gone"
+            tools:text="Social Worker"
+            tools:visibility="visible" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

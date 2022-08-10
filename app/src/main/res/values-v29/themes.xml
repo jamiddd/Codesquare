@@ -21,10 +21,14 @@
         <item name="chipStyle">@style/AppTheme.YoutubeChip</item>
         <item name="searchViewStyle">@style/AppTheme.SearchView</item>
         <item name="snackbarStyle">@style/AppTheme.Snackbar</item>
+        <item name="snackbarTextViewStyle">@style/AppTheme.Snackbar.Text</item>
         <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>
         <item name="popupMenuStyle">@style/AppTheme.PopupMenu</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
+        <item name="bottomSheetDialogTheme">@style/AppTheme.BottomSheet</item>
         <item name="colorOnError">@color/lightest_red</item>
+        <item name="actionButtonStyle">@style/AppTheme.Widget.ActionButton</item>
+
     </style>
 
 </resources>

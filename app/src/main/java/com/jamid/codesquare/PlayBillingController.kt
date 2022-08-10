@@ -46,8 +46,14 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
 
                             billingClient?.acknowledgePurchase(acknowledgePurchaseParams) { it1 ->
                                 if (it1.responseCode == BillingClient.BillingResponseCode.OK) {
-                                    updatePremiumState(PremiumState.STATE_FULL_PURCHASE.state)
+
                                     isPurchaseAcknowledged.postValue(true)
+                                    FireUtility.updateUser2(mapOf("hasTicket" to true), false) { task ->
+                                        if (!task.isSuccessful) {
+                                            Log.e(TAG, "verifyPurchase: ${task.exception?.localizedMessage}")
+                                        }
+                                    }
+
                                 } else {
                                     Log.e(TAG, "verifyPurchase: ${it1.debugMessage}")
                                 }
@@ -131,12 +137,17 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
     }*/
 
     private fun connectToGooglePlayBilling(scope: CoroutineScope) {
+
+        Log.d(TAG, "connectToGooglePlayBilling: connecting to google play")
+
         billingClient?.startConnection(object : BillingClientStateListener {
             override fun onBillingServiceDisconnected() {
+                Log.d(TAG, "onBillingServiceDisconnected: Disconnected")
                 connectToGooglePlayBilling(scope)
             }
 
             override fun onBillingSetupFinished(p0: BillingResult) {
+                Log.d(TAG, "onBillingSetupFinished: ${p0.responseCode}")
                 if (p0.responseCode == BillingClient.BillingResponseCode.OK) {
                     scope.launch (Dispatchers.IO) {
                         getProductDetails()
@@ -179,9 +190,12 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
     }*/
 
     private suspend fun getProductDetails() {
+
+        Log.d(TAG, "getProductDetails: Getting product details")
+
         val productList = mutableListOf(
             QueryProductDetailsParams.Product.newBuilder()
-                .setProductId("one_time_premium")
+                .setProductId("weekly_rank_registration")
                 .setProductType(BillingClient.ProductType.INAPP)
                 .build()
         )
@@ -195,9 +209,24 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
         }
 
         if (productDetailsResult != null) {
+
+            Log.d(TAG, "getProductDetails: productdetailsresult is not null")
+
             if (productDetailsResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK && productDetailsResult.productDetailsList != null) {
+                Log.d(TAG, "getProductDetails: Everything ok")
                 purchaseDetails.postValue(productDetailsResult.productDetailsList!!)
+            } else {
+                if (productDetailsResult.billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                    Log.d(TAG, "Not ok ${productDetailsResult.billingResult.responseCode} ${productDetailsResult.productDetailsList}")
+                }
+
+                if (productDetailsResult.productDetailsList == null) {
+                    Log.d(TAG, "getProductDetails: NULL")
+                }
+
             }
+        } else {
+            Log.d(TAG, "getProductDetails: productdetailsresult is null")
         }
 
     }
@@ -226,7 +255,7 @@ class PlayBillingController(private val mContext: Context): LifecycleEventObserv
             }
             ON_RESUME -> {
                 source.lifecycle.coroutineScope.launch (Dispatchers.IO) {
-                    getProductDetails()
+//                    getProductDetails()
                 }
             }
             else -> {

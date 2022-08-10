@@ -11,6 +11,7 @@ const ALGOLIA_SEARCH_KEY = functions.config().algolia.search_key;
 
 const ALGOLIA_PROJECTS_INDEX = "projects";
 const ALGOLIA_USERS_INDEX = "users";
+const ALGOLIA_INTERESTS_INDEX = "interests"
 const client = algoliasearch(ALGOLIA_ID, ALGOLIA_ADMIN_KEY);
 
 class Notification {
@@ -101,6 +102,8 @@ exports.onProjectDeleted = functions.firestore.document("projects/{projectId}")
 
 exports.onUserCreated = functions.firestore.document("users/{userId}")
     .onCreate(async (snap, context) => {
+        
+        const x = snap.data();
         
         const userDocument = snap.data();
 
@@ -392,7 +395,6 @@ exports.sendNotificationToTopic = async (topic, dataObject) => {
 	}
 }
 
-
 exports.onCommentDeleted = functions.firestore.document("commentChannels/{commentChannelId}/comments/{commentId}")
     .onDelete(async (snap, context) => {
         const threadChannelId = snap.get("threadChannelId");
@@ -416,19 +418,19 @@ exports.onCommentChannelDeleted = functions.firestore.document("commentChannels/
         return await batch.commit();
     });
 
-
 exports.onProjectUpdated = functions.firestore.document("projects/{projectId}")
     .onUpdate(async (change, context) => {
         const projectDocument = change.after;
+        const previousDocument = change.before;
 
         // check if changes are not relevant to algolia
         if (
-            previousDocument.get("name") == userDocument.get("name") &&
-            previousDocument.get("content") == userDocument.get("content") &&
-            previousDocument.get("tags") == userDocument.get("tags") &&
-            previousDocument.get("images") == userDocument.get("images") &&
-            previousDocument.get("creator") == userDocument.get("creator") && 
-            previousDocument.get("location") == userDocument.get("location")
+            previousDocument.get("name") == projectDocument.get("name") &&
+            previousDocument.get("content") == projectDocument.get("content") &&
+            previousDocument.get("tags") == projectDocument.get("tags") &&
+            previousDocument.get("images") == projectDocument.get("images") &&
+            previousDocument.get("creator") == projectDocument.get("creator") && 
+            previousDocument.get("location") == projectDocument.get("location")
         ) {
             return;
         }

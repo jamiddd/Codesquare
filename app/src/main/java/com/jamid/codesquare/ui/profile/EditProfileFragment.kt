@@ -4,38 +4,27 @@ import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.*
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.children
+import androidx.core.view.size
 import androidx.core.view.updateLayoutParams
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.chip.Chip
-import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.InterestItem
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentEditProfileBinding
 import com.jamid.codesquare.listeners.AddTagsListener
 import com.jamid.codesquare.listeners.InterestItemClickListener
-import com.jamid.codesquare.ui.*
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.ui.AddTagsFragment
+import com.jamid.codesquare.ui.DefaultProfileImageSheet
+import com.jamid.codesquare.ui.MessageDialogFragment
+import kotlinx.coroutines.Job
 
-@ExperimentalPagingApi
-class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListener {
+class EditProfileFragment : BaseFragment<FragmentEditProfileBinding>(), AddTagsListener, InterestItemClickListener {
 
-    private lateinit var binding: FragmentEditProfileBinding
-    private val viewModel: MainViewModel by activityViewModels()
-    private var profileImage: String = userImages.random()
-    private var loadingFragment: MessageDialogFragment? = null
-    private lateinit var currentUser: User
-    private val needToUpdate = MutableLiveData<Boolean>()
+    private var profileImage: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,87 +41,100 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
 
         return when (item.itemId) {
             R.id.edit_profile_save -> {
-                if (!validateUser())
-                    return true
 
-                val userEditForm = viewModel.userEditForm.value ?: return true
+                val name = binding.nameText.editText!!.text.trim().toString()
+                val username = binding.usernameText.editText!!.text.trim().toString()
+                val tag = binding.tagText.editText!!.text.trim().toString()
+                val about = binding.aboutText.editText!!.text.trim().toString()
+                val interests = getInterests()
 
-                val updatedUser = currentUser.copy()
-
-                val username = userEditForm.username
-
-                val changes = mutableMapOf(
-                    "name" to userEditForm.name,
-                    "about" to userEditForm.about,
-                    "tag" to userEditForm.tag,
-                    "interests" to userEditForm.interests,
-                    "photo" to  userEditForm.photo
-                )
-
-                updatedUser.name = userEditForm.name
-                updatedUser.about = userEditForm.about
-                updatedUser.tag = userEditForm.tag
-                updatedUser.interests = userEditForm.interests
-                updatedUser.photo = userEditForm.photo
-
-                if (currentUser.username != username) {
-                    viewModel.checkIfUsernameTaken(username) {
-                        if (it.isSuccessful) {
-                            val snapshot = it.result
-                            if (snapshot.isEmpty) {
-                                loadingFragment = MessageDialogFragment.builder( getString(R.string.profile_upload_loading_text))
-                                    .setIsHideable(false)
-                                    .setIsDraggable(false)
-                                    .shouldShowProgress(true)
-                                    .build()
-
-                                loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
-
-                                // no username .. good to go
-                                changes["username"] = username
-                                updatedUser.username = username
-
-                                updateUser(updatedUser, changes)
-                            } else {
-                                binding.usernameText.isErrorEnabled = true
-                                binding.usernameText.error = "Username already exists"
-                            }
-                        } else {
-                            toast("Something went wrong while uploading changes.")
-                        }
-                    }
+                val (photo, isPreUploadedImage) = if (profileImage == null) {
+                    val s: Uri? = null
+                    s to false
                 } else {
-                    updateUser(updatedUser, changes)
+                    val p = profileImage!!.toUri()
+                    if (p.scheme == "content") {
+                        p to false
+                    } else {
+                        p to true
+                    }
                 }
 
+                val userUpdate = UserUpdate(username, name, photo, isPreUploadedImage, tag, about, interests)
+
+                update(userUpdate)
                 true
             }
             else -> true
         }
     }
 
-    private fun updateUser(updatedUser: User, changes: Map<String, Any?>) {
-        if (changes.isEmpty()) {
-            findNavController().navigateUp()
-        } else {
-            viewModel.updateUser(updatedUser, changes) { it1 ->
 
-                loadingFragment?.dismiss()
+    private fun update(userUpdate: UserUpdate) = runOnBackgroundThread {
 
-                if (it1.isSuccessful) {
+        val loading = MessageDialogFragment.builder(getString(R.string.profile_upload_loading_text))
+            .setProgress()
+            .build()
 
-                    Snackbar.make(binding.root, "Saved changes successfully", Snackbar.LENGTH_LONG)
-                        .setBehavior(NoSwipeBehavior())
-                        .show()
-                    viewModel.setCurrentImage(null)
+        loading.show(childFragmentManager, "LoadingFragment")
+
+/*
+val userUpdate = if (profileImage != null) {
+val image = profileImage!!.toUri()
+if (image.scheme == "content") {
+UserUpdate(
+userEditForm.username,
+userEditForm.name,
+profileImage!!.toUri(),
+false,
+userEditForm.tag,
+userEditForm.about,
+userEditForm.interests
+)
+} else {
+UserUpdate(
+userEditForm.username,
+userEditForm.name,
+profileImage!!.toUri(),
+true,
+userEditForm.tag,
+userEditForm.about,
+userEditForm.interests
+)
+}
+} else {
+UserUpdate(
+userEditForm.username,
+userEditForm.name,
+null,
+false,
+userEditForm.tag,
+userEditForm.about,
+userEditForm.interests
+)
+}
+*/
+
+        when (val result = FireUtility.updateUser3(userUpdate)) {
+            is Result.Error -> {
+                when (result.exception){
+                    is UniqueUsernameException -> {
+                        binding.usernameText.isErrorEnabled = true
+                        binding.usernameText.error = "Username is already taken"
+                    }
+                    is ImageUploadException -> {
+                        toast("Something went wrong while trying to upload profile picture.")
+                    }
+                }
+            }
+            is Result.Success -> {
+                runOnMainThread {
+                    loading.dismiss()
                     findNavController().navigateUp()
-                } else {
-                    Snackbar.make(binding.root, "Something went wrong. Try again.", Snackbar.LENGTH_LONG)
-                        .setBehavior(NoSwipeBehavior())
-                        .show()
                 }
             }
         }
+
     }
 
     private fun getInterests(): List<String> {
@@ -140,150 +142,63 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         for (child in binding.interestsGroup.children) {
             val chip = child as Chip
             val interest = chip.text.toString()
-            if (interest != "Add Interest") {
+            if (interest != getString(R.string.add_interest)) {
                 interests.add(interest)
             }
         }
         return interests
     }
-
-    private fun validateUser(): Boolean {
-        val nameText = binding.nameText.editText?.text
-
-        if (nameText.isNullOrBlank()) {
-            binding.nameText.isErrorEnabled = true
-            binding.nameText.error = "Name cannot be empty"
-            return false
-        }
-
-        if (nameText.toString().length !in 4..30) {
-            binding.nameText.isErrorEnabled = true
-            binding.nameText.error = "Name is either too short or too long"
-            return false
-        }
-
-        val usernameText = binding.usernameText.editText?.text
-
-        if (usernameText.isNullOrBlank()) {
-            binding.usernameText.isErrorEnabled = true
-            binding.usernameText.error = "Username cannot be empty"
-            return false
-        }
-
-        if (usernameText.toString().contains(" ")) {
-            binding.usernameText.isErrorEnabled = true
-            binding.usernameText.error = "Username cannot contain spaces"
-            return false
-        }
-
-
-        if (usernameText.toString().length !in 4..16) {
-            binding.usernameText.isErrorEnabled = true
-            binding.usernameText.error = "Username is either too short or too long"
-            return false
-        }
-
-        val aboutText = binding.aboutText.editText?.text
-        if (!aboutText.isNullOrBlank() && aboutText.toString().length > 240) {
-            binding.aboutText.isErrorEnabled = true
-            binding.aboutText.error = "The about text is too long."
-            return false
-        }
-
-        return true
-    }
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentEditProfileBinding.inflate(inflater)
-        currentUser = UserManager.currentUser
-        return binding.root
-    }
-
-
+   
     private fun setFormObserver() {
 
         binding.nameText.editText?.doAfterTextChanged {
-            binding.nameText.isErrorEnabled = false
-            binding.nameText.error = null
-
-            val name = if (it.isNullOrBlank()) {
-                ""
-            } else {
-                it.trim().toString()
-            }
-
-            viewModel.setUserEditFormName(name)
+            onTextChange()
         }
 
         binding.usernameText.editText?.doAfterTextChanged {
-            binding.usernameText.isErrorEnabled = false
-            binding.usernameText.error = null
-
-            val username = if (it.isNullOrBlank()) {
-                ""
-            } else {
-                it.trim().toString()
-            }
-
-            viewModel.setUserEditFormUsername(username)
+            onTextChange()
         }
 
         binding.tagText.editText?.doAfterTextChanged {
-            binding.tagText.isErrorEnabled = false
-            binding.tagText.error = null
-
-            val tag = if (it.isNullOrBlank()) {
-                ""
-            } else {
-                it.trim().toString()
-            }
-
-            viewModel.setUserEditFormTag(tag)
+            onTextChange()
         }
 
         binding.aboutText.editText?.doAfterTextChanged {
-            binding.aboutText.isErrorEnabled = false
-            binding.aboutText.error = null
-
-            val about = if (it.isNullOrBlank()) {
-                ""
-            } else {
-                it.trim().toString()
-            }
-
-            viewModel.setUserEditFormAbout(about)
+            onTextChange()
         }
 
-        binding.interestsGroup.onChildrenChanged {
-            val interests = getInterests()
-            viewModel.setUserEditFormInterests(interests)
-        }
 
     }
 
+    private var job: Job? = null
+
+    private fun onTextChange() {
+
+        activity.binding.mainToolbar.menu.getItem(0).isEnabled = false
+
+        binding.nameText.removeError()
+        binding.usernameText.removeError()
+        binding.tagText.removeError()
+        binding.aboutText.removeError()
+
+        job?.cancel()
+        job = viewModel.updateUserFormChanged(
+            binding.nameText.editText!!.text.toString(),
+            binding.usernameText.editText!!.text.toString(),
+            binding.tagText.editText!!.text.toString(),
+            binding.aboutText.editText!!.text.toString()
+        )
+    }
+
     private fun setFormOnStart() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            delay(500)
-            val userEditForm = viewModel.userEditForm.value
-            if (userEditForm == null) {
-                val currentUser = UserManager.currentUser
-                viewModel.setUserEditForm(currentUser)
+        val currentUser = UserManager.currentUser
+        binding.nameText.editText?.setText(currentUser.name)
+        binding.usernameText.editText?.setText(currentUser.username)
+        binding.tagText.editText?.setText(currentUser.tag)
+        binding.aboutText.editText?.setText(currentUser.about)
 
-                setFormOnStart()
-            } else {
-                binding.nameText.editText?.setText(userEditForm.name)
-                binding.usernameText.editText?.setText(userEditForm.username)
-                binding.tagText.editText?.setText(userEditForm.tag)
-                binding.aboutText.editText?.setText(userEditForm.about)
-
-                addInterests(userEditForm.interests)
-                setProfileImage(userEditForm.photo)
-            }
-        }
+        addInterests(currentUser.interests)
+        setProfileImage(currentUser.photo)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -292,88 +207,76 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         setFormOnStart()
         setFormObserver()
 
-        binding.userImg.setOnClickListener(onImageUpdateClick)
-
         viewModel.currentImage.observe(viewLifecycleOwner) { image ->
-            onNewImageOrNullSet(image)
-
-            if (image != null) {
-                setProfileImage(image)
-
-                if (image.authority?.contains("googleapis.com") == true) {
-                    // already uploaded image, no need to upload
-                    onImageUploaded()
-                } else {
-                    uploadImage(image)
-                }
-            }
+            setProfileImage(image)
         }
 
         binding.addInterestBtn.setOnClickListener {
-
             val frag = AddTagsFragment.builder()
                 .setTitle("Add interests")
                 .setListener(this)
                 .build()
-
             frag.show(childFragmentManager, AddTagsFragment.TAG)
-
         }
-    }
 
-    private fun uploadImage(image: Uri) {
-        viewModel.uploadImage(UserManager.currentUserId, image) { downloadUri ->
-            onImageUploaded()
-            if (downloadUri != null) {
-                setProfileImage(downloadUri.toString())
-            } else {
-                onImageUploadFailed(Exception("Image could not be uploaded"))
+        binding.changePhotoBtn.setOnClickListener {
+            val fragment = DefaultProfileImageSheet()
+            fragment.show(requireActivity().supportFragmentManager, "DefaultProfileImage")
+        }
+        
+        viewModel.updateUserForm.observe(viewLifecycleOwner) {
+            val form = it ?: return@observe
+
+            activity.binding.mainToolbar.menu?.let { menu ->
+                if (menu.size > 0) {
+                    Log.d(TAG, "onViewCreated: ${form.isValid}")
+                    menu.getItem(0).isVisible = form.isValid
+                    menu.getItem(0).isEnabled = form.isValid
+                }
+            }
+            
+            if (form.nameError != null) {
+                if (binding.nameText.editText!!.text.isNotBlank()) {
+                    binding.nameText.showError(getString(form.nameError))
+                }
+            }
+            
+            if (form.usernameError != null) {
+                if (binding.usernameText.editText!!.text.isNotBlank()) {
+                    binding.usernameText.showError(getString(form.usernameError))
+                }
+            }
+            
+            if (form.tagError != null) {
+                if (binding.tagText.editText!!.text.isNotBlank()) {
+                    binding.tagText.showError(getString(form.tagError))
+                }
+            }
+            
+            if (form.aboutError != null) {
+                if (binding.aboutText.editText!!.text.isNotBlank()) {
+                    binding.aboutText.showError(getString(form.aboutError))
+                }
             }
         }
+
     }
 
-    private fun removeImage() {
-        profileImage = ""
-        setProfileImage(profileImage)
-    }
-
-    private fun onImageUploadFailed(e: Exception) {
-        removeImage()
-    }
-
-    private fun onImageUploaded() {
-        binding.userImageProgress.hide()
-        binding.userImg.colorFilter = null
-    }
-
-    private fun onNewImageOrNullSet(image: Uri? = null) {
-        val colorFilter =  ContextCompat.getColor(
-            requireContext(),
-            R.color.darkest_transparent
-        )
-
-        // show that there is some progress
-        binding.userImageProgress.show()
-        binding.userImg.setColorFilter(colorFilter)
-
-        // if there was no image
-        if (image == null) {
-            // update UI
-            binding.userImg.colorFilter = null
-            binding.userImageProgress.hide()
-
-            // setting the already existing image as profile image
-            setProfileImage("")
+    private fun setProfileImage(image: Uri? = null) {
+        if (image != null) {
+            setProfileImage(image.toString())
+        } else {
+            val s: String? = null
+            setProfileImage(s)
         }
-
     }
 
-    private fun setProfileImage(image: Uri) {
-        setProfileImage(image.toString())
-    }
-
-    private fun setProfileImage(image: String) {
-        viewModel.setUserEditFormProfilePhoto(image)
+    private fun setProfileImage(image: String? = null) {
+       /* if (image != null) {
+            viewModel.setUserEditFormProfilePhoto(image)
+        } else {
+            viewModel.setUserEditFormProfilePhoto("")
+        }*/
         profileImage = image
         binding.userImg.setImageURI(profileImage)
     }
@@ -387,14 +290,9 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         }
     }
 
-    private val onImageUpdateClick = View.OnClickListener {
-        val fragment = DefaultProfileImageSheet()
-        fragment.show(requireActivity().supportFragmentManager, "DefaultProfileImage")
-    }
-
     private fun addInterest(interest: String) {
         interest.trim()
-        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
+        val chip = View.inflate(requireContext(), R.layout.default_chip, null) as Chip
 
         chip.apply {
             text = interest
@@ -413,7 +311,6 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         }
 
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -434,8 +331,6 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         addInterests(allInterests.distinct())
     }
 
-
-
     override fun onInterestClick(interestItem: InterestItem) {
         if (interestItem.isChecked) {
             viewModel.uncheckInterestItem(interestItem)
@@ -444,7 +339,9 @@ class EditProfileFragment: Fragment(), AddTagsListener, InterestItemClickListene
         }
     }
 
-
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentEditProfileBinding {
+        return FragmentEditProfileBinding.inflate(inflater)
+    }
 
 
 }

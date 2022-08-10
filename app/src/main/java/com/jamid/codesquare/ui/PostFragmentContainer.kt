@@ -2,27 +2,25 @@ package com.jamid.codesquare.ui
 
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import androidx.activity.addCallback
 import androidx.core.os.bundleOf
-import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.databinding.PostFragmentContainerBinding
 
-@ExperimentalPagingApi
-class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding, MainViewModel>() {
+class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding>() {
 
     private lateinit var post: Post
     override val viewModel: MainViewModel by activityViewModels()
     private var isPrimaryFragment = true
 
-    override fun getViewBinding(): PostFragmentContainerBinding {
-        return PostFragmentContainerBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): PostFragmentContainerBinding {
+        return PostFragmentContainerBinding.inflate(inflater)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -35,10 +33,10 @@ class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding, MainView
 
         /* inflating the first fragment on start*/
         if (childFragmentManager.backStackEntryCount == 0) {
-            val frag = PostFragment.newInstance(bundleOf(POST to post, "image_pos" to 0))
+            val frag = PostFragment2.newInstance(bundleOf(POST to post))
             childFragmentManager.beginTransaction()
-                .add(binding.postFragContainer.id, frag, PostFragment.TAG)
-                .addToBackStack(PostFragment.TAG)
+                .add(binding.postFragContainer.id, frag, PostFragment2.TAG)
+                .addToBackStack(PostFragment2.TAG)
                 .commit()
         }
 
@@ -63,8 +61,8 @@ class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding, MainView
         val lastFragment = childFragmentManager.fragments.lastOrNull()
         return if (lastFragment != null) {
             when (lastFragment) {
-                is PostFragment -> {
-                    PostFragment.TAG
+                is PostFragment2 -> {
+                    PostFragment2.TAG
                 }
                 is PostContributorsFragment -> {
                     PostContributorsFragment.TAG
@@ -119,52 +117,7 @@ class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding, MainView
      *
      * */
     private fun setJoinBtn() {
-        activity.binding.mainPrimaryBtn.apply {
 
-            when {
-                !isPrimaryFragment -> hide()
-                post.isMadeByMe -> hide()
-                post.isCollaboration -> hide()
-                post.isRequested -> {
-                    show()
-                    text = getString(R.string.undo_request)
-                    icon = getImageResource(R.drawable.ic_arrow_undo)
-
-                    setOnClickListener {
-                        activity.onPostUndoClick(post) {
-                            post = it
-                            setJoinBtn()
-                        }
-                    }
-                }
-                else -> {
-                    show()
-                    text = getString(R.string.join_post)
-                    icon = getImageResource(R.drawable.ic_round_add_24)
-
-                    setOnClickListener {
-                        activity.onPostJoinClick(post) {
-                            post = it
-                            setJoinBtn()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fun setJoinBtnForChildScroll(v1: NestedScrollView) {
-        v1.setOnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
-            if (scrollY > oldScrollY && scrollY - oldScrollY >= 100) {
-                // slide down
-                activity.binding.mainPrimaryBtn.shrink()
-            }
-
-            if (scrollY < oldScrollY && oldScrollY - scrollY >= 50) {
-                // slide up
-                activity.binding.mainPrimaryBtn.extend()
-            }
-        }
     }
 
 
@@ -179,7 +132,7 @@ class PostFragmentContainer: BaseFragment<PostFragmentContainerBinding, MainView
             val title = args.getString(TITLE)
             val subtitle = args.getString(SUB_TITLE)
 
-            if (fragment !is PostFragment) {
+            if (fragment !is PostFragment2) {
                 activity.binding.mainToolbar.title = title
                 activity.binding.mainToolbar.subtitle = subtitle
             } else {

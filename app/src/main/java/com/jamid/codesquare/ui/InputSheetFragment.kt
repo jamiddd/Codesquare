@@ -1,45 +1,27 @@
 package com.jamid.codesquare.ui
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
-import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.jamid.codesquare.R
+import com.jamid.codesquare.BaseBottomFragment
 import com.jamid.codesquare.databinding.FragmentInputSheetBinding
 import com.jamid.codesquare.listeners.MessageDialogInterface
 
 
-class InputSheetFragment: BottomSheetDialogFragment() {
+class InputSheetFragment: BaseBottomFragment<FragmentInputSheetBinding>() {
 
-    override fun getTheme(): Int = R.style.AppTheme_BottomSheetInput
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return BottomSheetDialog(requireContext(), theme)
-    }
-
-    private lateinit var binding: FragmentInputSheetBinding
-    private var title: String = "CollabMe"
+    private var title: String = "Collabme"
     private var message: String? = null
     private var positiveLabel: String = "Yes"
     private var negativeLabel: String = "No"
     private var hint: String = "Write something here ..."
     private var onSubmitListener: MessageDialogInterface.OnInputSubmitListener? = null
     private var onNegativeClickListener: MessageDialogInterface.OnClickListener? = null
-    private var isScrimVisible: Boolean = true
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentInputSheetBinding.inflate(inflater)
-        return binding.root
+    init {
+        fullscreen = false
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -75,16 +57,9 @@ class InputSheetFragment: BottomSheetDialogFragment() {
             dismiss()
         }
 
-
-        if (!isScrimVisible) {
-            val window = dialog?.window
-            window?.setFlags(
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-            )
-            window?.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        runDelayed(300) {
+            binding.inputText.editText?.requestFocus()
         }
-
 
     }
 
@@ -134,11 +109,6 @@ class InputSheetFragment: BottomSheetDialogFragment() {
                 return this
             }
 
-            fun setScrimVisibility(isVisible: Boolean): Builder {
-                fragment.isScrimVisible = isVisible
-                return this
-            }
-
             fun build(): InputSheetFragment {
                 return fragment
             }
@@ -155,6 +125,10 @@ class InputSheetFragment: BottomSheetDialogFragment() {
             return s
         }
 
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentInputSheetBinding {
+        return FragmentInputSheetBinding.inflate(inflater)
     }
 
 }

@@ -67,28 +67,28 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/sort_contributors"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sort_contributors" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/sort_likes"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sort_likes" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/sort_relevance"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sort_relevance" />
 
         <com.google.android.material.chip.Chip
             android:id="@+id/sort_time"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
@@ -96,7 +96,7 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/sort_location"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/sort_location" />
@@ -135,7 +135,7 @@
 
         <com.google.android.material.chip.Chip
             android:id="@+id/filter_random"
-            style="@style/AppTheme.MyChip"
+            style="@style/AppTheme.DefaultChip"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:checked="true"
@@ -144,6 +144,7 @@
 
     <Button
         android:id="@+id/apply_filter_btn"
+        style="@style/AppTheme.GenericBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -151,6 +152,7 @@
         android:fontFamily="@font/title_semi"
         android:text="Apply"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        app:cornerRadius="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

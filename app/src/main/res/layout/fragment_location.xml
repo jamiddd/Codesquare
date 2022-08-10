@@ -6,6 +6,8 @@
     android:layout_height="match_parent">
 
 
+
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/location_text"
         android:layout_width="match_parent"

@@ -1,32 +1,32 @@
 package com.jamid.codesquare
 
-import android.graphics.Bitmap
 import android.os.Bundle
-import android.os.Environment
-import android.view.*
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.jamid.codesquare.databinding.FragmentCrop2Binding
-import kotlinx.coroutines.runBlocking
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
 
-@ExperimentalPagingApi
-class CropFragment2: Fragment() {
+class CropFragment2: BaseBottomFragment<FragmentCrop2Binding>() {
 
-    private lateinit var binding: FragmentCrop2Binding
-    private val viewModel: MainViewModel by activityViewModels()
-    private var options: CropImageOptions? = null
+    var options: CropImageOptions = CropImageOptions().apply {
+        cropShape = CropImageView.CropShape.RECTANGLE
+        fixAspectRatio = false
+        aspectRatioX = 4
+        aspectRatioY = 3
+        outputRequestWidth = 400
+        outputRequestHeight = 300
+    }
+    var image: String = ""
 
-    private val imagesDir: File by lazy { requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES) ?: throw NullPointerException("Couldn't get images directory.") }
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentCrop2Binding {
+        return FragmentCrop2Binding.inflate(inflater)
+    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    /*override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
     }
@@ -38,33 +38,16 @@ class CropFragment2: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.crop_image_done -> {
-
                 try {
-                    val file = File(imagesDir, "${randomId()}.jpg")
-
                     val bitmap = binding.cropView.getCroppedImage(options?.outputRequestWidth ?: 100, options?.outputRequestHeight ?: 100)
                     if (bitmap != null) {
-                        if (file.createNewFile()) {
-                            val byteArrayOutputStream = ByteArrayOutputStream()
-                            val destinationUri = FileProvider.getUriForFile(requireContext(), "com.jamid.codesquare.fileprovider", file)
-
-                            runBlocking {
-                                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, byteArrayOutputStream)
-                            }
-
-                            val ba = byteArrayOutputStream.toByteArray()
-
-                            val fos = FileOutputStream(file)
-                            fos.write(ba)
-                            fos.flush()
-                            fos.close()
-                            byteArrayOutputStream.flush()
-
+                        val file = convertBitmapToFile(bitmap)
+                        if (file != null) {
+                            val destinationUri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, file)
                             viewModel.setCurrentImage(destinationUri)
                             findNavController().navigateUp()
-                        } else {
-                            throw Exception("Could not create file.")
-                        }
+                        } else
+                            throw NullPointerException("File could not be created")
                     }
 
                 } catch (e: Exception) {
@@ -74,33 +57,116 @@ class CropFragment2: Fragment() {
             }
         }
         return super.onOptionsItemSelected(item)
-    }
+    }*/
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentCrop2Binding.inflate(inflater)
-        return binding.root
-    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        options = arguments?.getParcelable("cropOptions")
-        val image = arguments?.getString("image")
-
         binding.cropView.apply {
-            if (options != null) {
-                setFixedAspectRatio(options!!.fixAspectRatio)
-                setAspectRatio(options!!.aspectRatioX, options!!.aspectRatioY)
-                cropShape = options!!.cropShape
+            setFixedAspectRatio(options.fixAspectRatio)
+            setAspectRatio(options.aspectRatioX, options.aspectRatioY)
+            cropShape = options.cropShape
+        }
+
+        binding.cropToolbarComp.bottomSheetToolbar.setNavigationOnClickListener {
+            dismiss()
+        }
+
+        binding.cropToolbarComp.bottomSheetToolbar.title = "Crop"
+
+        binding.cropToolbarComp.bottomSheetDoneBtn.text = "Done"
+        binding.cropToolbarComp.bottomSheetDoneBtn.setOnClickListener {
+            try {
+                val bitmap = binding.cropView.getCroppedImage(options.outputRequestWidth,
+                    options.outputRequestHeight
+                )
+                if (bitmap != null) {
+                    val file = convertBitmapToFile(bitmap)
+                    if (file != null) {
+                        val destinationUri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, file)
+                        viewModel.setCurrentImage(destinationUri)
+                        dismiss()
+                    } else
+                        throw NullPointerException("File could not be created")
+                }
+
+            } catch (e: Exception) {
+                viewModel.setCurrentError(e)
             }
         }
 
-        binding.cropView.setImageUriAsync(image?.toUri())
+        binding.cropView.setImageUriAsync(image.toUri())
 
+        /*
+        * This is where the result comes asynchronously.
+        * If the image was set through Uri then the result will also come in uri
+        * If the image was set through bitmap then the result will also be a bitmap
+        *
+        * */
+        binding.cropView.setOnCropImageCompleteListener { _, result ->
+            if (result.isSuccessful) {
+                if (result.uriContent != null) {
+                    Log.d(TAG, "onViewCreated: We have uriContent after success: ${result.uriContent}")
+                } else {
+                    Log.d(TAG, "onViewCreated: No uriContent after success")
+                }
+            } else {
+                Log.d(TAG, "onViewCreated: CropImageComplete unsuccessful")
+            }
+        }
+
+
+        /*
+        * this is called right after onOverlayMoved before calling onCropOverlayReleased
+        * */
+        binding.cropView.setOnCropWindowChangedListener {
+            Log.d(TAG, "onViewCreated: The crop window has changed")
+        }
+
+
+        /*
+        * this is called multiple times as the box is being moved
+        * it returns the current position of the box in a rect
+        * */
+        binding.cropView.setOnSetCropOverlayMovedListener {
+            it?.let { it1 ->
+                Log.d(TAG, "onViewCreated: OnCropOverlayMoved $it1")
+            }
+        }
+
+
+        /*
+        * this is called as soon as the finger is released after moving
+        * */
+        binding.cropView.setOnSetCropOverlayReleasedListener {
+            it?.let {
+                /*val file = File.createTempFile(randomId(), ".jpg")
+                binding.cropView.croppedImageAsync(customOutputUri = file.toUri())*/
+               /* getNestedDir(requireActivity().filesDir, "images/thumbnails")?.let { it1 ->
+                    getFile(it1, randomId() + ".jpg")?.let { f ->
+                    }
+                }*/
+            }
+        }
+
+       /* binding.cropView.setOnSetImageUriCompleteListener { view1, uri, exc ->
+            if (exc != null) {
+                Log.e(TAG, "onViewCreated: ${exc.localizedMessage}")
+            } else {
+                *//*
+                * This happens when the image is set, the resultant uri is
+                *  the Uri of the image from local dir
+                * *//*
+                Log.d(TAG, "onViewCreated: The resultant uri = $uri")
+            }
+        }*/
+
+
+    }
+
+    companion object {
+        const val TAG = "CropFragment2"
     }
 
 }

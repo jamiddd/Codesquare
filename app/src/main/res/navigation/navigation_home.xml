@@ -1,0 +1,378 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navigation_home"
+    app:startDestination="@id/feedFragment">
+
+    <fragment
+        android:id="@+id/mediaViewerFragment"
+        android:name="com.jamid.codesquare.ui.MediaViewerFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_media_viewer" />
+
+    <fragment
+        android:id="@+id/updatePasswordFragment"
+        android:name="com.jamid.codesquare.ui.UpdatePasswordFragment"
+        tools:layout="@layout/fragment_update_password"
+        android:label="Update password" />
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.jamid.codesquare.ui.ForgotPasswordFragment"
+        tools:layout="@layout/fragment_forgot_password"
+        android:label="Reset password" />
+
+
+
+    <fragment
+        android:id="@+id/preSearchFragment"
+        android:name="com.jamid.codesquare.ui.PreSearchFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_pre_search"/>
+
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.jamid.codesquare.ui.SearchFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_search">
+
+        <argument android:name="title" app:argType="string" app:nullable="false" android:defaultValue="Search for posts, accounts .." />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/feedFragment"
+        android:name="com.jamid.codesquare.ui.home.feed.FeedFragment"
+        android:label=" " >
+
+        <action
+            android:id="@+id/action_feedFragment_to_navigation_auth"
+            app:destination="@id/navigation_auth" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/postFragment2"
+        android:name="com.jamid.codesquare.ui.PostFragment2"
+        tools:layout="@layout/fragment_post_2"
+        android:label="Post" />
+
+    <fragment
+        android:id="@+id/profileFragment2"
+        android:name="com.jamid.codesquare.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.jamid.codesquare.ui.profile.EditProfileFragment"
+        android:label="Edit Profile"
+        tools:layout="@layout/fragment_edit_profile" />
+
+    <fragment
+        android:id="@+id/advertiseInfoFragment"
+        android:name="com.jamid.codesquare.ui.AdvertiseInfoFragment"
+        tools:layout="@layout/fragment_advertise_info"
+        android:label="Advertise Info" />
+
+    <fragment
+        android:id="@+id/postLikesFragment"
+        android:name="com.jamid.codesquare.PostLikesFragment"
+        android:label="Liked by" />
+
+    <fragment
+        android:id="@+id/userLikesFragment"
+        android:name="com.jamid.codesquare.ui.UserLikesFragment"
+        android:label="Liked by" />
+
+    <fragment
+        android:id="@+id/commentsFragment"
+        android:label="{title}"
+        android:name="com.jamid.codesquare.ui.CommentsFragment">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Post" />
+
+    </fragment>
+
+    <fragment
+        android:id="@+id/postContributorsFragment"
+        android:name="com.jamid.codesquare.ui.PostContributorsFragment"
+        tools:layout="@layout/fragment_post_contributors"
+        android:label="Contributors" />
+    <fragment
+        android:id="@+id/tagFragment"
+        android:name="com.jamid.codesquare.ui.TagFragment"
+        tools:layout="@layout/fragment_pager"
+        android:label="{title}" >
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Tag" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/reportFragment"
+        android:name="com.jamid.codesquare.ui.ReportFragment"
+        android:label="Report"
+        tools:layout="@layout/fragment_report" />
+
+    <fragment
+        android:id="@+id/locationPostsFragment"
+        android:name="com.jamid.codesquare.ui.LocationPostsFragment"
+        android:label="{title}">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Post" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/savedPostsFragment"
+        android:name="com.jamid.codesquare.ui.profile.SavedPostsFragment"
+        tools:layout="@layout/fragment_pager"
+        android:label="Saved posts"/>
+
+    <fragment
+        android:id="@+id/createPostFragment"
+        android:name="com.jamid.codesquare.ui.CreatePostFragment"
+        android:label="@string/create_post"
+        tools:layout="@layout/fragment_create_post" />
+
+    <fragment
+        android:id="@+id/commentLikesFragment"
+        android:name="com.jamid.codesquare.ui.CommentLikesFragment"
+        android:label="Liked by" />
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.jamid.codesquare.ui.home.HomeFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_home"/>
+
+    <fragment
+        android:id="@+id/subscriberFragment"
+        android:name="com.jamid.codesquare.ui.SubscriberFragment"
+        android:label=" "
+        tools:layout="@layout/fragment_subscriber"/>
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.jamid.codesquare.ui.auth.LoginFragment"
+        android:label="Login"
+        tools:layout="@layout/fragment_login"/>
+    <fragment
+        android:id="@+id/createAccountFragment"
+        android:name="com.jamid.codesquare.ui.auth.CreateAccountFragment"
+        tools:layout="@layout/fragment_create_account"
+        android:label="Create account" />
+    <fragment
+        android:id="@+id/locationFragment"
+        android:name="com.jamid.codesquare.ui.LocationFragment"
+        android:label="Add Location"
+        tools:layout="@layout/fragment_location" />
+  <!--  <fragment
+        android:id="@+id/profileFragment"
+        android:name="com.jamid.codesquare.ui.profile.ProfileFragment"
+        android:label="Profile"
+        tools:layout="@layout/fragment_profile" />-->
+
+    <fragment
+        android:id="@+id/postFragment"
+        android:name="com.jamid.codesquare.ui.PostFragment"
+        tools:layout="@layout/fragment_post"
+        android:label=" " />
+    <fragment
+        android:id="@+id/postRequestFragment"
+        android:name="com.jamid.codesquare.ui.profile.PostRequestFragment"
+        android:label="Post Requests"
+        tools:layout="@layout/fragment_pager" />
+
+   <!-- <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatFragment"
+        tools:layout="@layout/fragment_chat_container"
+        android:label="{title}">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Chat" />
+
+    </fragment>-->
+    <fragment
+        android:id="@+id/chatDetailFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatDetailFragment"
+        tools:layout="@layout/fragment_chat_detail"
+        android:label="{title}" >
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Chat" />
+
+    </fragment>
+    <fragment
+        android:id="@+id/chatMediaFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatMediaFragment"
+        android:label="Media"
+        tools:layout="@layout/fragment_chat_media" />
+
+    <fragment
+        android:id="@+id/imageViewFragment"
+        android:name="com.jamid.codesquare.ui.ImageViewFragment"
+        android:label="{title}"
+        tools:layout="@layout/fragment_image_view">
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/onBoardingFragment"
+        android:name="com.jamid.codesquare.ui.onboarding.OnBoardingFragment"
+        tools:layout="@layout/fragment_on_boarding"
+        android:label="OnBoardingFragment" />
+    <fragment
+        android:id="@+id/emailVerificationFragment"
+        android:name="com.jamid.codesquare.ui.auth.EmailVerificationFragment"
+        tools:layout="@layout/fragment_email_verification"
+        android:label=" " />
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.jamid.codesquare.ui.SettingsFragment"
+        android:label="Settings" />
+    <fragment
+        android:id="@+id/splashFragment"
+        android:name="com.jamid.codesquare.ui.SplashFragment" />
+   <!-- <fragment
+        android:id="@+id/notificationCenterFragment"
+        android:name="com.jamid.codesquare.ui.NotificationCenterFragment"
+        tools:layout="@layout/fragment_notification_center"
+        android:label="Notifications">
+        <deepLink
+            android:id="@+id/deepLink"
+            android:autoVerify="true"
+            app:action="ACTION_VIEW"
+            app:uri="app://www.collab.com/notifications" />
+    </fragment>-->
+
+    <fragment
+        android:id="@+id/feedbackFragment"
+        android:name="com.jamid.codesquare.ui.FeedbackFragment"
+        tools:layout="@layout/fragment_feedback"
+        android:label="Feedback" />
+    <fragment
+        android:id="@+id/messageDetailFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.MessageDetailFragment"
+        android:label="Message Detail"
+        tools:layout="@layout/fragment_message_detail" />
+
+    <fragment
+        android:id="@+id/profileImageFragment"
+        android:name="com.jamid.codesquare.ui.auth.ProfileImageFragment"
+        android:label="ProfileImageFragment"/>
+    <fragment
+        android:id="@+id/userInfoFragment"
+        android:name="com.jamid.codesquare.ui.auth.UserInfoFragment"
+        android:label="UserInfoFragment"/>
+
+    <fragment
+        android:id="@+id/channelGuidelinesFragment"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatRulesFragment"
+        android:label="Update guidelines" />
+    <fragment
+        android:id="@+id/cropFragment2"
+        android:name="com.jamid.codesquare.CropFragment2"
+        android:label=" " />
+    <fragment
+        android:id="@+id/archiveFragment"
+        android:name="com.jamid.codesquare.ui.ArchiveFragment"
+        android:label="Archived posts"/>
+
+    <fragment
+        android:id="@+id/myRequestsFragment"
+        android:name="com.jamid.codesquare.ui.profile.MyRequestsFragment"
+        android:label="My requests"/>
+
+   <!-- <fragment
+        android:id="@+id/postFragmentContainer"
+        android:name="com.jamid.codesquare.ui.PostFragmentContainer"
+        android:label="{title}"
+        tools:layout="@layout/post_fragment_container">
+
+        <argument
+            android:name="title"
+            app:argType="string"
+            android:defaultValue="Post" />
+
+    </fragment>
+-->
+    <fragment
+        android:id="@+id/invitesFragment"
+        android:name="com.jamid.codesquare.ui.InvitesFragment"
+        tools:layout="@layout/fragment_invites"
+        android:label="My Invites" />
+    <fragment
+        android:id="@+id/testFragment"
+        android:name="com.jamid.codesquare.ui.TestFragment"
+        tools:layout="@layout/fragment_test"
+        android:label="Compression Test" />
+
+    <fragment
+        android:id="@+id/extraFragment"
+        android:name="com.jamid.codesquare.extra.ExtraFragment"
+        tools:layout="@layout/fragment_extra"
+        android:label="Add Interest to Database" />
+
+    <fragment
+        android:id="@+id/blockedAccountsFragment"
+        android:name="com.jamid.codesquare.ui.BlockedAccountsFragment"
+        tools:layout="@layout/fragment_blocked_accounts"
+        android:label="Blocked accounts" />
+
+    <fragment
+        android:id="@+id/maintenanceFragment"
+        android:name="com.jamid.codesquare.ui.MaintenanceFragment"
+        tools:layout="@layout/fragment_maintenance"
+        android:label=" " />
+
+    <fragment
+        android:id="@+id/closedCompetitionsFragment"
+        android:name="com.jamid.codesquare.ui.ClosedCompetitionsFragment"
+        tools:layout="@layout/fragment_closed_competitions"
+        android:label=" " />
+
+    <fragment
+        android:id="@+id/rankedEntryFragment"
+        android:name="com.jamid.codesquare.ui.RankedEntryFragment"
+        tools:layout="@layout/ranked_entry_fragment"
+        android:label="Ranked" />
+
+    <fragment
+        android:id="@+id/chatFragment2"
+        android:name="com.jamid.codesquare.ui.ChatFragment2"
+        tools:layout="@layout/fragment_chat_2"
+        android:label="{title}">
+
+        <argument android:name="title"
+            app:argType="string" android:defaultValue="Chat" app:nullable="false" />
+
+    </fragment>
+
+<!--    <fragment
+        android:id="@+id/chatListFragment2"
+        android:name="com.jamid.codesquare.ui.home.chat.ChatListFragment2"
+        tools:layout="@layout/fragment_chat_list_2"
+        android:label="Chats" />
+
+    <fragment
+        android:id="@+id/rankedFragment"
+        android:name="com.jamid.codesquare.ui.home.ranked.RankedFragment"
+        tools:layout="@layout/fragment_ranked"
+        android:label="Ranked" />-->
+
+</navigation>

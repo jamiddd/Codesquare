@@ -16,7 +16,9 @@ import com.google.android.material.button.MaterialButton
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.databinding.UserGridItemBinding
 import com.jamid.codesquare.databinding.UserVerticalItemBinding
 import com.jamid.codesquare.listeners.UserClickListener
@@ -49,7 +51,7 @@ class UserViewHolder(
             tag.hide()
         } else {
             tag.show()
-            tag.text = user.tag
+            tag.text = user.tag.trim()
         }
 
         if (user.about.isBlank()) {
@@ -59,7 +61,7 @@ class UserViewHolder(
                 about.hide()
             } else {
                 about.show()
-                about.text = user.about
+                about.text = user.about.trim()
             }
         }
 
@@ -182,18 +184,11 @@ class UserViewHolder(
 
             updateUi()
 
-            FireUtility.getUser(user.id) {
-                when (it) {
-                    is Result.Error -> {
-                        Log.e(TAG, it.exception.toString())
-                        view.hide()
-                    }
-                    is Result.Success -> {
-                        updateUi(processUsers(it.data).first())
-                    }
-                    null -> {
-                        view.hide()
-                    }
+            FireUtility.getUser(user.id) { mUser ->
+                if (mUser != null) {
+                    updateUi(mUser)
+                } else {
+                    view.hide()
                 }
             }
         } else {
@@ -212,14 +207,14 @@ class UserViewHolder(
         binding.userName.text = userMinimal.name
 
         if (userMinimal.about.isNotBlank()) {
-            binding.userAbout.text = userMinimal.about
+            binding.userAbout.text = userMinimal.about.trim()
             binding.userAbout.show()
         } else {
             binding.userAbout.hide()
         }
 
         if (userMinimal.tag.isNotBlank()) {
-            binding.userTag.text = userMinimal.tag
+            binding.userTag.text = userMinimal.tag.trim()
             binding.userTag.show()
         } else {
             binding.userTag.hide()

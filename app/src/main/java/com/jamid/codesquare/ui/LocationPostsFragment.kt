@@ -1,43 +1,43 @@
 package com.jamid.codesquare.ui
 
+import android.os.Bundle
+import android.view.View
 import androidx.core.text.isDigitsOnly
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.paging.map
 import androidx.preference.PreferenceManager
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
-import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
+import com.jamid.codesquare.LOCATION_RADIUS
+import com.jamid.codesquare.ONE
+import com.jamid.codesquare.POSTS
+import com.jamid.codesquare.SUB_TITLE
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter
+import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
 import com.jamid.codesquare.data.Location
 import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
+import kotlinx.coroutines.flow.map
 
-@OptIn(ExperimentalPagingApi::class)
-class LocationPostsFragment: PagerListFragment<Post, SuperPostViewHolder>() {
+class LocationPostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
 
-    private lateinit var toolbar: MaterialToolbar
-
-    override fun onViewLaidOut() {
-        super.onViewLaidOut()
-
+    @OptIn(ExperimentalPagingApi::class)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         val location = arguments?.getParcelable<Location>("location") ?: return
-        toolbar = requireActivity().findViewById(R.id.main_toolbar)
 
-        toolbar.subtitle = arguments?.getString(SUB_TITLE)
+        activity.binding.mainToolbar.subtitle = arguments?.getString(SUB_TITLE)
 
         searchBasedOnLocation(GeoLocation(location.latitude, location.longitude))
 
-        getItems {
-            viewModel.getPostsNearMe()
-        }
-
+        getLocationPosts()
     }
 
     private fun searchBasedOnLocation(geoLocation: GeoLocation) {
@@ -88,18 +88,35 @@ class LocationPostsFragment: PagerListFragment<Post, SuperPostViewHolder>() {
                 viewModel.insertPosts(*projects)
             }
 
-        getItems {
-            viewModel.getPostsNearMe()
+        getLocationPosts()
+
+    }
+
+    @OptIn(ExperimentalPagingApi::class)
+    private fun getLocationPosts() {
+        getItems(viewLifecycleOwner) {
+            viewModel.getPostsNearMe().map {
+                it.map { it1 ->
+                    Post2.Collab(it1)
+                }
+            }
         }
     }
 
-    override fun getAdapter(): PagingDataAdapter<Post, SuperPostViewHolder> {
-        return PostAdapter()
+    override fun getPagingAdapter(): PagingDataAdapter<Post2, SuperPostViewHolder> {
+        return PostAdapter(viewLifecycleOwner, activity)
+    }
+
+    override fun getDefaultInfoText(): String {
+        return "No posts near this location"
+    }
+
+    companion object {
+        private const val TAG = "LocationPostsFrag"
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        toolbar.subtitle = null
         viewModel.disableLocationBasedPosts()
     }
 }

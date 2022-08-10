@@ -19,4 +19,7 @@ abstract class InterestItemDao: BaseDao<InterestItem>() {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract suspend fun insertInterests(interestItems: List<InterestItem>)
 
+    @Query("SELECT * FROM interest_item WHERE content = :tag LIMIT 1")
+    abstract suspend fun getInterestItem(tag: String): InterestItem?
+
 }

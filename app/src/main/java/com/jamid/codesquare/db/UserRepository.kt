@@ -10,7 +10,10 @@ import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.User
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class UserRepository(db: CollabDatabase, private val scope: CoroutineScope) {
 
@@ -69,9 +72,10 @@ class UserRepository(db: CollabDatabase, private val scope: CoroutineScope) {
             }
         }
 
-        scope.launch (Dispatchers.IO) {
+        // TODO("Investigate why this")
+        /*scope.launch (Dispatchers.IO) {
             userDao.clearTable()
-        }
+        }*/
 
     }
 

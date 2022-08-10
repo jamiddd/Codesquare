@@ -7,14 +7,27 @@
     android:layout_height="match_parent">
 
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/message_requests_btn"
+        style="@style/AppTheme.GenericTextBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Message requests"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/divider26"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0" />
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/chatChannelsRefresher"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/divider26">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/chat_list_recycler"
@@ -102,6 +115,16 @@
         app:layout_constraintEnd_toEndOf="@+id/no_chat_channels_text"
         app:layout_constraintStart_toStartOf="@+id/no_chat_channels_text"
         app:layout_constraintTop_toBottomOf="@+id/no_chat_channels_text" />
+
+    <View
+        android:id="@+id/divider26"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintBottom_toTopOf="@+id/chatChannelsRefresher"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/message_requests_btn" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

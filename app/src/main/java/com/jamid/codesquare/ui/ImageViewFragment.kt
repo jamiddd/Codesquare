@@ -2,16 +2,13 @@ package com.jamid.codesquare.ui
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.*
-import androidx.core.content.ContextCompat
+import android.view.LayoutInflater
+import android.view.View
 import androidx.core.os.bundleOf
-import androidx.core.view.*
-import androidx.fragment.app.Fragment
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
-import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.transition.platform.MaterialContainerTransform
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Message
@@ -22,8 +19,7 @@ import com.jamid.codesquare.ui.zoomableView.TapListener
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalPagingApi::class)
-class ImageViewFragment: BaseFragment<FragmentImageViewBinding, MainViewModel>(), View.OnClickListener {
+class ImageViewFragment: BaseFragment<FragmentImageViewBinding>(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,8 +36,8 @@ class ImageViewFragment: BaseFragment<FragmentImageViewBinding, MainViewModel>()
 
     override val viewModel: MainViewModel by activityViewModels()
 
-    override fun getViewBinding(): FragmentImageViewBinding {
-        return FragmentImageViewBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentImageViewBinding {
+        return FragmentImageViewBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

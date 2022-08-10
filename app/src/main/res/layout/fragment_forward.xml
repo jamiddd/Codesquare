@@ -1,63 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/AppTheme.Fragment"
+    android:id="@+id/forward_fragment_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/forward_recycler"
+    <include
+        android:id="@+id/sheet_top_comp"
+        layout="@layout/bottom_sheet_toolbar_component" />
+
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:minHeight="500dp"
-        app:layout_constraintBottom_toTopOf="@+id/forward_action_bar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_min="500dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:listitem="@layout/chat_channel_item" >
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="56dp"
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-    </androidx.recyclerview.widget.RecyclerView>
-
-    <androidx.cardview.widget.CardView
-        android:id="@+id/forward_action_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/forward_recycler">
-
-        <TextView
-            android:id="@+id/forward_info"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/forward_channels_recycler"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="start|center_vertical"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="8dp" />
+            android:layout_height="wrap_content" />
 
-        <Button
-            android:id="@+id/forward_btn"
-            style="@style/AppTheme.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|end"
-            android:layout_marginEnd="8dp"
-            android:enabled="false"
-            android:text="@string/forward" />
+    </androidx.core.widget.NestedScrollView>
 
-        <ProgressBar
-            android:id="@+id/forward_progress_bar"
-            style="?android:attr/progressBarStyle"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="center_vertical|end"
-            android:layout_marginEnd="16dp"
-            android:visibility="gone" />
-    </androidx.cardview.widget.CardView>
+    <TextView
+        android:id="@+id/no_items_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="No items found"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <ProgressBar
+        android:id="@+id/forward_channels_progress"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

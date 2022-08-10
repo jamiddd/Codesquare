@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/send_invites_root"
+    style="@style/AppTheme.Fragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_minHeight="250dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/send_invites_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="250dp">
+
+        <TextView
+            android:id="@+id/posts_list_handle"
+            android:layout_width="40dp"
+            android:layout_height="8dp"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/chat_edittext_background"
+            android:backgroundTint="@color/darker_grey"
+            app:layout_constraintBottom_toTopOf="@+id/posts_list_header"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintVertical_chainStyle="packed" />
+
+        <TextView
+            android:id="@+id/posts_list_header"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/title_semi"
+            android:gravity="center"
+            android:padding="12dp"
+            android:text="@string/send_invites"
+            android:textAppearance="@style/TextAppearance.AppCompat.Body2"
+            android:textSize="16sp"
+            app:layout_constraintBottom_toTopOf="@+id/posts_list"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/posts_list_handle" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/posts_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/posts_list_header"
+            tools:itemCount="0"
+            tools:listitem="@layout/post_list_item" />
+
+        <TextView
+            android:id="@+id/no_posts_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No posts to send invite to"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/posts_list_header" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.core.widget.NestedScrollView>

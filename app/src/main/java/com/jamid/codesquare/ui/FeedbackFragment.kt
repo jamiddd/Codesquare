@@ -4,31 +4,20 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.data.Feedback
 import com.jamid.codesquare.databinding.FragmentFeedbackBinding
+import com.jamid.codesquare.showKeyboard
 import com.jamid.codesquare.toast
 
-@ExperimentalPagingApi
-class FeedbackFragment: Fragment() {
+class FeedbackFragment: BaseFragment<FragmentFeedbackBinding>() {
 
-    private lateinit var binding: FragmentFeedbackBinding
-    private val viewModel: MainViewModel by activityViewModels()
     private val feedback = Feedback()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentFeedbackBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentFeedbackBinding {
+        return FragmentFeedbackBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -52,6 +41,12 @@ class FeedbackFragment: Fragment() {
 
             }
         }
+
+        runDelayed(300) {
+            binding.feedbackText.editText?.requestFocus()
+            showKeyboard()
+        }
+
     }
 
     companion object {

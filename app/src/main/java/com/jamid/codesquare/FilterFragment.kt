@@ -4,35 +4,21 @@ import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.net.toUri
 import androidx.core.view.children
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.preference.PreferenceManager
 import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.jamid.codesquare.data.FeedOption
 import com.jamid.codesquare.data.FeedOrder
 import com.jamid.codesquare.data.FeedSort
 import com.jamid.codesquare.data.FeedSort.*
 import com.jamid.codesquare.databinding.FilterLayoutBinding
-import com.jamid.codesquare.ui.RoundedBottomSheetDialogFragment
 
-@OptIn(ExperimentalPagingApi::class)
-class FilterFragment : RoundedBottomSheetDialogFragment() {
+class FilterFragment : BaseBottomFragment<FilterLayoutBinding>() {
 
-    private val viewModel: MainViewModel by activityViewModels()
-    private lateinit var binding: FilterLayoutBinding
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FilterLayoutBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): FilterLayoutBinding {
+        return FilterLayoutBinding.inflate(inflater)
     }
 
     private fun setViewsWithPreExistingData(feedOption: FeedOption) {
@@ -87,16 +73,22 @@ class FilterFragment : RoundedBottomSheetDialogFragment() {
             binding.addInterestsBtn.show()
         } else {
             binding.addInterestsBtn.hide()
-            for (tag in currentUser.interests) {
+
+            val l = mutableListOf<String>()
+            l.add(getString(R.string.random))
+            l.addAll(currentUser.interests)
+
+            binding.filterInterestTags.addTagChips(l, checkable = true)
+
+            /*for (tag in currentUser.interests) {
                 binding.filterInterestTags.addTag(tag)
-            }
+            }*/
         }
 
         binding.addInterestsBtn.setOnClickListener {
-            viewModel.setUserEditForm(currentUser)
             viewModel.setCurrentImage(currentUser.photo.toUri())
 
-            findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
+            findNavController().navigate(R.id.editProfileFragment)
             dismiss()
         }
 
@@ -189,7 +181,7 @@ class FilterFragment : RoundedBottomSheetDialogFragment() {
 
     }
 
-    private fun ChipGroup.addTag(tag: String) {
+/*    private fun ChipGroup.addTag(tag: String) {
         tag.trim()
         val lContext = requireContext()
         val chip = View.inflate(lContext, R.layout.choice_chip, null) as Chip
@@ -200,7 +192,7 @@ class FilterFragment : RoundedBottomSheetDialogFragment() {
             isCloseIconVisible = false
             addView(this)
         }
-    }
+    }*/
 
     companion object {
         const val TAG = "FilterFragment"

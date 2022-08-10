@@ -55,7 +55,6 @@ data class Notification(
     constructor(): this("", "", "", "", "", UserManager.currentUser.minify())
 
     companion object {
-
         fun createNotification(
             content: String,
             receiverId: String,

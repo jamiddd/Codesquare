@@ -16,9 +16,9 @@ import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -33,7 +33,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
+import com.jamid.codesquare.adapter.recyclerview.HorizontalMediaAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentPostBinding
@@ -44,8 +44,7 @@ import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
 
-@ExperimentalPagingApi
-class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageClickListener, CommentMiniListener {
+class PostFragment : BaseFragment<FragmentPostBinding>(), ImageClickListener, CommentMiniListener, HorizontalMediaItemClickListener {
 
     private lateinit var post: Post
     private lateinit var creator: User
@@ -54,6 +53,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     private val userClickListener: UserClickListener by lazy { activity }
     override val viewModel: MainViewModel by activityViewModels()
     private lateinit var userAdapter: UserAdapter
+
+    private val emitter = MutableLiveData<ViewHolderState>()
 
     private var likeListener: ListenerRegistration? = null
     private var saveListener: ListenerRegistration? = null
@@ -68,10 +69,10 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
-        if ((parentFragment as PostFragmentContainer).getCurrentFragmentTag() == TAG) {
+       /* if ((parentFragment as PostFragmentContainer).getCurrentFragmentTag() == TAG) {
             activity.binding.mainToolbar.menu.clear()
             inflater.inflate(R.menu.post_fragment_menu, menu)
-        }
+        }*/
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -131,9 +132,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         }
 
         // join btn slide for scroll change
-        if (parentFragment is PostFragmentContainer) {
-            (parentFragment as PostFragmentContainer).setJoinBtnForChildScroll(binding.projectFragmentScroll)
-        }
+        /*if (parentFragment is PostFragmentContainer) {
+        }*/
 
 //        TODO("Create utility function")
         viewLifecycleOwner.lifecycleScope.launch {
@@ -164,6 +164,25 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                 }.addOnFailureListener {
                     Log.e(TAG, "onViewCreated: ${it.localizedMessage}")
                 }
+        }
+
+        if (post.rank != -1L) {
+            // ranked post
+            binding.projectLikeBtn.hide()
+            binding.projectCommentBtn.hide()
+            binding.projectSaveBtn.hide()
+
+            binding.projectUpvoteBtn.show()
+            binding.projectDownvoteBtn.show()
+
+        } else {
+            // unranked post
+            binding.projectLikeBtn.show()
+            binding.projectCommentBtn.show()
+            binding.projectSaveBtn.show()
+
+            binding.projectUpvoteBtn.hide()
+            binding.projectDownvoteBtn.hide()
         }
 
     }
@@ -200,7 +219,16 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                 (nativeAdView.headlineView as TextView).text = nativeAd.headline
                 nativeAd.mediaContent?.let {
                     nativeAdView.mediaView?.setMediaContent(it)
-                    nativeAdView.mediaView?.setImageScaleType(ImageView.ScaleType.FIT_CENTER)
+                    nativeAdView.mediaView?.setOnHierarchyChangeListener(object :
+                        ViewGroup.OnHierarchyChangeListener {
+                        override fun onChildViewAdded(parent: View, child: View) {
+                            if (child is ImageView) {
+                                child.adjustViewBounds = true
+                            }
+                        }
+
+                        override fun onChildViewRemoved(parent: View, child: View) {}
+                    })
                 }
 
                 if (nativeAd.icon != null) {
@@ -258,11 +286,14 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
                 override fun onAdLoaded() {
                     super.onAdLoaded()
-                    adBinding.loadingAdText.hide()
-                    adBinding.adPrimaryAction.show()
 
-                    if (adBinding.adPrimaryAction.text != "Install") {
-                        adBinding.adPrimaryAction.icon = ContextCompat.getDrawable(activity, R.drawable.ic_round_arrow_forward_24)
+                    if (this@PostFragment.isVisible) {
+                        adBinding.loadingAdText.hide()
+                        adBinding.adPrimaryAction.show()
+
+                        if (adBinding.adPrimaryAction.text != "Install") {
+                            adBinding.adPrimaryAction.icon = ContextCompat.getDrawable(activity, R.drawable.ic_round_arrow_forward_24)
+                        }
                     }
 
                 }
@@ -275,7 +306,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
     private fun updatePost() {
         // getting new data of the project
-        FireUtility.getPost(post.id) {
+        /*FireUtility.getPost(post.id) {
             val newPostResult = it ?: return@getPost
 
             // finished process and loading
@@ -296,7 +327,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                     setCommentUi()
                 }
             }
-        }
+        }*/
     }
 
 
@@ -307,12 +338,12 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     *
     * */
     private fun getUserData() = viewLifecycleOwner.lifecycleScope.launch (Dispatchers.IO) {
-        getUserImpulsive(post.creator.userId) {
+      /*  getUserImpulsive(post.creator.userId) {
             // now this is main thread
             creator = it
             post.creator = creator.minify()
             updateUserUi()
-        }
+        }*/
     }
 
     private fun updateUserUi() {
@@ -425,11 +456,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             isSelected = post.isLiked
 
             setOnClickListener {
-                postClickListener.onPostLikeClick(post.copy()) {
-                    post = it
-                    setLikeCommentStats()
-                    setPostLikeBtn()
-                }
+                postClickListener.onPostLikeClick(post.copy())
             }
         }
     }
@@ -440,11 +467,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             isSelected = post.isSaved
 
             setOnClickListener {
-                postClickListener.onPostSaveClick(post.copy()) {
-                    post = it
-
-                    setPostSaveBtn()
-                }
+                postClickListener.onPostSaveClick(post.copy())
             }
         }
     }
@@ -530,7 +553,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             chipStrokeWidth = 0f
 //            setTextColor(textColor)
             setOnClickListener {
-                (parentFragment as PostFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag, SUB_TITLE to "Posts related to ${post.name.uppercase()}"))
+//                (parentFragment as PostFragmentContainer).navigate(TagFragment.TAG, bundleOf(TITLE to "#$tag", "tag" to tag, SUB_TITLE to "Posts related to ${post.name.uppercase()}"))
             }
 
             setOnLongClickListener {
@@ -559,8 +582,8 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
         binding.seeAllContributorsBtn.isEnabled = true
         binding.seeAllContributorsBtn.setOnClickListener {
-            (parentFragment as PostFragmentContainer).navigate(PostContributorsFragment.TAG, bundleOf(
-                POST to post, TITLE to "Contributors", SUB_TITLE to post.name.uppercase()))
+           /* (parentFragment as PostFragmentContainer).navigate(PostContributorsFragment.TAG, bundleOf(
+                POST to post, TITLE to "Contributors", SUB_TITLE to post.name.uppercase()))*/
         }
     }
 
@@ -588,13 +611,17 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                     val users = it.toObjects(User::class.java)
                     contributors.addAll(users)
 
-                    activity.getUserImpulsive(post.creator.userId) { it1 ->
-                        contributors.add(it1)
+                    FireUtility.getUser(post.creator.userId) { it1 ->
+                        if (it1 != null) {
+                            contributors.add(it1)
+                        }
                         onContributorsFetched(contributors)
                     }
                 } else {
-                    activity.getUserImpulsive(post.creator.userId) { it1 ->
-                        onContributorsFetched(listOf(it1))
+                    FireUtility.getUser(post.creator.userId) { it1 ->
+                        if (it1 != null) {
+                            onContributorsFetched(listOf(it1))
+                        }
                     }
                 }
             }.addOnFailureListener {
@@ -624,8 +651,6 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
                 }.addOnFailureListener {
                     Log.e(TAG, "setCommentUi: ${it.localizedMessage}")
                 }
-
-//            onCheckForStaleData(commentChannel, lastComment)
 
             binding.projectsLastComment.root.show()
             binding.commentsHeader.show()
@@ -699,59 +724,64 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
     private fun setLikeCommentStats() {
         // setting like comment text
 
-        val likesString = getLikesString(post.likesCount.toInt())
-        val commentsString = getCommentsString(post.commentsCount.toInt())
+        if (post.rank == -1L) {
+            val likesString = getLikesString(post.likesCount.toInt())
+            val commentsString = getCommentsString(post.commentsCount.toInt())
 
-        val likeCommentText =
-            "$likesString • $commentsString"
+            val likeCommentText =
+                "$likesString • $commentsString"
 
-        val cs1 = object: ClickableSpan() {
-            override fun onClick(p0: View) {
-                postClickListener.onPostSupportersClick(post)
-            }
-
-            override fun updateDrawState(ds: TextPaint) {
-                super.updateDrawState(ds)
-                ds.isUnderlineText = false
-                val color = if (isNightMode()) {
-                    Color.WHITE
-                } else {
-                    Color.GRAY
+            val cs1 = object: ClickableSpan() {
+                override fun onClick(p0: View) {
+                    postClickListener.onPostSupportersClick(post)
                 }
-                ds.color = color
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.isUnderlineText = false
+                    val color = if (isNightMode()) {
+                        Color.WHITE
+                    } else {
+                        Color.GRAY
+                    }
+                    ds.color = color
+                }
             }
+
+            val cs2 = object: ClickableSpan() {
+                override fun onClick(p0: View) {
+                    postClickListener.onPostCommentClick(post)
+                }
+
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.isUnderlineText = false
+                    val color = if (isNightMode()) {
+                        Color.WHITE
+                    } else {
+                        Color.GRAY
+                    }
+                    ds.color = color
+                }
+            }
+
+            val s1 = 0
+            val e1 = likesString.length
+
+            val s2 = e1 + 3
+            val e2 = s2 + commentsString.length
+
+            val formattedString = SpannableString(likeCommentText)
+            formattedString.setSpan(cs1, s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+            formattedString.setSpan(cs2, s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+            binding.projectLikeCommentText.movementMethod = LinkMovementMethod.getInstance()
+
+            binding.projectLikeCommentText.text = formattedString
+        } else {
+//            binding.projectLikeCommentText.text = "${post.upvoteCount} Upvotes • ${post.downvoteCount} Downvotes"
         }
 
-        val cs2 = object: ClickableSpan() {
-            override fun onClick(p0: View) {
-                postClickListener.onPostCommentClick(post)
-            }
-
-            override fun updateDrawState(ds: TextPaint) {
-                super.updateDrawState(ds)
-                ds.isUnderlineText = false
-                val color = if (isNightMode()) {
-                    Color.WHITE
-                } else {
-                    Color.GRAY
-                }
-                ds.color = color
-            }
-        }
-
-        val s1 = 0
-        val e1 = likesString.length
-
-        val s2 = e1 + 3
-        val e2 = s2 + commentsString.length
-
-        val formattedString = SpannableString(likeCommentText)
-        formattedString.setSpan(cs1, s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-        formattedString.setSpan(cs2, s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
-
-        binding.projectLikeCommentText.movementMethod = LinkMovementMethod.getInstance()
-
-        binding.projectLikeCommentText.text = formattedString
     }
 
     private fun onEmptyComments() {
@@ -821,7 +851,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         }
 
         binding.projectLocation.setOnClickListener {
-            findNavController().navigate(R.id.locationPostsFragment, bundleOf(TITLE to "Showing projects near", SUB_TITLE to post.location.address, "location" to post.location), slideRightNavOptions())
+            findNavController().navigate(R.id.locationPostsFragment, bundleOf(TITLE to "Showing projects near", SUB_TITLE to post.location.address, "location" to post.location))
         }
 
         setPostImages()
@@ -858,20 +888,18 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
      * */
     private fun setPostImages() {
         val manager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
-        val imageAdapter = ImageAdapter(this)
+        val horizontalMediaAdapter = HorizontalMediaAdapter(horizontalMediaItemClickListener = this, lifecycleOwner = viewLifecycleOwner, parentEventEmitter = emitter, fragmentTag = TAG)
 
         val helper = LinearSnapHelper()
 
         binding.projectImagesRecycler.apply {
-            adapter = imageAdapter
+            adapter = horizontalMediaAdapter
             layoutManager = manager
             onFlingListener = null
-            OverScrollDecoratorHelper.setUpOverScroll(this, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
-
             helper.attachToRecyclerView(this)
         }
 
-        val totalImageCount = post.images.size
+        val totalImageCount = post.mediaList.size
         if (totalImageCount == 1) {
             binding.imagesCounter.hide()
         } else {
@@ -879,7 +907,7 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
             binding.imagesCounter.text = imageCount
         }
 
-        imageAdapter.submitList(post.images)
+        horizontalMediaAdapter.submitList(post.mediaList.map { it2 -> MediaItem().apply { url = it2 } })
 
         binding.projectImagesRecycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -896,15 +924,17 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
     companion object {
         const val TAG = "PostFragment"
+        const val FRAGMENT_END = 5
 
         fun newInstance(bundle: Bundle) = PostFragment().apply {
             arguments = bundle
         }
-
     }
 
     override fun onImageClick(view: View, image: Image) {
-        activity.showImageViewFragment(view, image)
+//        activity.showImageViewFragment(view, image)
+        /*val bundle = bundleOf("list" to post.mediaList.map { MediaItem(it, ) })
+        findNavController().navigate(R.id.mediaViewerFragment)*/
     }
 
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
@@ -926,10 +956,6 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
 
     }
 
-    override fun getViewBinding(): FragmentPostBinding {
-        return FragmentPostBinding.inflate(layoutInflater)
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
         // saving the changes made to the user
@@ -941,6 +967,37 @@ class PostFragment : BaseFragment<FragmentPostBinding, MainViewModel>(), ImageCl
         userLikeListenerRegistration?.remove()
         likeListener?.remove()
         saveListener?.remove()
+
+
+        emitter.postValue(ViewHolderState.STATE_RECYCLED)
     }
+
+    override fun onMediaItemClick(mediaItem: MediaItem, pos: Int) {
+        val mediaItems = convertMediaListToMediaItemList(post.mediaList, post.mediaString)
+        activity.onMediaPostItemClick(
+            mediaItems, pos
+        )
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentPostBinding {
+        return FragmentPostBinding.inflate(inflater)
+    }
+
+    /*override fun onMediaItemClick(mediaItem: MediaItem, pos: Int) {
+
+        val bundle = bundleOf("list" to post.mediaList.map {
+            MediaItem().apply {
+                url = it
+                type = if (it.contains(".mp4")) {
+                    "video"
+                } else {
+                    "image"
+                }
+            }
+        }, "current_position" to pos)
+
+        findNavController().navigate(R.id.mediaViewerFragment, bundle)
+
+    }*/
 
 }

@@ -77,7 +77,6 @@
         style="@style/AppTheme.PostItemStyledBtn"
         android:layout_width="36dp"
         android:layout_height="36dp"
-        android:layout_marginStart="4dp"
         android:contentDescription="@string/reply_to_this_comment"
         android:paddingStart="10dp"
         android:paddingEnd="4dp"

@@ -9,26 +9,33 @@ import { UserMinimal } from "./UserMinimal";
 export class PostMinimalImpl {
     /**
      * 
-     * @param {string} objectID Id of the post for algolia
-     * @param {string} type [post] [required for algolia]
-     * @param {string} name Name of the post
-     * @param {string} content Content of the post
-     * @param {number} createdAt Time of creation of the post
-     * @param {UserMinimal} creator Creator of the post
-     * @param {string[]} images Images of the post
-     * @param {MyLocation} location Location of the post
-     * @param {string[]} tags Related tags of the post
-     * @param {number} updatedAt Time of updation of the post
+     * @param {string} objectID objectID 
+     * @param {string} type type 
+     * @param {string} name name 
+     * @param {string} content content 
+     * @param {string} thumbnail thumbnail 
+     * @param {string} chatChannel chatChannel 
+     * @param {number} createdAt createdAt 
+     * @param {number} updatedAt updatedAt 
+     * @param {number} rank rank 
+     * @param {string[]} mediaList mediaList 
+     * @param {string[]} tags tags 
+     * @param {UserMinimal} creator creator 
+     * @param {MyLocation} location location 
      */
     constructor(
         readonly objectID: string,
         readonly type: string,
         readonly name: string,
         readonly content: string,
+        readonly thumbnail: string,
+        readonly chatChannel: string,
         readonly createdAt: number,
-        readonly creator: UserMinimal,
-        readonly images: string[],
-        readonly location: MyLocation,
+        readonly updatedAt: number,
+        readonly rank: number,
+        readonly mediaList: string[],
         readonly tags: string[],
-        readonly updatedAt: number) {}
+        readonly creator: UserMinimal,
+        readonly location: MyLocation,
+    ) {}
 }

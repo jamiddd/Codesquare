@@ -6,27 +6,29 @@
     android:layout_height="wrap_content">
 
     <View
+        android:id="@+id/asdad"
+        style="@style/AppTheme.GenericBackground2"
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:background="@drawable/ic_curved_arrow"
-        android:backgroundTint="@color/light_grey"
         android:rotation="-86"
-        app:layout_constraintEnd_toStartOf="@+id/message_with_reply_container"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintEnd_toEndOf="@+id/reply_layout_root"
+        app:layout_constraintHorizontal_bias="0.18"
         app:layout_constraintStart_toStartOf="@+id/reply_layout_root"
         app:layout_constraintTop_toBottomOf="@+id/reply_layout_root" />
 
     <LinearLayout
         android:id="@+id/reply_layout_root"
-        android:layout_width="0dp"
+        style="@style/AppTheme.ChatBalloonLeftDocument"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="2dp"
-        android:background="@drawable/message_reply_background"
         android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/message_with_reply_container"
-        app:layout_constraintEnd_toEndOf="@+id/message_with_reply_container"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.3"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"
@@ -57,7 +59,7 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
-                tools:text="Something is always something no matter what." />
+                tools:text="asdasdasd adasdas ad as dasd dgdfg df gerf dfd fdh h fgh fgh fg hfg fgh" />
         </LinearLayout>
 
         <com.facebook.drawee.view.SimpleDraweeView
@@ -73,6 +75,22 @@
             app:roundedCornerRadius="16dp"
             tools:visibility="visible" />
 
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/document_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ic_file"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textAllCaps="true"
+            android:visibility="gone"
+            app:textAllCaps="true"
+            tools:visibility="visible" />
+
     </LinearLayout>
 
     <LinearLayout
@@ -82,7 +100,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:background="@drawable/message_body"
-        android:minWidth="200dp"
+        android:minWidth="100dp"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -103,7 +121,7 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textColor="@color/white"
             android:textSize="16sp"
-            tools:text="This is a random message that needs no description" />
+            tools:text="asdasdasd adasdas ad as dasd dgdfg df gerf dfd fdh h fgh fgh fg hfg fgh" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -34,14 +34,14 @@ data class Message(
     @Exclude @set: Exclude @get: Exclude
     var isDownloaded: Boolean,
     @Exclude @set: Exclude @get: Exclude
-    var isCurrentUserMessage: Boolean,
+    var isSavedToFiles: Boolean,
     @Exclude @set: Exclude @get: Exclude
-    var state: Int = -1
+    var isCurrentUserMessage: Boolean,
 ): Parcelable {
 
     fun toReplyMessage(): MessageMinimal {
         return MessageMinimal(senderId, sender.name, content, type, messageId, chatChannelId, isDownloaded, metadata)
     }
 
-    constructor(): this("", "", "", "", "", UserMinimal(), Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), System.currentTimeMillis(), null, MessageMinimal(),false, false)
+    constructor(): this("", "", "", "", "", UserMinimal(), Metadata(), emptyList(), emptyList(), System.currentTimeMillis(), System.currentTimeMillis(), null, MessageMinimal(),false, false, false)
 }

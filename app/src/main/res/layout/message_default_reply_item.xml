@@ -6,25 +6,26 @@
     android:layout_height="wrap_content">
 
     <View
+        style="@style/AppTheme.GenericBackground2"
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:background="@drawable/ic_curved_arrow"
-        android:backgroundTint="@color/light_grey"
         android:rotation="180"
         app:layout_constraintEnd_toEndOf="@+id/reply_layout_root"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/message_with_reply_container"
+        app:layout_constraintHorizontal_bias="0.82"
+        app:layout_constraintStart_toStartOf="@+id/reply_layout_root"
         app:layout_constraintTop_toBottomOf="@+id/reply_layout_root" />
 
     <LinearLayout
         android:id="@+id/reply_layout_root"
+        style="@style/AppTheme.ChatBalloonLeftDocument"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:background="@drawable/message_reply_background"
         android:orientation="horizontal"
         app:layout_constraintBottom_toTopOf="@+id/message_with_reply_container"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.90"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"
@@ -56,7 +57,7 @@
                 android:layout_height="wrap_content"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
-                tools:text="Something is always something no matter what." />
+                tools:text="k" />
         </LinearLayout>
 
         <com.facebook.drawee.view.SimpleDraweeView
@@ -69,7 +70,24 @@
             android:layout_marginBottom="4dp"
             android:backgroundTint="@color/white"
             android:visibility="gone"
-            app:roundedCornerRadius="16dp" />
+            app:roundedCornerRadius="16dp"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/document_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/ic_file"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textAllCaps="true"
+            android:visibility="gone"
+            app:textAllCaps="true"
+            tools:visibility="visible" />
 
     </LinearLayout>
 
@@ -102,7 +120,7 @@
         app:layout_constraintStart_toEndOf="@+id/message_sender_img"
         app:layout_constraintTop_toBottomOf="@+id/reply_layout_root"
         app:layout_constraintWidth_max="270dp"
-        app:layout_constraintWidth_min="100dp">
+        app:layout_constraintWidth_min="50dp">
 
 
         <TextView
@@ -116,7 +134,7 @@
             android:paddingBottom="12dp"
             android:textAppearance="@style/TextAppearance.AppCompat.Body1"
             android:textSize="16sp"
-            tools:text="yes" />
+            tools:text="k" />
     </LinearLayout>
 
     <TextView

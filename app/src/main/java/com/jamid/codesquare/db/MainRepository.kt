@@ -2,10 +2,11 @@ package com.jamid.codesquare.db
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.facebook.drawee.backends.pipeline.Fresco
+import com.facebook.imagepipeline.request.ImageRequest
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
 import java.io.File
-import kotlin.random.Random
 
 class MainRepository(private val db: CollabDatabase) {
 
@@ -13,8 +14,9 @@ class MainRepository(private val db: CollabDatabase) {
     private val chatChannelDao = db.chatChannelDao()
     val postDao = db.postDao()
 
+    val userMinimalDao = db.userMinimalDao()
     val userDao = db.userDao()
-    private val messageDao = db.messageDao()
+    val messageDao = db.messageDao()
     val postRequestDao = db.postRequestDao()
     val commentDao = db.commentDao()
     val notificationDao = db.notificationDao()
@@ -28,7 +30,7 @@ class MainRepository(private val db: CollabDatabase) {
 
     val allPreviousQueries = searchQueryDao.prevQueries()
 
-    val chatChannels = chatChannelDao.chatChannels()
+    fun chatChannels(currentUserId: String) = chatChannelDao.chatChannels(currentUserId)
 
     val allUnreadNotifications = notificationDao.allUnreadNotifications()
 
@@ -38,34 +40,59 @@ class MainRepository(private val db: CollabDatabase) {
         likedByDao.clearTable()
     }
 
+    fun messageRequests(): LiveData<List<ChatChannel>> {
+        return chatChannelDao.messageRequests(currentUserId = UserManager.currentUserId)
+    }
 
     suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
-
-        val currentUser = UserManager.currentUser
         val newPosts = posts.toMutableList()
 
-        if (currentUser.premiumState.toInt() == -1) {
-            val numberOfAds = (posts.size / 3)
+        val totalAds = newPosts.size / 4 // 25% ads
 
-            val indexes = mutableListOf<Int>()
-            for (i in 0 until numberOfAds) {
-                indexes.add(Random.nextInt(1, posts.size - 1))
-            }
+        val likesCountList = posts.map { it.likesCount }
+        val createdAtList = posts.map { it.createdAt }
+        val updatedAtList = posts.map { it.updatedAt }
+        val viewsCountList = posts.map { it.viewsCount }
 
-            for (i in indexes) {
-                val newPost = Post()
-                newPost.isAd = true
-                newPost.createdAt = posts[i].createdAt
-                newPosts.add(i, newPost)
+        val adPosts = Array(totalAds) {
+            Post().apply {
+                id = randomId()
+                viewsCount = viewsCountList.random()
+                likesCount = likesCountList.random()
+                createdAt = createdAtList.random()
+                updatedAt = updatedAtList.random()
+                isAd = true
             }
         }
+
+        newPosts.addAll(adPosts)
 
         if (shouldProcess) {
-            postDao.insert(processPosts(newPosts.toTypedArray()).toList())
+            processPosts(newPosts)
+            postDao.insert(newPosts)
         } else {
-            postDao.insert(newPosts.toList())
+            postDao.insert(newPosts)
         }
+
+        val pipeline = Fresco.getImagePipeline()
+        for (post in newPosts) {
+            val mediaItems = post.mediaList
+            val mediaString = post.mediaString
+
+            for (index in mediaString.indices) {
+                if (mediaString[index].digitToInt() == 0) {
+                    val image = mediaItems[index]
+                    val imageRequest = ImageRequest.fromUri(image)
+                    pipeline.prefetchToDiskCache(imageRequest, null)
+                }
+            }
+
+            val ir = ImageRequest.fromUri(post.creator.photo)
+            pipeline.prefetchToDiskCache(ir, null)
+        }
+
     }
+
 
     private suspend fun insertCurrentUser(user: User) {
         user.isCurrentUser = true
@@ -117,24 +144,17 @@ class MainRepository(private val db: CollabDatabase) {
         chatChannelDao.insert(newListOfChatChannels)
     }
 
-    private fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
+    private fun processMessages(root: File, messages: List<Message>): List<Message> {
         // filter the messages which are marked as not delivered by the message
         for (message in messages) {
             // check if the media is already downloaded in the local folder
-            if (message.type == image) {
-                val name = message.content + message.metadata?.ext.orEmpty()
-                val f = File(imagesDir, name)
-                message.isDownloaded = f.exists()
-            }
-
-            if (message.type == document) {
-                val name = message.content + message.metadata?.ext.orEmpty()
-                val f = File(documentsDir, name)
-                message.isDownloaded = f.exists()
-            }
 
             if (message.type == text) {
                 message.isDownloaded = true
+            } else {
+                val name = message.content + message.metadata!!.ext
+                val f = File(root, "${message.type}s/${message.chatChannelId}/$name")
+                message.isDownloaded = f.exists()
             }
 
             message.isCurrentUserMessage = UserManager.currentUserId == message.senderId
@@ -198,14 +218,6 @@ class MainRepository(private val db: CollabDatabase) {
         return messageDao.getLimitedMediaMessages(channelId, limit, type).orEmpty()
     }
 
-    suspend fun insertMessages(imagesDir: File, documentsDir: File, messages: List<Message>, preProcessed: Boolean = false) {
-        if (!preProcessed) {
-            messageDao.insertMessages(processMessages(imagesDir, documentsDir, messages))
-        } else {
-            messageDao.insertMessages(messages)
-        }
-    }
-
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return messageDao.getMessages(chatChannelId).orEmpty()
     }
@@ -227,11 +239,11 @@ class MainRepository(private val db: CollabDatabase) {
         }
     }
 
-    suspend fun updateLocalPosts(updatedUser: User, posts: List<String>) {
+    suspend fun updateLocalPosts(updatedUser: User) {
 
         val updatedPosts = mutableListOf<Post>()
 
-        for (postId in posts) {
+        for (postId in updatedUser.posts) {
             val post = postDao.getPost(postId)
             if (post != null) {
                 post.creator = updatedUser.minify()
@@ -374,7 +386,7 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
     fun getUnreadInviteNotifications(): LiveData<List<Notification>> {
-        return notificationDao.getUnreadNotifications(-1)
+        return notificationDao.getUnreadNotifications(2)
     }
 
     suspend fun updateChatChannel(chatChannel: ChatChannel) {
@@ -411,6 +423,22 @@ class MainRepository(private val db: CollabDatabase) {
 
     suspend fun updateAllInviteNotificationsToRead() {
         notificationDao.updateAllInviteNotificationsToRead()
+    }
+
+    suspend fun getPostRequestByNotificationId(id: String): PostRequest? {
+        return postRequestDao.getPostRequestByNotificationId(id)
+    }
+
+    suspend fun getUnreadNotifications(): List<Notification> {
+        return notificationDao.getUnreadNotificationsAlt()
+    }
+
+    suspend fun getInterestItem(tag: String): InterestItem? {
+        return interestItemDao.getInterestItem(tag)
+    }
+
+    fun getChannelContributors(chatChannelId: String): LiveData<List<User>> {
+        return userDao.getChannelContributorsLive("%$chatChannelId%")
     }
 
     companion object {

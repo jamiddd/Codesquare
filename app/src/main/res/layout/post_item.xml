@@ -2,117 +2,166 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/post_root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:animateLayoutChanges="true"
+    android:layout_marginVertical="4dp"
     android:hapticFeedbackEnabled="true">
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_save_btn"
         style="@style/AppTheme.GenericIconBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:contentDescription="@string/save_this_post_for_later"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
         app:icon="@drawable/save_selector"
         app:layout_constraintBottom_toBottomOf="@+id/post_comment_btn"
         app:layout_constraintStart_toEndOf="@+id/post_comment_btn"
         app:layout_constraintTop_toTopOf="@+id/post_comment_btn"
-        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+        app:rippleColor="@null"
+        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck"
+        tools:text=" " />
 
-    <com.facebook.drawee.view.SimpleDraweeView
-        android:id="@+id/post_user_img"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
-        android:background="@drawable/ic_round_account_circle_24"
-        app:layout_constraintBottom_toTopOf="@+id/divider5"
+    <LinearLayout
+        android:id="@+id/post_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:weightSum="1"
+        app:layout_constraintBottom_toBottomOf="@id/divider5"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:roundAsCircle="true" />
+        app:layout_constraintVertical_chainStyle="packed">
 
-    <com.google.android.flexbox.FlexboxLayout
-        android:id="@+id/user_container"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:gravity="center_vertical"
-        android:orientation="vertical"
-        app:flexDirection="row"
-        app:flexWrap="wrap"
-        app:layout_constraintBottom_toBottomOf="@+id/post_user_img"
-        app:layout_constraintEnd_toStartOf="@+id/post_option"
-        app:layout_constraintStart_toEndOf="@+id/post_user_img"
-        app:layout_constraintTop_toTopOf="@+id/post_user_img">
+        <com.facebook.drawee.view.SimpleDraweeView
+            android:id="@+id/post_user_img"
+            style="@style/AppTheme.ProfileImage"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            app:fadeDuration="0"
+            android:layout_gravity="center_vertical"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/ic_round_account_circle_24"
+            app:layout_constraintBottom_toTopOf="@+id/divider5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintVertical_chainStyle="packed"
+            app:roundAsCircle="true" />
 
-        <TextView
-            android:id="@+id/post_user_name"
-            style="@style/TextAppearance.AppCompat.Body1"
-            android:layout_width="wrap_content"
+        <com.google.android.flexbox.FlexboxLayout
+            android:id="@+id/user_container"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:drawablePadding="8dp"
-            android:fontFamily="sans-serif-medium"
-            android:text="@string/sample_name" />
-
-        <TextView
-            android:id="@+id/post_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:drawablePadding="8dp"
+            android:layout_gravity="center_vertical"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="4dp"
+            android:layout_weight="1"
             android:gravity="center_vertical"
-            android:text=" • Yesterday"
-            tools:layout_editor_absoluteX="75dp" />
+            android:orientation="vertical"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            app:flexDirection="row"
+            app:flexWrap="wrap"
+            app:layout_constraintBottom_toBottomOf="@+id/post_user_img"
+            app:layout_constraintEnd_toStartOf="@+id/post_option"
+            app:layout_constraintStart_toEndOf="@+id/post_user_img"
+            app:layout_constraintTop_toTopOf="@+id/post_user_img">
 
-        <TextView
-            android:id="@+id/post_location"
-            android:layout_width="match_parent"
+            <TextView
+                android:id="@+id/post_user_name"
+                style="@style/TextAppearance.AppCompat.Body1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:id="@+id/post_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawablePadding="8dp"
+                android:gravity="center_vertical"
+                tools:layout_editor_absoluteX="75dp" />
+
+            <TextView
+                android:id="@+id/post_location"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                app:drawableStartCompat="@drawable/ic_round_location_on_18"
+                tools:text="@string/sample_location_text" />
+
+            <TextView
+                android:id="@+id/ranked_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="2dp"
+                android:background="@drawable/rounded_box_16"
+                android:backgroundTint="#FF9800"
+                android:paddingStart="12dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="2dp"
+                android:text="Ranked #1"
+                android:textColor="#774905"
+                android:textSize="12sp"
+                android:visibility="gone"
+                tools:layout_editor_absoluteX="8dp"
+                tools:layout_editor_absoluteY="39dp"
+                tools:visibility="visible" />
+
+        </com.google.android.flexbox.FlexboxLayout>
+
+        <Button
+            android:id="@+id/post_option"
+            style="@style/AppTheme.GenericIconBtn"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            app:drawableStartCompat="@drawable/ic_round_location_on_18"
-            tools:text="@string/sample_location_text" />
-    </com.google.android.flexbox.FlexboxLayout>
+            android:layout_gravity="center_vertical"
+            app:icon="@drawable/ic_round_more_horiz_24"
+            app:layout_constraintBottom_toBottomOf="@+id/user_container"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/user_container"
+            tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck"
+            tools:text=" " />
 
-    <Button
-        android:id="@+id/post_option"
-        style="@style/AppTheme.GenericIconBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
-        app:icon="@drawable/ic_round_more_horiz_24"
-        app:layout_constraintBottom_toBottomOf="@+id/user_container"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/user_container"
-        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+    </LinearLayout>
 
     <View
         android:id="@+id/divider5"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="?android:attr/listDivider"
-        app:layout_constraintBottom_toTopOf="@+id/post_images_recycler"
+        app:layout_constraintBottom_toTopOf="@+id/post_media_recycler"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/post_user_img" />
+        app:layout_constraintTop_toBottomOf="@+id/post_top" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/post_images_recycler"
+    <com.jamid.codesquare.ui.MediaRecyclerView
+        android:id="@+id/post_media_recycler"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="300dp"
         android:minHeight="250dp"
         android:nestedScrollingEnabled="false"
         android:overScrollMode="never"
-        app:layout_constraintBottom_toTopOf="@+id/post_title"
+        app:layout_constraintBottom_toTopOf="@+id/divider19"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/divider5"
         tools:ignore="SpeakableTextPresentCheck"
         tools:itemCount="1"
-        tools:listitem="@layout/imageview_layout" />
+        tools:listitem="@layout/media_item_2" />
 
     <TextView
         android:id="@+id/post_title"
@@ -122,13 +171,12 @@
         android:paddingStart="16dp"
         android:paddingTop="8dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="8dp"
-        android:text="@string/sample_post_title"
+        android:paddingBottom="4dp"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_constraintBottom_toTopOf="@+id/post_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/post_images_recycler" />
+        app:layout_constraintTop_toBottomOf="@+id/divider19" />
 
     <TextView
         android:id="@+id/post_content"
@@ -136,10 +184,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="16dp"
-        android:paddingTop="8dp"
+        android:paddingTop="4dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="8dp"
-        android:text="@string/about_me"
+        android:paddingBottom="4dp"
         android:textColorLink="@null"
         app:layout_constraintBottom_toTopOf="@+id/post_like_comment_text"
         app:layout_constraintEnd_toEndOf="parent"
@@ -149,33 +196,42 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_like_btn"
         style="@style/AppTheme.LikeBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginStart="12dp"
         android:layout_marginBottom="8dp"
         android:contentDescription="@string/like_btn_desc"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/post_like_comment_text"
-        tools:ignore="TouchTargetSizeCheck" />
+        app:rippleColor="@null"
+        tools:ignore="TouchTargetSizeCheck"
+        tools:text=" " />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_comment_btn"
         style="@style/AppTheme.GenericIconBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:contentDescription="@string/comment_btn_desc"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
         app:icon="@drawable/ic_round_chat_bubble_outline_24"
         app:layout_constraintBottom_toBottomOf="@+id/post_like_btn"
         app:layout_constraintStart_toEndOf="@+id/post_like_btn"
         app:layout_constraintTop_toTopOf="@+id/post_like_btn"
-        tools:ignore="TouchTargetSizeCheck" />
+        app:rippleColor="@null"
+        tools:ignore="TouchTargetSizeCheck"
+        tools:text=" " />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/post_join_btn"
         style="@style/AppTheme.GenericBtnOutlined"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+
         android:layout_marginEnd="12dp"
         android:fontFamily="@font/title_semi"
         android:minHeight="44dp"
@@ -193,6 +249,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="12dp"
+        android:layout_marginBottom="4dp"
         android:drawablePadding="4dp"
         android:gravity="center_vertical"
         android:maxWidth="330dp"
@@ -202,11 +259,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/post_content"
-        tools:text="@string/sample_likes_comment_text" />
+        app:layout_constraintTop_toBottomOf="@+id/post_content" />
 
     <TextView
         android:id="@+id/post_images_counter"
+        style="@style/AppTheme.OverlayItem.Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
@@ -218,12 +275,12 @@
         android:paddingBottom="4dp"
         android:text="@string/sample_counter_text"
         android:textColor="@color/white"
-        app:layout_constraintBottom_toBottomOf="@+id/post_images_recycler"
-        app:layout_constraintEnd_toEndOf="@+id/post_images_recycler"
+        app:layout_constraintBottom_toBottomOf="@+id/post_media_recycler"
+        app:layout_constraintEnd_toEndOf="@+id/post_media_recycler"
         app:layout_constraintTop_toBottomOf="@+id/divider5"
         app:layout_constraintVertical_bias="0.0" />
 
-    <com.google.android.material.button.MaterialButton
+    <!-- <com.google.android.material.button.MaterialButton
         android:id="@+id/right_btn"
         style="@style/AppTheme.GenericIconOverlayBtn"
         android:layout_width="wrap_content"
@@ -231,10 +288,11 @@
         android:layout_marginEnd="8dp"
         android:visibility="gone"
         app:icon="@drawable/ic_round_keyboard_arrow_right_24"
-        app:layout_constraintBottom_toBottomOf="@+id/post_images_recycler"
-        app:layout_constraintEnd_toEndOf="@+id/post_images_recycler"
-        app:layout_constraintTop_toTopOf="@+id/post_images_recycler"
+        app:layout_constraintBottom_toBottomOf="@+id/post_media_recycler"
+        app:layout_constraintEnd_toEndOf="@+id/post_media_recycler"
+        app:layout_constraintTop_toTopOf="@+id/post_media_recycler"
         tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck"
+        tools:text=" "
         tools:visibility="visible" />
 
     <com.google.android.material.button.MaterialButton
@@ -249,6 +307,18 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/right_btn"
         tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck"
-        tools:visibility="visible" />
+        tools:text=" "
+        tools:visibility="visible" />-->
+
+    <View
+        android:id="@+id/divider19"
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="?android:attr/listDivider"
+        app:layout_constraintBottom_toTopOf="@id/post_title"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/post_media_recycler" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

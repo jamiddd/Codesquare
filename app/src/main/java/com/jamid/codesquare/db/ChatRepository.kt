@@ -1,7 +1,6 @@
 package com.jamid.codesquare.db
 
 import android.content.Context
-import android.os.Environment
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -13,18 +12,26 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.Message
-import kotlinx.coroutines.*
-import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, context: Context) {
+class ChatRepository(
+    val db: CollabDatabase,
+    private val scope: CoroutineScope,
+    private val context: Context
+) {
 
     val messageDao = db.messageDao()
     private val chatChannelDao = db.chatChannelDao()
     val errors = MutableLiveData<Exception>()
     private var currentUserId: String = ""
 
-    private val imagesDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)!!
-    private val documentsDir =  context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)!!
+    /* private val root = context.filesDir
+     private val imagesDir = context.getDir("Images", Context.MODE_PRIVATE)
+     private val documentsDir = context.getDir("Documents", Context.MODE_PRIVATE)
+     private val videosDir = context.getDir("Videos", Context.MODE_PRIVATE)*/
+
 
     private var chatChannelsListenerRegistration: ListenerRegistration? = null
 
@@ -40,6 +47,7 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
 
             }
         }
+
     }
 
 
@@ -52,7 +60,8 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
                 if (error != null) {
                     Log.e(
                         TAG,
-                        "initializeListeners: Something went wrong - ${error.localizedMessage}")
+                        "initializeListeners: Something went wrong - ${error.localizedMessage}"
+                    )
                     return@addSnapshotListener
                 }
 
@@ -66,7 +75,7 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
             }
     }
 
-    private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch (Dispatchers.IO) {
+    private fun insertChatChannels(chatChannels: List<ChatChannel>) = scope.launch(Dispatchers.IO) {
         val currentUserId = UserManager.currentUserId
         val newListOfChatChannels = mutableListOf<ChatChannel>()
         for (chatChannel in chatChannels) {
@@ -87,7 +96,7 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
      * @param messages list of messages to be inserted in the local database
      *
      * */
-    fun insertChannelMessages(messages: List<Message>) = scope.launch (Dispatchers.IO) {
+    fun insertChannelMessages(messages: List<Message>) = scope.launch(Dispatchers.IO) {
         val uid = Firebase.auth.currentUser?.uid
         if (messages.isNotEmpty() && uid != null) {
 
@@ -116,61 +125,56 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
         insertMessages(listOf(message), preProcessed)
     }
 
+    var count = 0
+
     /**
      * To insert messages in local database
      *
      * @param messages list of messages to be inserted to local database
      * */
-    fun insertMessages(messages: List<Message>, preProcessed: Boolean = false) = scope.launch (Dispatchers.IO) {
-        if (!preProcessed) {
-            messageDao.insertMessages(processMessages(imagesDir, documentsDir, messages))
-        } else {
-            messageDao.insertMessages(messages)
+    fun insertMessages(messages: List<Message>, preProcessed: Boolean = false) =
+        scope.launch(Dispatchers.IO) {
+            if (!preProcessed) {
+                messageDao.insertMessages(processMessages(messages))
+            } else {
+                messageDao.insertMessages(messages)
+            }
+
+            for (m in messages) {
+                count++
+            }
+
+            Log.d(TAG, "insertMessages: $count")
+
         }
-    }
 
     suspend fun updateMessage(message: Message) {
         messageDao.update(message)
     }
 
     suspend fun updateMessages(chatChannelId: String, state: Int) {
-        messageDao.updateMessages(chatChannelId, state)
+//        messageDao.updateMessages(chatChannelId, state)
     }
 
     fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
         return chatChannelDao.getReactiveChatChannel(chatChannelId)
     }
 
-    fun selectedMessages(channelId: String): LiveData<List<Message>> {
-        return messageDao.selectedMessages(channelId)
-    }
-
-    fun getForwardChannels(userId: String): LiveData<List<ChatChannel>> {
-        return chatChannelDao.getForwardChannels(userId)
-    }
-
-    private fun processMessages(imagesDir: File, documentsDir: File, messages: List<Message>): List<Message> {
+    private fun processMessages(messages: List<Message>): List<Message> {
         // filter the messages which are marked as not delivered by the message
+
         for (message in messages) {
-            // check if the media is already downloaded in the local folder
-            if (message.type == image) {
-                val name = message.content + message.metadata?.ext.orEmpty()
-                val f = File(imagesDir, name)
-                message.isDownloaded = f.exists()
-            }
-
-            if (message.type == document) {
-                val name = message.content + message.metadata?.ext.orEmpty()
-                val f = File(documentsDir, name)
-                message.isDownloaded = f.exists()
-            }
-
             if (message.type == text) {
                 message.isDownloaded = true
+            } else {
+                val name = message.content + message.metadata?.ext
+                val fullPath = message.type.toPlural() + "/" + message.chatChannelId
+                getNestedDir(context.filesDir, fullPath)?.let {
+                    message.isDownloaded = checkFileExists(it, name)
+                }
             }
 
-            message.isCurrentUserMessage = currentUserId == message.senderId
-
+            message.isCurrentUserMessage = UserManager.currentUserId == message.senderId
         }
 
         return messages
@@ -183,7 +187,11 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
      * @param messages list of messages to be updated
      * @param onComplete A callback function to know the state of completion of this particular process
      * */
-    private fun updateDeliveryListOfMessages(currentUserId: String, messages: List<Message>, onComplete: (task: Task<Void>) -> Unit) {
+    private fun updateDeliveryListOfMessages(
+        currentUserId: String,
+        messages: List<Message>,
+        onComplete: (task: Task<Void>) -> Unit
+    ) {
         FireUtility.updateDeliveryListOfMessages(currentUserId, messages, onComplete)
     }
 
@@ -191,7 +199,7 @@ class ChatRepository(val db: CollabDatabase, private val scope: CoroutineScope, 
         return chatChannelDao.getChatChannel(chatChannelId)
     }
 
-    fun clearChatChannels() = scope.launch (Dispatchers.IO) {
+    fun clearChatChannels() = scope.launch(Dispatchers.IO) {
         chatChannelDao.clearTable()
     }
 

@@ -2,11 +2,11 @@ package com.jamid.codesquare.adapter.recyclerview
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
+import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.data.PostMinimal2
 import com.jamid.codesquare.databinding.PostMiniItemBinding
+import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.PostClickListener
 
 class PostMinimalViewHolder(val view: View): RecyclerView.ViewHolder(view) {
@@ -39,8 +39,12 @@ class PostMinimalViewHolder(val view: View): RecyclerView.ViewHolder(view) {
         val infoText = "${post.creator.name} • ${getTextForTime(post.createdAt)}"
         binding.miniProjectInfo.text = infoText
 
-        binding.miniProjectOption.setOnClickListener {
-            postClickListener.onPostOptionClick(post)
+        FireUtility.getUser(post.creator.userId) { creator ->
+            creator?.let {
+                binding.miniProjectOption.setOnClickListener {
+                    postClickListener.onPostOptionClick(post, creator)
+                }
+            }
         }
 
         binding.root.setOnClickListener {

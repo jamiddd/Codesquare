@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:fillViewport="true"
     android:layout_height="match_parent">
 
-    <TextView
+    <include layout="@layout/bottom_sheet_toolbar_component" android:id="@+id/topComp" />
+
+ <!--   <TextView
         android:id="@+id/add_tags_header"
         android:layout_width="match_parent"
         android:layout_height="?actionBarSize"
@@ -41,83 +42,69 @@
         app:icon="@drawable/ic_round_add_24"
         app:layout_constraintBottom_toBottomOf="@id/add_tags_header"
         app:layout_constraintEnd_toEndOf="@id/add_tags_header"
-        app:layout_constraintTop_toTopOf="@id/add_tags_header" />
+        app:layout_constraintTop_toTopOf="@id/add_tags_header" />-->
+
+    <ProgressBar
+        android:id="@+id/add_tags_progressbar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="5dp"
+        android:indeterminate="true"
+        android:visibility="visible"
+        app:layout_anchor="@id/topComp"
+        app:layout_anchorGravity="bottom"
+        tools:visibility="visible" />
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/add_tag_scroll"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
+        android:layout_height="match_parent"
         android:clipToPadding="false"
         android:paddingBottom="100dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/add_tags_header">
+        app:layout_behavior="com.google.android.material.appbar.AppBarLayout$ScrollingViewBehavior">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/post_tag_search_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="16dp"
-                android:elevation="3dp"
-                app:endIconDrawable="@drawable/ic_round_search_24"
-                app:endIconMode="custom"
-                app:layout_constraintBottom_toTopOf="@+id/post_tag_search_recycler"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:layout_constraintVertical_chainStyle="packed">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/write_something_here"
-                    tools:ignore="TextContrastCheck" />
-
-            </com.google.android.material.textfield.TextInputLayout>
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/post_tag_search_recycler"
-                android:layout_width="0dp"
+                style="@style/AppTheme.GenericBackground2"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/search_recycler_background"
-                android:translationY="-4dp"
                 android:visibility="gone"
-                app:layout_constraintBottom_toTopOf="@+id/post_tags"
-                app:layout_constraintEnd_toEndOf="@+id/post_tag_search_input"
-                app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toStartOf="@+id/post_tag_search_input"
-                app:layout_constraintTop_toBottomOf="@+id/post_tag_search_input"
                 tools:visibility="visible" />
+
+            <View
+                android:id="@+id/divider27"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/post_tags"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
                 android:layout_marginBottom="24dp"
                 android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="@+id/post_tag_search_input"
-                app:layout_constraintHeight_min="100dp"
-                app:layout_constraintHorizontal_bias="0.0"
-                app:layout_constraintStart_toStartOf="@+id/post_tag_search_input"
-                app:layout_constraintTop_toBottomOf="@+id/post_tag_search_recycler">
+                android:paddingEnd="8dp">
 
             </androidx.recyclerview.widget.RecyclerView>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
+    <TextView
+        android:id="@+id/add_tags_info_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

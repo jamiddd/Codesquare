@@ -31,13 +31,13 @@
         style="@style/AppTheme.Button.IconOnly"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        tools:text=" "
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        app:icon="@drawable/search_result_icon"
+        app:icon="@drawable/ic_arrow_fill_search"
         app:layout_constraintBottom_toBottomOf="@+id/search_result_content"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/search_result_content"
-        app:layout_constraintTop_toTopOf="@+id/search_result_content" />
+        app:layout_constraintTop_toTopOf="@+id/search_result_content"
+        tools:text=" " />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

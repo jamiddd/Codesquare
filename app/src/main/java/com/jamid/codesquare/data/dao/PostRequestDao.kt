@@ -30,4 +30,7 @@ abstract class PostRequestDao: BaseDao<PostRequest>() {
     @Query("DELETE FROM post_requests WHERE requestId = :id")
     abstract suspend fun deletePostRequestById(id: String)
 
+    @Query("SELECT * FROM post_requests WHERE notificationId = :id")
+    abstract suspend fun getPostRequestByNotificationId(id: String): PostRequest?
+
 }

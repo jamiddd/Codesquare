@@ -19,32 +19,44 @@
 
             <include
                 android:id="@+id/user_info_layout"
-                layout="@layout/user_info_layout" />
+                layout="@layout/user_info_layout_2" />
 
             <com.google.android.material.appbar.MaterialToolbar
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 app:layout_collapseMode="pin" />
 
-            <com.google.android.material.tabs.TabLayout
-                android:id="@+id/profile_tabs"
-                style="@style/AppTheme.TabLayout"
+            <LinearLayout
+                android:id="@+id/tabsContainer"
+                style="@style/AppTheme.GenericBackground"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                app:layout_collapseMode="pin">
+                android:orientation="vertical">
 
-                <com.google.android.material.tabs.TabItem
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/profile_tabs"
+                    style="@style/AppTheme.TabLayout"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Projects" />
+                    android:layout_gravity="bottom|center_horizontal"
+                    app:layout_collapseMode="pin"
+                    app:tabGravity="center"
+                    app:tabIndicatorFullWidth="false"
+                    app:tabMode="scrollable">
 
-                <com.google.android.material.tabs.TabItem
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Collaborations" />
+                    <com.google.android.material.tabs.TabItem
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Posts" />
 
-            </com.google.android.material.tabs.TabLayout>
+                    <com.google.android.material.tabs.TabItem
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Collaborations" />
+
+                </com.google.android.material.tabs.TabLayout>
+            </LinearLayout>
 
             <View
                 android:id="@+id/divider6"

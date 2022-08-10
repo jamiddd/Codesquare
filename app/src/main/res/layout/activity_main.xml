@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_container_root"
@@ -36,18 +37,23 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/main_tab_layout"
             style="@style/AppTheme.TabLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            app:tabIndicatorFullWidth="false"
+            app:tabMode="scrollable">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="" />
+                android:layout_height="wrap_content" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="" />
+                android:layout_height="wrap_content" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
 
         </com.google.android.material.tabs.TabLayout>
 
@@ -63,23 +69,6 @@
         app:navGraph="@navigation/main_navigation"
         tools:layout="@layout/fragment_home" />
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/main_primary_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="8dp"
-        android:fontFamily="@font/title_semi"
-        android:text="@string/join_post"
-        android:textAllCaps="false"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-        android:textColor="@color/white"
-        android:visibility="gone"
-        app:icon="@drawable/ic_round_add_24"
-        app:iconTint="@color/white"
-        app:tint="@color/white"
-        tools:visibility="visible" />
-
     <ProgressBar
         android:id="@+id/main_progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -90,127 +79,9 @@
         android:visibility="gone"
         app:layout_anchor="@id/main_appbar"
         app:layout_anchorGravity="bottom"
-        tools:visibility="visible" />
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/comment_bottom_root"
-        android:layout_width="match_parent"
-
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:translationY="200dp"
-        app:cardCornerRadius="0dp"
-        app:cardElevation="20dp"
-        tools:visibility="gone">
-
-        <LinearLayout
-            android:id="@+id/comment_bottom_linear_vertical"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
-
-            <!-- app:adUnitId="ca-app-pub-2159166722829360/8589960328" For play store version -->
-            <!-- app:adUnitId="ca-app-pub-3940256099942544/6300978111" For test version -->
-            <com.google.android.gms.ads.AdView
-                android:id="@+id/adView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:adSize="FULL_BANNER"
-                app:adUnitId="ca-app-pub-3940256099942544/6300978111"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent" />
-
-            <TextView
-                android:id="@+id/replying_to_text"
-                style="@style/AppTheme.GenericBackground"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/lightest_grey"
-                android:drawablePadding="16dp"
-                android:gravity="center_vertical"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="8dp"
-                android:text="@string/replying_to"
-                android:visibility="gone"
-                app:drawableEndCompat="@drawable/ic_round_close_24"
-                app:drawableStartCompat="@drawable/ic_round_reply_24"
-                tools:visibility="visible" />
-
-            <LinearLayout
-                android:id="@+id/linearLayout9"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <com.facebook.drawee.view.SimpleDraweeView
-                    android:id="@+id/sender_img"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="4dp"
-                    android:background="@drawable/ic_round_account_circle_24"
-                    app:roundAsCircle="true" />
-
-                <EditText
-                    android:id="@+id/comment_input_layout"
-                    style="@style/AppTheme.ChatBottomText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/chat_edittext_background"
-                    android:ems="10"
-                    android:hint="@string/write_something_here"
-                    android:importantForAutofill="no"
-                    android:inputType="textMultiLine"
-                    android:minHeight="48dp"
-                    android:paddingStart="12dp"
-                    android:paddingTop="8dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="8dp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/comment_send_btn"
-                    style="@style/AppTheme.Button.IconOnly"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_marginBottom="4dp"
-                    android:backgroundTint="?colorAccent"
-                    android:contentDescription="@string/comment_send_button_info"
-                    android:paddingStart="6dp"
-                    android:paddingEnd="0dp"
-                    app:icon="@drawable/ic_round_arrow_forward_24"
-                    app:iconTint="@color/white"
-                    tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
-            </LinearLayout>
-
-        </LinearLayout>
+        tools:visibility="gone" />
 
 
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.chip.Chip
-        android:id="@+id/main_notify_chip"
-        style="@style/AppTheme.ActionChip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:textAppearance="@style/AppTheme.ActionChipTextAppearance1"
-        android:visibility="gone"
-        tools:visibility="visible" />
 
     <!--<com.google.android.gms.ads.AdView
         android:id="@+id/adView2"

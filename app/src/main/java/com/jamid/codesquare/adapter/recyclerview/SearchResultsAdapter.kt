@@ -13,11 +13,12 @@ import com.jamid.codesquare.adapter.comparators.PreviousQueryComparator
 import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
-class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener): ListAdapter<SearchQuery, SearchResultsAdapter.SearchResultViewHolder>(PreviousQueryComparator()){
+class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickListener) :
+    ListAdapter<SearchQuery, SearchResultsAdapter.SearchResultViewHolder>(PreviousQueryComparator()) {
 
     var shouldShowRightIcon = true
 
-    inner class SearchResultViewHolder(val view: View): RecyclerView.ViewHolder(view) {
+    inner class SearchResultViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
 
         private val searchItemText = view.findViewById<TextView>(R.id.search_result_content)
         private val searchItemForwardBtn = view.findViewById<Button>(R.id.search_result_forward)
@@ -39,13 +40,14 @@ class SearchResultsAdapter(private val searchItemClickListener: SearchItemClickL
                 searchItemClickListener.onSearchOptionClick(it, searchQuery)
                 true
             }
-
         }
 
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SearchResultViewHolder {
-        return SearchResultViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.search_result_item, parent, false))
+        return SearchResultViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.search_result_item, parent, false)
+        )
     }
 
     override fun onBindViewHolder(holder: SearchResultViewHolder, position: Int) {

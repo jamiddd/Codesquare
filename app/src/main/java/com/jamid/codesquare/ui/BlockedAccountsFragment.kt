@@ -5,25 +5,20 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.BlockedAccountItemBinding
 import com.jamid.codesquare.databinding.FragmentBlockedAccountsBinding
 
-@OptIn(ExperimentalPagingApi::class)
-class BlockedAccountsFragment: BaseFragment<FragmentBlockedAccountsBinding, MainViewModel>() {
+class BlockedAccountsFragment: BaseFragment<FragmentBlockedAccountsBinding>() {
 
-    override val viewModel: MainViewModel by activityViewModels()
     private val blockedList = mutableListOf<String>()
     private lateinit var blockAccountAdapter: BlockAccountsAdapter
 
-    override fun getViewBinding(): FragmentBlockedAccountsBinding {
-        return FragmentBlockedAccountsBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentBlockedAccountsBinding {
+        return FragmentBlockedAccountsBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -65,33 +60,27 @@ class BlockedAccountsFragment: BaseFragment<FragmentBlockedAccountsBinding, Main
             val binding = BlockedAccountItemBinding.bind(v)
             binding.unblockBtn.hide()
 
-            FireUtility.getUser(userId) {
-                val res = it ?: return@getUser
-                when (res) {
-                    is Result.Error -> Log.e(TAG, "bind: ${res.exception.localizedMessage}")
-                    is Result.Success -> {
-                        val user = res.data
+            FireUtility.getUser(userId) { user ->
+                if (user != null) {
+                    binding.blockedAccountImg.setImageURI(user.photo)
+                    binding.blockedAccountName.text = user.name
+                    binding.unblockBtn.show()
 
-                        binding.blockedAccountImg.setImageURI(user.photo)
-                        binding.blockedAccountName.text = user.name
-                        binding.unblockBtn.show()
+                    binding.unblockBtn.setOnClickListener {
 
-                        binding.unblockBtn.setOnClickListener {
+                        binding.unblockBtn.disappear()
+                        binding.unblockProgress.show()
 
-                            binding.unblockBtn.disappear()
-                            binding.unblockProgress.show()
+                        FireUtility.unblockUser(user) { it1 ->
+                            if (it1.isSuccessful) {
+                                binding.unblockBtn.show()
+                                binding.unblockProgress.hide()
 
-                            FireUtility.unblockUser(user) { it1 ->
-                                if (it1.isSuccessful) {
-                                    binding.unblockBtn.show()
-                                    binding.unblockProgress.hide()
-
-                                    blockedList.removeAt(pos)
-                                    blockAccountAdapter.notifyItemRemoved(pos)
-                                    Snackbar.make(activity.binding.root, "${user.name} is unblocked.", Snackbar.LENGTH_LONG).show()
-                                } else {
-                                    Log.e(TAG, "bind: ${it1.exception?.localizedMessage}")
-                                }
+                                blockedList.removeAt(pos)
+                                blockAccountAdapter.notifyItemRemoved(pos)
+                                Snackbar.make(activity.binding.root, "${user.name} is unblocked.", Snackbar.LENGTH_LONG).show()
+                            } else {
+                                Log.e(TAG, "bind: ${it1.exception?.localizedMessage}")
                             }
                         }
                     }

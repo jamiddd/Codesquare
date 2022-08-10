@@ -36,13 +36,51 @@
         <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>-->
 <!--        <item name="snackbarTextViewStyle">@style/AppTheme.Snackbar.Text</item>-->
         <item name="snackbarButtonStyle">@style/AppTheme.SnackbarButtonStyle</item>
+        <item name="snackbarTextViewStyle">@style/AppTheme.Snackbar.Text</item>
         <item name="popupMenuStyle">@style/AppTheme.PopupMenu</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.App.MaterialAlertDialog</item>
-
+        <item name="bottomSheetDialogTheme">@style/AppTheme.BottomSheet</item>
         <item name="materialCardViewStyle">@style/AppTheme.CardView</item>
+
+        <item name="actionButtonStyle">@style/AppTheme.Widget.ActionButton</item>
 
     </style>
 
+    <style name="AppTheme.Widget.ActionButton" parent="@style/Widget.AppCompat.ActionButton">
+        <item name="textAllCaps">false</item>
+        <item name="fontFamily">@font/title_semi</item>
+        <item name="android:fontFamily">@font/title_semi</item>
+    </style>
+
+    <style name="AppTheme.BottomNavigationView" parent="Widget.MaterialComponents.BottomNavigationView">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.App.BottomNavigationView</item>
+        <item name="itemTextAppearanceActive">@style/AppTheme.BottomNavigationViewText</item>
+        <item name="itemTextAppearanceInactive">@style/AppTheme.BottomNavigationViewText</item>
+    </style>
+
+    <style name="ThemeOverlay.App.BottomNavigationView" parent="">
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurface">@color/black</item>
+    </style>
+
+    <style name="SelectableItemBackground">
+        <item name="android:background">@drawable/selectable_item_background_night</item>
+    </style>
+
+    <style name="AppTheme.BottomNavigationViewText" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="fontFamily">@font/title_semi</item>
+    </style>
+
+    <style name="AppTheme.GenericListItemBackground">
+        <item name="android:background">@color/dank_grey</item>
+    </style>
+
+    <style name="AppTheme.BottomSheet.Toolbar.TextAppearance" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:fontFamily">@font/title_semi</item>
+        <item name="fontFamily">@font/title_semi</item>
+        <item name="android:textSize">15sp</item>
+    </style>
 
     <style name="AppTheme.CardView" parent="Widget.MaterialComponents.CardView">
         <item name="materialThemeOverlay">@style/ThemeOverlay.App.Card</item>
@@ -62,7 +100,52 @@
         <item name="android:backgroundTint">#4A8A8A8A</item>
     </style>
 
-    <style name="BottomSheetDialogTheme" parent="BaseBottomSheetDialog">
+
+
+
+
+
+    <style name="AppTheme.BottomSheetAppearance" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <style name="AppTheme.BottomSheetDialogStyle">
+        <item name="backgroundTint">@color/darkest_grey_2</item>
+        <item name="android:background">@drawable/bottom_sheet_background_night</item>
+        <item name="background">@drawable/bottom_sheet_background_night</item>
+
+    </style>
+
+    <style name="AppTheme.BottomSheet" parent="ThemeOverlay.MaterialComponents.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/AppTheme.BottomSheetDialogStyle</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+
+    <style name="AppTheme.MediaItemProgress" parent="@android:style/Widget.Material.Light.ProgressBar">
+        <item name="android:indeterminateTint">@color/white</item>
+    </style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <style name="BottomSheetDialogTheme" parent="@style/Widget.MaterialComponents.BottomSheet.Modal">
         <item name="colorAccent">@color/darkest_blue</item>
         <item name="colorPrimary">@color/darkest_blue</item>
         <item name="android:statusBarColor">@color/transparent</item>
@@ -221,10 +304,29 @@
 
     <!-- ////////////////////////////////////////////////////////////////////////////////////// -->
 
+
+    <style name="AppTheme.RoundedItemSmall">
+        <item name="android:background">@drawable/rounded_box_night_16</item>
+    </style>
+
+    <style name="AppTheme.RoundedItemBig">
+        <item name="android:background">@drawable/rounded_box_night_24</item>
+    </style>
+
+    <style name="AppTheme.RoundedRadioBtnGroup" parent="@android:style/Widget.Material.Light.CompoundButton.RadioButton">
+        <item name="android:background">@drawable/rounded_box_night_16</item>
+    </style>
+
     <style name="AppTheme.PopupMenu" parent="@android:style/Widget.PopupMenu">
         <item name="android:popupBackground">@drawable/popup_background_night</item>
         <item name="popupMenuBackground">@drawable/popup_background_night</item>
         <item name="android:popupElevation">8dp</item>
+        <item name="android:dropDownHorizontalOffset">-4dp</item>
+        <item name="android:dropDownVerticalOffset">4dp</item>
+    </style>
+
+    <style name="AppTheme.MessageProgress">
+        <item name="indicatorColor">@color/white</item>
     </style>
 
     <!--this color inside this child is the background color of the snackbar-->
@@ -238,11 +340,19 @@
 <!--        <item name="snackbarTextViewStyle">@style/AppTheme.Snackbar.Text</item>-->
         <item name="animationMode">slide</item>
         <item name="backgroundOverlayColorAlpha">1</item>
-<!--        <item name="actionTextColorAlpha">1</item>-->
+        <item name="snackbarTextViewStyle">@style/TextAppearance.MaterialComponents.Caption</item>
+        <!--        <item name="actionTextColorAlpha">1</item>-->
     </style>
 
-    <style name="AppTheme.Snackbar.Text">
-        <item name="materialThemeOverlay">@style/ThemeOverlay.App.Snackbar</item>
+    <style name="AppTheme.ProfileImage">
+        <item name="roundAsCircle">true</item>
+        <item name="roundingBorderWidth">1dp</item>
+        <item name="roundingBorderColor">#373737</item>
+        <item name="android:background">@drawable/ic_round_account_circle_24</item>
+    </style>
+
+    <style name="AppTheme.Snackbar.Text" parent="@style/Widget.MaterialComponents.Snackbar.TextView">
+        <item name="android:textSize">13sp</item>
     </style>
 
     <style name="AppTheme.SnackbarButtonStyle" parent="@style/Widget.MaterialComponents.Button.TextButton.Snackbar">
@@ -318,9 +428,9 @@
     </style>
 
     <style name="AppTheme.Headline6" parent="TextAppearance.MaterialComponents.Headline6">
-        <item name="fontFamily">sans-serif</item>
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">18sp</item>
+        <item name="fontFamily">@font/title_semi</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">@font/title_semi</item>
     </style>
 
     <style name="AppTheme.Subtitle1" parent="TextAppearance.MaterialComponents.Subtitle1">
@@ -393,7 +503,12 @@
 
     <style name="AppTheme.ChatBalloonLeft">
         <item name="android:background">@drawable/message_background</item>
-        <item name="android:backgroundTint">@color/darkest_grey_2</item>
+        <item name="android:backgroundTint">#333</item>
+    </style>
+
+    <style name="AppTheme.AccountCircle">
+        <item name="android:background">@drawable/ic_round_account_circle_24</item>
+        <item name="android:backgroundTint">#423F3F</item>
     </style>
 
     <style name="AppTheme.ChatBalloonLeftDocument">
@@ -502,7 +617,7 @@
     </style>
 
     <style name="ThemeOverlay.App.TextInputLayout" parent="">
-        <item name="colorSurface">@color/black</item>
+        <item name="colorSurface">#111</item>
         <item name="colorOnSurface">@color/white</item>
         <item name="textAppearanceSubtitle1">@style/AppTheme.Subtitle1</item>
         <item name="textAppearanceCaption">@style/TextAppearance.App.Caption</item>
@@ -521,6 +636,16 @@
 
     <style name="AppTheme.TextInputLayout.HintText" parent="TextAppearance.AppCompat.Caption">
 
+    </style>
+
+    <style name="AppTheme.SheetAppBar">
+        <item name="android:background">@drawable/sheet_toolbar_bg_night</item>
+    </style>
+
+    <style name="AppTheme.SorryAnimation">
+        <item name="lottie_rawRes">@raw/sorry_night</item>
+        <item name="lottie_loop">true</item>
+        <item name="lottie_autoPlay">true</item>
     </style>
 
     <style name="AppTheme.Fragment">
@@ -596,9 +721,15 @@
         <item name="android:fontFamily">sans-serif-medium</item>
     </style>
 
-    <style name="ThemeOverlay.App.YoutubeChip" parent="">
+   <!-- <style name="ThemeOverlay.App.YoutubeChip" parent="">
         <item name="colorOnSurface">@color/darkest_grey_2</item>
         <item name="chipIconTint">@color/darker_grey</item>
+    </style>-->
+
+    <style name="ThemeOverlay.App.YoutubeChip" parent="">
+        <item name="colorOnSurface">?colorAccent</item>
+        <item name="colorPrimary">@color/darkest_blue</item>
+        <item name="colorAccent">@color/darkest_blue</item>
     </style>
 
     <style name="AppTheme.YoutubeChip" parent="Widget.MaterialComponents.Chip.Entry">
@@ -608,7 +739,7 @@
         <item name="checkedIconEnabled">false</item>
         <item name="closeIconEnabled">false</item>
         <item name="closeIconVisible">false</item>
-        <item name="android:textColor">#E4E4E4</item>
+        <item name="android:textColor">@color/black</item>
         <item name="chipStrokeWidth">1dp</item>
         <item name="closeIcon">@drawable/ic_round_close_24</item>
         <item name="closeIconTint">#C6C6C6</item>
@@ -812,11 +943,23 @@
 
 
 
+    <style name="AppTheme.PostMediaBackground">
+        <item name="android:background">#404040</item>
+    </style>
 
+    <style name="ThemeOverlay.DefaultChip" parent="">
+        <item name="colorOnSurface">@color/darkest_grey_2</item>
+    </style>
 
-
-
-
+    <style name="AppTheme.DefaultChip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.DefaultChip</item>
+        <item name="chipBackgroundColor">@color/choice_chip_background_color_night</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeColor">@color/choice_chip_stroke_color_night</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="rippleColor">#404A4A4A</item>
+        <item name="closeIconTint">?colorAccent</item>
+    </style>
 
 
 

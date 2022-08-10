@@ -5,20 +5,20 @@ import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.core.content.ContextCompat
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.core.view.ViewCompat
-import androidx.paging.ExperimentalPagingApi
+import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Message2
 import com.jamid.codesquare.databinding.*
-import com.jamid.codesquare.ui.MessageListenerFragment
-import kotlin.math.abs
+import com.jamid.codesquare.ui.MessageListener3
+import java.util.*
 
-@OptIn(ExperimentalPagingApi::class)
 class MessageViewHolder2<T: Any>(
     val view: View,
     private val itemType: Int,
@@ -26,40 +26,53 @@ class MessageViewHolder2<T: Any>(
 
     private val controllerListener = FrescoImageControllerListener()
     private val currentUserId = UserManager.currentUser.id
-    var fragment: MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>? = null
-
-    private fun updateMessageUi(state: Int) {
-        when (state) {
-            MESSAGE_IDLE -> {
-                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
-            }
-            MESSAGE_READY -> {
-                view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.transparent))
-            }
-            MESSAGE_SELECTED -> {
-                if (view.context.isNightMode()) {
-                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_black))
-                } else {
-                    view.setBackgroundColor(ContextCompat.getColor(view.context, R.color.lightest_blue))
-                }
-            }
-        }
-    }
+    var listener: MessageListener3? = null
 
     fun bind(item: T) {
         when (item::class.java) {
-            Message::class.java -> {
-                val message = item as Message
-                bind(message)
+            Message2.MessageItem::class.java -> {
+                bind(item as Message2.MessageItem)
             }
-            ListSeparator::class.java -> {
-                val separator = item as ListSeparator
-                bind(separator)
+            Message2.DateSeparator::class.java -> {
+                bind(item as Message2.DateSeparator)
             }
         }
     }
 
-    private fun bind(message: Message) {
+    private fun bind(dateSeparator: Message2.DateSeparator) {
+        val binding = MessagesDateItemBinding.bind(view)
+        val today = Date(System.currentTimeMillis())
+        when {
+            isSameDay(today, dateSeparator.date) -> {
+                binding.dateItem.text = "Today"
+            }
+            isYesterday(dateSeparator.date) -> {
+                binding.dateItem.text = "Yesterday"
+            }
+            isThisWeek(dateSeparator.date) -> {
+                val calendar = Calendar.getInstance()
+                calendar.time = dateSeparator.date
+                val dayS = when (calendar[Calendar.DAY_OF_WEEK]) {
+                    0 -> "Monday"
+                    1 -> "Tuesday"
+                    2 -> "Wednesday"
+                    3 -> "Thursday"
+                    4 -> "Friday"
+                    5 -> "Saturday"
+                    6 -> "Sunday"
+                    else -> "This week"
+                }
+                binding.dateItem.text = dayS
+            }
+            else -> {
+                binding.dateItem.text = dateSeparator.text
+            }
+        }
+    }
+
+    private fun bind(messageItem: Message2.MessageItem) {
+        val message = messageItem.message
+
         when (itemType) {
             MESSAGE_DEFAULT_ITEM -> {
                 setMessageDefaultItem(message)
@@ -70,6 +83,9 @@ class MessageViewHolder2<T: Any>(
             MESSAGE_DEFAULT_DOCUMENT_ITEM -> {
                 setMessageDefaultDocumentItem(message)
             }
+            MESSAGE_DEFAULT_VIDEO_ITEM -> {
+                setMessageDefaultVideoItem(message)
+            }
             MESSAGE_DEFAULT_REPLY_ITEM -> {
                 setMessageDefaultReplyItem(message)
             }
@@ -78,6 +94,9 @@ class MessageViewHolder2<T: Any>(
             }
             MESSAGE_MIDDLE_IMAGE_ITEM -> {
                 setMessageMiddleImageItem(message)
+            }
+            MESSAGE_MIDDLE_VIDEO_ITEM -> {
+                setMessageMiddleVideoItem(message)
             }
             MESSAGE_MIDDLE_DOCUMENT_ITEM -> {
                 setMessageMiddleDocumentItem(message)
@@ -91,6 +110,9 @@ class MessageViewHolder2<T: Any>(
             MESSAGE_DEFAULT_IMAGE_RIGHT_ITEM -> {
                 setMessageDefaultImageRightItem(message)
             }
+            MESSAGE_DEFAULT_VIDEO_RIGHT_ITEM -> {
+                setMessageDefaultVideoRightItem(message)
+            }
             MESSAGE_DEFAULT_DOCUMENT_RIGHT_ITEM -> {
                 setMessageDefaultDocumentRightItem(message)
             }
@@ -103,6 +125,9 @@ class MessageViewHolder2<T: Any>(
             MESSAGE_MIDDLE_IMAGE_RIGHT_ITEM -> {
                 setMessageMiddleImageRightItem(message)
             }
+            MESSAGE_MIDDLE_VIDEO_RIGHT_ITEM -> {
+                setMessageMiddleVideoRightItem(message)
+            }
             MESSAGE_MIDDLE_DOCUMENT_RIGHT_ITEM -> {
                 setMessageMiddleDocumentRightItem(message)
             }
@@ -111,35 +136,110 @@ class MessageViewHolder2<T: Any>(
             }
         }
 
-        updateMessageUi(message.state)
+        //        updateMessageUi(message.state)
 
         view.setOnClickListener {
-            fragment?.onMessageClick(message.copy())
+            listener?.onMessageClick(message.copy())
 
-            // updating ui changes to cover database delay
-            if (message.state != MESSAGE_IDLE) {
-                message.state = 1 - message.state
-            }
-            updateMessageUi(message.state)
+            /* // updating ui changes to cover database delay
+             if (message.state != MESSAGE_IDLE) {
+                 message.state = 1 - message.state
+             }
+             updateMessageUi(message.state)*/
         }
 
         view.setOnLongClickListener {
-            fragment?.onMessageContextClick(message.copy())
+            listener?.onMessageContextClick(message.copy())
 
-            // updating ui changes to cover database delay
-            if (message.isDownloaded) {
-                message.state = 1 - abs(message.state)
-                updateMessageUi(message.state)
-            }
+            /* // updating ui changes to cover database delay
+             if (message.isDownloaded) {
+                 message.state = 1 - abs(message.state)
+                 updateMessageUi(message.state)
+             }*/
             true
         }
 
-        fragment?.onMessageRead(message)
+        listener?.onMessageRead(message)
 
-        fragment?.onCheckForStaleData(message) {
-            bind(it)
+        /*listener?.onCheckForStaleData(message) {
+            bind(Message2.MessageItem(it))
+        }*/
+
+    }
+
+    private fun setMessageMiddleVideoRightItem(message: Message) {
+        val binding = MessageMiddleVideoRightItemBinding.bind(view)
+        binding.messageVideoProgress.show()
+
+        setVideoMessage(binding.messageVideo, binding.playVideoBtn, binding.messageVideoProgress, message)
+    }
+
+    private fun setMessageDefaultVideoRightItem(message: Message) {
+        val binding = MessageDefaultVideoRightItemBinding.bind(view)
+        binding.messageVideoProgress.show()
+
+        setVideoMessage(binding.messageVideo, binding.playVideoBtn, binding.messageVideoProgress, message)
+
+        // setting time
+        setTimeForTextView(binding.messageCreatedAt, message.createdAt)
+    }
+
+    private fun setVideoMessage(view: SimpleDraweeView, playBtn: AppCompatImageButton, progressBar: ProgressBar, message: Message) {
+
+        if (message.isDownloaded) {
+
+            playBtn.show()
+
+            val thumbnail = message.metadata?.thumbnail
+            if (thumbnail == null) {
+                listener?.onMessageThumbnailNotDownload(message)
+            } else {
+                view.setImageURI(thumbnail.toString())
+            }
+
+            progressBar.hide()
+        } else {
+
+            playBtn.hide()
+
+            listener?.onMessageNotDownloaded(message) { newMessage ->
+                bind(Message2.MessageItem(newMessage))
+            }
         }
 
+        view.setOnClickListener {
+            listener?.onMessageMediaItemClick(message)
+        }
+
+        view.setOnLongClickListener {
+            listener?.onMessageContextClick(message)
+            true
+        }
+    }
+
+    private fun setMessageMiddleVideoItem(message: Message) {
+        val binding = MessageMiddleVideoItemBinding.bind(view)
+        binding.messageVideoProgress.show()
+
+        setVideoMessage(binding.messageVideo, binding.playVideoBtn, binding.messageVideoProgress, message)
+
+    }
+
+    private fun setMessageDefaultVideoItem(message: Message) {
+        val binding = MessageDefaultVideoItemBinding.bind(view)
+        binding.messageVideoProgress.show()
+
+        setVideoMessage(binding.messageVideo, binding.playVideoBtn, binding.messageVideoProgress, message)
+
+        // setting sender image
+        binding.messageSenderImg.setImageURI(message.sender.photo)
+
+        binding.messageSenderImg.setOnClickListener {
+            listener?.onMessageSenderClick(message)
+        }
+
+        // setting time
+        setTimeForTextView(binding.messageCreatedAt, message.createdAt)
     }
 
 
@@ -163,22 +263,35 @@ class MessageViewHolder2<T: Any>(
                 binding.replyText.text = replyMessage.content
                 binding.replyImage.hide()
             } else {
-                binding.replyText.text = replyMessage.type
+                binding.replyText.text = replyMessage.type.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.getDefault()
+                    ) else it.toString()
+                }
 
                 if (replyMessage.type == image) {
                     binding.replyImage.show()
+                    binding.documentIcon.hide()
                     binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
                 }
 
                 if (replyMessage.type == document) {
+                    binding.replyImage.hide()
+                    binding.documentIcon.show()
+                    TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+                    binding.documentIcon.text = replyMessage.metadata?.ext?.substring(1)?.uppercase()
+                }
+
+                if (replyMessage.type == video) {
                     binding.replyImage.show()
-                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    binding.documentIcon.hide()
+                    binding.replyImage.setImageURI(message.metadata?.thumbnail)
                 }
             }
         }
 
         binding.replyLayoutRoot.setOnClickListener {
-            fragment?.onReplyMessageClick(message)
+            listener?.onMessageReplyMsgClick(message)
         }
     }
 
@@ -188,13 +301,9 @@ class MessageViewHolder2<T: Any>(
         val metadata = message.metadata
         if (metadata != null) {
             binding.documentName.text = metadata.name
-            val icon = when (message.metadata?.ext) {
-                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
-                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
-                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
-            }
-            binding.documentIcon.background = icon
+            TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            binding.documentSize.text = android.text.format.Formatter.formatShortFileSize(binding.root.context, metadata.size)
+            binding.documentIcon.text = metadata.ext.substring(1).uppercase()
         }
 
         // set download button and progress
@@ -209,8 +318,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                fragment?.onMessageNotDownloaded(message) {
-                    bind(it)
+                listener?.onMessageNotDownloaded(message) {
+                    bind(Message2.MessageItem(it))
                 }
             }
         }
@@ -220,18 +329,16 @@ class MessageViewHolder2<T: Any>(
 
     private fun setMessageMiddleImageRightItem(message: Message) {
         val binding = MessageMiddleImageRightItemBinding.bind(view)
-        binding.root
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = view.context.getImageUriFromMessage(message)
-            setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
+            view.context.getImageUriFromMessage(message)?.let {
+                setMessageImageBasedOnExtension(binding.messageImage, it, message)
+            }
         } else {
             binding.messageImgProgress.show()
-
-            fragment?.onMessageNotDownloaded(message) {
-                bind(it)
+            listener?.onMessageNotDownloaded(message) {
+                bind(Message2.MessageItem(it))
             }
-
         }
     }
 
@@ -259,22 +366,36 @@ class MessageViewHolder2<T: Any>(
                 binding.replyText.text = replyMessage.content
                 binding.replyImage.hide()
             } else {
-                binding.replyText.text = replyMessage.type
+                binding.replyText.text = replyMessage.type.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.getDefault()
+                    ) else it.toString()
+                }
 
                 if (replyMessage.type == image) {
                     binding.replyImage.show()
+                    binding.documentIcon.hide()
                     binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
                 }
 
                 if (replyMessage.type == document) {
-                    binding.replyImage.show()
-                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    binding.replyImage.hide()
+                    binding.documentIcon.show()
+                    TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+                    binding.documentIcon.text = replyMessage.metadata?.ext?.substring(1)?.uppercase()
                 }
+
+                if (replyMessage.type == video) {
+                    binding.replyImage.show()
+                    binding.documentIcon.hide()
+                    binding.replyImage.setImageURI(message.metadata?.thumbnail)
+                }
+
             }
         }
 
         binding.replyLayoutRoot.setOnClickListener {
-            fragment?.onReplyMessageClick(message)
+            listener?.onMessageReplyMsgClick(message)
         }
 
         // setting time
@@ -288,14 +409,16 @@ class MessageViewHolder2<T: Any>(
         val metadata = message.metadata
         if (metadata != null) {
             binding.documentName.text = metadata.name
-            binding.documentSize.text = getTextForSizeInBytes(metadata.size)
-            val icon = when (message.metadata?.ext) {
+            TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            binding.documentSize.text = android.text.format.Formatter.formatShortFileSize(binding.root.context, metadata.size)
+            binding.documentIcon.text = metadata.ext.substring(1).uppercase()
+           /* val icon = when (message.metadata?.ext) {
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
                 else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
-            binding.documentIcon.background = icon
+            binding.documentIcon.background = icon*/
         }
 
         // set download button and progress
@@ -310,8 +433,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                fragment?.onMessageNotDownloaded(message) {
-                    bind(it)
+                listener?.onMessageNotDownloaded(message) {
+                    bind(Message2.MessageItem(it))
                 }
             }
         }
@@ -328,12 +451,13 @@ class MessageViewHolder2<T: Any>(
         // setting image
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = view.context.getImageUriFromMessage(message)
-            setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
+            view.context.getImageUriFromMessage(message)?.let {
+                setMessageImageBasedOnExtension(binding.messageImage, it, message)
+            }
         } else {
             binding.messageImgProgress.show()
-            fragment?.onMessageNotDownloaded(message) {
-                bind(it)
+            listener?.onMessageNotDownloaded(message) {
+                bind(Message2.MessageItem(it))
             }
         }
 
@@ -366,22 +490,35 @@ class MessageViewHolder2<T: Any>(
                 binding.replyText.text = replyMessage.content
                 binding.replyImage.hide()
             } else {
-                binding.replyText.text = replyMessage.type
+                binding.replyText.text = replyMessage.type.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.getDefault()
+                    ) else it.toString()
+                }
 
                 if (replyMessage.type == image) {
                     binding.replyImage.show()
+                    binding.documentIcon.hide()
                     binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
                 }
 
                 if (replyMessage.type == document) {
+                    binding.replyImage.hide()
+                    binding.documentIcon.show()
+                    TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+                    binding.documentIcon.text = replyMessage.metadata?.ext?.substring(1)?.uppercase()
+                }
+
+                if (replyMessage.type == video) {
                     binding.replyImage.show()
-                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    binding.documentIcon.hide()
+                    binding.replyImage.setImageURI(message.metadata?.thumbnail)
                 }
             }
         }
 
         binding.replyLayoutRoot.setOnClickListener {
-            fragment?.onReplyMessageClick(message)
+            listener?.onMessageReplyMsgClick(message)
         }
 
     }
@@ -395,14 +532,16 @@ class MessageViewHolder2<T: Any>(
         val metadata = message.metadata
         if (metadata != null) {
             binding.documentName.text = metadata.name
-            binding.documentSize.text = getTextForSizeInBytes(metadata.size)
-            val icon = when (message.metadata?.ext) {
+            TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            binding.documentSize.text = android.text.format.Formatter.formatShortFileSize(binding.root.context, metadata.size)
+            binding.documentIcon.text = metadata.ext.substring(1).uppercase()
+            /*val icon = when (message.metadata?.ext) {
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
                 else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
-            binding.documentIcon.background = icon
+            binding.documentIcon.background = icon*/
         }
 
         // set download button and progress
@@ -417,8 +556,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                fragment?.onMessageNotDownloaded(message) {
-                    bind(it)
+                listener?.onMessageNotDownloaded(message) {
+                    bind(Message2.MessageItem(it))
                 }
             }
         }
@@ -431,12 +570,13 @@ class MessageViewHolder2<T: Any>(
 
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = view.context.getImageUriFromMessage(message)
-            setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
+            view.context.getImageUriFromMessage(message)?.let {
+                setMessageImageBasedOnExtension(binding.messageImage, it, message)
+            }
         } else {
             binding.messageImgProgress.show()
-            fragment?.onMessageNotDownloaded(message) {
-                bind(it)
+            listener?.onMessageNotDownloaded(message) {
+                bind(Message2.MessageItem(it))
             }
         }
     }
@@ -468,29 +608,42 @@ class MessageViewHolder2<T: Any>(
                 binding.replyText.text = replyMessage.content
                 binding.replyImage.hide()
             } else {
-                binding.replyText.text = replyMessage.type
+                binding.replyText.text = replyMessage.type.replaceFirstChar {
+                    if (it.isLowerCase()) it.titlecase(
+                        Locale.getDefault()
+                    ) else it.toString()
+                }
 
                 if (replyMessage.type == image) {
                     binding.replyImage.show()
+                    binding.documentIcon.hide()
                     binding.replyImage.setImageURI(view.context.getImageUriFromMessage(replyMessage.toMessage()).toString())
                 }
 
                 if (replyMessage.type == document) {
+                    binding.replyImage.hide()
+                    binding.documentIcon.show()
+                    TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+                    binding.documentIcon.text = replyMessage.metadata?.ext?.substring(1)?.uppercase()
+                }
+
+                if (replyMessage.type == video) {
                     binding.replyImage.show()
-                    binding.replyImage.background = view.context.getImageResource(R.drawable.ic_round_insert_drive_file_24)
+                    binding.documentIcon.hide()
+                    binding.replyImage.setImageURI(message.metadata?.thumbnail)
                 }
             }
         }
 
         binding.replyLayoutRoot.setOnClickListener {
-            fragment?.onReplyMessageClick(message)
+            listener?.onMessageReplyMsgClick(message)
         }
 
         // setting sender image
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            fragment?.onMessageSenderClick(message)
+            listener?.onMessageSenderClick(message)
         }
 
         // setting time
@@ -503,14 +656,16 @@ class MessageViewHolder2<T: Any>(
         val metadata = message.metadata
         if (metadata != null) {
             binding.documentName.text = metadata.name
-            binding.documentSize.text = getTextForSizeInBytes(metadata.size)
-            val icon = when (message.metadata?.ext) {
+            TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
+            binding.documentSize.text = android.text.format.Formatter.formatShortFileSize(binding.root.context, metadata.size)
+            binding.documentIcon.text = metadata.ext.substring(1).uppercase()
+            /*val icon = when (message.metadata?.ext) {
                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
                 else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
             }
-            binding.documentIcon.background = icon
+            binding.documentIcon.background = icon*/
         }
 
         // set download button and progress
@@ -525,8 +680,8 @@ class MessageViewHolder2<T: Any>(
             binding.documentDownloadBtn.setOnClickListener {
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
-                fragment?.onMessageNotDownloaded(message) {
-                    bind(it)
+                listener?.onMessageNotDownloaded(message) {
+                    bind(Message2.MessageItem(it))
                 }
             }
 
@@ -534,8 +689,8 @@ class MessageViewHolder2<T: Any>(
                 binding.documentDownloadBtn.disappear()
                 binding.documentDownloadProgress.show()
 
-                fragment?.onMessageNotDownloaded(message) {
-                    bind(it)
+                listener?.onMessageNotDownloaded(message) {
+                    bind(Message2.MessageItem(it))
                 }
             }
         }
@@ -547,7 +702,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            fragment?.onMessageSenderClick(message)
+            listener?.onMessageSenderClick(message)
         }
 
         //
@@ -556,28 +711,38 @@ class MessageViewHolder2<T: Any>(
 
     private fun setDocumentListener(documentContainer: View, downloadProgress: ProgressBar, downloadBtn: Button, message: Message) {
 
-        if (message.state == MESSAGE_IDLE) {
+        if (message.isSavedToFiles) {
+
+            documentContainer.setOnClickListener {
+                listener?.onMessageMediaItemClick(message)
+            }
+
+            documentContainer.setOnLongClickListener {
+                listener?.onMessageContextClick(message)
+                true
+            }
+
+        } else {
+
             if (message.isDownloaded) {
                 documentContainer.setOnClickListener {
-                    fragment?.onMessageDocumentClick(message)
+                    listener?.onMessageMediaItemClick(message)
                 }
+
+                documentContainer.setOnLongClickListener {
+                    listener?.onMessageContextClick(message)
+                    true
+                }
+
             } else {
                 documentContainer.setOnClickListener {
                     downloadProgress.show()
                     downloadBtn.disappear()
-                    fragment?.onMessageNotDownloaded(message) {
-                        bind(it)
+                    listener?.onMessageNotDownloaded(message) {
+                        bind(Message2.MessageItem(it))
                     }
                 }
             }
-        } else {
-            documentContainer.setOnClickListener {
-                view.performClick()
-            }
-        }
-
-        documentContainer.setOnLongClickListener {
-            view.performLongClick()
         }
 
     }
@@ -588,12 +753,13 @@ class MessageViewHolder2<T: Any>(
         // setting image
         if (message.isDownloaded) {
             binding.messageImgProgress.hide()
-            val imageUri = view.context.getImageUriFromMessage(message)
-            setMessageImageBasedOnExtension(binding.messageImage, imageUri, message)
+            view.context.getImageUriFromMessage(message)?.let {
+                setMessageImageBasedOnExtension(binding.messageImage, it, message)
+            }
         } else {
             binding.messageImgProgress.show()
-            fragment?.onMessageNotDownloaded(message) {
-                bind(it)
+            listener?.onMessageNotDownloaded(message) {
+                bind(Message2.MessageItem(it))
             }
         }
 
@@ -601,7 +767,7 @@ class MessageViewHolder2<T: Any>(
         binding.messageSenderImg.setImageURI(message.sender.photo)
 
         binding.messageSenderImg.setOnClickListener {
-            fragment?.onMessageSenderClick(message)
+            listener?.onMessageSenderClick(message)
         }
 
         // setting time
@@ -615,12 +781,12 @@ class MessageViewHolder2<T: Any>(
         setTimeForTextView(binding.messageCreatedAt, message.createdAt)
 
         binding.messageSenderImg.setOnClickListener {
-            fragment?.onMessageSenderClick(message)
+            listener?.onMessageSenderClick(message)
         }
     }
 
     private fun setTimeForTextView(tv: TextView, time: Long) {
-        val timeText = getTextForChatTime(time)
+        val timeText = getTextForTime(time)
         tv.text = timeText
 
        /* val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)
@@ -636,9 +802,12 @@ class MessageViewHolder2<T: Any>(
         imageUri: Uri,
         message: Message
     ) {
+
         ViewCompat.setTransitionName(imageHolder, message.content)
+
         val metadata = message.metadata
         if (metadata != null) {
+
             val builder = Fresco.newDraweeControllerBuilder()
                 .setUri(imageUri)
                 .setControllerListener(controllerListener)
@@ -649,20 +818,19 @@ class MessageViewHolder2<T: Any>(
 
             imageHolder.controller = builder.build()
 
-            if (message.state == MESSAGE_IDLE) {
-                imageHolder.setOnClickListener {
-                    message.metadata!!.height = controllerListener.finalHeight.toLong()
-                    message.metadata!!.width = controllerListener.finalWidth.toLong()
-                    fragment?.onMessageImageClick(imageHolder, message)
-                }
-            } else {
-                imageHolder.setOnClickListener {
-                    view.performClick()
-                }
+            imageHolder.setOnClickListener {
+                message.metadata!!.height = controllerListener.finalHeight.toLong()
+                message.metadata!!.width = controllerListener.finalWidth.toLong()
+
+                listener?.onMessageMediaItemClick(message)
             }
 
             imageHolder.setOnLongClickListener {
                 view.performLongClick()
+            }
+
+            if (metadata.thumbnail == null) {
+                listener?.onMessageThumbnailNotDownload(message)
             }
 
         }
@@ -673,27 +841,33 @@ class MessageViewHolder2<T: Any>(
         setTimeForTextView(binding.timeSeparatorText, listSeparator.time)
     }
 
-    companion object {
-        const val MESSAGE_IDLE = -1
-        const val MESSAGE_READY = 0
-        const val MESSAGE_SELECTED = 1
-    }
-
 }
 
 const val MESSAGE_DEFAULT_ITEM = 0
 const val MESSAGE_DEFAULT_IMAGE_ITEM = 1
 const val MESSAGE_DEFAULT_DOCUMENT_ITEM = 2
-const val MESSAGE_DEFAULT_REPLY_ITEM = 3
-const val MESSAGE_MIDDLE_ITEM = 4
-const val MESSAGE_MIDDLE_IMAGE_ITEM = 5
-const val MESSAGE_MIDDLE_DOCUMENT_ITEM = 6
-const val MESSAGE_MIDDLE_REPLY_ITEM = 7
-const val MESSAGE_DEFAULT_RIGHT_ITEM = 8
-const val MESSAGE_DEFAULT_IMAGE_RIGHT_ITEM = 9
-const val MESSAGE_DEFAULT_DOCUMENT_RIGHT_ITEM = 10
-const val MESSAGE_DEFAULT_REPLY_RIGHT_ITEM = 11
-const val MESSAGE_MIDDLE_RIGHT_ITEM = 12
-const val MESSAGE_MIDDLE_IMAGE_RIGHT_ITEM = 13
-const val MESSAGE_MIDDLE_DOCUMENT_RIGHT_ITEM = 14
-const val MESSAGE_MIDDLE_REPLY_RIGHT_ITEM = 15
+const val MESSAGE_DEFAULT_VIDEO_ITEM = 3
+const val MESSAGE_DEFAULT_REPLY_ITEM = 4
+
+
+const val MESSAGE_MIDDLE_ITEM = 5
+const val MESSAGE_MIDDLE_IMAGE_ITEM = 6
+const val MESSAGE_MIDDLE_DOCUMENT_ITEM = 7
+const val MESSAGE_MIDDLE_VIDEO_ITEM = 8
+const val MESSAGE_MIDDLE_REPLY_ITEM = 9
+
+
+const val MESSAGE_DEFAULT_RIGHT_ITEM = 10
+const val MESSAGE_DEFAULT_IMAGE_RIGHT_ITEM = 11
+const val MESSAGE_DEFAULT_DOCUMENT_RIGHT_ITEM = 12
+const val MESSAGE_DEFAULT_VIDEO_RIGHT_ITEM = 13
+const val MESSAGE_DEFAULT_REPLY_RIGHT_ITEM = 14
+
+
+const val MESSAGE_MIDDLE_RIGHT_ITEM = 15
+const val MESSAGE_MIDDLE_IMAGE_RIGHT_ITEM = 16
+const val MESSAGE_MIDDLE_DOCUMENT_RIGHT_ITEM = 17
+const val MESSAGE_MIDDLE_VIDEO_RIGHT_ITEM = 18
+const val MESSAGE_MIDDLE_REPLY_RIGHT_ITEM = 19
+
+const val DATE_SEPARATOR_ITEM = 50

@@ -1,44 +1,10 @@
 package com.jamid.codesquare.ui
 
-import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
-import android.os.Environment
-import android.provider.OpenableColumns
-import android.util.Log
-import android.view.*
-import androidx.activity.addCallback
-import androidx.core.animation.doOnEnd
-import androidx.core.content.FileProvider
-import androidx.core.os.bundleOf
-import androidx.core.view.*
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.MutableLiveData
-import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
-import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.snackbar.BaseTransientBottomBar
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.SmallDocumentsAdapter
-import com.jamid.codesquare.adapter.recyclerview.SmallImagesAdapter
-import com.jamid.codesquare.data.*
-import com.jamid.codesquare.databinding.*
-import com.jamid.codesquare.listeners.DocumentClickListener
-import com.jamid.codesquare.listeners.ImageClickListener
-import com.jamid.codesquare.listeners.OptionClickListener
-import com.jamid.codesquare.ui.home.chat.*
-import java.io.File
-import kotlin.math.abs
 
+/*
 @ExperimentalPagingApi
-class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>(), ImageClickListener, OptionClickListener, DocumentClickListener {
+class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>(), ImageClickListener, OptionClickListener, DocumentClickListener,
+    ItemSelectResultListener<MediaItem> {
 
     override val viewModel: MainViewModel by activityViewModels()
     private lateinit var chatChannel: ChatChannel
@@ -53,16 +19,6 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         return FragmentChatContainerBinding.inflate(layoutInflater)
     }
 
-    private val imagesDir: File by lazy {
-        activity.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-            ?: throw NullPointerException("Couldn't get images directory.")
-    }
-    private val documentsDir: File by lazy {
-        activity.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-            ?: throw NullPointerException("Couldn't get documents directory.")
-    }
-
-    private val errorsList = MutableLiveData<List<Uri>>().apply { value = emptyList() }
     private lateinit var documentsAdapter: SmallDocumentsAdapter
     private lateinit var smallImagesAdapter: SmallImagesAdapter
     private var isChatFragment = true
@@ -71,6 +27,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         super.onViewCreated(view, savedInstanceState)
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
         viewModel.isSelectModeOn = false
+
+        checkWriteStoragePermission()
 
         val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
         val chatChannelIsOpened = sharedPref.getBoolean(chatChannel.chatChannelId + "_is_opened", false)
@@ -146,9 +104,12 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                     viewModel.insertUsers(contributors)
                 }
             }
+
+        setExternalDocumentCreationListener()
     }
 
-    fun getCurrentFragmentTag(): String {
+    */
+/*fun getCurrentFragmentTag(): String {
         val lastFragment = childFragmentManager.fragments.lastOrNull()
         return if (lastFragment != null) {
             when (lastFragment) {
@@ -178,7 +139,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             Log.d(TAG, "onViewCreated: Last fragment is null")
             "NULL"
         }
-    }
+    }*//*
+
 
 
     fun init() {
@@ -252,7 +214,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             setReplyLayout(replyMessage = replyMessage)
         }
 
-        viewModel.chatDocumentsUpload.observe(viewLifecycleOwner) { documents ->
+        */
+/* viewModel.chatDocumentsUpload.observe(viewLifecycleOwner) { documents ->
             updateChatInputUi(documents = documents)
             if (documents.isNullOrEmpty()) {
                 // hiding progress after upload
@@ -260,13 +223,21 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
             }
         }
 
-        viewModel.chatImagesUpload.observe(viewLifecycleOwner) { images ->
+         viewModel.chatImagesUpload.observe(viewLifecycleOwner) { images ->
             updateChatInputUi(images = images)
             if (images.isNullOrEmpty()) {
                 // hiding progress after upload
                 binding.uploadProgress.hide()
             }
         }
+
+        viewModel.chatVideosUpload.observe(viewLifecycleOwner) { videos ->
+            updateChatInputUi(videos = videos)
+            if (videos.isNullOrEmpty()) {
+                binding.uploadProgress.hide()
+            }
+        }*//*
+
 
         documentsAdapter = SmallDocumentsAdapter(this)
 
@@ -333,19 +304,24 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
 
     private fun setNavigation(onNavigation: () -> Unit) {
         requireActivity().onBackPressedDispatcher.addCallback {
-           /* if (viewModel.chatFragmentStack.size != 1)
-                viewModel.chatFragmentStack.pop()*/
+           */
+/* if (viewModel.chatFragmentStack.size != 1)
+                viewModel.chatFragmentStack.pop()*//*
+
             onNavigation()
         }
 
         activity.binding.mainToolbar.setNavigationOnClickListener {
-            /*if (viewModel.chatFragmentStack.size != 1)
-                viewModel.chatFragmentStack.pop()*/
+            */
+/*if (viewModel.chatFragmentStack.size != 1)
+                viewModel.chatFragmentStack.pop()*//*
+
             onNavigation()
         }
     }
 
-    /**
+    */
+/**
      * Handling back navigation for all the children fragments
      *
      * Dependencies: The back navigation depends upon
@@ -353,7 +329,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
      * 1. Whether the current fragment is chat fragment, in which case the back navigation should be system back navigation
      * 2. Whether the message select mode is on, in which case the back navigation should only toggle select mode
      *
-     * */
+     * *//*
+
     private fun updateNavigation() {
         if (isChatFragment) {
             // We care about select mode only if the current child fragment is chat fragment
@@ -378,7 +355,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
     }
 
-    /**
+    */
+/**
      * Update chat bottom layout
      *
      * Dependencies:
@@ -386,11 +364,10 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
      * 1. isSelectMode: If isSelectMode is on, the chat layout should be hidden
      * 2. replyMessage: If there is a reply message on hold, the reply layout should be visible
      * 3. documents and images: If there are documents or images ready to be uploaded, show them
-     * */
+     * *//*
+
     private fun updateChatInputUi(
         isSelectModeOn: Boolean = false,
-        documents: List<Uri> = emptyList(),
-        images: List<Uri> = emptyList(),
         selectedMessages: ArrayList<Message>? = null
     ) {
 
@@ -407,11 +384,13 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
                 // hide options and show input
                 binding.chatBottomRoot.slideReset()
 
-                setDocumentsRecycler(documents)
-                setImagesRecycler(images)
+              */
+/*  setDocumentsRecycler(documents)
+                setImagesRecycler(images)*//*
+
             }
 
-            setSendButton(images, documents)
+            setSendButton()
             setAddMediaBtn()
 
             setChatOptionsLayout(isSelectModeOn, isChatFragment, selectedMessages)
@@ -427,23 +406,14 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         val icons = arrayListOf(R.drawable.ic_round_image_24, R.drawable.ic_round_insert_drive_file_24)
 
         binding.addMediaBtn.setOnClickListener {
-            activity.optionsFragment = OptionsFragment.newInstance("Upload", options, icons)
+            activity.optionsFragment = OptionsFragment.newInstance("Upload", options, icons, listener = this, chatChannel = chatChannel)
             activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
         }
 
     }
 
-    override fun onResume() {
-        super.onResume()
-        val dy = resources.getDimension(R.dimen.generic_len) * 30
-        binding.chatOptionRoot.slideDown(dy)
-        updateNavigation()
-        updateNecessaryItems()
-    }
-
-
-
-    /**
+    */
+/**
      * To set chat options layout
      *
      * Dependencies:
@@ -451,7 +421,8 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
      * 1. isSelectModeOn: if isSelectMode is on, the chat options should be visible
      * 2. selectedMessages: need to know the count of selected messages and also the messages
      * 3. isChatFragment: Whether the current child fragment is chat fragment
-     * */
+     * *//*
+
     private fun setChatOptionsLayout(isSelectModeOn: Boolean, isChatFragment: Boolean, selectedMessages: ArrayList<Message>? = null) {
         val dy = resources.getDimension(R.dimen.generic_len) * 30
 
@@ -535,213 +506,21 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
 
         }
     }
-
-    private fun setDocumentsRecycler(documents: List<Uri>) {
-        if (documents.isNotEmpty()) {
-            binding.uploadingDocumentsRecycler.show()
-            binding.uploadingDocumentsRecycler.apply {
-                adapter = documentsAdapter
-                layoutManager =
-                    LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            }
-
-            documentsAdapter.submitList(getMetadataForFiles(documents))
-        } else {
-            isInProgressMode = false
-            binding.uploadingDocumentsRecycler.hide()
-            binding.chatUploadHelperText.hide()
-            showChatInput()
-        }
-    }
-
-    private fun getMetadataForFiles(objects: List<Uri>, isImages: Boolean = false): List<Metadata> {
-        val items = mutableListOf<Metadata>()
-        for (item in objects) {
-            val cursor = requireActivity().contentResolver.query(item, null, null, null, null)
-
-            try {
-                cursor?.moveToFirst()
-                val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
-
-                val name = cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $item is null")
-
-                val size = (cursor.getLong(sizeIndex ?: 0))
-                cursor.close()
-
-                if (isImages) {
-                    // if image size is greater than 2 mb
-                    if (size / (1024 * 1024) > 2) {
-                        val newList = errorsList.value.orEmpty().toMutableList()
-                        newList.add(item)
-                        errorsList.postValue(newList)
-                    }
-                } else {
-                    // if document size is greater than 20 mb
-                    if (size / (1024 * 1024) > 20) {
-                        val newList = errorsList.value.orEmpty().toMutableList()
-                        newList.add(item)
-                        errorsList.postValue(newList)
-                    }
-                }
-
-                val ext = "." + name.split('.').last()
-                val metadata = Metadata(size, name, item.toString(), ext, 0, 0)
-
-                items.add(metadata)
-            } catch (e: Exception) {
-                viewModel.setCurrentError(e)
-            }
-        }
-
-        return items
-    }
-
-    private fun setImagesRecycler(images: List<Uri>) {
-        if (images.isNotEmpty()) {
-            binding.uploadingImagesRecycler.show()
-            binding.uploadingImagesRecycler.apply {
-                adapter = smallImagesAdapter
-                layoutManager =
-                    LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            }
-
-            smallImagesAdapter.submitList(images.map { it.toString() })
-        } else {
-            isInProgressMode = false
-            binding.uploadingImagesRecycler.hide()
-            binding.chatUploadHelperText.hide()
-            showChatInput()
-        }
-    }
-
-    /**
-     * Get a list of media messages by getting info from device
-     *
-     * @param items Items to be converted to messages
-     * @param isImage Setting the type of items as image
-     *
-     * @return List of media messages based on uri
-     *
-     * */
-    private fun getListOfMediaMessages(items: List<Uri>, isImage: Boolean = false): List<Message> {
-        val currentUser = UserManager.currentUser
-        val now = System.currentTimeMillis()
-        val listOfMessages = mutableListOf<Message>()
-
-        val listOfMetadata = getMetadataForFiles(items, isImage)
-
-        for (m in listOfMetadata) {
-            val message = Message(
-                randomId(),
-                chatChannel.chatChannelId,
-                if (isImage) image else document,
-                randomId(),
-                currentUser.id,
-                currentUser.minify(),
-                m,
-                emptyList(),
-                emptyList(),
-                now,
-                now,
-                null,
-                null,
-                isDownloaded = false,
-                isCurrentUserMessage = true
-            )
-            listOfMessages.add(message)
-        }
-
-        return listOfMessages
-    }
-
-    /**
-     * Updating send button ui and functionalities
-     *
-     * Dependencies:
-     *
-     * 1. Depends upon whether there is a reply message, in which case it should send a reply message
-     * 2. Whether there are any images or documents currently selected to be sent
-     *
-     * @param images Optional images to be sent along with the current message
-     * @param documents Optional documents to be sent along with the current image
-     *
-     * */
-    private fun setSendButton(
-        images: List<Uri> = emptyList(),
-        documents: List<Uri> = emptyList()
-    ) {
+    private fun setSendButton() {
 
         binding.chatSendBtn.setOnClickListener {
-            isInProgressMode = true
-            val currentUser = UserManager.currentUser
 
-            val now = System.currentTimeMillis()
-            val listOfMessages = mutableListOf<Message>()
+            if (binding.chatInputLayout.text.isNullOrBlank())
+                return@setOnClickListener
 
-            var helperText = ""
+            val content = binding.chatInputLayout.text.trim().toString()
 
-            if (images.isNotEmpty()) {
-                binding.chatUploadHelperText.show()
-                helperText = "Uploading images ..."
-                listOfMessages.addAll(getListOfMediaMessages(images, true))
-            }
-
-            if (documents.isNotEmpty()) {
-                binding.chatUploadHelperText.show()
-                helperText = "Uploading documents ..."
-                listOfMessages.addAll(getListOfMediaMessages(documents, false))
-            }
-
-            if (listOfMessages.isNotEmpty()) {
-                binding.uploadProgress.show()
-                binding.chatUploadHelperText.text = helperText
-
-                // check if there is any text present
-                if (!binding.chatInputLayout.text.isNullOrBlank()) {
-                    val message = Message(
-                        randomId(),
-                        chatChannel.chatChannelId,
-                        text,
-                        binding.chatInputLayout.text.toString(),
-                        currentUser.id,
-                        currentUser.minify(),
-                        null,
-                        emptyList(),
-                        emptyList(),
-                        now,
-                        now,
-                        null,
-                        null,
-                        false,
-                        isCurrentUserMessage = true
-                    )
-                    listOfMessages.add(message)
-                }
-
-                hideChatInput()
-
-                viewModel.sendMessagesSimultaneously(
-                    chatChannel.chatChannelId,
-                    listOfMessages
-                )
-            } else {
-
-                // is a text message of type a) Normal text b) Reply message
-                if (binding.chatInputLayout.text.isNullOrBlank())
-                    return@setOnClickListener
-
-                val content = binding.chatInputLayout.text.trim().toString()
-
-                viewModel.sendTextMessage(
-                    chatChannel.chatChannelId,
-                    content,
-                    viewModel.replyMessage.value?.messageId,
-                    viewModel.replyMessage.value?.toReplyMessage()
-                )
-            }
-
-            // regardless of type clear the message input
+            viewModel.sendTextMessage(
+                chatChannel.chatChannelId,
+                content,
+                viewModel.replyMessage.value?.messageId,
+                viewModel.replyMessage.value?.toReplyMessage()
+            )
 
             binding.chatInputLayout.text.clear()
             viewModel.setReplyMessage(null)
@@ -749,26 +528,53 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
 
     }
 
-    private fun hideChatInput() {
-        binding.chatInputContainer.hide()
-    }
-
-    private fun showChatInput() {
-        binding.chatInputContainer.show()
-    }
-
-    /**
+    */
+/**
      * Cleaning up all the changes related to main viewModel
-     * */
+     * *//*
+
     private fun cleanUp() {
         viewModel.disableSelectMode(chatChannel.chatChannelId)
     }
 
+    private fun saveThumbnail(message: Message) {
+
+        val name = "thumb_" + message.content + ".jpg"
+
+        fun download(file: File) {
+            val ref = Firebase.storage.reference.child("videos/messages/${message.messageId}/thumb_${message.content}.jpg")
+            ref.getFile(file)
+                .addOnSuccessListener {
+
+                    message.metadata?.thumbnail = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, file).toString()
+                    viewModel.updateMessage(message)
+
+                    Log.d(TAG, "download: Successfully downloaded thumbnail.")
+                }.addOnFailureListener {
+                    Log.e(TAG, "download: ${it.localizedMessage}")
+                }
+        }
+
+        val fullPath = "images/thumbnails/${message.chatChannelId}"
+        getNestedDir(activity.filesDir, fullPath)?.let {
+            getFile(it, name)?.let { it1 ->
+                download(it1)
+            }
+        }
+
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val dy = resources.getDimension(R.dimen.generic_len) * 30
+        binding.chatOptionRoot.slideDown(dy)
+        updateNavigation()
+        updateNecessaryItems()
+    }
     override fun onPause() {
         super.onPause()
         viewModel.disableSelectMode(chatChannel.chatChannelId)
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         cleanUp()
@@ -776,87 +582,12 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         contributorsListener?.remove()
     }
 
-    private fun createNewFileAndDownload(
-        externalFilesDir: File,
-        message: Message,
-        onComplete: (newMessage: Message) -> Unit
-    ) {
-        val name = message.content + message.metadata!!.ext
-        val destination = File(externalFilesDir, message.chatChannelId)
 
-        fun download(des: File) {
-            val file = File(des, name)
-            try {
-                if (file.createNewFile()) {
-                    FireUtility.downloadMedia(file, message.content, message) {
-                        message.isDownloaded = true
-                        onComplete(message)
-                        if (it.isSuccessful) {
-                            viewModel.updateMessage(message)
-                        } else {
-                            file.delete()
-                            viewModel.setCurrentError(it.exception)
-                        }
-                    }
-                } else {
-                    if (file.exists()) {
-                        FireUtility.downloadMedia(file, message.content, message) {
-                            message.isDownloaded = true
-                            onComplete(message)
-                            if (it.isSuccessful) {
-                                viewModel.updateMessage(message)
-                            } else {
-                                file.delete()
-                                viewModel.setCurrentError(it.exception)
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                viewModel.setCurrentError(e)
-            } finally {
-                Log.d(TAG, file.path)
-            }
-        }
 
-        try {
-            if (destination.mkdir()) {
-                download(destination)
-            } else {
-                if (destination.exists()) {
-                    download(destination)
-                } else {
-                    throw Exception("Unknown error. Couldn't create file and download.")
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, e.localizedMessage.orEmpty())
-        } finally {
-            Log.d(TAG, destination.path)
-        }
+    override fun onMessageThumbnailNotDownloaded(message: Message) {
+        super.onMessageThumbnailNotDownloaded(message)
+        saveThumbnail(message)
     }
-
-    private fun openFile(file: File) {
-        // Get URI and MIME type of file
-        try {
-            val uri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, file)
-            val mime = requireActivity().contentResolver.getType(uri)
-
-            // Open file with user selected app
-            val intent = Intent()
-            intent.action = Intent.ACTION_VIEW
-            intent.setDataAndType(uri, mime)
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            startActivity(intent)
-        } catch (e: Exception) {
-            Log.d(TAG, e.localizedMessage.orEmpty())
-        }
-
-    }
-
-    private var lastTime: Long = System.currentTimeMillis()
-    private var isReadyForDoubleClick = false
-
     override fun onMessageClick(message: Message) {
         // there is a message that has been clicked, handle the functions here
 
@@ -868,15 +599,17 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
 
         if (viewModel.isSelectModeOn) {
             // if select mode is on, we simply need to toggle the state of this message
-            message.state = 1 - abs(message.state) // since the values can be either 1 or 0
+//            message.state = 1 - abs(message.state) // since the values can be either 1 or 0
 
             // in case this was the only selected message and it has been deselected in this current click,
             // disable select mode entirely, else simply update the message
-            if (isSingleSelectedMessage && message.state == 0) {
+           */
+/* if (isSingleSelectedMessage && message.state == 0) {
                 viewModel.disableSelectMode(message.chatChannelId)
             } else {
                 viewModel.updateMessage(message)
-            }
+            }*//*
+
 
         } else {
             if (lastTime - System.currentTimeMillis() <= 200 && isReadyForDoubleClick && currentMessage == message) {
@@ -913,53 +646,54 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
     }
-
     override fun onMessageContextClick(message: Message) {
         // if the message is not downloaded, it cannot be selected
         if (!message.isDownloaded) {
             Snackbar.make(binding.root, "To select this message, please download first.", Snackbar.LENGTH_LONG)
                 .addCallback(object: BaseTransientBottomBar.BaseCallback<Snackbar>() {
-                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
-                    super.onDismissed(transientBottomBar, event)
-                    if (viewModel.isSelectModeOn) {
-                        if (binding.chatOptionRoot.translationY != 0f) {
-                            binding.chatOptionRoot.slideReset()
-                        }
-                    } else {
-                        if (binding.chatBottomRoot.translationY != 0f) {
-                            binding.chatBottomRoot.slideReset()
+                    override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                        super.onDismissed(transientBottomBar, event)
+                        if (viewModel.isSelectModeOn) {
+                            if (binding.chatOptionRoot.translationY != 0f) {
+                                binding.chatOptionRoot.slideReset()
+                            }
+                        } else {
+                            if (binding.chatBottomRoot.translationY != 0f) {
+                                binding.chatBottomRoot.slideReset()
+                            }
                         }
                     }
-                }
-            }).show()
+                }).show()
             return
         }
 
         if (viewModel.isSelectModeOn) {
             // if the select mode is already on, simple toggle the state of this message
             // since the values can be only 1, 0
-            message.state = 1 - message.state
+//            message.state = 1 - message.state
 
             // in case this was the only selected message and it has been deselected in this current long click,
             // disable select mode entirely, else simply update the message
-            if (isSingleSelectedMessage && message.state == 0) {
+         */
+/*   if (isSingleSelectedMessage && message.state == 0) {
                 viewModel.disableSelectMode(message.chatChannelId)
             } else {
                 viewModel.updateMessage(message)
-            }
+            }*//*
+
 
         } else {
             // if select mode is not on, start select mode here
             viewModel.enableSelectMode(message)
         }
     }
-
     override fun onMessageImageClick(imageView: View, message: Message) {
 
         val metadata = message.metadata
         if (metadata != null) {
             val name = message.content + metadata.ext
-            val destination = File(imagesDir, message.chatChannelId)
+
+            val destination = File(requireActivity().filesDir, "images/${message.chatChannelId}")
             val file = File(destination, name)
             val uri = Uri.fromFile(file)
 
@@ -974,25 +708,111 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
     }
+    override fun onMessageDocumentClickFromSaved(message: Message) {
 
-    override fun onMessageDocumentClick(message: Message) {
-        val destination = File(documentsDir, message.chatChannelId)
-        val name = message.content + message.metadata!!.ext
-        val file = File(destination, name)
-        openFile(file)
+
     }
+    override fun onMessageSaveToFilesClick(message: Message, onComplete: (newMessage: Message) -> Unit) {
+        val name = message.content + message.metadata!!.ext
 
+        if (message.isDownloaded) {
+            val fullPath = "${message.type.toPlural()}/${message.chatChannelId}"
+            getNestedDir(activity.filesDir, fullPath)?.let {
+                getFile(it, name)?.let { it1 ->
+                    if (message.type != document) {
+                        val uri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, it1)
+                        getMimeType(uri)?.let { m ->
+                            val extUri = saveMediaToDevice(it1, name, message.type, m)
+                            if (extUri != null) {
+                                message.isSavedToFiles = true
+                                message.updatedAt = System.currentTimeMillis()
+                                onComplete(message)
+                                viewModel.updateMessage(message)
+                            } else {
+                                Log.d(TAG, "onMessageSaveToFilesClick: returned uri is null")
+                            }
+                        }
+                    } else {
+                        val uri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, it1)
+                        getMimeType(uri)?.let { m ->
+
+                            if (Build.VERSION.SDK_INT >= 29) {
+                                internalDocumentToBeSaved = it1
+                                createFile(MediaStore.Downloads.EXTERNAL_CONTENT_URI, m, name)
+                            } else {
+                                val extUri = saveMediaToDevice(it1, name, message.type, m)
+                                if (extUri != null) {
+                                    message.isSavedToFiles = true
+                                    message.updatedAt = System.currentTimeMillis()
+                                    onComplete(message)
+                                    viewModel.updateMessage(message)
+                                } else {
+                                    Log.d(TAG, "onMessageSaveToFilesClick: returned uri is null")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            onMessageNotDownloaded(message) {
+                onMessageSaveToFilesClick(it, onComplete)
+            }
+        }
+
+    }
+    override fun onMessageMediaItemClick(message: Message) {
+        super.onMessageMediaItemClick(message)
+
+        if (message.isDownloaded) {
+            if (message.type == document) {
+                showMessageDocument(message)
+            } else {
+                showMessageMedia(message)
+            }
+        } else {
+            onMessageNotDownloaded(message) {
+                onMessageMediaItemClick(it)
+            }
+        }
+
+    }
+    override fun onMessageDocumentClick(message: Message) {
+
+        */
+/* TODO("Directories have changed")
+
+         val destination = File(requireActivity().filesDir, "Documents")
+         val name = message.content + message.metadata!!.ext
+         val file = File(destination, name)
+
+         val uri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, file)
+         val mime = requireActivity().contentResolver.getType(uri)
+
+         if (mime?.contains("video") == true || message.metadata?.ext == ".mp4") {
+             val mediaItem = MediaItem(uri.toString(), message.metadata!!.name, video, mime ?: "", message.metadata!!.size, message.metadata!!.ext)
+             activity.showMediaFragment(listOf(mediaItem))
+         } else if (mime?.contains("image") == true) {
+             val mediaItem = MediaItem(uri.toString(), message.metadata!!.name, image, mime, message.metadata!!.size, message.metadata!!.ext)
+             activity.showMediaFragment(listOf(mediaItem))
+         } else {
+             // TODO("Save file to external directory")
+             openFile(file)
+         }*//*
+
+
+        // pdf, docx, pptx, xlsx
+
+    }
     override fun onMessageRead(message: Message) {
         val currentUserId = UserManager.currentUserId
         if (!message.readList.contains(currentUserId)) {
-            viewModel.updateReadList(imagesDir, documentsDir, message)
+            viewModel.updateReadList(message)
         }
     }
-
     override fun onMessageUpdated(message: Message) {
         viewModel.updateMessage(message)
     }
-
     override fun onMessageSenderClick(message: Message) {
 
         val cachedUser = viewModel.getCachedUser(message.senderId)
@@ -1018,88 +838,12 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
     }
-
     override fun onMessageNotDownloaded(
         message: Message,
         onComplete: (newMessage: Message) -> Unit
     ) {
-        if (message.type == image) {
-            createNewFileAndDownload(imagesDir, message, onComplete)
-        } else if (message.type == document) {
-            createNewFileAndDownload(documentsDir, message, onComplete)
-        }
+        createNewFileAndDownload(message, onComplete)
     }
-
-    @Suppress("LABEL_NAME_CLASH")
-    override fun onCheckForStaleData(message: Message, onUpdate: (Message) -> Unit) {
-
-        fun onChangeNeeded(user: User) {
-
-            message.sender = user.minify()
-            message.updatedAt = System.currentTimeMillis()
-
-            val change = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
-            FireUtility.updateMessage(message.chatChannelId, message.messageId, change) {
-                if (it.isSuccessful) {
-
-                    onUpdate(message)
-
-                    viewModel.updateMessage(message)
-
-                    viewModel.getChatChannel(message.chatChannelId) { it1 ->
-                        requireActivity().runOnUiThread {
-                            val chatChannel = it1 ?: return@runOnUiThread
-
-                            if (chatChannel.lastMessage != null && chatChannel.lastMessage!!.messageId == message.messageId) {
-                                // updated chat channel also
-                                val chatChannelChanges = mapOf("lastMessage" to message, "updatedAt" to System.currentTimeMillis())
-                                FireUtility.updateChatChannel(chatChannel.chatChannelId, chatChannelChanges) {  it2 ->
-                                    if (!it2.isSuccessful) {
-                                        Log.e(
-                                            TAG,
-                                            "onChangeNeeded: ${it2.exception?.localizedMessage}"
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    Log.e(TAG, "onChangeNeeded: ${it.exception?.localizedMessage}")
-                }
-            }
-        }
-
-        activity.getUserImpulsive(message.senderId) {
-            if (it.minify() != message.sender) {
-                onChangeNeeded(it)
-            }
-        }
-
-        fun onChangeNeeded1(user: User) {
-            message.replyMessage!!.name = user.name
-
-            val changes = mapOf("replyMessage" to message.replyMessage, "updatedAt" to System.currentTimeMillis())
-
-            FireUtility.updateMessage(message.chatChannelId, message.messageId, changes) {
-                if (it.isSuccessful) {
-                    viewModel.updateMessage(message)
-                } else {
-                    Log.e(TAG, "onChangeNeeded1: ${it.exception?.localizedMessage}")
-                }
-            }
-        }
-
-        if (message.replyMessage != null) {
-            activity.getUserImpulsive(message.replyMessage!!.senderId) {
-                if (it.name != message.replyMessage!!.name) {
-                    onChangeNeeded1(it)
-                }
-            }
-        }
-
-    }
-
 
     override fun onReplyMessageClick(message: Message) {
 
@@ -1252,62 +996,87 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
 
     }
-
-    fun navigate(tag: String, bundle: Bundle) {
-        isInProgressMode = false
-        val fragment = getFragmentByTag(tag, bundle)
-        hideKeyboard()
-        childFragmentManager.beginTransaction()
-            .add(binding.chatFragmentsContainer.id, fragment, tag)
-            .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_right)
-            .addToBackStack(tag)
-            .commit()
-    }
-
-    /**
-     * later make it public so that child fragments can access this
-     * */
-    /*private fun setProjectIconAction(action: () -> Unit) {
-        postIcon.setOnClickListener {
-            action()
-        }
-    }*/
-
-    /**
-     * later make it public so that child fragments can access this
-     * */
-    /*private fun setMoreBtnAction(action: () -> Unit) {
-        moreBtn.setOnClickListener {
-            action()
-        }
-    }*/
-
-    fun navigateUp() {
-        childFragmentManager.popBackStack()
-    }
-
-    companion object {
-        private const val TAG = "ChatContainer"
-    }
-
     override fun onImageClick(view: View, image: Image) {
         activity.showImageViewFragment(view, image)
     }
-
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
         viewModel.removeImageAtPosition(position)
     }
-
-    private fun forward(messages: ArrayList<Message>) {
-        navigate(ForwardFragment.TAG, bundleOf(MESSAGES to messages))
-    }
-
     override fun onDocumentClick(view: View, metadata: Metadata) {
 
     }
-
     override fun onCloseBtnClick(view: View, metadata: Metadata, position: Int) {
         viewModel.removeDocumentAtPosition(position)
+    }
+
+    @Suppress("LABEL_NAME_CLASH")
+    override fun onCheckForStaleData(message: Message, onUpdate: (Message) -> Unit) {
+
+        fun onChangeNeeded(user: User) {
+
+            message.sender = user.minify()
+            message.updatedAt = System.currentTimeMillis()
+
+            val change = mapOf("sender" to user.minify(), "updatedAt" to System.currentTimeMillis())
+            FireUtility.updateMessage(message.chatChannelId, message.messageId, change) {
+                if (it.isSuccessful) {
+
+                    onUpdate(message)
+
+                    viewModel.updateMessage(message)
+
+                    viewModel.getChatChannel(message.chatChannelId) { it1 ->
+                        requireActivity().runOnUiThread {
+                            val chatChannel = it1 ?: return@runOnUiThread
+
+                            if (chatChannel.lastMessage != null && chatChannel.lastMessage!!.messageId == message.messageId) {
+                                // updated chat channel also
+                                val chatChannelChanges = mapOf("lastMessage" to message, "updatedAt" to System.currentTimeMillis())
+                                FireUtility.updateChatChannel(chatChannel.chatChannelId, chatChannelChanges) {  it2 ->
+                                    if (!it2.isSuccessful) {
+                                        Log.e(
+                                            TAG,
+                                            "onChangeNeeded: ${it2.exception?.localizedMessage}"
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Log.e(TAG, "onChangeNeeded: ${it.exception?.localizedMessage}")
+                }
+            }
+        }
+
+        activity.getUserImpulsive(message.senderId) {
+            if (it.minify() != message.sender) {
+                onChangeNeeded(it)
+            }
+        }
+
+        fun onChangeNeeded1(user: User) {
+            message.replyMessage!!.name = user.name
+
+            val changes = mapOf("replyMessage" to message.replyMessage, "updatedAt" to System.currentTimeMillis())
+
+            FireUtility.updateMessage(message.chatChannelId, message.messageId, changes) {
+                if (it.isSuccessful) {
+                    viewModel.updateMessage(message)
+                } else {
+                    Log.e(TAG, "onChangeNeeded1: ${it.exception?.localizedMessage}")
+                }
+            }
+        }
+
+        if (message.replyMessage != null) {
+            activity.getUserImpulsive(message.replyMessage!!.senderId) {
+                if (it.name != message.replyMessage!!.name) {
+                    onChangeNeeded1(it)
+                }
+            }
+        }
+
     }
 
     override fun onOptionClick(
@@ -1316,10 +1085,42 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         post: Post?,
         chatChannel: ChatChannel?,
         comment: Comment?,
-        tag: String?
+        tag: String?,
+        message: Message?
     ) {
         activity.optionsFragment?.dismiss()
         when (option.item) {
+            OPTION_8 -> {
+//                val ch = chatChannel ?: return
+
+                val frag = GalleryFragment(itemSelectResultListener = this)
+                frag.title = "Select items"
+                frag.primaryActionLabel = "Send"
+                frag.show(requireActivity().supportFragmentManager, "GalleryFrag")
+
+
+                */
+/*GalleryFragment { items ->
+
+                }.apply {
+                    title = "Select items"
+                    primaryLabel = "Send"
+                }.show(requireActivity().supportFragmentManager, "GalleryFrag")*//*
+
+            }
+            OPTION_9 -> {
+
+                val frag = FilesFragment(itemSelectResultListener = this)
+                frag.title = "Select files"
+                frag.primaryActionLabel = "Send"
+                frag.show(requireActivity().supportFragmentManager, "FilesFrag")
+
+                */
+/*if (chatChannel != null) {
+                    findNavController().navigate(R.id.documentSelectorFragment, bundleOf("chatChannelId" to chatChannel.chatChannelId), slideRightNavOptions())
+                }*//*
+
+            }
             OPTION_19 -> {
                 viewModel.setReplyMessage(currentMessage)
             }
@@ -1335,4 +1136,371 @@ class ChatContainerFragment : MessageListenerFragment<FragmentChatContainerBindi
         }
     }
 
-}
+    private fun sendMessages(messages: List<Message>) {
+        viewModel.sendMessages(messages) { taskResult ->
+            activity.runOnUiThread {
+                if (this.isVisible) {
+                    activity.binding.mainProgressBar.hide()
+
+                    binding.chatInputLayout.hint = "Write something here ..."
+                    binding.chatSendBtn.enable()
+
+                    when (taskResult) {
+                        is Result.Error -> {
+                            toast("Something went wrong while uploading documents")
+                        }
+                        is Result.Success -> {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun createNewFileAndDownload(
+        message: Message,
+        onComplete: (newMessage: Message) -> Unit
+    ) {
+
+        if (message.type == video)
+            saveThumbnail(message)
+
+        val name = message.content + message.metadata!!.ext
+
+        fun download(file: File) {
+            FireUtility.downloadMessageMedia(file, name, message) {
+                if (it.isSuccessful) {
+                    message.isDownloaded = true
+                    onComplete(message)
+                    viewModel.updateMessage(message)
+                } else {
+                    file.delete()
+                    onComplete(message)
+                    viewModel.setCurrentError(it.exception)
+                }
+            }
+        }
+
+        val dirType = message.type.toPlural()
+        val fullPath = dirType + "/" + chatChannel.chatChannelId
+
+        getNestedDir(activity.filesDir, fullPath)?.let {
+            getFile(it, name)?.let { it1 ->
+                download(it1)
+            }
+        }
+
+    }
+
+    private fun openFile(uri: Uri) {
+        try {
+            val mime = requireActivity().contentResolver.getType(uri)
+
+            // Open file with user selected app
+            val intent = Intent()
+            intent.action = Intent.ACTION_VIEW
+            intent.setDataAndType(uri, mime)
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.d(TAG, e.localizedMessage.orEmpty())
+        }
+    }
+
+    private var lastTime: Long = System.currentTimeMillis()
+    private var isReadyForDoubleClick = false
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createFile(pickerInitialUri: Uri, mime: String, name: String) {
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = mime
+            putExtra(Intent.EXTRA_TITLE, name)
+
+            // Optionally, specify a URI for the directory that should be opened in
+            // the system file picker before your app creates the document.
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri)
+        }
+
+        activity.fileSaverLauncher.launch(intent)
+    }
+
+
+    private fun checkWriteStoragePermission() {
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED -> {
+                activity.writePermissionGranted = true
+            }
+            shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE) -> {
+                Toast.makeText(requireContext(), "Grant permission", Toast.LENGTH_LONG).show()
+            }
+            else -> {
+                activity.requestWriteStoragePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            }
+        }
+    }
+
+    private var internalDocumentToBeSaved: File? = null
+
+    private fun setExternalDocumentCreationListener() {
+        val resolver = activity.contentResolver
+        viewModel.externallyCreatedDocument.observe(viewLifecycleOwner) { destinationUri ->
+            if (destinationUri != null) {
+                if (internalDocumentToBeSaved != null) {
+                    val pfd: ParcelFileDescriptor?
+                    try {
+                        pfd = resolver.openFileDescriptor(destinationUri, "w")
+                        val out = FileOutputStream(pfd?.fileDescriptor)
+
+                        val inputStream = FileInputStream(internalDocumentToBeSaved!!)
+                        val buf = ByteArray(8192)
+                        var len: Int
+                        while (inputStream.read(buf).also { it1 -> len = it1 } > 0) {
+                            out.write(buf, 0, len)
+                        }
+                        out.close()
+                        inputStream.close()
+                        pfd?.close()
+
+                        internalDocumentToBeSaved = null
+                        viewModel.setExternallyCreatedDocumentUri(null)
+
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun saveMediaToDevice(dest: File, name: String, type: String, mime: String): Uri? {
+
+        val destinationUri: Uri?
+        val resolver = activity.contentResolver
+        val now = System.currentTimeMillis()
+        val destinationFile: File?
+
+        val dateAddedValue = now/1000
+
+        val relativePathValue: String = when (type) {
+            image -> Environment.DIRECTORY_PICTURES
+            video -> Environment.DIRECTORY_MOVIES
+            else ->  Environment.DIRECTORY_DOWNLOADS
+        }
+
+        val contentValues = ContentValues()
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            contentValues.apply {
+                put(MediaStore.MediaColumns.RELATIVE_PATH, relativePathValue)
+                put(MediaStore.MediaColumns.TITLE, name)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                put(MediaStore.MediaColumns.DATE_ADDED, dateAddedValue)
+            }
+            val collection = when (type) {
+                image -> MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                video -> MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+                else -> MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            }
+
+            Log.d(TAG, "saveMediaToDevice: $collection")
+
+            destinationUri = resolver.insert(collection, contentValues)
+        } else {
+            val directory = (Environment.getExternalStorageDirectory().absolutePath
+                    + File.separator + relativePathValue)
+
+            destinationFile = File(directory, name)
+
+            contentValues.apply {
+                put(MediaStore.MediaColumns.TITLE, name)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                put(MediaStore.MediaColumns.MIME_TYPE, mime)
+                put(MediaStore.MediaColumns.DATE_ADDED, dateAddedValue)
+                put(MediaStore.MediaColumns.DATA, destinationFile.absolutePath)
+            }
+
+            val collectionPathUri = when (type) {
+                image -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+                video ->  MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                else -> MediaStore.Files.getContentUri("external")
+            }
+
+            destinationUri = resolver.insert(
+                collectionPathUri,
+                contentValues
+            )
+        }
+
+        Log.d(TAG, "saveMediaToDevice: $destinationUri")
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            contentValues.put(
+                MediaStore.MediaColumns.DATE_TAKEN,
+                System.currentTimeMillis()
+            )
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+
+        val pfd: ParcelFileDescriptor?
+        try {
+            pfd = destinationUri?.let { resolver.openFileDescriptor(it, "w") }
+
+            val out = FileOutputStream(pfd?.fileDescriptor)
+
+            val inputStream = FileInputStream(dest)
+            val buf = ByteArray(8192)
+            var len: Int
+            while (inputStream.read(buf).also { len = it } > 0) {
+                out.write(buf, 0, len)
+            }
+            out.close()
+            inputStream.close()
+            pfd?.close()
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+
+        if (Build.VERSION.SDK_INT >= 29) {
+            contentValues.clear()
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
+            if (destinationUri != null) {
+                resolver.update(destinationUri, contentValues, null, null)
+            }
+        }
+
+        return destinationUri
+    }
+
+    private fun showMessageMedia(message: Message) {
+
+        if (message.isDownloaded) {
+            val fullPath = "${message.type.toPlural()}/${message.chatChannelId}"
+            val name = message.content + message.metadata!!.ext
+
+            getNestedDir(activity.filesDir, fullPath)?.let { dest ->
+                getFile(dest, name)?.let { it1 ->
+                    val uri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, it1)
+                    val mimeType = getMimeType(uri)
+
+                    mimeType?.let {
+                        val mediaItem = MediaItem(uri.toString(), name, message.type,
+                            it, message.metadata!!.size, message.metadata!!.ext, "", null, System.currentTimeMillis(), System.currentTimeMillis())
+
+                        activity.showMediaFragment(listOf(mediaItem))
+                    }
+                }
+            }
+        } else {
+            onMessageNotDownloaded(message) {
+                showMessageMedia(message)
+            }
+        }
+    }
+
+    private fun showMessageDocument(message: Message) {
+
+        if (message.isDownloaded) {
+
+            val fullPath = "documents/${message.chatChannelId}"
+            val name = message.content + message.metadata!!.ext
+
+            getNestedDir(activity.filesDir, fullPath)?.let {
+                getFile(it, name)?.let { it1 ->
+                    val uri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, it1)
+                    openFile(uri)
+                }
+            }
+
+        } else {
+            onMessageNotDownloaded(message) {
+                showMessageDocument(message)
+            }
+        }
+
+        // query external downloads directory and check for file name [name]
+        // if it is present than open the file through intent
+        // else save the internal file to external downloads directory and then
+        // open it through intent
+    }
+
+    fun navigate(tag: String, bundle: Bundle) {
+        isInProgressMode = false
+        val fragment = getFragmentByTag(tag, bundle)
+        hideKeyboard()
+        childFragmentManager.beginTransaction()
+            .add(binding.chatFragmentsContainer.id, fragment, tag)
+            .setCustomAnimations(R.anim.slide_in_right, R.anim.slide_out_right)
+            .addToBackStack(tag)
+            .commit()
+    }
+
+    fun navigateUp() {
+        childFragmentManager.popBackStack()
+    }
+
+    companion object {
+        private const val TAG = "ChatContainer"
+    }
+
+    private fun forward(messages: ArrayList<Message>) {
+        navigate(ForwardFragment.TAG, bundleOf(MESSAGES to messages))
+    }
+
+    private fun createImageFile(image: Bitmap, destUri: Uri): Result<String> {
+        val contentResolver = activity.contentResolver
+        val pfd: ParcelFileDescriptor?
+        return try {
+            pfd = contentResolver.openFileDescriptor(destUri, "w")
+            val out = FileOutputStream(pfd?.fileDescriptor)
+
+            image.compress(Bitmap.CompressFormat.JPEG, 100, out)
+            out.close()
+            pfd?.close()
+
+            Result.Success(destUri.toString())
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.Error(e)
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun saveThumbnailsBeforeSendingMessages(messages: List<Message>) {
+        for (item in messages) {
+            val name = "thumb_${item.content}.jpg"
+            val uri = item.metadata!!.url.toUri()
+
+            val bitmap = getObjectThumbnail(uri)
+
+            if (bitmap != null) {
+                val fullPath = "images/thumbnails/${item.chatChannelId}"
+
+                getNestedDir(activity.filesDir, fullPath)?.let { dest ->
+                    getFile(dest, name)?.let {
+                        val destUri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, it)
+
+                        when (val res = createImageFile(bitmap, destUri)) {
+                            is Result.Error -> {
+                                Log.e(TAG, "saveThumbnailsBeforeSendingMessages: ${res.exception}")
+                            }
+                            is Result.Success -> {
+                                item.metadata!!.thumbnail = res.data
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
+
+    }
+
+
+}*/

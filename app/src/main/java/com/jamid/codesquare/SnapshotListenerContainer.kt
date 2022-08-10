@@ -65,6 +65,38 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
 
         projectRequestsListenerRegistration?.remove()
         projectRequestsListenerRegistration = null
+
+        for (item in listenerMap) {
+            item.value.remove()
+        }
+
+        listenerMap.clear()
+
+    }
+
+    private val listenerMap = mutableMapOf<String, ListenerRegistration>()
+
+    private fun setContributorsListener(chatChannelId: String) {
+        if (!listenerMap.containsKey(chatChannelId)) {
+            Log.d(TAG, "setContributorsListener: Setting listener for $chatChannelId")
+            val lis = Firebase.firestore.collection(USERS)
+                .whereArrayContains(CHAT_CHANNEL, chatChannelId)
+                .addSnapshotListener { value, error ->
+                    if (error != null) {
+                        Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
+                    }
+
+                    if (value != null && !value.isEmpty) {
+
+                        Log.d(TAG, "setContributorsListener: Got new contributors ${value.size()}")
+
+                        val contributors = value.toObjects(User::class.java)
+                        viewModel.insertUsers(contributors)
+                    }
+                }
+
+            listenerMap[chatChannelId] = lis
+        }
     }
 
     private fun initializeListeners() {
@@ -81,7 +113,7 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
                         if (error != null) {
                             Log.e(
                                 TAG,
-                                "initializeListeners: Something went wrong - ${error.localizedMessage}")
+                                "initializeListeners $currentUserId: Something went wrong - ${error.localizedMessage}")
                             return@addSnapshotListener
                         }
 
@@ -89,6 +121,10 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
                             val currentUser = value.toObject(User::class.java)!!
                             UserManager.updateUser(currentUser)
                             viewModel.insertCurrentUser(currentUser)
+
+                            for (channel in currentUser.chatChannels) {
+                                setContributorsListener(channel)
+                            }
                         }
 
                     }
@@ -109,6 +145,9 @@ class SnapshotListenerContainer(private val viewModel: MainViewModel): Lifecycle
 
                         if (value != null && !value.isEmpty) {
                             val notifications = value.toObjects(Notification::class.java)
+
+                            Log.d(TAG, "initializeListeners: $notifications")
+
                             viewModel.insertNotifications(notifications)
                         }
 

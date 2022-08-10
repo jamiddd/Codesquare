@@ -3,12 +3,9 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.ktx.auth
@@ -16,19 +13,12 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.databinding.FragmentUpdatePasswordBinding
 
-@OptIn(ExperimentalPagingApi::class)
-class UpdatePasswordFragment: Fragment() {
+class UpdatePasswordFragment: BaseFragment<FragmentUpdatePasswordBinding>() {
 
-    private lateinit var binding: FragmentUpdatePasswordBinding
     private var actionModeDone: Boolean = false
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentUpdatePasswordBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentUpdatePasswordBinding {
+        return FragmentUpdatePasswordBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -133,5 +123,15 @@ class UpdatePasswordFragment: Fragment() {
                 }
             }
         }
+
+        runDelayed(300) {
+            binding.oldPasswordText.editText?.requestFocus()
+
+            if (keyboardState.value != true) {
+                showKeyboard()
+            }
+
+        }
+
     }
 }

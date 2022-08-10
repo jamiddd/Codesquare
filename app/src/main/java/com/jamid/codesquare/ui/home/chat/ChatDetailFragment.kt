@@ -1,81 +1,42 @@
 package com.jamid.codesquare.ui.home.chat
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.os.bundleOf
-import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.navGraphViewModels
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.viewbinding.ViewBinding
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.google.android.material.transition.MaterialSharedAxis
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.GridImageMessagesAdapter
+import com.jamid.codesquare.adapter.recyclerview.GridMediaAdapter
+import com.jamid.codesquare.adapter.recyclerview.MediaDocumentAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
-import com.jamid.codesquare.listeners.CommonImageListener
+import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.listeners.UserClickListener
-import com.jamid.codesquare.ui.ChatContainerFragment
-import com.jamid.codesquare.ui.MessageListenerFragment
+import com.jamid.codesquare.ui.ChatViewModel
+import com.jamid.codesquare.ui.ChatViewModelFactory
 import com.jamid.codesquare.ui.OptionsFragment
 
-@ExperimentalPagingApi
-class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>(), UserClickListener {
 
-    override val viewModel: MainViewModel by activityViewModels()
-    
-    
+// TODO("Show images from post on the top")
+class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickListener, MediaClickListener {
+
     private lateinit var userAdapter: UserAdapter
     private lateinit var chatChannel: ChatChannel
-    private lateinit var post: Post
+    private var post: Post? = null
     private var contributorsListener: ListenerRegistration? = null
+    private val savedList = mutableListOf<MediaItemWrapper>()
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        if ((parentFragment as ChatContainerFragment).getCurrentFragmentTag() == TAG){
-            activity.binding.mainToolbar.menu.clear()
-            inflater.inflate(R.menu.chat_detail_fragment_menu, menu)
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.chat_option -> {
-                val (a, b) = if (post.isMadeByMe) {
-                    val option = if (post.archived) {
-                        OPTION_13
-                    } else {
-                        OPTION_12
-                    }
-
-                    arrayListOf(OPTION_15, option) to arrayListOf(R.drawable.ic_round_edit_note_24, R.drawable.ic_round_archive_24)
-                } else {
-                    arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_round_report_24)
-                }
-
-                activity.optionsFragment = OptionsFragment.newInstance(options = a, title = post.name, icons = b, post = post)
-                activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
-
-            }
-        }
-
-        return super.onOptionsItemSelected(item)
+    private val chatViewModel: ChatViewModel by navGraphViewModels(R.id.navigation_chats) {
+        ChatViewModelFactory(requireContext())
     }
 
     companion object {
@@ -85,148 +46,200 @@ class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>
             ChatDetailFragment().apply {
                 arguments = bundle
             }
-
     }
 
-    @SuppressLint("NotifyDataSetChanged")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
+        post = arguments?.getParcelable(POST)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
-        post = arguments?.getParcelable(POST) ?: return
-
         val currentUser = UserManager.currentUser
 
-        userAdapter = UserAdapter(min = false, small = true, grid = true, associatedChatChannel = chatChannel, userClickListener = this)
+        userAdapter = UserAdapter(associatedChatChannel = chatChannel, userClickListener = this)
 
         binding.chatContributorsRecycler.apply {
             adapter = userAdapter
-            layoutManager = GridLayoutManager(requireContext(), 2, GridLayoutManager.VERTICAL, false)
+            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
+            layoutManager = LinearLayoutManager(activity)
         }
 
-        binding.chatTitle.text = chatChannel.postTitle
 
-        viewModel.getReactiveChatChannel(chatChannel.chatChannelId).observe(viewLifecycleOwner) { reactiveChatChannel ->
-            if (reactiveChatChannel != null) {
-                chatChannel = reactiveChatChannel
-                userAdapter.associatedChatChannel = chatChannel
+        viewModel.getReactiveChatChannel(chatChannel.chatChannelId)
+            .observe(viewLifecycleOwner) { reactiveChatChannel ->
+                if (reactiveChatChannel != null) {
+                    chatChannel = reactiveChatChannel
+                    userAdapter.associatedChatChannel = chatChannel
 
-                if (reactiveChatChannel.administrators.contains(currentUser.id)) {
-                    binding.updateGuidelinesBtn.show()
-                } else {
-                    binding.updateGuidelinesBtn.hide()
-                }
-
-                setRules(reactiveChatChannel)
-
-                binding.updateGuidelinesBtn.setOnClickListener {
-                    (parentFragment as ChatContainerFragment).navigate(ChannelGuidelinesFragment.TAG, bundleOf(
-                        CHAT_CHANNEL to reactiveChatChannel))
-                }
-
-                binding.chatMediaHeader.setOnClickListener {
-                    (parentFragment as ChatContainerFragment).navigate(ChatMediaFragment.TAG, bundleOf(
-                        CHAT_CHANNEL to reactiveChatChannel))
-                }
-
-            }
-        }
-
-        setMediaRecyclerAndData(chatChannel.chatChannelId)
-
-        contributorsListener = Firebase.firestore.collection(USERS)
-            .whereArrayContains(COLLABORATIONS, post.id)
-            .addSnapshotListener { querySnapshot, error ->
-                if (error != null) {
-                    Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
-                }
-
-                if (querySnapshot != null && !querySnapshot.isEmpty) {
-                    val contributors = mutableListOf<User>()
-                    val users = querySnapshot.toObjects(User::class.java)
-                    contributors.addAll(users)
-
-                    activity.getUserImpulsive(post.creator.userId) { it1 ->
-                        contributors.add(it1)
-                        onContributorsFetched(contributors)
+                    if (reactiveChatChannel.type == CHANNEL_PRIVATE) {
+                        binding.updateGuidelinesBtn.hide()
+                    } else {
+                        if (reactiveChatChannel.administrators.contains(currentUser.id)) {
+                            binding.updateGuidelinesBtn.show()
+                        } else {
+                            binding.updateGuidelinesBtn.hide()
+                        }
                     }
-                } else {
-                    activity.getUserImpulsive(post.creator.userId) { it1 ->
-                        onContributorsFetched(listOf(it1))
+
+                    setRules(reactiveChatChannel)
+
+                    binding.updateGuidelinesBtn.setOnClickListener {
+                        findNavController().navigate(R.id.channelGuidelinesFragment, bundleOf(
+                            CHAT_CHANNEL to reactiveChatChannel
+                        ))
                     }
+
+                    binding.chatMediaHeader.setOnClickListener {
+                        findNavController().navigate(R.id.chatMediaFragment, bundleOf(CHAT_CHANNEL to chatChannel))
+                    }
+
                 }
             }
 
-        val listener = CommonImageListener()
 
-        val builder = Fresco.newDraweeControllerBuilder()
-            .setUri(post.images.first())
-            .setControllerListener(listener)
+        if (chatChannel.type != CHANNEL_PRIVATE) {
+            viewModel.getChannelContributors(chatChannel.chatChannelId).observe(viewLifecycleOwner) {
+                if (it != null) {
+                    userAdapter.submitList(it)
+                }
+            }
 
-        binding.chatPostImage.controller = builder.build()
+            runDelayed(1000) {
+                contributorsListener = Firebase.firestore.collection(USERS)
+                    .whereArrayContains(CHAT_CHANNELS, chatChannel.chatChannelId)
+                    .addSnapshotListener { querySnapshot, error ->
+                        if (error != null) {
+                            Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
+                        }
 
-        binding.chatPostImage.setOnClickListener {
-            activity.showImageViewFragment(binding.chatPostImage, Image(post.images.first(), listener.finalWidth, listener.finalWidth, ".jpg"))
+                        if (querySnapshot != null && !querySnapshot.isEmpty) {
+                            val users = querySnapshot.toObjects(User::class.java)
+                            viewModel.insertUsers(users)
+                        }
+                    }
+            }
         }
 
+        setMediaRecyclerUi()
+
+        setTopImageAndTitle()
     }
 
-    @SuppressLint("NotifyDataSetChanged")
-    private fun onContributorsFetched(contributors: List<User>) {
-        userAdapter.submitList(contributors)
-        userAdapter.notifyDataSetChanged()
+    private fun setTopImageAndTitle() {
+
+        if (chatChannel.type == CHANNEL_PRIVATE) {
+            val data1 = chatChannel.data1!!
+            val data2 = chatChannel.data2!!
+            if (data1.userId != UserManager.currentUserId) {
+                binding.chatTitle.text = data1.name
+                binding.chatPostImage.setImageURI(data1.photo)
+            } else {
+                binding.chatTitle.text = data2.name
+                binding.chatPostImage.setImageURI(data2.photo)
+            }
+
+            // TODO("Save the image of the user")
+
+        } else {
+            binding.chatTitle.text = chatChannel.postTitle
+            binding.chatPostImage.setImageURI(chatChannel.postImage)
+
+            binding.chatPostImage.setOnClickListener {
+                val mediaItems = convertMediaListToMediaItemList(post!!.mediaList, post!!.mediaString)
+                activity.showMediaFragment(mediaItems.take(1), 0)
+            }
+
+        }
+
+
     }
 
-    fun setRules(chatChannel: ChatChannel) {
-        if (chatChannel.rules.isBlank()) {
+    private fun setRules(chatChannel: ChatChannel) {
+
+        if (chatChannel.type == "private") {
             binding.chatPostGuidelines.hide()
             binding.chatPostGuidelinesHeader.hide()
-            binding.chatPostGuidelines.text = getString(R.string.update_chat_rules)
         } else {
-            binding.chatPostGuidelines.show()
-            binding.chatPostGuidelinesHeader.show()
-            binding.chatPostGuidelines.text = chatChannel.rules
+            if (chatChannel.rules.isBlank()) {
+                binding.chatPostGuidelines.hide()
+                binding.chatPostGuidelinesHeader.hide()
+                binding.chatPostGuidelines.text = getString(R.string.update_chat_rules)
+            } else {
+                binding.chatPostGuidelines.show()
+                binding.chatPostGuidelinesHeader.show()
+                binding.chatPostGuidelines.text = chatChannel.rules
+            }
         }
+
     }
 
-    private fun onMediaMessagesExists() {
-        binding.chatMediaRecycler.show()
-        binding.chatMediaHeader.show()
-    }
-
-    private fun onMediaMessagesNotFound() {
-        binding.chatMediaRecycler.hide()
-        binding.chatMediaHeader.hide()
-    }
-
-    override fun onStop() {
-        super.onStop()
+    override fun onDestroyView() {
+        super.onDestroyView()
         contributorsListener?.remove()
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun setMediaRecyclerAndData(chatChannelId: String) {
-        val gridAdapter = GridImageMessagesAdapter(parentFragment as MessageListenerFragment<ViewBinding, MainViewModel>)
+    private lateinit var gridMediaAdapter: GridMediaAdapter
+    private lateinit var mediaDocumentAdapter: MediaDocumentAdapter
 
-        binding.chatMediaRecycler.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
-            adapter = gridAdapter
-        }
 
-        viewModel.getLimitedMediaMessages(chatChannelId, 6) {
-            activity.runOnUiThread {
-                if (it.isNotEmpty()) {
-                    gridAdapter.submitList(it)
-                    onMediaMessagesExists()
-                } else {
-                    viewModel.getLimitedMediaMessages(chatChannelId, 3, document) { mediaMessages2 ->
-                        activity.runOnUiThread {
-                            if (mediaMessages2.isEmpty()) {
-                                onMediaMessagesNotFound()
-                            } else {
-                                onMediaMessagesExists()
-                            }
+    private fun setMediaRecyclerUi() {
+        binding.chatMediaRecycler.hide()
+        binding.chatMediaHeader.hide()
+
+        chatViewModel.chatPhotosList.observe(viewLifecycleOwner) {
+            if (!it.isNullOrEmpty()) {
+
+                Log.d(TAG, "setMediaRecyclerUi: Photos yes")
+
+                savedList.clear()
+                savedList.addAll(it.take(minOf(6, it.size)))
+
+                binding.chatMediaProgress.hide()
+                binding.chatMediaRecycler.show()
+                binding.chatMediaHeader.show()
+
+                gridMediaAdapter = GridMediaAdapter(mediaClickListener = this)
+
+                binding.chatMediaRecycler.apply {
+                    adapter = gridMediaAdapter
+                    layoutManager = GridLayoutManager(activity, 3)
+                }
+                gridMediaAdapter.submitList(savedList)
+            } else {
+
+                Log.d(TAG, "setMediaRecyclerUi: No photos")
+
+                chatViewModel.chatDocumentsList.observe(viewLifecycleOwner) { it1 ->
+                    if (!it1.isNullOrEmpty()) {
+
+                        Log.d(TAG, "setMediaRecyclerUi: Documents yes")
+
+                        Log.d(TAG, "setMediaRecyclerUi: ${it1.map { it2 -> it2.mediaItem }}")
+                        
+                        binding.chatMediaProgress.hide()
+                        binding.chatMediaRecycler.show()
+                        binding.chatMediaHeader.show()
+
+                        savedList.clear()
+                        savedList.addAll(it1.take(minOf(6, it1.size)))
+
+                        mediaDocumentAdapter = MediaDocumentAdapter(mediaClickListener = this)
+                        binding.chatMediaRecycler.apply {
+                            adapter = mediaDocumentAdapter
+                            layoutManager = LinearLayoutManager(activity)
                         }
+
+                        mediaDocumentAdapter.submitList(savedList)
+                    } else {
+
+                        Log.d(TAG, "setMediaRecyclerUi: No documents")
+
+                        binding.chatMediaProgress.hide()
+                        binding.chatMediaRecycler.hide()
+                        binding.chatMediaHeader.hide()
                     }
                 }
             }
@@ -246,7 +259,6 @@ class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>
         val isCurrentUserAdministrator = chatChannel.administrators.contains(currentUserId)
 
         if (currentUser.id == focusedUser.id) {
-
             // the user has created the post, hence cannot leave post
             if (currentUser.posts.contains(chatChannel.postId))
                 return arrayListOf<String>() to arrayListOf()
@@ -255,13 +267,29 @@ class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>
         } else {
             return if (chatChannel.administrators.contains(focusedUser.id)) {
                 if (isCurrentUserAdministrator) {
-                    arrayListOf(option2, option3, option4) to arrayListOf(R.drawable.ic_round_remove_moderator_24, R.drawable.ic_round_report_24, R.drawable.ic_round_person_remove_24)
+                    arrayListOf(
+                        option2,
+                        option3,
+                        option4
+                    ) to arrayListOf(
+                        R.drawable.ic_round_remove_moderator_24,
+                        R.drawable.ic_round_report_24,
+                        R.drawable.ic_round_person_remove_24
+                    )
                 } else {
                     arrayListOf(option3) to arrayListOf(R.drawable.ic_round_report_24)
                 }
             } else {
                 if (isCurrentUserAdministrator) {
-                    arrayListOf(option1, option3, option4) to arrayListOf(R.drawable.ic_round_add_moderator_24, R.drawable.ic_round_report_24, R.drawable.ic_round_person_remove_24)
+                    arrayListOf(
+                        option1,
+                        option3,
+                        option4
+                    ) to arrayListOf(
+                        R.drawable.ic_round_add_moderator_24,
+                        R.drawable.ic_round_report_24,
+                        R.drawable.ic_round_person_remove_24
+                    )
                 } else {
                     arrayListOf(option3) to arrayListOf(R.drawable.ic_round_report_24)
                 }
@@ -274,27 +302,32 @@ class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>
     }
 
     override fun onUserClick(userId: String) {
-
+        activity.onUserClick(userId)
     }
 
     override fun onUserClick(userMinimal: UserMinimal2) {
-        activity.getUserImpulsive(userMinimal.objectID) {
-            onUserClick(it)
-        }
+        activity.onUserClick(userMinimal)
     }
 
     override fun onUserOptionClick(user: User) {
         val optionsListPair = getFilteredOptionsList(user)
         if (optionsListPair.first.isNotEmpty()) {
-            activity.optionsFragment = OptionsFragment.newInstance(null, optionsListPair.first, optionsListPair.second, chatChannel = chatChannel, user = user)
-            activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
+            activity.optionsFragment = OptionsFragment.newInstance(
+                null,
+                optionsListPair.first,
+                optionsListPair.second,
+                chatChannel = chatChannel,
+                user = user
+            )
+            activity.optionsFragment?.show(
+                activity.supportFragmentManager,
+                OptionsFragment.TAG
+            )
         }
     }
 
     override fun onUserOptionClick(userMinimal: UserMinimal2) {
-        activity.getUserImpulsive(userMinimal.objectID) {
-            onUserOptionClick(it)
-        }
+        activity.onUserOptionClick(userMinimal)
     }
 
     override fun onUserLikeClick(user: User) {
@@ -302,17 +335,64 @@ class ChatDetailFragment: BaseFragment<FragmentChatDetailBinding, MainViewModel>
     }
 
     override fun onUserLikeClick(userId: String) {
-
+        activity.onUserLikeClick(userId)
     }
 
     override fun onUserLikeClick(userMinimal: UserMinimal2) {
-        activity.getUserImpulsive(userMinimal.objectID) {
-            onUserLikeClick(it)
-        }
+        activity.onUserLikeClick(userMinimal)
     }
 
-    override fun getViewBinding(): FragmentChatDetailBinding {
-        return FragmentChatDetailBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentChatDetailBinding {
+        if (chatChannel.type != CHANNEL_PRIVATE) {
+            setMenu(R.menu.chat_detail_fragment_menu, {
+                when (it.itemId) {
+                    R.id.chat_option -> {
+                        val (a, b) = if (post?.isMadeByMe == true) {
+                            val option = if (post?.archived == true) {
+                                OPTION_13
+                            } else {
+                                OPTION_12
+                            }
+
+                            arrayListOf(OPTION_15, option) to arrayListOf(
+                                R.drawable.ic_round_edit_note_24,
+                                R.drawable.ic_round_archive_24
+                            )
+                        } else {
+                            arrayListOf(OPTION_14) to arrayListOf(R.drawable.ic_round_report_24)
+                        }
+
+                        activity.optionsFragment = OptionsFragment.newInstance(
+                            options = a,
+                            title = post?.name,
+                            icons = b,
+                            post = post
+                        )
+                        activity.optionsFragment?.show(
+                            requireActivity().supportFragmentManager,
+                            OptionsFragment.TAG
+                        )
+
+                    }
+                }
+                true
+            }) {
+
+            }
+        }
+        return FragmentChatDetailBinding.inflate(inflater)
+    }
+
+    override fun onMediaPostItemClick(mediaItems: List<MediaItem>, currentPos: Int) {
+
+    }
+
+    override fun onMediaMessageItemClick(message: Message) {
+
+    }
+
+    override fun onMediaClick(mediaItemWrapper: MediaItemWrapper, pos: Int) {
+        activity.showMediaFragment(savedList.map { it.mediaItem }, pos)
     }
 
 }

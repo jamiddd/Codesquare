@@ -11,15 +11,8 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
 import android.util.Log
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.Lifecycle.Event.*
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.preference.PreferenceManager
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
@@ -90,7 +83,7 @@ class LocationProvider2 {
     private val locationCallback: LocationCallback = object : LocationCallback() {
         override fun onLocationResult(locationResult: LocationResult) {
             currentLocation = locationResult.lastLocation
-            locationStateListener?.onLastLocationReceived(locationResult.lastLocation)
+            locationResult.lastLocation?.let { locationStateListener?.onLastLocationReceived(it) }
             stopLocationUpdates()
         }
     }

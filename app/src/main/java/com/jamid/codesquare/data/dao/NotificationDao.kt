@@ -23,7 +23,7 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Query("SELECT * FROM notifications ORDER BY createdAt DESC LIMIT 1")
     abstract suspend fun getLastNotification(): Notification?
 
-    @Query("SELECT * FROM notifications WHERE read = 0 AND isReceived = 1 ORDER BY updatedAt DESC")
+    @Query("SELECT * FROM notifications WHERE read = 0 ORDER BY updatedAt DESC")
     abstract fun allUnreadNotifications(): LiveData<List<Notification>>
 
     @Query("DELETE FROM notifications")
@@ -44,7 +44,11 @@ abstract class NotificationDao: BaseDao<Notification>() {
     @Query("UPDATE notifications SET read = 1 WHERE type = 1 AND read = 0")
     abstract suspend fun updateAllRequestNotificationsToRead()
 
-    @Query("UPDATE notifications SET read = 1 WHERE type = -1 AND read = 0")
+    @Query("UPDATE notifications SET read = 1 WHERE type = 2 AND read = 0")
     abstract suspend fun updateAllInviteNotificationsToRead()
+
+    @Query("SELECT * FROM notifications WHERE read = 0 ORDER BY updatedAt DESC")
+    abstract suspend fun getUnreadNotificationsAlt(): List<Notification>
+
 
 }

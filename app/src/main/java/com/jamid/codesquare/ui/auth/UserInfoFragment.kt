@@ -2,14 +2,14 @@ package com.jamid.codesquare.ui.auth
 
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
@@ -21,22 +21,20 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.InterestItemAdapter
 import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
 import com.jamid.codesquare.data.InterestItem
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.SearchQuery
+import com.jamid.codesquare.data.UserUpdate
 import com.jamid.codesquare.databinding.FragmentUserInfoBinding
 import com.jamid.codesquare.listeners.InterestItemClickListener
 import com.jamid.codesquare.listeners.SearchItemClickListener
-import com.jamid.codesquare.ui.AddTagsFragment
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-@ExperimentalPagingApi
-class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), SearchItemClickListener, InterestItemClickListener {
+class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClickListener, InterestItemClickListener {
 
-    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var searchResultsAdapter: SearchResultsAdapter
     private var currentList: List<SearchQuery> = emptyList()
 
-    @Suppress("UNCHECKED_CAST")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -78,7 +76,7 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
             var about = ""
             val aboutText = binding.aboutText.text
             if (!aboutText.isNullOrBlank()) {
-                about = aboutText.toString()
+                about = aboutText.trim().toString()
                 currentUser.about = about
             }
 
@@ -93,16 +91,36 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
 
             currentUser.interests = interests
 
-            FireUtility.updateUser2(mapOf("interests" to interests, "about" to about)) {
-                binding.setupCompleteProgress.hide()
-                if (it.isSuccessful) {
-                    findNavController().navigate(R.id.homeFragment, null, slideRightNavOptions())
-                } else {
-                    binding.doneBtn.show()
-                    viewModel.setCurrentError(it.exception)
+            val photo = if (currentUser.photo.isNotBlank()) {
+                currentUser.photo.toUri()
+            } else {
+                null
+            }
+            val userUpdate = UserUpdate(
+                null,
+                null,
+                photo,
+                false,
+                null,
+                about,
+                interests
+            )
+
+            runOnBackgroundThread {
+                when (val result = FireUtility.updateUser3(userUpdate)) {
+                    is Result.Error -> {
+                        runOnMainThread {
+                            binding.doneBtn.show()
+                            Log.e(TAG, "onViewCreated: ${result.exception.localizedMessage}")
+                        }
+                    }
+                    is Result.Success -> {
+                        runOnMainThread {
+                            findNavController().navigate(R.id.action_userInfoFragment_to_navigationHome)
+                        }
+                    }
                 }
             }
-
         }
 
         viewModel.recentSearchList.observe(viewLifecycleOwner) {
@@ -127,7 +145,7 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
                 viewModel.searchInterests(it.toString())
 
                 binding.interestSearchTextInputLayout.setEndIconOnClickListener {
-                    val tag = binding.interestSearchText.text.toString()
+                    val tag = binding.interestSearchText.text?.trim().toString()
                     insertInterestItem(tag)
                     binding.interestSearchText.text?.clear()
                 }
@@ -167,53 +185,6 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
         }
     }
 
-    /*private fun preloadInterests(interests: List<String>){
-        val newInterests = interests.shuffled()
-
-        for (i in newInterests) {
-            binding.interestsContainer.addTag(i)
-        }
-    }
-
-    private fun FlexboxLayout.addTag(s: String, checked: Boolean = false) {
-        s.trim()
-        val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
-        chip.text = s
-        chip.isCheckable = true
-        chip.isChecked = checked
-        chip.isCloseIconVisible = false
-        chip.tag = s
-
-        fun onAdded() {
-            chip.updateLayoutParams<FlexboxLayout.LayoutParams> {
-                marginEnd = resources.getDimension(R.dimen.generic_len).toInt()
-                marginStart = resources.getDimension(R.dimen.zero).toInt()
-            }
-        }
-
-        if (currentList.find { it.queryString == s } == null) {
-            this.addView(chip, 0)
-            onAdded()
-        } else {
-            val oldChip = this.findViewWithTag<Chip>(s)
-            if (oldChip != null) {
-                oldChip.performClick()
-            } else {
-                this.addView(chip, 0)
-                onAdded()
-            }
-        }
-
-        chip.setOnClickListener {
-            this.removeView(chip)
-            if (chip.isChecked) {
-                this.addView(chip, 0)
-                onAdded()
-            }
-        }
-
-    }*/
-
     override fun onSearchItemClick(searchQuery: SearchQuery) {
         val interest = searchQuery.queryString
         insertInterestItem(interest)
@@ -241,7 +212,7 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
             if (it.isSuccessful) {
                 viewModel.insertInterestItem(interestItem)
             } else {
-                Log.e(AddTagsFragment.TAG, "onViewCreated: ${it.exception?.localizedMessage}")
+                Log.e(TAG, "onViewCreated: ${it.exception?.localizedMessage}")
             }
         }
     }
@@ -264,16 +235,16 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding, MainViewModel>(), 
         viewModel.setSearchData(emptyList())
     }
 
-    override fun getViewBinding(): FragmentUserInfoBinding {
-        return FragmentUserInfoBinding.inflate(layoutInflater)
-    }
-
     override fun onInterestClick(interestItem: InterestItem) {
         if (interestItem.isChecked) {
             viewModel.uncheckInterestItem(interestItem)
         } else {
             viewModel.checkInterestItem(interestItem)
         }
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentUserInfoBinding {
+        return FragmentUserInfoBinding.inflate(inflater)
     }
 
 }

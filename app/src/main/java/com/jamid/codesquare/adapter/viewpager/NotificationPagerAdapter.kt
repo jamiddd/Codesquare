@@ -2,13 +2,11 @@ package com.jamid.codesquare.adapter.viewpager
 
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
-import androidx.paging.ExperimentalPagingApi
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.jamid.codesquare.ui.NotificationFragment
 import com.jamid.codesquare.ui.profile.PostInvitesFragment
 import com.jamid.codesquare.ui.profile.PostRequestFragment
 
-@ExperimentalPagingApi
 class NotificationPagerAdapter(fa: FragmentActivity): FragmentStateAdapter(fa) {
     override fun getItemCount() = 3
 

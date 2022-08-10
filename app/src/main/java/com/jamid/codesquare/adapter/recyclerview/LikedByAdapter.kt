@@ -3,26 +3,13 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.comparators.LikedByComparator
-import com.jamid.codesquare.data.LikedBy
+import com.jamid.codesquare.adapter.comparators.UserMinimalComparator
+import com.jamid.codesquare.data.UserMinimal
 
-class LikedByAdapter: PagingDataAdapter<LikedBy, UserViewHolder>(LikedByComparator()) {
+class LikedByAdapter: PagingDataAdapter<UserMinimal, UserViewHolder>(UserMinimalComparator()) {
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
-
         getItem(position)?.let {
-            holder.bind(it.userMinimal.toUser())
-/*
-            FireUtility.getUser(it.id) { it1 ->
-                val result = it1 ?: return@getUser
-                when (result) {
-                    is Result.Error -> {
-                        Log.e(TAG, "onBindViewHolder: Couldn't get user")
-                    }
-                    is Result.Success -> {
-                        holder.bind(result.data)
-                    }
-                }
-            }*/
+            holder.bind(it.toUser())
         }
     }
 

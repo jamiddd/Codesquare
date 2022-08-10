@@ -1,17 +1,31 @@
 package com.jamid.codesquare.ui
 
-import android.app.Dialog
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.annotation.LayoutRes
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import com.jamid.codesquare.R
 
-open class RoundedBottomSheetDialogFragment : BottomSheetDialogFragment() {
+/**
+ * "Use [com.jamid.codesquare.BaseBottomFragment] instead"
+ *
+ * */
+@Deprecated("")
+open class RoundedBottomSheetDialogFragment(@LayoutRes val layout: Int? = null) : BottomSheetDialogFragment() {
 
-    override fun getTheme(): Int = R.style.BottomSheetDialogTheme
-
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog = BottomSheetDialog(requireContext(), theme)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return if (layout == null) {
+            super.onCreateView(inflater, container, savedInstanceState)
+        } else {
+            inflater.inflate(layout, container, false)
+        }
+    }
 
     open fun setScrimVisibility(isVisible: Boolean) {
         val dialog = dialog

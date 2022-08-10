@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="@style/AppTheme.Fragment"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <TextView
+        android:id="@+id/upload_warning_info2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#F8F7F7"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:text="Files larger than 15 MB cannot be uploaded"
+        android:textColor="#595858"
+        app:layout_constraintBottom_toTopOf="@+id/browse_files"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/gallery_media_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@id/media_select_action_card"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/browse_files" />
+
+    <TextView
+        android:id="@+id/no_media"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No images or videos"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/browse_files"
+        style="@style/AppTheme.TextButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Browse in files ..."
+        android:textAllCaps="false"
+        app:cornerRadius="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/gallery_media_recycler"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/upload_warning_info2" />
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/media_select_action_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/gallery_media_recycler">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ProgressBar
+                android:id="@+id/upload_progress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                app:layout_constraintBottom_toTopOf="@+id/selected_media_recycler"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:visibility="visible" />
+
+            <View
+                android:id="@+id/divider12"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="?android:attr/listDivider"
+                app:layout_constraintBottom_toTopOf="@+id/media_send_btn"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <TextView
+                android:id="@+id/media_select_count_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="88dp"
+                app:layout_constraintBottom_toBottomOf="@+id/media_send_btn"
+                app:layout_constraintStart_toEndOf="@+id/upload_progress"
+                app:layout_constraintTop_toTopOf="@+id/media_send_btn" />
+
+            <Button
+                android:id="@+id/media_send_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Send"
+                android:textAllCaps="false"
+                app:layout_constraintBottom_toTopOf="@+id/selected_media_recycler"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/divider12" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/selected_media_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:backgroundTint="#F1F1F1"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/media_send_btn"
+                tools:itemCount="2"
+                tools:listitem="@layout/v_doc_layout"
+                tools:visibility="visible" />
+
+            <Button
+                android:id="@+id/clear_select"
+                style="@style/AppTheme.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="60dp"
+                android:text="Clear"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@+id/media_send_btn"
+                app:layout_constraintEnd_toStartOf="@+id/media_send_btn"
+                app:layout_constraintTop_toTopOf="@+id/media_send_btn" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    </androidx.cardview.widget.CardView>
+
+    <LinearLayout
+        android:id="@+id/select_scrim"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/darkest_transparent"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/gallery_media_recycler"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:visibility="visible"></LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

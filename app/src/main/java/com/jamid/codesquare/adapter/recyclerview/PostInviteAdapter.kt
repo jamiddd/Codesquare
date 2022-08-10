@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,7 +10,9 @@ import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.comparators.PostInviteComparator
 import com.jamid.codesquare.adapter.recyclerview.PostInviteAdapter.PostInviteViewHolder
 import com.jamid.codesquare.data.PostInvite
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.RequestItemBinding
+import com.jamid.codesquare.listeners.NotificationItemClickListener
 import com.jamid.codesquare.listeners.PostInviteListener
 
 class PostInviteAdapter : PagingDataAdapter<PostInvite, PostInviteViewHolder>(PostInviteComparator()) {
@@ -18,6 +21,7 @@ class PostInviteAdapter : PagingDataAdapter<PostInvite, PostInviteViewHolder>(Po
 
         private lateinit var binding: RequestItemBinding
         private val postInviteListener = view.context as PostInviteListener
+        private val notificationItemClickListener = view.context as NotificationItemClickListener
 
         fun bind(postInvite: PostInvite?) {
 
@@ -58,6 +62,19 @@ class PostInviteAdapter : PagingDataAdapter<PostInvite, PostInviteViewHolder>(Po
             }
 
             postInviteListener.onCheckForStaleData(postInvite)
+
+            FireUtility.getNotification(UserManager.currentUserId, postInvite.notificationId) {
+                val result = it ?:return@getNotification
+
+                when (result) {
+                    is Result.Error -> {
+                        Log.d(TAG, "bind: ${result.exception.localizedMessage}")
+                    }
+                    is Result.Success -> {
+                        notificationItemClickListener.onNotificationRead(result.data)
+                    }
+                }
+            }
 
         }
 

@@ -6,28 +6,21 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
-import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ImageSelectType
+import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.databinding.CircleImageLayoutBinding
 import com.jamid.codesquare.databinding.DefaultProfileImageSheetBinding
+import com.jamid.codesquare.listeners.ItemSelectResultListener
 
-@ExperimentalPagingApi
-class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
+class DefaultProfileImageSheet : BaseBottomFragment<DefaultProfileImageSheetBinding>(),
+    ItemSelectResultListener<MediaItem> {
 
-    private lateinit var binding: DefaultProfileImageSheetBinding
-    private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = DefaultProfileImageSheetBinding.inflate(inflater)
-        return binding.root
+    override fun onCreateBinding(inflater: LayoutInflater): DefaultProfileImageSheetBinding {
+        return DefaultProfileImageSheetBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -38,16 +31,26 @@ class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
         binding.selectFromDefault.setOnClickListener {
             if (binding.defaultProfileImgRecycler.isVisible) {
                 binding.defaultProfileImgRecycler.hide()
-                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_round_keyboard_arrow_down_24, 0)
+                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0,
+                    0,
+                    R.drawable.ic_round_keyboard_arrow_down_24,
+                    0
+                )
             } else {
                 binding.defaultProfileImgRecycler.show()
-                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, R.drawable.ic_round_keyboard_arrow_up_24, 0)
+                binding.selectFromDefault.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    0,
+                    0,
+                    R.drawable.ic_round_keyboard_arrow_up_24,
+                    0
+                )
             }
         }
 
         binding.defaultProfileImgRecycler.apply {
             adapter = DefaultProfileImagesAdapter(images)
-            layoutManager = GridLayoutManager(requireContext(), 3)
+            layoutManager = GridLayoutManager(activity, 3)
         }
 
         binding.removeSelectedImageBtn.setOnClickListener {
@@ -56,15 +59,19 @@ class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
         }
 
         binding.selectFromGalleryBtn.setOnClickListener {
-            (activity as MainActivity).selectImage(ImageSelectType.IMAGE_PROFILE)
-            dismiss()
+            val frag = GalleryFragment(false, ItemSelectType.GALLERY_ONLY_IMG, this)
+            frag.title = "Select image"
+            frag.primaryActionLabel = "Done"
+            frag.show(activity.supportFragmentManager, "GalleryFrag")
         }
 
     }
 
-    private inner class DefaultProfileImagesAdapter(private val images: List<String>): RecyclerView.Adapter<DefaultProfileImagesAdapter.DefaultProfileImageViewHolder>() {
+    private inner class DefaultProfileImagesAdapter(private val images: List<String>) :
+        RecyclerView.Adapter<DefaultProfileImagesAdapter.DefaultProfileImageViewHolder>() {
 
-        inner class DefaultProfileImageViewHolder(private val view: View): RecyclerView.ViewHolder(view) {
+        inner class DefaultProfileImageViewHolder(private val view: View) :
+            RecyclerView.ViewHolder(view) {
             fun bind(image: String) {
                 val layoutBinding = CircleImageLayoutBinding.bind(view)
                 layoutBinding.defaultProfileImg.setImageURI(image)
@@ -80,7 +87,10 @@ class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
             parent: ViewGroup,
             viewType: Int
         ): DefaultProfileImageViewHolder {
-            return DefaultProfileImageViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.circle_image_layout, parent, false))
+            return DefaultProfileImageViewHolder(
+                LayoutInflater.from(parent.context)
+                    .inflate(R.layout.circle_image_layout, parent, false)
+            )
         }
 
         override fun onBindViewHolder(holder: DefaultProfileImageViewHolder, position: Int) {
@@ -91,6 +101,32 @@ class DefaultProfileImageSheet: RoundedBottomSheetDialogFragment() {
             return images.size
         }
 
+    }
+
+    override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
+        if (items.isNotEmpty()) {
+            val singleImage = items.first().url
+            viewModel.setCurrentImage(singleImage.toUri())
+            val options = CropImageOptions().apply {
+                fixAspectRatio = true
+                aspectRatioX = 1
+                aspectRatioY = 1
+                cropShape = CropImageView.CropShape.OVAL
+                outputRequestHeight = 300
+                outputRequestWidth = 300
+            }
+
+            val frag = CropFragment2().apply {
+                image = singleImage
+                this.options = options
+            }
+            frag.show(activity.supportFragmentManager, CropFragment2.TAG)
+        }
+        dismiss()
+    }
+
+    companion object {
+        const val TAG = "DefaultProfileImage"
     }
 
 }

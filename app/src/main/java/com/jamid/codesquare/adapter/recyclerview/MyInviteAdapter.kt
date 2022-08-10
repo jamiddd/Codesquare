@@ -28,19 +28,12 @@ class MyInviteAdapter(private val inviteClickListener: PostMiniItemClickListener
             binding.postMiniImage.setImageURI(invite.post.image)
             binding.postMiniName.text = invite.post.name
 
-            FireUtility.getUser(invite.receiverId) {
-                val result = it ?: return@getUser
-
-                when (result) {
-                    is Result.Error -> Log.e(TAG, "bind: ${result.exception.localizedMessage}")
-                    is Result.Success -> {
-                        binding.postMiniInviteHelperText.show()
-                        val receiver = result.data
-                        val t = "Invite sent to ${receiver.name}"
-                        binding.postMiniInviteHelperText.text = t
-                    }
+            FireUtility.getUser(invite.receiverId) { user ->
+                if (user != null) {
+                    binding.postMiniInviteHelperText.show()
+                    val t = "Invite sent to ${user.name}"
+                    binding.postMiniInviteHelperText.text = t
                 }
-
             }
 
             binding.postMiniInviteBtn.text = "Revoke"

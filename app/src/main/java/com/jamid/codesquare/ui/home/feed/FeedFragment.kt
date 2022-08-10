@@ -1,22 +1,23 @@
 package com.jamid.codesquare.ui.home.feed
 
-import android.animation.LayoutTransition
-import android.annotation.SuppressLint
+import android.Manifest
 import android.content.IntentSender
 import android.location.Location
-import androidx.core.animation.doOnEnd
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
 import androidx.core.text.isDigitsOnly
-import androidx.core.view.doOnLayout
-import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.paging.PagingDataAdapter
+import androidx.paging.map
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.RecyclerView
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
@@ -25,113 +26,126 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter
 import com.jamid.codesquare.adapter.recyclerview.SuperPostViewHolder
-import com.jamid.codesquare.data.FeedOption
-import com.jamid.codesquare.data.FeedOrder.ASC
-import com.jamid.codesquare.data.FeedOrder.DESC
-import com.jamid.codesquare.data.FeedSort
-import com.jamid.codesquare.data.FeedSort.*
-import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.*
+import com.jamid.codesquare.databinding.FragmentPagerBinding
 import com.jamid.codesquare.listeners.LocationStateListener
-import com.jamid.codesquare.ui.PagerListFragment
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.ui.DefaultPagingFragment
+import kotlinx.coroutines.flow.map
 import java.util.*
 
-@ExperimentalPagingApi
-class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStateListener {
 
-    init {
-        shouldHideRecyclerView = true
+class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), LocationStateListener {
+
+    companion object {
+        private const val TAG = "FeedFragment"
     }
 
     private var searchInProgress = false
     private var locationBasedSnackBars: Snackbar? = null
     private lateinit var query: Query
-
     private var isLocationListenerSet = false
     private var lastUsedLocation: Location? = null
-
     private var isLocationReady = false
+    private var counter = 0
+    private var tooltipView: View? = null
 
-    @SuppressLint("InflateParams")
-    override fun onViewLaidOut() {
-        super.onViewLaidOut()
+    /* TODO("Get menu here, refine this")*/
+    private fun showCreateItemTooltip(){
+        val container = activity.binding.root
 
-        query = Firebase.firestore.collection(POSTS)
-            .whereEqualTo(ARCHIVED, false)
+        container.removeView(tooltipView)
 
-        binding.root.layoutTransition = LayoutTransition()
+        val createItem = requireActivity().findViewById<View>(R.id.create_post)
+        if (createItem != null) {
+            val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
+            val createProjectDialogFlag = sharedPref.getBoolean(PREF_CREATE_TOOLTIP, true)
+            if (createProjectDialogFlag) {
+                tooltipView = showTooltip(
+                    "Click here to create a new post", container, createItem,
+                    AnchorSide.Bottom
+                )
+                val editor = sharedPref.edit()
+                editor.putBoolean(PREF_CREATE_TOOLTIP, false)
+                editor.apply()
+            }
+        }
+    }
 
-        binding.pagerItemsRecycler.itemAnimator = null
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentPagerBinding {
+        setMenu(R.menu.home_menu, {
+            // Handle the menu selection
+            when (it.itemId) {
+                R.id.search -> {
+                    findNavController().navigate(R.id.preSearchFragment)
+                }
+                R.id.create_post -> {
+                    checkPermission(Manifest.permission.READ_EXTERNAL_STORAGE) { granted ->
+                        if (granted) {
+                            findNavController().navigate(R.id.createPostFragment)
+                        } else {
+                            activity.apply {
+                                currentRequest = Manifest.permission.READ_EXTERNAL_STORAGE
+                                permissionLauncher.launch(currentRequest)
+                            }
 
-        val largeBottomPadding = resources.getDimension(R.dimen.extra_comfort_len)
-        binding.pagerItemsRecycler.setPadding(0, 0, 0, largeBottomPadding.toInt())
-
-        binding.pagerItemsRecycler.doOnLayout {
-            if (!activity.initialLoadWaitFinished) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    delay(1000)
-                    activity.runOnUiThread {
-                        activity.initialLoadWaitFinished = true
-                        activity.binding.mainPrimaryBtn.show()
+                            viewModel.readPermission.observe(viewLifecycleOwner) { enabled ->
+                                if (enabled) {
+                                    findNavController().navigate(R.id.createPostFragment)
+                                }
+                            }
+                        }
                     }
+                }
+            }
+            true
+        }) {
+            runDelayed(2000) {
+                showCreateItemTooltip()
+            }
+        }
+        return super.onCreateBinding(inflater)
+    }
+
+    @OptIn(ExperimentalPagingApi::class)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        binding = FragmentPagerBinding.bind(view)
+
+        val mAuth = Firebase.auth
+        if (mAuth.currentUser == null) {
+            findNavController().navigate(R.id.action_feedFragment_to_navigation_auth)
+        } else {
+            FireUtility.getUser(mAuth.currentUser!!.uid) {
+                if (it != null) {
+                    UserManager.updateUser(it)
+                } else {
+                    findNavController().navigate(R.id.action_feedFragment_to_navigation_auth)
                 }
             }
         }
 
-        val defaultSetting = viewModel.feedOption.value
-
-        val pref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val isSettingsRemembered = pref.getBoolean("is_settings_remembered", false)
-        if (isSettingsRemembered) {
-            val filter = pref.getString("feed_filter", null)
-            val sort = pref.getString("feed_sort", getString(R.string.sort_time))!!
-            val order = pref.getString("feed_order", "desc")!!
-
-            val oldSetting = FeedOption(filter, getSortFromString(sort), getOrderFromString(order))
-            if (defaultSetting != oldSetting) {
-                // we need to use old setting
-                viewModel.setCurrentFeedOption(oldSetting)
-            } else {
-                // if default setting is same as old setting no need to anything
-            }
-        } else {
-            // if there is no old setting no need to do anything
+        binding.pagerItemsRecycler.apply {
+            val bottomPadding = resources.getDimension(R.dimen.large_padding).toInt()
+            setPadding(0, 0, 0, bottomPadding * 2)
         }
 
+        var query = Firebase.firestore.collection(POSTS)
+            .whereEqualTo(ARCHIVED, false)
 
-        binding.pagerItemsRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                hideNotifyBtnOnTop()
-            }
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                hideNotifyBtnOnTop()
-            }
-        })
-
-        viewModel.isNewPostCreated.observe(viewLifecycleOwner) {
-            if (it != null) {
-                if (it) {
-                    binding.notifyChip.show()
-                    // 100dp
-                    val dy = resources.getDimension(R.dimen.extra_comfort_len)
-                    binding.notifyChip.slideReset()
-
-                    binding.notifyChip.setOnClickListener {
-                        // scroll to top
-                        activity.findViewById<RecyclerView>(R.id.pager_items_recycler)?.smoothScrollToPosition(0)
-
-                        val anim = binding.notifyChip.slideUp(dy)
-                        anim.doOnEnd {
-                            binding.notifyChip.hide()
+        if (viewModel.feedOption.value == null) {
+            getItems(viewLifecycleOwner) {
+                viewModel.getFeedItems(query).map {
+                    it.map { p ->
+                        if (p.isAd) {
+                            Post2.Advertise(p.id)
+                        } else {
+                            Post2.Collab(p)
                         }
                     }
                 }
             }
         }
+
 
         viewModel.feedOption.observe(viewLifecycleOwner) { feedOption ->
             if (feedOption != null) {
@@ -149,8 +163,8 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
                 }
 
                 val order = when (feedOption.order) {
-                    ASC -> Query.Direction.ASCENDING
-                    DESC -> Query.Direction.DESCENDING
+                    FeedOrder.ASC -> Query.Direction.ASCENDING
+                    FeedOrder.DESC -> Query.Direction.DESCENDING
                 }
 
                 var shouldInitiate = true
@@ -159,13 +173,13 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
                     FeedSort.CONTRIBUTORS -> {
                         query = query.orderBy(CONTRIBUTORS_COUNT, order)
                     }
-                    LIKES -> {
+                    FeedSort.LIKES -> {
                         query = query.orderBy(LIKES_COUNT, order)
                     }
-                    MOST_VIEWED -> {
+                    FeedSort.MOST_VIEWED -> {
                         query = query.orderBy(VIEWS_COUNT, order)
                     }
-                    MOST_RECENT -> {
+                    FeedSort.MOST_RECENT -> {
                         //
                     }
                     FeedSort.LOCATION -> {
@@ -206,44 +220,89 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
                         tag
                     }
 
-                    getItems {
-                        viewModel.getFeedItems(query, s)
+                    getItems(viewLifecycleOwner) {
+                        viewModel.getFeedItems(query, s).map {
+                            it.map { p ->
+                                if (p.isAd) {
+                                    Post2.Advertise(p.id)
+                                } else {
+                                    Post2.Collab(p)
+                                }
+                            }
+                        }
                     }
 
                     binding.pagerRefresher.setOnRefreshListener {
-                        getItems {
-                            viewModel.getFeedItems(query, s)
+                        getItems(viewLifecycleOwner) {
+                            viewModel.getFeedItems(query, s).map {
+                                it.map { p ->
+                                    if (p.isAd) {
+                                        Post2.Advertise(p.id)
+                                    } else {
+                                        Post2.Collab(p)
+                                    }
+                                }
+                            }
                         }
+                        binding.pagerRefresher.isRefreshing = false
                     }
                 }
             }
         }
 
-        /*
 
-        FUTURE IMPLEMENTATION
 
-        viewModel.currentQuery.observe(viewLifecycleOwner){ currentQuery ->
-            if (currentQuery != null) {
-                getItems {
-                    viewModel.getFeedItems(currentQuery)
+        viewModel.isNewPostCreated.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it) {
+                    runDelayed(300) {
+                        Snackbar.make(
+                            activity.binding.root,
+                            "Post uploaded successfully.",
+                            Snackbar.LENGTH_LONG
+                        ).setAnchorView(activity.binding.mainPrimaryBottom).show()
+                        binding.pagerItemsRecycler.scrollToPosition(0)
+                    }
+                    viewModel.setCreatedNewPost(false)
                 }
             }
-        }*/
+        }
 
-    }
-
-    private fun hideNotifyBtnOnTop() {
-        if (binding.pagerItemsRecycler.scrollY <= 100) {
-            val y = resources.getDimension(R.dimen.appbar_slide_translation)
-            binding.notifyChip.slideUp(y).doOnEnd {
-                binding.notifyChip.hide()
+        viewModel.updatedOldPost.observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (it) {
+                    runDelayed(300) {
+                        Snackbar.make(
+                            activity.binding.root,
+                            "Post updated successfully",
+                            Snackbar.LENGTH_LONG
+                        ).setAnchorView(activity.binding.mainPrimaryBottom).show()
+                    }
+                    viewModel.setUpdatedOldPost(false)
+                }
             }
         }
+
+        binding.pagerItemsRecycler.post {
+            runDelayed(2000) {
+                onSplashFinished()
+            }
+        }
+
     }
 
+    private fun onSplashFinished() {
+        activity.splashFragment?.let {
+            activity.supportFragmentManager.beginTransaction()
+                .remove(it)
+                .commit()
+        }
+        activity.splashFragment = null
+    }
+
+    @OptIn(ExperimentalPagingApi::class)
     private fun searchBasedOnLocation(geoLocation: GeoLocation, tag: String? = null) {
-        if (!searchInProgress){
+        if (!searchInProgress) {
             searchInProgress = true
 
             val center = GeoLocation(geoLocation.latitude, geoLocation.longitude)
@@ -309,25 +368,25 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
                     viewModel.insertPosts(*posts)
                 }
 
-            getItems {
-                viewModel.getPostsNearMe()
+            getItems(viewLifecycleOwner) {
+                viewModel.getPostsNearMe().map { it.map { p -> if (p.isAd) {
+                    Post2.Advertise(p.id)
+                } else {
+                    Post2.Collab(p)
+                } } }
             }
         }
     }
 
-    companion object {
-        @JvmStatic
-        fun newInstance() = FeedFragment()
-    }
-
-    override fun getAdapter(): PagingDataAdapter<Post, SuperPostViewHolder> {
-        return PostAdapter()
+    override fun onDestroyView() {
+        super.onDestroyView()
+        onSplashFinished()
+        activity.detachFragmentFromLocationListener()
     }
 
     override fun onLocationSettingsReady() {
         isLocationReady = true
         binding.pagerRefresher.isRefreshing = true
-        /* there is a possibility that onLastLocationReceived be called twice */
     }
 
     override fun onLocationTurnOnRequestRejected() {
@@ -358,15 +417,29 @@ class FeedFragment: PagerListFragment<Post, SuperPostViewHolder>(), LocationStat
     private fun updateUiOnError(msg: String) {
         viewModel.setDefaultFeedOption()
         locationBasedSnackBars?.dismiss()
-
         locationBasedSnackBars = Snackbar.make(binding.root, msg, Snackbar.LENGTH_INDEFINITE)
         locationBasedSnackBars?.show()
     }
 
+    override fun getPagingAdapter(): PagingDataAdapter<Post2, SuperPostViewHolder> {
+        return PostAdapter(viewLifecycleOwner, activity)
+    }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        activity.detachFragmentFromLocationListener()
+    override fun onPagingDataChanged(itemCount: Int) {
+        //
+    }
+
+    override fun onNewDataAdded(positionStart: Int, itemCount: Int) {
+        //
+    }
+
+    override fun getDefaultInfoText(): String {
+        return "No posts at the moment"
+    }
+
+    override fun onPause() {
+        super.onPause()
+        counter = 0
     }
 
 }

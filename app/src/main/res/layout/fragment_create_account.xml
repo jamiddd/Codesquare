@@ -5,9 +5,13 @@
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/create_account_root"
+    android:clipToPadding="false"
+    android:paddingBottom="50dp"
     android:fillViewport="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/create_account_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 

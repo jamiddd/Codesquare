@@ -14,7 +14,6 @@ import com.jamid.codesquare.databinding.FragmentSubscriberBinding
 import com.jamid.codesquare.doOnAnimationEnd
 import com.jamid.codesquare.isNightMode
 
-@ExperimentalPagingApi
 class SubscriberFragment: Fragment() {
 
     private lateinit var binding: FragmentSubscriberBinding

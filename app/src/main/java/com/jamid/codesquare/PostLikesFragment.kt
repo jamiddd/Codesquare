@@ -1,38 +1,41 @@
 package com.jamid.codesquare
 
-import androidx.paging.ExperimentalPagingApi
+import android.os.Bundle
+import android.util.Log
+import android.view.View
 import androidx.paging.PagingDataAdapter
-import androidx.recyclerview.widget.DividerItemDecoration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.adapter.recyclerview.LikedByAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserViewHolder
-import com.jamid.codesquare.data.LikedBy
-import com.jamid.codesquare.ui.PagerListFragment
+import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.ui.DefaultPagingFragment
 
-@ExperimentalPagingApi
-class PostLikesFragment: PagerListFragment<LikedBy, UserViewHolder>() {
+class PostLikesFragment: DefaultPagingFragment<UserMinimal, UserViewHolder>() {
 
-    override fun getAdapter(): PagingDataAdapter<LikedBy, UserViewHolder> {
-        return LikedByAdapter()
-    }
-
-    override fun onViewLaidOut() {
-        super.onViewLaidOut()
-
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         val postId = arguments?.getString(POST_ID) ?: return
 
         val query = Firebase.firestore.collection(POSTS)
             .document(postId)
             .collection("likedBy")
 
-        getItems {
+        Log.d(TAG, "onViewCreated: $postId")
+
+        getItems(viewLifecycleOwner) {
             viewModel.getLikes(query)
         }
 
-        shouldShowImage = false
-
         binding.pagerNoItemsText.text = getString(R.string.no_users_found)
-
     }
+
+    override fun getPagingAdapter(): PagingDataAdapter<UserMinimal, UserViewHolder> {
+        return LikedByAdapter()
+    }
+
+    override fun getDefaultInfoText(): String {
+        return "No likes for this post"
+    }
+
 }

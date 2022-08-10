@@ -1,411 +1,413 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.util.Log
-import android.view.*
-import androidx.coordinatorlayout.widget.CoordinatorLayout
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.activity.OnBackPressedCallback
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.core.view.children
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.SnapHelper
-import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.tabs.TabLayout
 import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.ImageAdapter
-import com.jamid.codesquare.data.ImageSelectType
-import com.jamid.codesquare.data.Location
-import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentCreatePostBinding
 import com.jamid.codesquare.listeners.AddTagsListener
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.jamid.codesquare.listeners.ChipClickListener
+import com.jamid.codesquare.listeners.ItemSelectResultListener
+import com.jamid.codesquare.listeners.MediaClickListener
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
-@ExperimentalPagingApi
-class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>(), AddTagsListener {
-
-    override val viewModel: MainViewModel by activityViewModels()
-    
-    private lateinit var imageAdapter: ImageAdapter
-    private var imagesCount = 0
+// TODO("Add create post reactive form")
+class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
+    AddTagsListener,
+    ItemSelectResultListener<MediaItem>, ChipClickListener, MediaClickListener {
 
     private var isUpdateMode = false
+    private var hasInitiated = false
+    var currentCropPos = -1
+    private var startTime = System.currentTimeMillis()
+    private var thumbnailUrl: String? = null
+
+    private var currentDialogFrag: BottomSheetDialogFragment? =  null
 
     private fun onUpdatePost(post: Post) {
-        activity.findViewById<MaterialToolbar>(R.id.main_toolbar).title = getString(R.string.update_post)
+        activity.binding.mainToolbar.title =
+            getString(R.string.update_post)
         isUpdateMode = true
-
-        binding.postTitleText.disable()
-
+        thumbnailUrl = post.thumbnail
         viewModel.setCurrentPost(post)
-    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.create_post_menu, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        super.onOptionsItemSelected(item)
-        return when (item.itemId) {
-            R.id.create_post -> {
-
-                // instead of toasts we will use helper text of text input layout
-                if (!validatePostContent())
-                    return true
-
-                /*viewModel.setCurrentPostTitle(getTitle())
-                viewModel.setCurrentPostTags(getTags())
-                viewModel.setCurrentPostContent(getContent())
-                viewModel.setCurrentPostLinks(getLinks())*/
-
-                if (isUpdateMode) {
-                    val dialogFragment = MessageDialogFragment.builder(getString(R.string.update_post_loading))
-                        .setIsHideable(false)
-                        .setIsDraggable(false)
-                        .shouldShowProgress(true)
-                        .build()
-
-                    dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
-
-                    viewModel.updatePost { newPost, task ->
-                        activity.runOnUiThread {
-                            dialogFragment.dismiss()
-                            if (task.isSuccessful) {
-                                val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
-                                Snackbar.make(mainRoot, "Post updated successfully", Snackbar.LENGTH_LONG).show()
-
-                                viewModel.deletePostById(newPost.id)
-
-                                // updating local post
-                                viewModel.insertPosts(newPost)
-                                viewModel.setCurrentPost(null)
-                                findNavController().navigateUp()
-                            } else {
-                                viewModel.setCurrentError(task.exception)
-                            }
-                        }
-                    }
-                } else {
-                    val dialogFragment = MessageDialogFragment
-                        .builder(getString(R.string.create_post_loading))
-                        .setIsDraggable(false)
-                        .setIsHideable(false)
-                        .shouldShowProgress(true)
-                        .build()
-
-                    dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
-
-                    viewModel.createPost {
-                        activity.runOnUiThread {
-                            dialogFragment.dismiss()
-                            if (it.isSuccessful) {
-                                viewModel.setCreatedNewPost(true)
-
-                                findNavController().navigateUp()
-                                viewModel.setCurrentPost(null)
-
-                                val mainRoot = activity.findViewById<CoordinatorLayout>(R.id.main_container_root)
-                                Snackbar.make(mainRoot, "Post uploaded successfully.", Snackbar.LENGTH_LONG)
-                                    .setBehavior(NoSwipeBehavior())
-                                    .show()
-                            } else {
-                                viewModel.setCurrentError(it.exception)
-                            }
-                        }
-                    }
-                }
-
-                true
-            }
-            else -> true
-        }
-    }
-
-    private fun getLinks(): List<String> {
-        val links = mutableListOf<String>()
-        for (child in binding.postLinksContainer.children) {
-            val chip = child as Chip
-            val link = chip.text.toString()
-            if (link != getString(R.string.add_link)) {
-                links.add(link)
-            }
-        }
-        return links
+        val mediaItems = convertMediaListToMediaItemList(post.mediaList, post.mediaString)
+        viewModel.setCreatePostMediaList(mediaItems)
     }
 
     private fun validatePostContent(): Boolean {
-        if (binding.postTitleText.editText?.text.isNullOrBlank()) {
-            binding.postTitleText.isErrorEnabled = true
-            binding.postTitleText.error = "Title cannot be empty."
+        if (binding.postTitleText.editText?.text?.trim().isNullOrBlank()) {
+            binding.postTitleText.showError("Title cannot be empty.")
             return false
         }
 
-        if (binding.postTitleText.editText?.text.toString().length !in 6..100) {
-            binding.postTitleText.isErrorEnabled = true
-            binding.postTitleText.error = "Title must be longer than 5 characters and shorter than 100 characters."
+        if (binding.postTitleText.editText?.text?.trim().toString().length !in 6..100) {
+            binding.postTitleText.showError( "Title must be longer than 5 characters and shorter than 100 characters.")
             return false
         }
 
-        if (binding.postContentText.editText?.text.isNullOrBlank()) {
-            binding.postContentText.isErrorEnabled = true
-            binding.postContentText.error = "Content must not be empty."
+        if (binding.postContentText.editText?.text?.trim().isNullOrBlank()) {
+            binding.postContentText.showError("Content must not be empty.")
             return false
         }
 
-        val currentPost = viewModel.currentPost.value
-        return if (currentPost != null) {
-            if (currentPost.images.isEmpty()) {
-                Snackbar.make(binding.root, "Must include at least one image for the post.", Snackbar.LENGTH_LONG).show()
-                false
-            } else {
-                true
-            }
+
+        if (thumbnailUrl == null) {
+            Snackbar.make(binding.root, "Couldn't generate thumbnail for this post. Try re-selecting media items.", Snackbar.LENGTH_LONG)
+                .setAnchorView(binding.createPostActions)
+                .show()
+            return false
+        }
+
+        val currentMediaList = viewModel.createPostMediaList.value
+        return if (currentMediaList.isNullOrEmpty()) {
+            Snackbar.make(binding.root, "No media items selected.", Snackbar.LENGTH_LONG)
+                .setAnchorView(binding.createPostActions)
+                .show()
+            return false
         } else {
-            false
+            true
         }
+    }
+
+    override fun onMediaItemsAdded() {
+        super.onMediaItemsAdded()
+        binding.uploadError.hide()
+    }
+
+    override fun onMediaLayoutItemRemoved(pos: Int) {
+        super.onMediaLayoutItemRemoved(pos)
+        viewModel.deleteMediaItemAtPosition(pos)
+        binding.uploadError.hide()
+    }
+
+    override fun onMediaLayoutCleared() {
+        super.onMediaLayoutCleared()
+        viewModel.clearCreatePostMediaItems()
+        binding.uploadError.hide()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val tabLayout = activity.findViewById<TabLayout>(R.id.main_tab_layout)
-        tabLayout.hide()
 
         val currentUser = UserManager.currentUser
         val prevPost = arguments?.getParcelable<Post>(PREVIOUS_POST)
         if (prevPost != null) {
             onUpdatePost(prevPost)
         } else {
-            Log.d(TAG, "onViewCreated: Creating new post")
             val newPost = Post.newInstance(currentUser)
             viewModel.setCurrentPost(newPost)
         }
 
-        setNonReactiveUiOnStartAndResume()
-
-
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
 
-        imageAdapter = ImageAdapter()
+        prefill()
 
-        val helper: SnapHelper = LinearSnapHelper()
-        val imagesManager = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        setBottomActions()
+        setNavigation()
+        setMediaRecycler()
 
-        binding.postImagesRecycler.apply {
-            adapter = imageAdapter
-            onFlingListener = null
-            helper.attachToRecyclerView(this)
-            layoutManager = imagesManager
-        }
-
-        binding.postContentText.editText?.doAfterTextChanged {
-            binding.postContentText.isErrorEnabled = false
-            binding.postContentText.error = null
-        }
-
-        binding.postTitleText.editText?.doAfterTextChanged {
-            binding.postTitleText.isErrorEnabled = false
-            binding.postTitleText.error = null
-        }
-
-
-        binding.removeCurrentImgBtn.setOnClickListener {
-            val pos = imagesManager.findFirstCompletelyVisibleItemPosition()
-            viewModel.deletePostImageAtPosition(pos)
-        }
-
-        binding.addImagesBtn.setOnClickListener {
-            activity.selectImage(ImageSelectType.IMAGE_POST)
-        }
-
-        binding.clearAllImagesBtn.setOnClickListener {
-            viewModel.setCurrentPostImages(emptyList())
-        }
-
-        binding.addMoreImagesBtn.setOnClickListener {
-            activity.selectImage(ImageSelectType.IMAGE_POST)
-        }
-
-        binding.addTagBtn.setOnClickListener {
-            val frag = AddTagsFragment.builder()
-                .setTitle("Add tag to post")
-                .setIsDraggable(false)
-                .setListener(this)
-                .build()
-
-            frag.show(requireActivity().supportFragmentManager, AddTagsFragment.TAG)
-        }
-
-        binding.addLinkBtn.setOnClickListener {
-
-            val frag = InputSheetFragment.builder("Add links to your existing post sources or files. Ex. Github, Google drive, etc.")
-                .setTitle("Add link to post")
-                .setHint("Ex: https://wwww.google.com")
-                .setMessage("Make sure to give a proper url.")
-                .setPositiveButton("Add link") { _, _, s ->
-
-                    // this cannot be an url
-                    if (!s.contains('.')) {
-                        Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG).show()
-                        return@setPositiveButton
-                    }
-
-                    if (s.startsWith('.') || s.endsWith('.')) {
-                        Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG).show()
-                        return@setPositiveButton
-                    }
-
-                    addLink(s)
-
-                }.setNegativeButton("Cancel") { a, _ ->
-                    a.dismiss()
-                }.build()
-
-            frag.show(activity.supportFragmentManager, "InputSheetFrag")
-        }
-
-        binding.postImagesRecycler.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                val pos = imagesManager.findFirstCompletelyVisibleItemPosition()
-                if (pos != -1) {
-                    val counterText = "${pos + 1}/$imagesCount"
-                    binding.imageCounter.text = counterText
+        childFragmentManager.addFragmentOnAttachListener { _, fragment ->
+            when (fragment.tag) {
+                AddTagsFragment.TAG, InputSheetFragment.TAG, LocationFragment.TAG -> {
+                    showKeyboardDelayed()
                 }
+                GalleryFragment.TAG -> {
+                    hideKeyboard()
+                }
+            }
+        }
+
+    }
+
+    private fun showKeyboardDelayed() {
+        runDelayed(1000) {
+            if (keyboardState.value != true) {
+                showKeyboard()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        prefill()
+    }
+
+    private fun setBottomActions() {
+
+        runDelayed(1000) {
+            binding.addTagBtn.setOnClickListener {
+                val tags = getTags()
+                currentDialogFrag = AddTagsFragment.builder()
+                    .setTitle("Add tag to post")
+                    .setPrefill(tags)
+                    .setListener(this)
+                    .build()
+
+                currentDialogFrag?.show(childFragmentManager, AddTagsFragment.TAG)
+            }
+            binding.addLocationBtn.setOnClickListener {
+                currentDialogFrag = LocationFragment()
+                currentDialogFrag?.show(childFragmentManager, LocationFragment.TAG)
+            }
+            binding.addLinkBtn.setOnClickListener {
+                currentDialogFrag =
+                    InputSheetFragment.builder("Add links to your existing post sources or files. Ex. Github, Google drive, etc.")
+                        .setTitle("Add link to post")
+                        .setHint("Ex: https://wwww.google.com")
+                        .setMessage("Make sure to give a proper url.")
+                        .setPositiveButton("Add link") { _, _, s ->
+
+                            // this cannot be an url
+                            if (!s.contains('.')) {
+                                Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
+                                    .show()
+                                return@setPositiveButton
+                            }
+
+                            if (s.startsWith('.') || s.endsWith('.')) {
+                                Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
+                                    .show()
+                                return@setPositiveButton
+                            }
+
+                            addLink(s)
+
+                        }.setNegativeButton("Cancel") { a, _ ->
+                            a.dismiss()
+                        }.build()
+
+                currentDialogFrag?.show(childFragmentManager, InputSheetFragment.TAG)
+            }
+
+            binding.addMediaBtn.setOnClickListener {
+                currentDialogFrag = GalleryFragment(itemSelectResultListener = this).apply {
+                    title = "Select items"
+                    primaryActionLabel = "Select"
+                }
+                currentDialogFrag?.show(childFragmentManager, GalleryFragment.TAG)
+            }
+        }
+    }
+
+    private fun onBackPressed() {
+        viewModel.setCurrentImage(null)
+        viewModel.clearCreatePostMediaItems()
+        findNavController().navigateUp()
+    }
+
+    private fun setNavigation() {
+        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner, object :
+            OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                onBackPressed()
             }
         })
 
-        setPostObserver()
+        activity.binding.mainToolbar.setNavigationOnClickListener {
+            viewModel.clearCreatePostMediaItems()
+            onBackPressed()
+        }
+    }
 
-       /* val sharedPref = PreferenceManager.getDefaultSharedPreferences(requireContext())
-        val isCreatingPostFirstTime = sharedPref.getBoolean("isCreatingPostFirstTime", true)
-        if (isCreatingPostFirstTime) {
-            viewLifecycleOwner.lifecycleScope.launch {
+    private fun setMediaRecycler() {
+        runDelayed(1000) {
+            val helper: SnapHelper = LinearSnapHelper()
 
-                delay(1000)
+            val lm = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
 
-                if (this@CreatePostFragment.isVisible) {
-                    val frag = MessageDialogFragment.builder(getString(R.string.create_post_info))
-                        .setTitle("Creating your post .. ")
-                        .build()
+            var totalCount = 0
 
-                    frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-                    val editor = sharedPref.edit()
-                    editor.putBoolean("isCreatingPostFirstTime", false)
-                    editor.apply()
+            fun setCounterText(currentPos: Int) {
+                if (totalCount != 0) {
+                    binding.mediaHelperLayout.mediaItemCounter.show()
+                    val t = "$currentPos/$totalCount"
+                    binding.mediaHelperLayout.mediaItemCounter.text = t
+                } else {
+                    binding.mediaHelperLayout.mediaItemCounter.hide()
                 }
             }
-        }*/
 
-    }
+            val mediaAdapter = MediaAdapter("", false, this)
 
-    private fun setImagesUi(images: List<String>) {
-        if (images.isNotEmpty()) {
-            val newImages = checkForSizeIssues(images)
 
-            if (newImages.size > images.size) {
-                viewModel.setCurrentPostImages(newImages)
-                return
-            }
+            binding.mediaHelperLayout.imageCropBtn.show()
+            binding.mediaHelperLayout.imageCropBtn.setOnClickListener {
+                val pos = lm.findFirstVisibleItemPosition()
+                currentCropPos = pos
+                val item = viewModel.createPostMediaList.value!![pos]
 
-            imageAdapter.submitList(images)
-
-            imagesCount = images.size
-
-            updateLayoutOnImagesLoaded()
-
-            val counterText = "1/$imagesCount"
-            binding.imageCounter.text = counterText
-
-            binding.removeCurrentImgBtn.show()
-
-        } else {
-
-            Log.d(TAG, "onViewCreated: Images empty")
-
-            imageAdapter.submitList(emptyList())
-            updateBtnOnImageCleared()
-
-            binding.removeCurrentImgBtn.hide()
-        }
-    }
-
-    private fun checkForSizeIssues(images: List<String>): List<String> {
-        val imagesUris = images.map {
-            it.toUri()
-        }
-
-        val newImages = images.toMutableList()
-
-        imagesUris.forEachIndexed { _, uri ->
-            val cursor = activity.contentResolver.query(uri, null, null, null, null)
-
-            try {
-                cursor?.moveToFirst()
-                val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
-
-                val size = (cursor?.getLong(sizeIndex ?: 0) ?: 0)
-                cursor?.close()
-
-                if (size/1024 > 1024) {
-                    newImages.remove(uri.toString())
+                if (item.type == image) {
+                    if (item.url.toUri().scheme == "https" || item.url.toUri().scheme == "http") {
+                        Snackbar.make(binding.root, "This image cannot be cropped because this is an already uploaded image.", Snackbar.LENGTH_INDEFINITE)
+                            .setAnchorView(binding.createPostActions)
+                            .show()
+                    } else {
+                        val cropFragment = CropFragment2().apply {
+                            image = item.url
+                        }
+                        cropFragment.show(activity.supportFragmentManager, "CropFragment")
+                    }
+                } else {
+                    Snackbar.make(binding.root, "Video cannot be cropped.", Snackbar.LENGTH_LONG)
+                        .setAnchorView(binding.createPostActions)
+                        .show()
                 }
-
-            } catch (e: Exception) {
-                viewModel.setCurrentError(e)
             }
-        }
 
-        return newImages
+            viewModel.currentImage.observe(viewLifecycleOwner) {
+                if (it != null) {
+                    val metadata = getMetadataForFile(it)
+                    val mediaItem = if (metadata != null) {
+                        val mime = getMimeType(metadata.url.toUri())
+                        if (mime != null) {
+                            val type = if (mime.contains(video)) {
+                                video
+                            } else {
+                                image
+                            }
+
+                            if (type == image) {
+                                val img = compressImage(activity, it)
+                                if (img != null) {
+                                    MediaItem(img.toString(), metadata.name, image, mime, sizeInBytes = metadata.size, ext = metadata.ext)
+                                } else {
+                                    Log.e(TAG, "Something went wrong while compressing image.")
+                                    null
+                                }
+                            } else {
+                                if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                    MediaItem(it.toString(), metadata.name, video, mime, sizeInBytes = metadata.size, ext = metadata.ext)
+                                } else {
+                                    Log.e(TAG, "Video selection omitted because video size is too large.")
+                                    null
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Mime couldn't be generated for the given file: $it")
+                            null
+                        }
+                    } else {
+                        Log.e(TAG, "ActivityResult: Metadata of the $it is null")
+                        null
+                    }
+
+                    if (mediaItem != null) {
+                        if (currentCropPos != -1) {
+                            viewModel.updateCreatePostList(mediaItem, currentCropPos)
+                        }
+                    } else {
+                        Log.d(TAG, "setMediaRecycler: Media Item nulll")
+                    }
+
+                }
+            }
+
+
+            // setting up the recycler
+            binding.postMediaRecycler.apply {
+                mLifecycleOwner = viewLifecycleOwner
+                adapter = mediaAdapter
+
+                setMediaCounterText(binding.mediaHelperLayout.mediaItemCounter)
+
+                onFlingListener = null
+                helper.attachToRecyclerView(this)
+                layoutManager = lm
+                OverScrollDecoratorHelper.setUpOverScroll(binding.postMediaRecycler, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
+            }
+
+            binding.mediaHelperLayout.removeCurrentImgBtn.setOnClickListener {
+                val pos = lm.findFirstCompletelyVisibleItemPosition()
+                onMediaLayoutItemRemoved(pos)
+            }
+
+            binding.mediaHelperLayout.clearAllImagesBtn.setOnClickListener {
+                onMediaLayoutCleared()
+            }
+
+            viewModel.createPostMediaList.observe(viewLifecycleOwner) { mediaItems ->
+                if (!mediaItems.isNullOrEmpty()) {
+                    totalCount = mediaItems.size
+                    setCounterText(1)
+                    mediaAdapter.submitList(mediaItems)
+                    binding.postMediaContainer.show()
+
+                    runDelayed(500) {
+                        binding.postMediaRecycler.scrollToPosition(currentCropPos)
+                    }
+                } else {
+                    binding.postMediaContainer.hide()
+                }
+            }
+        }.invokeOnCompletion {
+            Log.d(TAG, "setMediaRecycler: Time[$startTime - ${System.currentTimeMillis()}]")
+        }
     }
 
-    private fun getTitle() = binding.postTitleText.editText?.text?.trim().toString()
-
-    private fun getContent() = binding.postContentText.editText?.text?.trim().toString()
 
     private fun getTags(): List<String> {
         val tags = mutableListOf<String>()
         for (child in binding.postTagsContainer.children) {
             val chip = child as Chip
             val tag = chip.text.toString()
-            if (tag != getString(R.string.add_tag)) {
-                tags.add(tag)
-            }
+            tags.add(tag)
         }
         return tags
     }
 
     private fun setTags(tags: List<String>) {
-        if (binding.postTagsContainer.childCount != 1) {
-            binding.postTagsContainer.removeViews(0, binding.postTagsContainer.childCount - 1)
-        }
-        for (tag in tags) {
-            addTag(tag)
-        }
+        binding.tagsHeader.isVisible = tags.isNotEmpty()
+        
+        binding.postTagsContainer.addTagChips(
+            tags,
+            true,
+            isDefaultTheme = false,
+            insertAtStart = true,
+            chipClickListener = this,
+            tag = CHIPS_TAGS
+        )
     }
 
     private fun setLinks(links: List<String>) {
-        if (binding.postLinksContainer.childCount != 1) {
-            binding.postLinksContainer.removeViews(0, binding.postLinksContainer.childCount - 1)
-        }
-        for (link in links) {
-            addLink(link)
+        binding.linksHeader.isVisible = links.isNotEmpty()
+
+        binding.postLinksContainer.addTagChips(
+            links,
+            true,
+            isDefaultTheme = false,
+            insertAtStart = true,
+            chipClickListener = this,
+            tag = CHIPS_LINKS
+        )
+    }
+
+    override fun onCloseIconClick(chip: Chip) {
+        super.onCloseIconClick(chip)
+        when (chip.tag) {
+            CHIPS_LINKS -> {
+                binding.postLinksContainer.removeView(chip)
+            }
+            CHIPS_TAGS -> {
+                binding.postTagsContainer.removeView(chip)
+            }
         }
     }
 
@@ -421,40 +423,11 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         binding.postTagsContainer.addView(chip, 0)
     }
 
-    private fun onChange() {
-        val title = getTitle()
-        viewModel.setCurrentPostTitle(title)
-
-        val content = getContent()
-        viewModel.setCurrentPostContent(content)
-
-        val tags = getTags()
-        viewModel.setCurrentPostTags(tags)
-
-        val links = getLinks()
-        viewModel.setCurrentPostLinks(links)
-    }
-
     private fun addLink(link: String) {
         link.trim()
         val chip = View.inflate(requireContext(), R.layout.choice_chip, null) as Chip
-
         chip.isCloseIconVisible = true
-
-        /*val splitLink = link.split(".")
-        if (splitLink.size > 2) {
-            if (splitLink[2].length > 3) {
-                val linkText = link.substring(0, 12) + "..."
-                chip.text = linkText
-                // trim
-            } else {
-                chip.text = link
-            }
-        } else {
-        }*/
         chip.text = link
-
-
         chip.isCheckable = false
         chip.setOnCloseIconClickListener {
             binding.postLinksContainer.removeView(chip)
@@ -483,20 +456,6 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         }
     }
 
-    private fun updateLayoutOnImagesLoaded() {
-        binding.addImagesBtn.hide()
-        binding.imagesEditorLayout.show()
-    }
-
-    private fun updateBtnOnImageCleared() {
-        binding.addImagesBtn.show()
-        binding.imagesEditorLayout.hide()
-    }
-
-    override fun getViewBinding(): FragmentCreatePostBinding {
-        return FragmentCreatePostBinding.inflate(layoutInflater)
-    }
-
     override fun onTagsSelected(tags: List<String>) {
 
         val existingTags = getTags()
@@ -508,64 +467,81 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         setTags(allTags.distinct())
     }
 
+    private fun prefill() {
+        if (!hasInitiated) {
+            hasInitiated = true
+            runDelayed(500) {
+                val currentPostState = viewModel.currentPost.value
+                if (currentPostState != null) {
 
-    override fun onResume() {
-        super.onResume()
-        setNonReactiveUiOnStartAndResume()
-    }
 
-    fun setNonReactiveUiOnStartAndResume() = viewLifecycleOwner.lifecycleScope.launch {
+                    /* This is must because the title and content are not refreshed
+                    all the time by the observer, since it may lead to infinite loop */
 
-        delay(500)
+                    binding.postTitleText.editText?.setText(currentPostState.name)
+                    binding.postContentText.editText?.setText(currentPostState.content)
 
-        val currentPostState = viewModel.currentPost.value
-        if (currentPostState != null) {
+                    Log.d(TAG, "setNonReactiveUiOnStartAndResume: ${currentPostState.tags.size}")
 
-            Log.d(TAG, "setNonReactiveUiOnStartAndResume: $currentPostState")
+                    setTags(currentPostState.tags)
+                    setLinks(currentPostState.sources)
+                }
 
-            /* This is must because the title and content are not refreshed
-            all the time by the observer, since it may lead to infinite loop */
-
-            binding.postTitleText.editText?.setText(currentPostState.name)
-            binding.postContentText.editText?.setText(currentPostState.content)
-            setTags(currentPostState.tags)
-            setLinks(currentPostState.sources)
+                setPostObserver()
+            }
         }
     }
 
-    fun setLocationTextUi(location: Location) {
+
+    private fun setLocationTextUi(location: Location) {
         if (location.address.isNotBlank()) {
+
+            binding.postLocationText.show()
+
             binding.postLocationText.text = location.address
 
-            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_location_on_small, 0, 0, 0)
+            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                R.drawable.ic_round_location_on_small,
+                0,
+                0,
+                0
+            )
 
             binding.postLocationText.setOnClickListener {
-                val frag = MessageDialogFragment.builder("Are you sure you want to remove location attached to this post?")
-                    .setTitle("Removing location ...")
-                    .setPositiveButton("Remove") { _, _ ->
-                        viewModel.setCurrentPostLocation(Location())
-                    }
-                    .setNegativeButton("Cancel") { d, _ ->
-                        d.dismiss()
-                    }
-                    .build()
+                val frag =
+                    MessageDialogFragment.builder("Are you sure you want to remove location attached to this post?")
+                        .setTitle("Removing location ...")
+                        .setPositiveButton("Remove") { _, _ ->
+                            viewModel.setCurrentPostLocation(Location())
+                        }
+                        .setNegativeButton("Cancel") { d, _ ->
+                            d.dismiss()
+                        }
+                        .build()
 
                 frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
             }
         } else {
-            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_round_add_location_small, 0, 0, 0)
+
+            binding.postLocationText.hide()
+
+            binding.postLocationText.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                R.drawable.ic_round_add_location_small,
+                0,
+                0,
+                0
+            )
 
             binding.postLocationText.text = getString(R.string.add_location)
 
-            binding.postLocationText .setOnClickListener {
+            binding.postLocationText.setOnClickListener {
                 val frag = LocationFragment()
                 frag.show(activity.supportFragmentManager, "LocationFragment")
             }
         }
     }
 
-    fun setReactiveUi(currentPost: Post) {
-        setImagesUi(currentPost.images)
+    private fun setReactiveUi(currentPost: Post) {
         setLocationTextUi(currentPost.location)
     }
 
@@ -585,12 +561,10 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
     * */
 
 
-    fun setPostObserver() {
+    private fun setPostObserver() {
         viewModel.currentPost.observe(viewLifecycleOwner) { currentPost ->
             if (currentPost != null) {
                 setReactiveUi(currentPost)
-            } else {
-                updateBtnOnImageCleared()
             }
         }
 
@@ -601,10 +575,14 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
 
     }
 
-    fun setTitleObserver() {
+    private fun setTitleObserver() {
 
         /* To make sure the title always stays exactly the same as entered immediately */
         binding.postTitleText.editText?.doAfterTextChanged {
+
+            binding.postTitleText.error = null
+            binding.postTitleText.isErrorEnabled = false
+
             if (it.isNullOrBlank()) {
                 viewModel.setCurrentPostTitle("")
             } else {
@@ -613,9 +591,13 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         }
     }
 
-    fun setContentObserver() {
+    private fun setContentObserver() {
         /* To make sure content is always reflective */
         binding.postContentText.editText?.doAfterTextChanged {
+
+            binding.postContentText.error = null
+            binding.postContentText.isErrorEnabled = false
+
             if (it.isNullOrBlank()) {
                 viewModel.setCurrentPostContent("")
             } else {
@@ -624,29 +606,31 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         }
     }
 
-    fun setTagsObserver() {
+    private fun setTagsObserver() {
         binding.postTagsContainer.onChildrenChanged {
+
+            binding.tagsHeader.isVisible = binding.postTagsContainer.childCount != 0
+
             val tags = mutableListOf<String>()
             for (v in it) {
                 val chip = v as Chip
                 val tag = chip.text.toString()
-                if (tag != "Add tag") {
-                    tags.add(tag)
-                }
+                tags.add(tag)
             }
             viewModel.setCurrentPostTags(tags)
         }
     }
 
-    fun setLinksObserver() {
+    private fun setLinksObserver() {
         binding.postLinksContainer.onChildrenChanged {
+
+            binding.linksHeader.isVisible = binding.postLinksContainer.childCount != 0
+
             val links = mutableListOf<String>()
             for (v in it) {
                 val chip = v as Chip
                 val link = chip.text.toString()
-                if (link != "Add link") {
-                    links.add(link)
-                }
+                links.add(link)
             }
             viewModel.setCurrentPostLinks(links)
         }
@@ -664,5 +648,120 @@ class CreatePostFragment: BaseFragment<FragmentCreatePostBinding, MainViewModel>
         })
     }
 
+    override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
+        if (!items.isNullOrEmpty()) {
+            val mediaList = viewModel.createPostMediaList.value ?: emptyList()
+
+            // to maintain the order, in a way that the first image should always be the thumbnail
+            if (mediaList.isEmpty()) {
+                val postThumb = getObjectThumbnail(items.first().url.toUri())
+                if (postThumb != null) {
+                    val temp = convertBitmapToFile(postThumb)
+                    if (temp != null) {
+                        val uri = FileProvider.getUriForFile(requireContext(), FILE_PROV_AUTH, temp)
+                        if (uri != null) {
+                            /*viewModel.uploadPostThumbnail(uri)*/
+                            thumbnailUrl = uri.toString()
+                        }
+                    }
+                }
+            }
+
+            val newList = mutableListOf<MediaItem>()
+            newList.addAll(mediaList)
+            newList.addAll(items)
+
+            viewModel.setCreatePostMediaList(newList)
+        } else {
+            toast("NULL")
+        }
+    }
+
+    companion object {
+        private const val TAG = "CreatePostFragment"
+
+        private const val CHIPS_TAGS = "chip_tags"
+        private const val CHIPS_LINKS = "chip_links"
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentCreatePostBinding {
+        setMenu(R.menu.create_post_menu, {
+            when (it.itemId) {
+                R.id.create_post -> {
+
+                    if (!validatePostContent())
+                        return@setMenu true
+
+                    if (isUpdateMode) {
+                        val dialogFragment =
+                            MessageDialogFragment.builder(getString(R.string.update_post_loading))
+                                .setProgress()
+                                .build()
+
+                        dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
+
+                        viewModel.updatePost(thumbnailUrl!!) { newPost, task ->
+                            runOnMainThread {
+                                dialogFragment.dismiss()
+
+                                if (task.isSuccessful) {
+                                    viewModel.deletePostById(newPost.id)
+
+                                    // updating local post
+                                    viewModel.insertPosts(newPost)
+                                    viewModel.setCurrentPost(null)
+                                    viewModel.setUpdatedOldPost(true)
+                                    viewModel.clearCreatePostMediaItems()
+                                    findNavController().navigateUp()
+                                } else {
+                                    viewModel.setCurrentError(task.exception)
+                                }
+                            }
+                        }
+                    } else {
+
+                        val dialogFragment = MessageDialogFragment
+                            .builder(getString(R.string.create_post_loading))
+                            .setProgress()
+                            .build()
+
+                        dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
+
+                        viewModel.createPost(thumbnailUrl!!) {
+                            runOnMainThread {
+
+                                dialogFragment.dismiss()
+
+                                if (it.isSuccessful) {
+                                    findNavController().navigateUp()
+                                    viewModel.setCurrentPost(null)
+                                    viewModel.clearCreatePostMediaItems()
+                                    viewModel.setCreatedNewPost(true)
+                                } else {
+                                    viewModel.setCurrentError(it.exception)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            true
+        }) {
+
+        }
+        return FragmentCreatePostBinding.inflate(inflater)
+    }
+
+    override fun onMediaPostItemClick(mediaItems: List<MediaItem>, currentPos: Int) {
+
+    }
+
+    override fun onMediaMessageItemClick(message: Message) {
+
+    }
+
+    override fun onMediaClick(mediaItemWrapper: MediaItemWrapper, pos: Int) {
+
+    }
 
 }

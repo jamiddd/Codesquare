@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.appbar.AppBarLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/bottom_sheet_appbar"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    style="@style/AppTheme.SheetAppBar">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/bottom_sheet_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:navigationIcon="@drawable/ic_round_close_24"
+        app:subtitleCentered="true"
+        app:titleCentered="true"
+        app:titleTextAppearance="@style/AppTheme.BottomSheet.Toolbar.TextAppearance">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/bottom_sheet_done_btn"
+            style="@style/AppTheme.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginEnd="8dp"
+            android:minWidth="60dp" />
+
+    </com.google.android.material.appbar.MaterialToolbar>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/bottom_sheet_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"
+        app:endIconDrawable="@drawable/ic_round_search_24"
+        app:endIconMode="custom"
+        tools:visibility="visible">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/write_something_here" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+</com.google.android.material.appbar.AppBarLayout>

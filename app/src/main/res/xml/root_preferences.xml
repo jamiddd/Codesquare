@@ -3,17 +3,17 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout="@layout/sample_fragment_background">
 
-    <PreferenceCategory app:key="subscription_category">
+    <!--<PreferenceCategory app:key="subscription_category">
         <Preference
             android:id="@+id/subscription"
             app:key="subscription_setting"
             app:layout="@layout/subscription_setting_layout" />
-    </PreferenceCategory>
+    </PreferenceCategory>-->
 
     <PreferenceCategory app:key="admin_section" app:title="Admin">
         <Preference
-            app:key="admin_add_interest"
-            app:title="Add interest to Database" />
+            app:key="admin_functions"
+            app:title="Admin Functions" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Profile">

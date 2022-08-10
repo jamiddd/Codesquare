@@ -2,7 +2,7 @@ package com.jamid.codesquare
 
 const val COLLAB_DB = "collab-db"
 
-const val HOME_PAGE_COUNT = 2
+const val HOME_PAGE_COUNT = 5
 const val PROFILE_PAGE_COUNT = 2
 const val MAX_LINES = 4
 const val ONE = "1"
@@ -10,6 +10,8 @@ const val ONE = "1"
 const val CREATED_AT = "createdAt"
 const val UPDATED_AT = "updatedAt"
 const val ID = "id"
+
+const val GALLERY_LOADER_ID = 131
 
 const val SENDER = "sender"
 
@@ -24,9 +26,13 @@ const val IMAGES = "images"
 const val LOCATION = "location"
 const val NAME = "name"
 
-const val image = "Image"
-const val text = "Text"
-const val document = "Document"
+const val image = "image"
+const val text = "text"
+const val document = "document"
+const val video = "video"
+
+const val VIDEO_SIZE_LIMIT = 15728640
+const val FILE_SIZE_LIMIT = 15728640
 
 const val COMMENT = "comment"
 
@@ -115,8 +121,8 @@ const val OPTION_4 = "Dislike "
 const val OPTION_5 = "Report "
 const val OPTION_6 = "Remove from post"
 const val OPTION_7 = "Leave post"
-const val OPTION_8 = "Select images"
-const val OPTION_9 = "Select documents"
+const val OPTION_8 = "Gallery"
+const val OPTION_9 = "Documents"
 const val OPTION_10 = "Save post"
 const val OPTION_11 = "Remove from saved"
 const val OPTION_12 = "Archive post"
@@ -142,6 +148,9 @@ const val OPTION_31 = "Sent invites"
 const val OPTION_32 = "View profile"
 const val OPTION_33 = "Block"
 const val OPTION_34 = "Unblock"
+const val OPTION_35 = "Copy"
+const val OPTION_36 = "Save"
+const val OPTION_37 = "Camera"
 const val PREVIOUS_POST = "prev_post"
 
 const val HTTPS = "https"
@@ -157,3 +166,18 @@ const val PREF_CREATE_TOOLTIP = "PREF_CREATE_TOOLTIP"
 const val PREF_POST_TAGS = "PREF_POST_TAGS"
 const val PREF_SCROLL_TOP = "PREF_SCROLL_TOP"
 const val PREF_SCROLL_TOP_ALT = "PREF_SCROLL_TOP_ALT"
+
+
+const val FILE_PROVIDER_AUTH = "com.jamid.codesquare.fileprovider"
+
+const val DIR_IMAGES = "images"
+const val DIR_VIDEOS = "videos"
+const val DIR_DOCUMENTS = "documents"
+
+const val THUMBNAILS = "thumbnails"
+
+const val POST_IN_REVIEW = -2L
+const val RANK_CATEGORY_COUNT = 2
+
+const val CHANNEL_PRIVATE = "private"
+const val CHANNEL_GROUP = "group"

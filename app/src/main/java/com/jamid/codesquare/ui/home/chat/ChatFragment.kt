@@ -2,44 +2,10 @@
 
 package com.jamid.codesquare.ui.home.chat
 
-import android.content.Context
-import android.graphics.Bitmap
-import android.os.Bundle
-import android.util.Log
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
-import android.view.View
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
-import androidx.core.os.bundleOf
-import androidx.lifecycle.lifecycleScope
-import androidx.paging.ExperimentalPagingApi
-import androidx.paging.PagingDataAdapter
-import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
-import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
-import com.jamid.codesquare.data.AnchorSide
-import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.Message
-import com.jamid.codesquare.data.Post
-import com.jamid.codesquare.databinding.FragmentChatContainerBinding
-import com.jamid.codesquare.ui.ChatContainerFragment
-import com.jamid.codesquare.ui.MessageListenerFragment
-import com.jamid.codesquare.ui.PagerListFragment
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+//@ExperimentalPagingApi
+class ChatFragment/*: DefaultPagingFragment<Message, MessageViewHolder2<Message>>(), MessageListener3 */{
 
-@ExperimentalPagingApi
-class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
-
-    private lateinit var chatChannelId: String
+   /* private lateinit var chatChannelId: String
     private lateinit var chatChannel: ChatChannel
     private val mContext: Context by lazy { requireContext() }
 //    private var fab: FloatingActionButton? = null
@@ -50,6 +16,11 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        postponeEnterTransition(700, TimeUnit.MILLISECONDS)
+        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
+        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
+        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
         setHasOptionsMenu(true)
     }
 
@@ -245,9 +216,11 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             post = it
         }
 
+        startPostponedEnterTransition()
+
     }
 
-    /*private fun updateFabUi(scrollPosition: Int) {
+    *//*private fun updateFabUi(scrollPosition: Int) {
         if (scrollPosition != 0) {
             // if the scroll position is not the bottom most check if it is way above or not
             if (scrollPosition > MESSAGE_SCROLL_THRESHOLD) {
@@ -263,13 +236,13 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
         } else {
             fab?.hide()
             // if the scroll position is exactly bottom, check if there are actually any messages
-            *//*if (pagingAdapter.itemCount != 0) {
+            *//**//*if (pagingAdapter.itemCount != 0) {
                 fab?.hide()
-            }*//*
+            }*//**//*
         }
-    }*/
+    }*//*
 
-   /* private fun setFabLayout() {
+   *//* private fun setFabLayout() {
         fab = FloatingActionButton(requireContext())
         fab?.apply {
             size = SIZE_MINI
@@ -299,7 +272,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
             it.hide()
         }
 
-    }*/
+    }*//*
 
     private fun scrollToBottom() = viewLifecycleOwner.lifecycleScope.launch {
         delay(300)
@@ -307,7 +280,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
     }
 
     override fun getAdapter(): PagingDataAdapter<Message, MessageViewHolder2<Message>> {
-        return MessageAdapter3(parentFragment as MessageListenerFragment<FragmentChatContainerBinding, MainViewModel>)
+        return MessageAdapter3(this)
     }
 
     companion object {
@@ -319,7 +292,7 @@ class ChatFragment: PagerListFragment<Message, MessageViewHolder2<Message>>() {
                 arguments = bundle
             }
 
-    }
+    }*/
 
 }
 

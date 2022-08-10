@@ -1,50 +1,30 @@
 package com.jamid.codesquare.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ClipData
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Bundle
-import android.os.Environment
 import android.provider.OpenableColumns
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.FileProvider
-import androidx.core.os.bundleOf
-import androidx.navigation.findNavController
-import androidx.paging.ExperimentalPagingApi
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.GoogleAuthProvider
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ImageSelectType.*
-import com.jamid.codesquare.data.User
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Metadata
 
-@ExperimentalPagingApi
-abstract class LauncherActivity : LocationAwareActivity(){
+abstract class LauncherActivity : LocationAwareActivity() {
 
     var loadingDialog: AlertDialog? = null
-    var imageSelectType = IMAGE_PROFILE
+    /*var imageSelectType = IMAGE_PROFILE
 
     private val imagesDir: File by lazy {
         getExternalFilesDir(Environment.DIRECTORY_PICTURES)
             ?: throw NullPointerException("Couldn't get images directory.")
-    }
+    }*/
 
     companion object {
         private const val TAG = "LauncherActivity"
@@ -52,20 +32,22 @@ abstract class LauncherActivity : LocationAwareActivity(){
 
     val viewModel: MainViewModel by viewModels()
 
-
-    /*override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        onCreate()
+    val fileSaverLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+            val externalUri = it.data?.data
+            viewModel.setExternallyCreatedDocumentUri(externalUri)
+        } else {
+            Log.d(TAG, "LOL")
+        }
     }
 
-    @SuppressLint("VisibleForTests")
-    open fun onCreate() {}
-*/
+    /*var writePermissionGranted = false*/
 
-
+   /* val requestWriteStoragePermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        writePermissionGranted = it
+    }*/
 
     val requestGoogleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        loadingDialog?.dismiss()
         if (it.resultCode == Activity.RESULT_OK) {
             val task = GoogleSignIn.getSignedInAccountFromIntent(it.data)
             try {
@@ -78,21 +60,29 @@ abstract class LauncherActivity : LocationAwareActivity(){
                 }
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
-                viewModel.setGoogleSignInError(0)
+                googleSignInListener?.onError(e)
             }
         } else {
-            viewModel.setGoogleSignInError(1)
+            googleSignInListener?.onError(Exception("Activity result was not OK"))
         }
     }
 
 
-    private fun getImagesFromClipData(clipData: ClipData): List<Uri> {
+    var cameraPhotoUri: Uri? = null
+
+    val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            viewModel.setCameraImage(cameraPhotoUri)
+        }
+    }
+
+    /*private fun getImagesFromClipData(clipData: ClipData): List<Uri> {
         return getItemsFromClipData(clipData)
     }
 
     private fun getDocumentsFromClipData(clipData: ClipData): List<Uri> {
         return getItemsFromClipData(clipData)
-    }
+    }*/
 
     private fun getItemsFromClipData(clipData: ClipData): List<Uri> {
         val items = mutableListOf<Uri>()
@@ -107,47 +97,358 @@ abstract class LauncherActivity : LocationAwareActivity(){
     }
 
 
-    @Throws(IOException::class)
-    private fun compressAndSaveLocally(images: List<Uri>): List<Uri> {
-        val compressedImages = mutableListOf<Uri>()
+    private fun getMetadataForFile(uri: Uri): Metadata? {
+        val cursor = contentResolver.query(uri, null, null, null, null)
 
-        for (image in images) {
+        return try {
+            cursor?.moveToFirst()
+            val nameIndex = cursor?.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            val sizeIndex = cursor?.getColumnIndex(OpenableColumns.SIZE)
+            val name = cursor?.getString(nameIndex ?: 0) ?: throw NullPointerException("Name of $uri is null")
+
+            val size = (cursor.getLong(sizeIndex ?: 0))
+            cursor.close()
+            val ext = "." + name.split('.').last()
+
+            Metadata(size, name, uri.toString(), ext, 0, 0)
+        } catch (e: Exception) {
+            viewModel.setCurrentError(e)
+            null
+        }
+    }
+
+    /*fun compressVideo(item: Uri): Uri? {
+        return try {
+            TODO()
+        } catch (e: Exception) {
+            Log.e(TAG, "compressVideo: ${e.localizedMessage}")
+            null
+        }
+    }*/
+
+    /*private fun compressImage(item: Uri): Uri? {
+        return try {
+            val inputStream = contentResolver.openInputStream(item)
+            val imageBitmap = BitmapFactory.decodeStream(inputStream)
+            val mWidth = imageBitmap.width.toFloat()
+            val mHeight = imageBitmap.height.toFloat()
+
+            val fWidth = minOf(mWidth, 600f).toInt()
+            val fHeight = ((mHeight / mWidth) * fWidth).toInt()
+
+            val scaledBitmap = Bitmap.createScaledBitmap(imageBitmap, fWidth, fHeight, true)
+            val file = File(imagesDir, "${randomId()}.jpg")
+
+            file.createNewFile()
+
+            val byteArrayOutputStream = ByteArrayOutputStream()
+            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+
+            val data = byteArrayOutputStream.toByteArray()
+
+            val stream = FileOutputStream(file)
+            stream.write(data)
+            stream.flush()
+            stream.close()
+            FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
+        } catch (e: Exception) {
+            Log.e(TAG, "compressImage: ${e.localizedMessage}")
+            null
+        }
+    }*/
+
+   /* @Throws(IOException::class)
+    private fun compressAndSaveLocally(items: List<Uri>): List<Uri> {
+        val compressedItems = mutableListOf<Uri>()
+
+        for (item in items) {
             try {
-                val inputStream = contentResolver.openInputStream(image)
-                val imageBitmap = BitmapFactory.decodeStream(inputStream)
-                val mWidth = imageBitmap.width.toFloat()
-                val mHeight = imageBitmap.height.toFloat()
 
-                val fWidth = minOf(mWidth, 600f).toInt()
-                val fHeight = ((mHeight / mWidth) * fWidth).toInt()
-
-                val scaledBitmap = Bitmap.createScaledBitmap(imageBitmap, fWidth, fHeight, true)
-                val file = File(imagesDir, "${randomId()}.jpg")
-
-                file.createNewFile()
-
-                val byteArrayOutputStream = ByteArrayOutputStream()
-                scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
-
-                val data = byteArrayOutputStream.toByteArray()
-
-                val stream = FileOutputStream(file)
-                stream.write(data)
-                stream.flush()
-                stream.close()
-
-                val uri = FileProvider.getUriForFile(this, FILE_PROV_AUTH, file)
-
-                compressedImages.add(uri)
+                val metadata = getMetadataForFile(item)
+                if (metadata != null) {
+                    if (metadata.ext != ".mp4") {
+                        compressImage(item)?.let {
+                            compressedItems.add(it)
+                        }
+                    } else {
+                        // check if size is more than 15 MB, omit files larger than 15 MB
+                        if (metadata.size > 15728640) {
+                            //
+                        } else {
+                            compressedItems.add(item)
+                        }
+                    }
+                } else {
+                    throw NullPointerException("The metadata for the file couldn't be generated.")
+                }
             } catch (e: Exception) {
                 toast(e.localizedMessage!!)
             }
         }
 
-       return compressedImages
+       return compressedItems
+    }*/
+
+   /* val chatVideosLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        val finalList = mutableListOf<Uri>()
+
+        if (it.resultCode == Activity.RESULT_OK) {
+            val data = it.data ?: return@registerForActivityResult
+            val singleItem = data.data
+
+            if (singleItem != null) {
+
+                finalList.add(singleItem)
+
+            *//*val metadata = getMetadataForFile(singleItem)
+
+                if (metadata != null) {
+                    val image = compressImage(singleItem)
+                    if (image != null) {
+                        finalList.add(MediaItem(image.toString(), "image", sizeInBytes = metadata.size, ext = metadata.ext))
+                    } else {
+                        Log.e(TAG, "ActivityResult: Couldn't get image after compressing")
+                    }
+                } else {
+                    Log.e(TAG, "ActivityResult: Metadata of the $singleItem is null")
+                }*//*
+
+            } else {
+                val clipData = data.clipData ?: return@registerForActivityResult
+
+                val items = getItemsFromClipData(clipData)
+
+                if (items.isNullOrEmpty()) {
+                    return@registerForActivityResult
+                }
+
+                for (item in items) {
+                    val metadata = getMetadataForFile(item)
+                    if (metadata != null) {
+                        if (metadata.size > VIDEO_SIZE_LIMIT) {
+                            // notify that some files have not been selected
+                            toast("Some of the video files have been omitted because the size of the video was larger than 15 MB.")
+                        } else {
+                            finalList.add(item)
+                        }
+                    } else {
+                        Log.e(TAG, "ActivityResult: Metadata of the $item is null")
+                    }
+                }
+            }
+            viewModel.setChatUploadVideos(finalList)
+        }
+    }*/
+
+    /*val sml = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == Activity.RESULT_OK) {
+            val data = it.data ?: return@registerForActivityResult
+            val singleItem = data.data
+
+            val finalList = mutableListOf<MediaItem>()
+
+            if (singleItem != null) {
+                val metadata = getMetadataForFile(singleItem)
+
+                if (metadata != null) {
+                    val mime = getMimeType(metadata.url.toUri())
+                    if (mime != null) {
+
+                        val type = if (mime.contains(video)) {
+                            video
+                        } else {
+                            image
+                        }
+
+                        if (type == image) {
+                            val img = compressImage(singleItem)
+                            if (img != null) {
+                                finalList.add(MediaItem(img.toString(), image, sizeInBytes = metadata.size, ext = metadata.ext))
+                            } else {
+                                Log.e(TAG, "Something went wrong while compressing image.")
+                            }
+                        } else {
+                            if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                finalList.add(MediaItem(singleItem.toString(), video, sizeInBytes = metadata.size, ext = metadata.ext))
+                            } else {
+                                Log.e(TAG, "Video selection omitted because video size is too large.")
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "Mime couldn't be generated for the given file: $singleItem")
+                    }
+                } else {
+                    Log.e(TAG, "ActivityResult: Metadata of the $singleItem is null")
+                }
+            } else {
+                val clipData = data.clipData ?: return@registerForActivityResult
+
+                val items = getItemsFromClipData(clipData)
+
+                if (items.isNullOrEmpty()) {
+                    return@registerForActivityResult
+                }
+
+                for (item in items) {
+                    val metadata = getMetadataForFile(item)
+                    if (metadata != null) {
+
+                        val mime = getMimeType(metadata.url.toUri())
+
+                        if (mime != null) {
+                            val type = if (mime.contains(video)) {
+                                video
+                            } else {
+                                image
+                            }
+
+                            if (type == image) {
+                                val img = compressImage(item)
+                                if (img != null) {
+                                    finalList.add(MediaItem(img.toString(), metadata.name, image, mime, sizeInBytes = metadata.size, ext = metadata.ext))
+                                } else {
+                                    Log.e(TAG, "Something went wrong while compressing image.")
+                                }
+                            } else {
+                                if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                    finalList.add(MediaItem(it.toString(), metadata.name, video, mime, sizeInBytes = metadata.size, ext = metadata.ext))
+                                } else {
+                                    Log.e(TAG, "Video selection omitted because video size is too large.")
+                                }
+                            }
+                        } else {
+                            Log.e(TAG, "Mime couldn't be generated for the given file: $item")
+                        }
+                    } else {
+                        Log.e(TAG, "ActivityResult: Metadata of the $item is null")
+                    }
+                }
+            }
+
+            viewModel.setCreatePostMediaList(finalList)
+
+        } else {
+            Log.d(TAG, "ActivityResult : NOT_OK")
+        }
+
+    }*/
+
+    /*val chatMediaLauncher = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) {
+        val items = mutableListOf<MediaItem>()
+        if (!it.isNullOrEmpty()) {
+            for (uri in it) {
+                val metadata = getMetadataForFile(uri)
+                if (metadata != null) {
+                    items.add(MediaItem(uri.toString(), metadata.name, ext = metadata.ext, sizeInBytes = metadata.size))
+                }
+            }
+            viewModel.setChatUploadMedia(items)
+        }
+    }*/
+
+    /*val chatMediaLauncher2 = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+
+            val items = mutableListOf<MediaItem>()
+
+            val data = it.data
+            if (data != null) {
+                val single = data.data
+                if (single != null) {
+                    val metadata = getMetadataForFile(single)
+                    if (metadata != null) {
+                        if (metadata.size < VIDEO_SIZE_LIMIT) {
+                            items.add(MediaItem(single.toString(), metadata.name, ext = metadata.ext, sizeInBytes = metadata.size))
+                        } else {
+                            toast("Some files are being omitted because the size is larger than 15 MB")
+                        }
+                    }
+                } else {
+                    val clipData = data.clipData
+                    if (clipData != null) {
+                        val clipItems = getItemsFromClipData(clipData)
+                        for (item in clipItems) {
+                            val metadata = getMetadataForFile(item)
+                            if (metadata != null) {
+                                if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                    items.add(MediaItem(item.toString(), metadata.name, ext = metadata.ext, sizeInBytes = metadata.size))
+                                } else {
+                                    toast("Some files are being omitted because the size is larger than 15 MB")
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "Found nothing")
+                    }
+                }
+            } else {
+                Log.e(TAG, "Single item null")
+            }
+
+            viewModel.setChatUploadMedia(items)
+
+        }
+    }*/
+
+
+    val gallerySelectLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (it.resultCode == RESULT_OK) {
+
+            val items = mutableListOf<MediaItem>()
+
+            val data = it.data
+            if (data != null) {
+                val single = data.data
+                if (single != null) {
+                    val metadata = getMetadataForFile(single)
+                    val mime = getMimeType(single)
+                    if (metadata != null && mime != null) {
+                        val type = if (mime.contains(video)) {
+                            video
+                        } else {
+                            image
+                        }
+
+                        if (metadata.size < VIDEO_SIZE_LIMIT) {
+                            items.add(MediaItem(single.toString(), metadata.name, type, mime, metadata.size, metadata.ext))
+                        } else {
+                            toast("Some files are being omitted because the size is larger than 15 MB")
+                        }
+                    }
+                } else {
+                    val clipData = data.clipData
+                    if (clipData != null) {
+                        val clipItems = getItemsFromClipData(clipData)
+                        for (item in clipItems) {
+                            val metadata = getMetadataForFile(item)
+                            val mime = getMimeType(item)
+                            if (metadata != null && mime != null) {
+                                val type = if (mime.contains(video)) {
+                                    video
+                                } else {
+                                    image
+                                }
+                                if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                    items.add(MediaItem(item.toString(), metadata.name, type, mime, metadata.size, metadata.ext))
+                                } else {
+                                    toast("Some files are being omitted because the size is larger than 15 MB")
+                                }
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "Found nothing")
+                    }
+                }
+            } else {
+                Log.e(TAG, "Single item null")
+            }
+
+            viewModel.setPreUploadMediaItems(items)
+
+        }
     }
 
-    val sil = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+    /*val sil = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         var images: List<Uri> = emptyList()
         when (it.resultCode) {
             Activity.RESULT_OK -> {
@@ -183,7 +484,7 @@ abstract class LauncherActivity : LocationAwareActivity(){
 
                     }
                     IMAGE_PROFILE -> {
-                        val singleImage = data.data
+                       *//* val singleImage = data.data
 
                         if (singleImage != null) {
                             viewModel.setCurrentImage(singleImage)
@@ -195,13 +496,14 @@ abstract class LauncherActivity : LocationAwareActivity(){
                                 outputRequestHeight = 100
                                 outputRequestWidth = 100
                             }
-                            findNavController(R.id.nav_host_fragment).navigate(R.id.cropFragment2, bundleOf("image" to singleImage.toString(), "cropOptions" to options))
-                        }
+                            findNavController(R.id.nav_host_fragment).navigate(R.id.cropFragment2, bundleOf(ARG_CROP_IMAGE to singleImage.toString(), ARG_CROP_OPTIONS to options))
+                        }*//*
+                        TODO("Whatever happened here ...??? Jeez")
                     }
                     IMAGE_POST -> {
                         val currentPost = viewModel.currentPost.value
                         if (currentPost != null) {
-                            val isPostImagesEmpty = currentPost.images.isNullOrEmpty()
+                            val isPostImagesEmpty = currentPost.mediaList.isNullOrEmpty()
                             try {
                                 if (clipData != null) {
                                     images = getImagesFromClipData(clipData)
@@ -218,7 +520,7 @@ abstract class LauncherActivity : LocationAwareActivity(){
                                         viewModel.setCurrentPostImages(formattedImages)
                                     } else {
 
-                                        if (currentPost.images.size + images.size > 10) {
+                                        if (currentPost.mediaList.size + images.size > 10) {
                                             toast("Cannot add more images")
                                             return@registerForActivityResult
                                         }
@@ -239,7 +541,7 @@ abstract class LauncherActivity : LocationAwareActivity(){
                                             viewModel.setCurrentPostImages(formattedImages)
                                         } else {
 
-                                            if (currentPost.images.size + images.size > 10) {
+                                            if (currentPost.mediaList.size + images.size > 10) {
                                                 toast("Cannot add more images")
                                                 return@registerForActivityResult
                                             }
@@ -279,9 +581,9 @@ abstract class LauncherActivity : LocationAwareActivity(){
                 Log.d(TAG, "Something unexpected happened")
             }
         }
-    }
+    }*/
 
-    val selectChatDocumentsUploadLauncher = registerForActivityResult(
+    /*val selectChatDocumentsUploadLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) {
         if (it.resultCode == Activity.RESULT_OK) {
 
@@ -330,9 +632,9 @@ abstract class LauncherActivity : LocationAwareActivity(){
             viewModel.setChatUploadDocuments(documents)
 
         }
-    }
+    }*/
 
-    private fun checkDocumentsForSize(documents: List<Uri>): List<Uri> {
+    /*private fun checkDocumentsForSize(documents: List<Uri>): List<Uri> {
         val goodDocuments = mutableListOf<Uri>()
 
         for (document in documents) {
@@ -358,8 +660,7 @@ abstract class LauncherActivity : LocationAwareActivity(){
         }
 
         return goodDocuments
-    }
-
+    }*/
 
     private fun firebaseAuthWithGoogle(idToken: String) {
         val credential = GoogleAuthProvider.getCredential(idToken, null)
@@ -367,35 +668,26 @@ abstract class LauncherActivity : LocationAwareActivity(){
             if (it.isSuccessful) {
                 val user = it.result.user
                 if (user != null) {
-                    val ref = Firebase.firestore.collection(USERS)
-                        .document(user.uid)
-
-                    FireUtility.getDocument(ref) { it1 ->
-                        if (it1.isSuccessful && it1.result.exists()) {
-                            val oldUser = it1.result.toObject(User::class.java)!!
-                            UserManager.updateUser(oldUser)
-                            viewModel.insertCurrentUser(oldUser)
-                        } else {
-                            val localUser = User.newUser(user.uid, user.displayName!!, user.email!!, user.photoUrl)
-
-                            FireUtility.uploadUser(localUser) { it2 ->
-                                if (it2.isSuccessful) {
-                                    UserManager.updateUser(localUser)
-                                    viewModel.insertCurrentUser(localUser)
-                                } else {
-                                    viewModel.setCurrentError(it2.exception)
-                                    Firebase.auth.signOut()
-                                }
-                            }
-                        }
-                    }
+                    googleSignInListener?.onSignedIn(user)
                 } else {
-                    Firebase.auth.signOut()
+                    googleSignInListener?.onError(Exception("Firebase user is null"))
                 }
             } else {
-                viewModel.setCurrentError(it.exception)
+                it.exception?.let { it1 -> googleSignInListener?.onError(it1) }
             }
         }
     }
+
+    var currentRequest = ""
+
+    val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) {
+            when (currentRequest) {
+                Manifest.permission.READ_EXTERNAL_STORAGE -> viewModel.setReadPermission(true)
+                Manifest.permission.ACCESS_FINE_LOCATION -> viewModel.setLocationPermission(true)
+            }
+        }
+    }
+
 
 }

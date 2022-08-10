@@ -8,7 +8,7 @@ import { UserMinimal2 } from "../data/UserMinimal2";
 import { ChatChannel } from "../data/ChatChannel";
 import { Post } from "../data/Post";
 import { PurchaseInfo } from "../data/PurchaseInfo";
-import { DocumentSnapshot, QueryDocumentSnapshot, DocumentData } from "firebase-admin/firestore";
+import { DocumentData, DocumentSnapshot, QueryDocumentSnapshot } from "firebase-admin/firestore";
 import { PostImpl } from "../data/PostImpl";
 import { ChatChannelImpl } from "../data/ChatChannelImpl";
 import { UserImpl } from "../data/UserImpl";
@@ -61,46 +61,56 @@ export const convertSnapshotToPost = (snapshot: QueryDocumentSnapshot|DocumentSn
     const content = snapshot.get(Constants.CONTENT);
     const commentChannel = snapshot.get(Constants.COMMENT_CHANNEL);
     const chatChannel = snapshot.get(Constants.CHAT_CHANNEL);
+    const rankCategory = snapshot.get("rankCategory");
+    const thumbnail = snapshot.get("thumbnail");
     const creator = snapshot.get(Constants.CREATOR);
     const likesCount = snapshot.get(Constants.LIKES_COUNT);
     const commentsCount = snapshot.get(Constants.COMMENTS_COUNT);
-    const contributors = snapshot.get(Constants.CONTRIBUTORS);
-    const images = snapshot.get(Constants.IMAGES);
-    const tags = snapshot.get(Constants.TAGS);
-    const sources = snapshot.get(Constants.SOURCES);
-    const requests = snapshot.get(Constants.REQUESTS);
-    const location = snapshot.get(Constants.LOCATION);
+    const contributorsCount = snapshot.get(Constants.CONTRIBUTORS_COUNT);
     const createdAt = snapshot.get(Constants.CREATED_AT);
     const updatedAt = snapshot.get(Constants.UPDATED_AT);
     const expiredAt = snapshot.get(Constants.EXPIRED_AT);
     const viewsCount = snapshot.get(Constants.VIEWS_COUNT);
-    const archived = snapshot.get(Constants.ARCHIVED);
+    const rank = snapshot.get(Constants.RANK);
+    const points: number = snapshot.get("points");
     const blockedList = snapshot.get(Constants.BLOCKED_LIST);
+    const mediaList = snapshot.get("mediaList");
+    const tags = snapshot.get(Constants.TAGS);
+    const sources = snapshot.get(Constants.SOURCES);
+    const contributors = snapshot.get(Constants.CONTRIBUTORS);
+    const requests = snapshot.get(Constants.REQUESTS);
+    const location = snapshot.get(Constants.LOCATION);
+    const mediaString = snapshot.get("mediaString");
+    const archived = snapshot.get(Constants.ARCHIVED);
 
-    const post: Post = {
+    return {
         id,
         name,
         content,
         commentChannel,
         chatChannel,
+        rankCategory,
+        thumbnail,
         creator,
         likesCount,
         commentsCount,
-        contributors,
-        images,
-        tags,
-        sources,
-        requests,
-        location,
+        contributorsCount,
         createdAt,
         updatedAt,
         expiredAt,
         viewsCount,
+        rank,
+        points,
+        blockedList,
+        mediaList,
+        tags,
+        sources,
+        contributors,
+        requests,
+        location,
+        mediaString,
         archived,
-        blockedList
     };
-
-    return post;
 };
 
 export const convertSnapshotToChatChannel = (snapshot: QueryDocumentSnapshot|DocumentSnapshot): ChatChannel => {
@@ -108,32 +118,42 @@ export const convertSnapshotToChatChannel = (snapshot: QueryDocumentSnapshot|Doc
     const postId = snapshot.get(Constants.POST_ID);
     const postTitle = snapshot.get(Constants.POST_TITLE);
     const postImage = snapshot.get(Constants.POST_IMAGE);
-    const contributorsCount = snapshot.get(Constants.CONTRIBUTORS_COUNT);
+    const type = snapshot.get("type");
+    const rules = snapshot.get(Constants.RULES);
     const administrators = snapshot.get(Constants.ADMINISTRATORS);
     const contributors = snapshot.get(Constants.CONTRIBUTORS);
-    const rules = snapshot.get(Constants.RULES);
-    const createdAt = snapshot.get(Constants.CREATED_AT);
-    const updatedAt = snapshot.get(Constants.UPDATED_AT);
-    const lastMessage = snapshot.get(Constants.LAST_MESSAGE);
     const tokens = snapshot.get(Constants.TOKENS);
     const blockedUsers = snapshot.get(Constants.BLOCKED_USERS);
+    const contributorsCount = snapshot.get(Constants.CONTRIBUTORS_COUNT);
+    const createdAt = snapshot.get(Constants.CREATED_AT);
+    const updatedAt = snapshot.get(Constants.UPDATED_AT);
+    const mute = snapshot.get("mute");
     const archived = snapshot.get(Constants.ARCHIVED);
+    const authorized = snapshot.get("authorized");
+    const lastMessage = snapshot.get(Constants.LAST_MESSAGE);
+    const data1 = snapshot.get("data1");
+    const data2 = snapshot.get("data2");
 
     const chatChannel: ChatChannel = {
         chatChannelId,
         postId,
         postTitle,
         postImage,
-        contributorsCount,
+        type,
+        rules,
         administrators,
         contributors,
-        rules,
-        createdAt,
-        updatedAt,
-        lastMessage,
         tokens,
         blockedUsers,
-        archived
+        contributorsCount,
+        createdAt,
+        updatedAt,
+        mute,
+        archived,
+        authorized,
+        lastMessage,
+        data1,
+        data2
     };
 
     return chatChannel;
@@ -146,16 +166,21 @@ export const chatChannelConverter: FirebaseFirestore.FirestoreDataConverter<Chat
             postId: chatChannel.postId,
             postTitle: chatChannel.postTitle,
             postImage: chatChannel.postImage,
-            contributorsCount: chatChannel.contributorsCount,
+            type: chatChannel.type,
+            rules: chatChannel.rules,
             administrators: chatChannel.administrators,
             contributors: chatChannel.contributors,
-            rules: chatChannel.rules,
-            createdAt: chatChannel.createdAt,
-            updatedAt: chatChannel.updatedAt,
             tokens: chatChannel.tokens,
             blockedUsers: chatChannel.blockedUsers,
+            contributorsCount: chatChannel.contributorsCount,
+            createdAt: chatChannel.createdAt,
+            updatedAt: chatChannel.updatedAt,
+            mute: chatChannel.mute,
             archived: chatChannel.archived,
+            authorized: chatChannel.authorized,
             lastMessage: chatChannel.lastMessage,
+            data1: chatChannel.data1,
+            data2: chatChannel.data2
         };
     },
     fromFirestore: function(snapshot: QueryDocumentSnapshot<DocumentData>): ChatChannelImpl {
@@ -165,16 +190,21 @@ export const chatChannelConverter: FirebaseFirestore.FirestoreDataConverter<Chat
             data.postId,
             data.postTitle,
             data.postImage,
-            data.contributorsCount,
+            data.type,
+            data.rules,
             data.administrators,
             data.contributors,
-            data.rules,
-            data.createdAt,
-            data.updatedAt,
             data.tokens,
             data.blockedUsers,
+            data.contributorsCount,
+            data.createdAt,
+            data.updatedAt,
+            data.mute,
             data.archived,
-            data.lastMessage
+            data.authorized,
+            data.lastMessage,
+            data.data1,
+            data.data2
         );
     }
 };
@@ -187,21 +217,27 @@ export const postConverter: FirebaseFirestore.FirestoreDataConverter<PostImpl> =
             content: post.content,
             commentChannel: post.commentChannel,
             chatChannel: post.chatChannel,
-            creator: post.creator,
-            likes: post.likesCount,
-            comments: post.commentsCount,
-            contributors: post.contributors,
-            images: post.images,
-            tags: post.tags,
-            sources: post.sources,
-            requests: post.requests,
-            location: post.location,
+            rankCategory: post.rankCategory,
+            thumbnail: post.thumbnail,
+            mediaString: post.mediaString,
+            likesCount: post.likesCount,
+            commentsCount: post.commentsCount,
+            contributorsCount: post.contributorsCount,
             createdAt: post.createdAt,
             updatedAt: post.updatedAt,
             expiredAt: post.expiredAt,
             viewsCount: post.viewsCount,
+            rank: post.rank,
+            points: post.points,
+            blockedList: post.blockedList,
+            mediaList: post.mediaList,
+            tags: post.tags,
+            sources: post.sources,
+            contributors: post.contributors,
+            requests: post.requests,
             archived: post.archived,
-            blockedList: post.blockedList
+            creator: post.creator,
+            location: post.location,
         };
     },
     fromFirestore: function(snapshot: QueryDocumentSnapshot<DocumentData>): PostImpl {
@@ -212,21 +248,27 @@ export const postConverter: FirebaseFirestore.FirestoreDataConverter<PostImpl> =
             data.content,
             data.commentChannel,
             data.chatChannel,
-            data.creator,
+            data.rankCategory,
+            data.thumbnail,
+            data.mediaString,
             data.likesCount,
             data.commentsCount,
-            data.contributors,
-            data.images,
-            data.tags,
-            data.sources,
-            data.requests,
-            data.location,
+            data.contributorsCount,
             data.createdAt,
             data.updatedAt,
             data.expiredAt,
             data.viewsCount,
+            data.rank,
+            data.points,
+            data.blockedList,
+            data.mediaList,
+            data.tags,
+            data.sources,
+            data.contributors,
+            data.requests,
             data.archived,
-            data.blockedList
+            data.creator,
+            data.location,
         );
     }
 };
@@ -241,8 +283,21 @@ export const userConverter: FirebaseFirestore.FirestoreDataConverter<UserImpl> =
             email: user.email,
             about: user.about,
             photo: user.photo,
+            token: user.token,
+            postsCount: user.postsCount,
+            collaborationsCount: user.collaborationsCount,
+            likesCount: user.likesCount,
+            likedPostsCount: user.likedPostsCount,
+            likedUsersCount: user.likedUsersCount,
+            likedCommentsCount: user.likedCommentsCount,
+            savedPostsCount: user.savedPostsCount,
+            upvotedPostsCount: user.upvotedPostsCount,
+            downvotedPostsCount: user.downvotedPostsCount,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+            premiumState: user.premiumState,
+            online: user.online,
             interests: user.interests,
-            savedPosts: user.savedPosts,
             archivedPosts: user.archivedPosts,
             collaborations: user.collaborations,
             posts: user.posts,
@@ -251,15 +306,7 @@ export const userConverter: FirebaseFirestore.FirestoreDataConverter<UserImpl> =
             chatChannels: user.chatChannels,
             blockedUsers: user.blockedUsers,
             blockedBy: user.blockedBy,
-            token: user.token,
-            postsCount: user.postsCount,
-            collaborationsCount: user.collaborationsCount,
-            likesCount: user.likesCount,
-            createdAt: user.createdAt,
-            updatedAt: user.updatedAt,
             location: user.location,
-            premiumState: user.premiumState,
-            online: user.online
         };
     },
     fromFirestore: function(snapshot: QueryDocumentSnapshot<DocumentData>): UserImpl {
@@ -272,8 +319,21 @@ export const userConverter: FirebaseFirestore.FirestoreDataConverter<UserImpl> =
             data.email,
             data.about,
             data.photo,
+            data.token,
+            data.postsCount,
+            data.collaborationsCount,
+            data.likesCount,
+            data.likedPostsCount,
+            data.likedUsersCount,
+            data.likedCommentsCount,
+            data.savedPostsCount,
+            data.upvotedPostsCount,
+            data.downvotedPostsCount,
+            data.createdAt,
+            data.updatedAt,
+            data.premiumState,
+            data.online,
             data.interests,
-            data.savedPosts,
             data.archivedPosts,
             data.collaborations,
             data.posts,
@@ -282,15 +342,7 @@ export const userConverter: FirebaseFirestore.FirestoreDataConverter<UserImpl> =
             data.chatChannels,
             data.blockedUsers,
             data.blockedBy,
-            data.token,
-            data.postsCount,
-            data.collaborationsCount,
-            data.likesCount,
-            data.createdAt,
-            data.updatedAt,
-            data.location,
-            data.premiumState,
-            data.online
+            data.location
         );
     }
 };
@@ -338,12 +390,15 @@ export const postMinimalConverter: FirebaseFirestore.FirestoreDataConverter<Post
             type: postMinimal.type,
             name: postMinimal.name,
             content: postMinimal.content,
+            thumbnail: postMinimal.thumbnail,
+            chatChannel: postMinimal.thumbnail,
             createdAt: postMinimal.createdAt,
-            creator: postMinimal.creator,
-            images: postMinimal.images,
-            location: postMinimal.location,
+            updatedAt: postMinimal.updatedAt,
+            rank: postMinimal.rank,
+            mediaList: postMinimal.mediaList,
             tags: postMinimal.tags,
-            updatedAt: postMinimal.updatedAt
+            creator: postMinimal.creator,
+            location: postMinimal.location,
         };
     },
     fromFirestore: function(snapshot: QueryDocumentSnapshot<DocumentData>): PostMinimalImpl {
@@ -353,12 +408,15 @@ export const postMinimalConverter: FirebaseFirestore.FirestoreDataConverter<Post
             data.type,
             data.name,
             data.content,
+            data.thumbnail,
+            data.chatChannel,
             data.createdAt,
-            data.creator,
-            data.images,
-            data.location,
+            data.updatedAt,
+            data.rank,
+            data.mediaList,
             data.tags,
-            data.updatedAt
+            data.creator,
+            data.location,
         );
     }
 };
@@ -426,7 +484,6 @@ export const convertSnapshotToCommentChannel = (snap: QueryDocumentSnapshot|Docu
     const commentChannelId: string = snap.get(Constants.COMMENT_CHANNEL_ID);
     const parentId: string = snap.get(Constants.PARENT_ID);
     const postId: string = snap.get(Constants.POST_ID);
-    const postTitle: string = snap.get(Constants.POST_TITLE);
     const commentsCount: number = snap.get(Constants.COMMENTS_COUNT);
     const createdAt: number = snap.get(Constants.CREATED_AT);
     const archived: boolean = snap.get(Constants.ARCHIVED);
@@ -437,7 +494,6 @@ export const convertSnapshotToCommentChannel = (snap: QueryDocumentSnapshot|Docu
         commentChannelId,
         parentId,
         postId,
-        postTitle,
         commentsCount,
         createdAt,
         archived,
@@ -524,25 +580,29 @@ export const convertSnapshotToPostMinimal = (snapshot: QueryDocumentSnapshot): P
     const content: string = snapshot.get(Constants.CONTENT);
     const createdAt: number = snapshot.get(Constants.CREATED_AT);
     const creator: UserMinimal = snapshot.get(Constants.CREATOR);
-    const images: string[] = snapshot.get(Constants.IMAGES);
+    const mediaList: string[] = snapshot.get("mediaList");
     const location: MyLocation = snapshot.get(Constants.LOCATION);
     const tags: string[] = snapshot.get(Constants.TAGS);
     const updatedAt: number = snapshot.get(Constants.UPDATED_AT);
+    const rank: number = snapshot.get("rank");
+    const thumbnail: string = snapshot.get("thumbnail");
+    const chatChannel: string = snapshot.get("chatChannel");
 
-    const postMinimal: PostMinimal = {
+    return {
         objectID,
         type,
         name,
         content,
         createdAt,
         creator,
-        images,
+        mediaList,
         location,
         tags,
-        updatedAt
+        updatedAt,
+        rank,
+        thumbnail,
+        chatChannel
     };
-
-    return postMinimal;
 };
 
 export const convertSnapshotToNotification = (snapshot: QueryDocumentSnapshot): MyNotification => {
@@ -562,7 +622,7 @@ export const convertSnapshotToNotification = (snapshot: QueryDocumentSnapshot): 
     const commentId: string|undefined = snapshot.get(Constants.COMMENT_ID);
     const userId: string|undefined = snapshot.get(Constants.USER_ID);
 
-    const notification: MyNotification = {
+    return {
         id,
         title,
         content,
@@ -579,6 +639,4 @@ export const convertSnapshotToNotification = (snapshot: QueryDocumentSnapshot): 
         commentId,
         userId
     };
-
-    return notification;
 };

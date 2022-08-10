@@ -1,48 +1,36 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.util.Log
 import android.view.*
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.transition.platform.MaterialSharedAxis
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PreviousQueryAdapter
 import com.jamid.codesquare.adapter.recyclerview.SearchResultsAdapter
+import com.jamid.codesquare.data.QUERY_TYPE_POST
+import com.jamid.codesquare.data.QUERY_TYPE_USER
 import com.jamid.codesquare.data.SearchQuery
 import com.jamid.codesquare.databinding.FragmentPreSearchBinding
 import com.jamid.codesquare.listeners.SearchItemClickListener
 
-@ExperimentalPagingApi
-class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>(), SearchItemClickListener, SearchView.OnQueryTextListener {
+class PreSearchFragment: BaseFragment<FragmentPreSearchBinding>(), SearchItemClickListener, SearchView.OnQueryTextListener {
 
-    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var previousQueryAdapter: PreviousQueryAdapter
     private var searchView: SearchView? = null
 
-    override fun getViewBinding(): FragmentPreSearchBinding {
-        return FragmentPreSearchBinding.inflate(layoutInflater)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentPreSearchBinding {
         setHasOptionsMenu(true)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.Z, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.Z, false)
+        return FragmentPreSearchBinding.inflate(inflater)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
 
         inflater.inflate(R.menu.search_menu, menu)
-        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.main_toolbar)
-        val searchItem = toolbar.menu.getItem(0)
+        val searchItem = activity.binding.mainToolbar.menu.getItem(0)
         searchItem.expandActionView()
 
         searchItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
@@ -60,8 +48,15 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
 
         searchView?.setOnQueryTextListener(this)
         searchView?.isSubmitButtonEnabled = false
-        searchView?.queryHint = "Search for projects, users ..."
 
+
+        viewModel.currentSearchQueryString.observe(viewLifecycleOwner) { s ->
+            if (s != null) {
+                searchView?.setQuery(s, false)
+            } else {
+                searchView?.queryHint = "Search for projects, users ..."
+            }
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -93,8 +88,6 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
         viewModel.recentSearchList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
                 searchAdapter.submitList(it)
-            } else {
-                Log.d(TAG, "null")
             }
         }
 
@@ -106,6 +99,17 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
                 onEmptyRecyclerView()
             }
         }
+
+        activity.binding.mainToolbar.setNavigationOnClickListener {
+            viewModel.setCurrentSearchQueryString(null)
+        }
+
+        activity.onBackPressedDispatcher.addCallback(viewLifecycleOwner, object :
+            OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                viewModel.setCurrentSearchQueryString(null)
+            }
+        })
 
     }
 
@@ -139,10 +143,29 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
         } else {
             onEmptyRecyclerView()
         }
+        viewModel.setCurrentSearchQueryString(null)
     }
 
     override fun onSearchItemClick(searchQuery: SearchQuery) {
-        findNavController().navigate(R.id.searchFragment, bundleOf("query" to searchQuery), slideRightNavOptions())
+        when (searchQuery.type) {
+            QUERY_TYPE_POST -> {
+                FireUtility.getPost(searchQuery.id) { post ->
+                    post?.let {
+                        activity.onPostClick(it)
+                    }
+                }
+            }
+            QUERY_TYPE_USER -> {
+                FireUtility.getUser(searchQuery.id) { user ->
+                    if (user != null) {
+                        activity.onUserClick(user)
+                    }
+                }
+            }
+            else -> {
+                findNavController().navigate(R.id.searchFragment, bundleOf("query" to searchQuery))
+            }
+        }
         viewModel.insertSearchQuery(searchQuery)
     }
 
@@ -155,7 +178,7 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
     }
 
     override fun onSearchOptionClick(view: View, query: SearchQuery) {
-        //
+
     }
 
     companion object {
@@ -163,7 +186,7 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
     }
 
     override fun onQueryTextSubmit(query: String?): Boolean {
-        findNavController().navigate(R.id.searchFragment, bundleOf("query" to SearchQuery()), slideRightNavOptions())
+        findNavController().navigate(R.id.searchFragment, bundleOf("title" to query, "query" to SearchQuery()))
         return true
     }
 
@@ -175,7 +198,6 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding, MainViewModel>()
                 onQueryPresent()
                 viewModel.search(newText)
             }
-
         } else {
             onQueryRemoved()
         }

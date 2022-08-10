@@ -1,5 +1,6 @@
 package com.jamid.codesquare.adapter.recyclerview
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,14 +8,17 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.PostRequest
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.RequestItemAltBinding
 import com.jamid.codesquare.databinding.RequestItemBinding
+import com.jamid.codesquare.listeners.NotificationItemClickListener
 import com.jamid.codesquare.listeners.PostRequestListener
 
 class PostRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
     private lateinit var binding: ViewBinding
     private val projectRequestListener = view.context as PostRequestListener
+    private val notificationItemClickListener = view.context as NotificationItemClickListener
     var isMyRequests: Boolean = false
 
     fun bind(postRequest: PostRequest?) {
@@ -25,6 +29,20 @@ class PostRequestViewHolder(val view: View): RecyclerView.ViewHolder(view) {
             } else {
                 binding = RequestItemBinding.bind(view)
                 bindForOtherUsers(binding as RequestItemBinding, postRequest)
+
+                FireUtility.getNotification(UserManager.currentUserId, postRequest.notificationId) {
+                    val result = it ?:return@getNotification
+
+                    when (result) {
+                        is Result.Error -> {
+                            Log.d(TAG, "bind: ${result.exception.localizedMessage}")
+                        }
+                        is Result.Success -> {
+                            notificationItemClickListener.onNotificationRead(result.data)
+                        }
+                    }
+                }
+
             }
         }
     }

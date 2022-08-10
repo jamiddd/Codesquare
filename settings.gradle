@@ -8,3 +8,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Codesquare"
 include ':app'
+//include ':exo'

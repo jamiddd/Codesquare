@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import com.android.billingclient.api.BillingFlowParams
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.jamid.codesquare.MainViewModel
@@ -17,7 +16,6 @@ import com.jamid.codesquare.disappear
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
 
-@ExperimentalPagingApi
 class SubscriptionFragment : RoundedBottomSheetDialogFragment() {
 
     private lateinit var binding: SubscriptionLayout2Binding

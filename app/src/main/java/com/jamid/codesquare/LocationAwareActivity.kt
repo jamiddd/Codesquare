@@ -28,6 +28,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.*
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.jamid.codesquare.listeners.GoogleSignInListener
 import com.jamid.codesquare.listeners.LocationStateListener
 
 abstract class LocationAwareActivity: AppCompatActivity() {
@@ -39,6 +40,7 @@ abstract class LocationAwareActivity: AppCompatActivity() {
     private var isPermissionAvailable = false
     var fusedLocationProviderClient: FusedLocationProviderClient? = null
     private var locationStateListener: LocationStateListener? = null
+    protected var googleSignInListener: GoogleSignInListener? = null
     private var isLocationPermissionHardRejected = false
     private var currentFragment: Fragment? = null
 
@@ -46,7 +48,7 @@ abstract class LocationAwareActivity: AppCompatActivity() {
         override fun onLocationResult(locationResult: LocationResult) {
             Log.d(TAG, "onLocationResult: Got last location from callback")
             currentLocation = locationResult.lastLocation
-            locationStateListener?.onLastLocationReceived(locationResult.lastLocation)
+            locationResult.lastLocation?.let { locationStateListener?.onLastLocationReceived(it) }
             stopLocationUpdates()
         }
     }
@@ -130,6 +132,14 @@ abstract class LocationAwareActivity: AppCompatActivity() {
         placesClient = Places.createClient(this)
         geocoder = Geocoder(this)
         fusedLocationProviderClient = FusedLocationProviderClient(this)
+    }
+
+    open fun attachFragmentWithGoogleSignInLauncher(listener: GoogleSignInListener) {
+        googleSignInListener = listener
+    }
+
+    open fun detachFragmentWithGoogleSignInLauncher() {
+        googleSignInListener = null
     }
 
     open fun attachFragmentWithLocationListener(listener: LocationStateListener) {

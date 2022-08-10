@@ -2,10 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/default_profile_image_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/profile_images_select_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -32,7 +34,7 @@
             android:drawablePadding="16dp"
             android:gravity="center_vertical"
             android:text="@string/select_from_gallery"
-            app:drawableStartCompat="@drawable/ic_image_coloured"
+            app:drawableStartCompat="@drawable/ic_outline_photo_library_24"
             tools:ignore="TextContrastCheck" />
 
         <TextView
@@ -43,7 +45,7 @@
             android:drawablePadding="16dp"
             android:gravity="center_vertical"
             android:text="@string/remove_selected_image"
-            app:drawableStartCompat="@drawable/ic_remove"
+            app:drawableStartCompat="@drawable/ic_round_remove_circle_24"
             tools:ignore="TextContrastCheck" />
 
         <View

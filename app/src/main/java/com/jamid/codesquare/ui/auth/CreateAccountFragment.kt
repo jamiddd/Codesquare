@@ -2,26 +2,30 @@ package com.jamid.codesquare.ui.auth
 
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.widget.doAfterTextChanged
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentCreateAccountBinding
 import com.jamid.codesquare.ui.MessageDialogFragment
+import kotlinx.coroutines.Job
 
 @ExperimentalPagingApi
-class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainViewModel>() {
+class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding>() {
 
     private var loadingFragment: MessageDialogFragment? = null
+
+    private var onChangeJob: Job? = null
+
+    private val inputs = mutableListOf<TextInputLayout>()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -30,29 +34,49 @@ class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainVie
             findNavController().navigateUp()
         }
 
-        binding.nameText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.nameText.error = null
-            binding.nameText.isErrorEnabled = false
+        inputs.addAll(
+            listOf(
+                binding.nameText,
+                binding.emailText,
+                binding.passwordText,
+                binding.confirmPasswordText
+            )
+        )
+        inputs.forEach { i ->
+            i.onChange()
         }
 
-        binding.emailText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.emailText.error = null
-            binding.emailText.isErrorEnabled = false
+        viewModel.registerFormState.observe(viewLifecycleOwner) {
+            val state = it ?: return@observe
+
+            binding.createBtn.isEnabled = state.isDataValid
+
+            if (state.nameError != null) {
+                if (name().isNotBlank()) {
+                    binding.nameText.showError(getString(state.nameError))
+                }
+            }
+
+            if (state.emailError != null) {
+                if (email().isNotBlank()) {
+                    binding.emailText.showError(getString(state.emailError))
+                }
+            }
+
+            if (state.passwordError != null) {
+                if (password().isNotBlank()) {
+                    binding.passwordText.showError(getString(state.passwordError))
+                }
+            }
+
+            if (state.confirmPasswordError != null) {
+                if (confirmPassword().isNotBlank()) {
+                    binding.confirmPasswordText.showError(getString(state.confirmPasswordError))
+                }
+            }
+
         }
 
-        binding.passwordText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.passwordText.error = null
-            binding.passwordText.isErrorEnabled = false
-        }
-
-        binding.confirmPasswordText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.confirmPasswordText.error = null
-            binding.confirmPasswordText.isErrorEnabled = false
-        }
 
         binding.createBtn.setOnClickListener {
             createAccount()
@@ -61,23 +85,18 @@ class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainVie
         binding.backBtn.setOnClickListener {
             findNavController().navigateUp()
         }
-        
-        UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
+
+        /*UserManager.authState.observe(viewLifecycleOwner) { isSignedIn ->
             loadingFragment?.dismiss()
             binding.createBtn.isEnabled = true
             if (isSignedIn != null && isSignedIn) {
-                // Chang here
+                // Change here
                 findNavController().navigate(
-                    R.id.emailVerificationFragment,
-                    null,
-                    slideRightNavOptions()
+                    R.id.emailVerificationFragment
                 )
             }
         }
-        
-        binding.confirmPasswordText.editText?.onDone {
-            createAccount()
-        }
+*/
 
         viewModel.currentError.observe(viewLifecycleOwner) { exception ->
             if (exception != null) {
@@ -104,24 +123,37 @@ class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainVie
 
     }
 
-    private fun onTextChange() {
-        val nameText = binding.nameText.editText?.text
-        val emailText = binding.emailText.editText?.text
-        val passwordText = binding.passwordText.editText?.text
-        val confirmPasswordText = binding.confirmPasswordText.editText?.text
+    private fun name(): String {
+        return binding.nameText.editText?.text?.trim().toString()
+    }
 
-        binding.createBtn.isEnabled = !nameText.isNullOrBlank() && nameText.trim()
-            .toString().length >= 4 && !emailText.isNullOrBlank() && emailText.toString()
-            .isValidEmail() && !passwordText.isNullOrBlank() && passwordText.toString()
-            .isValidPassword() && !confirmPasswordText.isNullOrBlank() && confirmPasswordText.toString() == passwordText.toString()
+    private fun email(): String {
+        return binding.emailText.editText?.text?.trim().toString()
+    }
+
+    private fun password(): String {
+        return binding.passwordText.editText?.text?.trim().toString()
+    }
+
+    private fun confirmPassword(): String {
+        return binding.confirmPasswordText.editText?.text?.trim().toString()
+    }
+
+    fun TextInputLayout.onChange() {
+        editText?.doAfterTextChanged {
+            inputs.forEach {
+                it.removeError()
+            }
+            onChangeJob?.cancel()
+            onChangeJob =
+                viewModel.registerDataChanged(name(), email(), password(), confirmPassword())
+        }
     }
 
     private fun showDialog() {
         val msg = "Creating account .. Please wait for a while"
         loadingFragment = MessageDialogFragment.builder(msg)
-            .setIsDraggable(false)
-            .setIsHideable(false)
-            .shouldShowProgress(true)
+            .setProgress()
             .build()
 
         loadingFragment?.show(childFragmentManager, MessageDialogFragment.TAG)
@@ -131,96 +163,22 @@ class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainVie
 
         binding.createBtn.isEnabled = false
 
-        val nameText = binding.nameText.editText?.text
-        if (nameText.isNullOrBlank()) {
-            binding.nameText.isErrorEnabled = true
-            binding.nameText.error = "Name cannot be empty"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val name = nameText.trim().toString()
-
-        val emailText = binding.emailText.editText?.text
-        if (emailText.isNullOrBlank()) {
-            binding.emailText.isErrorEnabled = true
-            binding.emailText.error = "Email cannot be empty"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val email = emailText.trim().toString()
-
-        if (!email.isValidEmail()) {
-            binding.emailText.isErrorEnabled = true
-            binding.emailText.error = "Email is not valid"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val passwordText = binding.passwordText.editText?.text
-        if (passwordText.isNullOrBlank()) {
-            binding.passwordText.isErrorEnabled = true
-            binding.passwordText.error = "Password cannot be empty"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val password = passwordText.trim().toString()
-
-        if (!password.isValidPassword()) {
-            binding.passwordText.isErrorEnabled = true
-            binding.passwordText.error = "Not a valid password. Must be longer than 8 characters. Must include at least one letter, one number and one symbol"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val confirmPasswordText = binding.confirmPasswordText.editText?.text
-        if (confirmPasswordText.isNullOrBlank()) {
-            binding.confirmPasswordText.isErrorEnabled = true
-            binding.confirmPasswordText.error = "Confirm the given password again."
-            binding.createBtn.isEnabled = true
-            return
-        }
-
-        val confirmPassword = confirmPasswordText.trim().toString()
-
-        if (password != confirmPassword) {
-            binding.confirmPasswordText.isErrorEnabled = true
-            binding.confirmPasswordText.error = "Password does not match"
-            binding.createBtn.isEnabled = true
-            return
-        }
-
         showDialog()
 
-        FireUtility.createAccount(email, password) {
-            if (it.isSuccessful) {
-                val user = it.result.user
-                if (user != null) {
-                    val localUser = User.newUser(user.uid, name, email)
+        val name = name()
+        val email = email()
+        val password = password()
 
-                    // setting a default image for the user
-                    val photo = userImages.random()
-                    localUser.photo = photo
-
-                    FireUtility.uploadUser(localUser) { it1 ->
-                        if (it1.isSuccessful) {
-
-                            /* initialize user manager here */
-                            UserManager.updateUser(localUser)
-
-                            viewModel.insertCurrentUser(localUser)
-                        } else {
-                            viewModel.setCurrentError(it1.exception)
-                            Firebase.auth.signOut()
-                        }
-                    }
+        FireUtility.createAccount2(name, email, password) { result ->
+            when (result) {
+                is Result.Error -> {
+                    binding.createBtn.isEnabled = true
+                    Log.e(TAG, "createAccount: ${result.exception.localizedMessage}")
                 }
-            } else {
-                binding.createBtn.isEnabled = true
-                viewModel.setCurrentError(it.exception)
-                Firebase.auth.signOut()
+                is Result.Success -> {
+                    UserManager.updateUser(result.data)
+                    viewModel.insertCurrentUser(result.data)
+                }
             }
         }
     }
@@ -229,9 +187,8 @@ class CreateAccountFragment : BaseFragment<FragmentCreateAccountBinding, MainVie
         private const val TAG = "CreateAccountFragment"
     }
 
-    override val viewModel: MainViewModel by activityViewModels()
-    override fun getViewBinding(): FragmentCreateAccountBinding {
-        return FragmentCreateAccountBinding.inflate(layoutInflater)
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentCreateAccountBinding {
+        return FragmentCreateAccountBinding.inflate(inflater)
     }
 
 }

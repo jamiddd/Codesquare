@@ -2,6 +2,7 @@
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/chat_detail_root"
     style="@style/AppTheme.Fragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,6 +11,7 @@
     android:overScrollMode="never">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/chat_detail_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
@@ -53,7 +55,7 @@
                 style="@style/AppTheme.ContentHeading"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Post Guidelines" />
+                android:text="Rules" />
 
             <TextView
                 android:id="@+id/chat_post_guidelines"
@@ -74,6 +76,31 @@
                 android:layout_marginBottom="8dp"
                 android:text="Set rules for chat"
                 android:textAllCaps="true" />
+
+            <TextView
+                android:id="@+id/chat_contributors_header"
+                style="@style/AppTheme.ContentHeading"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="People" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/chat_contributors_recycler"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="16dp"
+                tools:itemCount="1"
+                tools:listitem="@layout/user_grid_item" />
+
+            <ProgressBar
+                android:id="@+id/chat_media_progress"
+                style="?android:attr/progressBarStyle"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_margin="16dp" />
 
             <TextView
                 android:id="@+id/chat_media_header"
@@ -97,22 +124,6 @@
                 tools:listitem="@layout/grid_image_layout">
 
             </androidx.recyclerview.widget.RecyclerView>
-
-            <TextView
-                android:id="@+id/chat_contributors_header"
-                style="@style/AppTheme.ContentHeading"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Contributors" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/chat_contributors_recycler"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:overScrollMode="never"
-                android:paddingBottom="8dp"
-                tools:itemCount="1"
-                tools:listitem="@layout/user_grid_item" />
 
         </LinearLayout>
 

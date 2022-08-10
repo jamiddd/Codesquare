@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.firestore.ktx.firestore
@@ -21,7 +20,6 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.databinding.FragmentInvitesBinding
 import com.jamid.codesquare.listeners.PostMiniItemClickListener
 
-@OptIn(ExperimentalPagingApi::class)
 class InvitesFragment: Fragment(), PostMiniItemClickListener {
 
     private lateinit var binding: FragmentInvitesBinding

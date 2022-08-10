@@ -1,3 +1,6 @@
+export const UPVOTE_COUNT = "upvoteCount";
+export const DOWNVOTE_COUNT = "downvoteCount";
+export const RANK = "rank";
 export const ID = "id";
 export const TITLE = "title";
 export const CONTENT = "content";

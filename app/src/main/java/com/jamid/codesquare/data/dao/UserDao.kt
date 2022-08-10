@@ -1,7 +1,6 @@
 package com.jamid.codesquare.data.dao
 
 import androidx.lifecycle.LiveData
-import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Transaction
@@ -50,5 +49,6 @@ abstract class UserDao: BaseDao<User>() {
 
     @Query("SELECT * FROM users WHERE chatChannels LIKE :chatChannelId ORDER BY name ASC LIMIT :limit")
     abstract fun getContributors(chatChannelId: String, limit: Int = 6): LiveData<List<User>>
+
 
 }

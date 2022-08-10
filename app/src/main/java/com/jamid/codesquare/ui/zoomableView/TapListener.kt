@@ -1,11 +1,12 @@
 package com.jamid.codesquare.ui.zoomableView
 
 import android.graphics.PointF
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
+import kotlin.math.abs
+import kotlin.math.hypot
 
-class TapListener(zoomableDraweeView: ZoomableDraweeView):
+open class TapListener(zoomableDraweeView: ZoomableDraweeView):
 	GestureDetector.SimpleOnGestureListener() {
 
 	private val mDraweeView: ZoomableDraweeView = zoomableDraweeView
@@ -32,12 +33,10 @@ class TapListener(zoomableDraweeView: ZoomableDraweeView):
 	}
 
 	override fun onDown(e: MotionEvent?): Boolean {
-		Log.d("TAG", "onDown")
 		return super.onDown(e)
 	}
 
 	override fun onSingleTapUp(e: MotionEvent?): Boolean {
-		Log.d("TAG", "onSingleTapUp")
 		return super.onSingleTapUp(e)
 	}
 
@@ -93,7 +92,7 @@ class TapListener(zoomableDraweeView: ZoomableDraweeView):
 	}
 
 	private fun shouldStartDoubleTapScroll(viewPoint: PointF): Boolean {
-		val dist = Math.hypot(
+		val dist = hypot(
 			(viewPoint.x - mDoubleTapViewPoint.x).toDouble(),
 			(viewPoint.y - mDoubleTapViewPoint.y).toDouble()
 		)
@@ -102,7 +101,7 @@ class TapListener(zoomableDraweeView: ZoomableDraweeView):
 
 	private fun calcScale(currentViewPoint: PointF): Float {
 		val dy = currentViewPoint.y - mDoubleTapViewPoint.y
-		val t = 1 + Math.abs(dy) * 0.001f
+		val t = 1 + abs(dy) * 0.001f
 		return if (dy < 0) mDoubleTapScale / t else mDoubleTapScale * t
 	}
 

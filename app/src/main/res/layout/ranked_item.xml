@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <include
+        android:id="@+id/post_container"
+        layout="@layout/post_mini_item"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/upvote_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/ranked_post_rank"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <TextView
+        android:id="@+id/ranked_post_rank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:fontFamily="@font/anton"
+        android:gravity="center"
+        android:text="9"
+        android:textAppearance="@style/TextAppearance.AppCompat.Display3"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/post_container"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_min="50dp" />
+
+    <Button
+        android:id="@+id/upvote_btn"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:icon="@drawable/ic_round_thumb_up_24"
+        app:iconTint="#777"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/post_container"
+        app:layout_constraintTop_toBottomOf="@id/post_container" />
+
+    <Button
+        android:id="@+id/downvote_btn"
+        style="@style/AppTheme.Button.IconOnly"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_round_thumb_down_24"
+        app:iconTint="#777"
+        app:layout_constraintBottom_toBottomOf="@+id/upvote_btn"
+        app:layout_constraintStart_toEndOf="@+id/upvote_btn"
+        app:layout_constraintTop_toTopOf="@+id/upvote_btn" />
+
+    <TextView
+        android:id="@+id/upvote_count"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center_vertical|end"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/downvote_btn"
+        app:layout_constraintEnd_toEndOf="@+id/post_container"
+        app:layout_constraintStart_toEndOf="@+id/downvote_btn"
+        app:layout_constraintTop_toTopOf="@+id/downvote_btn" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

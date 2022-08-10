@@ -5,34 +5,33 @@ import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
-import androidx.room.Transaction
 import com.jamid.codesquare.data.Post
 
 @Dao
 abstract class PostDao: BaseDao<Post>() {
 
-    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY isMadeByMe DESC, createdAt DESC")
+    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY createdAt DESC")
     abstract fun getPagedPostsByTime(): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY isMadeByMe DESC, createdAt DESC")
+    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY createdAt DESC")
     abstract fun getTagPostsByTime(tag: String): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY isMadeByMe DESC, likesCount DESC")
+    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY likesCount DESC")
     abstract fun getPagedPostsByLikes(): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY isMadeByMe DESC, likesCount DESC")
+    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY likesCount DESC")
     abstract fun getTagPostsByLikes(tag: String): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY isMadeByMe DESC, viewsCount DESC")
+    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY viewsCount DESC")
     abstract fun getPagedPostsByViews(): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY  isMadeByMe DESC, viewsCount DESC")
+    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY viewsCount DESC")
     abstract fun getTagPostsByViews(tag: String): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY isMadeByMe DESC, contributorsCount DESC")
+    @Query("SELECT * FROM posts WHERE archived = 0 ORDER BY contributorsCount DESC")
     abstract fun getPagedPostsByContributors(): PagingSource<Int, Post>
 
-    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY isMadeByMe DESC, contributorsCount DESC")
+    @Query("SELECT * FROM posts WHERE tags LIKE :tag AND archived = 0 ORDER BY contributorsCount DESC")
     abstract fun getTagPostsByContributors(tag: String): PagingSource<Int, Post>
 
     @Query("DELETE FROM posts")
@@ -99,6 +98,41 @@ abstract class PostDao: BaseDao<Post>() {
 
     @Query("DELETE FROM posts WHERE post_userId = :id")
     abstract suspend fun deletePostsByUserId(id: String)
+
+    @Query("SELECT * FROM posts WHERE rank != -1 ORDER BY rank ASC")
+    abstract fun getRankedPosts(): PagingSource<Int, Post>
+
+    @Query("SELECT * FROM posts WHERE likesCount > 5 AND isAd = 0")
+    abstract fun getPostMoreLikes(): PagingSource<Int, Post>
+
+    @Query("SELECT * FROM posts WHERE rankCategory = :category ORDER BY rank ASC")
+    abstract fun getRankedCategoryPosts(category: String): PagingSource<Int, Post>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /* Experimental for new stuff */
+    @Query("SELECT * FROM posts WHERE archived = 0 AND createdAt < :time ORDER BY createdAt DESC LIMIT :loadSize")
+    abstract suspend fun getPosts(time: Long, loadSize: Int): List<Post>
+
+
+    @Query("SELECT * FROM posts WHERE archived = 0 AND id = :key LIMIT 1")
+    abstract suspend fun getPostById(key: String): Post?
 
 
 }

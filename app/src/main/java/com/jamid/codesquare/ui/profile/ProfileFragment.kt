@@ -2,20 +2,17 @@ package com.jamid.codesquare.ui.profile
 
 import android.animation.AnimatorInflater
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
+import android.util.Log
+import android.view.LayoutInflater
 import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
-import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.chip.Chip
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
@@ -26,62 +23,111 @@ import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentProfileBinding
 import com.jamid.codesquare.listeners.OptionClickListener
 import com.jamid.codesquare.listeners.UserClickListener
-import com.jamid.codesquare.ui.MessageDialogFragment
 import com.jamid.codesquare.ui.OptionsFragment
-import com.jamid.codesquare.ui.PostListFragment
+import com.jamid.codesquare.ui.SendInviteFragment
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.util.*
 
-@ExperimentalPagingApi
-class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), OptionClickListener {
+class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListener {
 
-    override val viewModel: MainViewModel by activityViewModels()
     private lateinit var userClickListener: UserClickListener
-
     private var userLikeListenerRegistration: ListenerRegistration? = null
     private var mUser: User? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.profile_menu, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        super.onOptionsItemSelected(item)
         mUser = arguments?.getParcelable(USER)
-
-        return when (item.itemId) {
-            R.id.profile_option -> {
-                val (choices, icons) = if (mUser == null || mUser?.id == UserManager.currentUserId) {
-                    arrayListOf(OPTION_24, OPTION_25, OPTION_26, OPTION_31, OPTION_27, OPTION_23) to arrayListOf(R.drawable.ic_round_collections_bookmark_24, R.drawable.ic_round_archive_24, R.drawable.ic_round_post_add_24, R.drawable.ic_round_group_add_24, R.drawable.ic_round_settings_24, R.drawable.ic_round_logout_24)
-                } else {
-                    arrayListOf(OPTION_14, OPTION_33) to arrayListOf(R.drawable.ic_round_report_24, R.drawable.ic_round_block_24)
-                }
-
-                activity.optionsFragment = OptionsFragment.newInstance(null, choices, icons, listener = this, user = mUser)
-                activity.optionsFragment?.show(requireActivity().supportFragmentManager, OptionsFragment.TAG)
-
-                true
-            }
-            else -> true
-        }
-    }
-
-    override fun getViewBinding(): FragmentProfileBinding {
-        return FragmentProfileBinding.inflate(layoutInflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         userClickListener = activity
-        mUser = arguments?.getParcelable(USER)
+
+
+
+        binding.profileAppBar.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
+            if (verticalOffset == 0) {
+                activity.binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(activity,
+                    R.animator.app_bar_elevation)
+            } else {
+                activity.binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(activity,
+                    R.animator.app_bar_elevation_reverse)
+            }
+        })
+
+        setUserData()
+    }
+
+    private fun setUserData() {
+        val user = mUser ?: UserManager.currentUser
+        binding.userInfoLayout.apply {
+
+            profileCollabCount.setOnClickListener {
+                binding.profileViewPager.setCurrentItem(1, true)
+            }
+
+            profilePostsCount.setOnClickListener {
+                binding.profileViewPager.setCurrentItem(0, true)
+            }
+
+            profileImg.setImageURI(user.photo)
+
+            profileName.text = user.name
+
+            if (user.tag.isBlank()) {
+                profileTag.hide()
+            } else {
+                profileTag.show()
+                profileTag.text = user.tag
+            }
+
+            if (user.about.isBlank()) {
+                profileAbout.hide()
+            } else {
+                profileAbout.show()
+                profileAbout.text = user.about
+            }
+
+            val t1 = user.postsCount.toString()
+            profilePostsCount.text = t1
+
+            val t2 = user.collaborationsCount.toString()
+            profileCollabCount.text = t2
+
+            // before setting up, hide both primary and secondary buttons
+            profileEditBtn.hide()
+            profileLikeBtn.hide()
+            profileInviteBtn.hide()
+
+            // setting up primary button
+            setUpPrimaryButton(user)
+
+            // set up invite button
+            setUpSecondaryButton(user)
+
+        }
+
+        if (UserManager.currentUser.blockedUsers.contains(user.id)) {
+            activity.showTopSnack(user.name + " is blocked. Do you want to unblock?", label = "Unblock") {
+                FireUtility.unblockUser(user) {
+                    if (it.isSuccessful) {
+                        Snackbar.make(binding.root, "${user.name} has been unblocked.", Snackbar.LENGTH_LONG).show()
+                    } else {
+                        toast("Something went wrong! Try again later.")
+                    }
+                }
+            }
+        }
+
+        binding.userInfoLayout.root.post {
+            if (binding.profileViewPager.adapter == null) {
+                setPager()
+            }
+        }
+    }
+
+    private fun setPager() = runDelayed(300) {
         binding.profileViewPager.adapter = ProfilePagerAdapter(activity, mUser)
-        binding.profileViewPager.offscreenPageLimit = 2
 
         OverScrollDecoratorHelper.setUpOverScroll((binding.profileViewPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
 
@@ -96,105 +142,48 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
                 }
             }
         }.attach()
-
-        binding.profileAppBar.addOnOffsetChangedListener(AppBarLayout.OnOffsetChangedListener { _, verticalOffset ->
-            if (verticalOffset == 0) {
-                activity.binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(requireContext(),
-                    R.animator.app_bar_elevation)
-            } else {
-                activity.binding.mainAppbar.stateListAnimator = AnimatorInflater.loadStateListAnimator(requireContext(),
-                    R.animator.app_bar_elevation_reverse)
-            }
-        })
-
-        setUserData()
-
-    }
-
-    private fun setUserData() {
-        val user = mUser ?: UserManager.currentUser
-        binding.userInfoLayout.apply {
-
-            collaborationsCount.setOnClickListener {
-                binding.profileViewPager.setCurrentItem(1, true)
-            }
-
-            postsCount.setOnClickListener {
-                binding.profileViewPager.setCurrentItem(0, true)
-            }
-
-            userImg.setImageURI(user.photo)
-
-            userName.text = user.name
-
-            if (user.tag.isBlank()) {
-                userTag.hide()
-            } else {
-                userTag.show()
-                userTag.text = user.tag
-            }
-
-            if (user.about.isBlank()) {
-                userAbout.hide()
-            } else {
-                userAbout.show()
-                userAbout.text = user.about
-            }
-
-            val t1 = user.postsCount.toString() + " Posts"
-            postsCount.text = t1
-
-            val t2 = user.collaborationsCount.toString() + " Collaborations"
-            collaborationsCount.text = t2
-
-            // before setting up, hide both primary and secondary buttons
-            profilePrimaryBtn.hide()
-            inviteBtn.hide()
-
-            // setting up primary button
-            setUpPrimaryButton(profilePrimaryBtn, likesCount, user)
-
-            // set up invite button
-            setUpSecondaryButton(inviteBtn, user)
-
-        }
     }
 
 
-    private fun setUpSecondaryButton(secondaryBtn: MaterialButton, user: User) {
+    private fun setUpSecondaryButton(user: User) {
         val currentUser = UserManager.currentUser
         if (!user.isCurrentUser && currentUser.postsCount.toInt() != 0) {
             // set secondary btn for other user
-            secondaryBtn.show()
+            binding.userInfoLayout.profileInviteBtn.show()
 
-            secondaryBtn.setOnClickListener {
-                val postListFragment = PostListFragment.newInstance(user)
-                postListFragment.show(requireActivity().supportFragmentManager, PostListFragment.TAG)
+            binding.userInfoLayout.profileInviteBtn.setOnClickListener {
+                val postListFragment = SendInviteFragment.newInstance(user)
+                postListFragment.show(requireActivity().supportFragmentManager, SendInviteFragment.TAG)
             }
         } else {
             // current user doesn't require secondary btn
-            secondaryBtn.hide()
+            binding.userInfoLayout.profileInviteBtn.hide()
         }
     }
 
-    private fun setUpLikeText(likesCount: Chip, user: User) {
+    private fun setLikeText(user: User) {
+        val t1 = user.likesCount.toString()
+        binding.userInfoLayout.profileLikesCount.text = t1
 
-        val t1 = user.likesCount.toString() + " Likes"
-        likesCount.text = t1
-
-        likesCount.setOnClickListener {
-            findNavController().navigate(R.id.userLikesFragment, bundleOf(USER_ID to user.id), slideRightNavOptions())
+        binding.userInfoLayout.profileLikesCount.setOnClickListener {
+            findNavController().navigate(R.id.userLikesFragment, bundleOf(USER_ID to user.id))
         }
-
     }
 
 
-    private fun setUpPrimaryButton(primaryBtn: MaterialButton, likesCount: Chip, user: User) {
+    private fun setUpPrimaryButton(user: User) {
 
        /* primaryBtn.iconTint = ColorStateList.valueOf(primaryBtn.context.accentColor())
         primaryBtn.setTextColor(primaryBtn.context.accentColor())*/
 
+        setLikeText(user)
+
         if (!user.isCurrentUser) {
+
+            binding.userInfoLayout.profileMessageBtn.show()
+            binding.userInfoLayout.profileLikeBtn.show()
+            binding.userInfoLayout.profileEditBtn.hide()
+
             // set primary btn for other user
             userLikeListenerRegistration = Firebase.firestore.collection(USERS)
                 .document(UserManager.currentUserId)
@@ -202,60 +191,75 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
                 .document(user.id)
                 .addSnapshotListener { value, error ->
                     if (error != null) {
-                        primaryBtn.hide()
+                        binding.userInfoLayout.profileLikeBtn.hide()
                         return@addSnapshotListener
                     }
 
                     user.isLiked = value != null && value.exists()
 
-                    primaryBtn.icon = ContextCompat.getDrawable(primaryBtn.context, R.drawable.thumb_selector)
-                    primaryBtn.iconGravity = MaterialButton.ICON_GRAVITY_START
+                    binding.userInfoLayout.profileLikeBtn.icon = ContextCompat.getDrawable(activity, R.drawable.thumb_selector)
 
-                    setUpLikeText(likesCount, user)
+                    setLikeText(user)
 
                     if (user.isLiked) {
-                        onUserLiked(primaryBtn)
+                        onUserLiked(binding.userInfoLayout.profileLikeBtn)
                     } else {
-                        onUserDisliked(primaryBtn)
+                        onUserDisliked(binding.userInfoLayout.profileLikeBtn)
                     }
 
-                    primaryBtn.setOnClickListener {
-
+                    binding.userInfoLayout.profileLikeBtn.setOnClickListener {
                         if (user.isLiked) {
                             user.likesCount -= 1
                             mUser = user
-                            setUpLikeText(likesCount, user)
+                            setLikeText(user)
                         } else {
                             user.likesCount += 1
                             mUser = user
-                            setUpLikeText(likesCount, user)
+                            setLikeText(user)
                         }
 
                         userClickListener.onUserLikeClick(user)
                     }
-
                 }
+
+            binding.userInfoLayout.profileMessageBtn.setOnClickListener {
+
+                Firebase.firestore.collection(CHAT_CHANNELS)
+                    .whereIn("postId", listOf(UserManager.currentUserId + "," + user.id, user.id + "," + UserManager.currentUserId))
+                    .get()
+                    .addOnSuccessListener {
+                        if (!it.isEmpty) {
+                            val channel = it.toObjects(ChatChannel::class.java).first()
+                            activity.binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
+                            activity.onChannelClick(channel, 0)
+                        } else {
+                            FireUtility.createChannel(user) { channel ->
+                                if (channel != null) {
+                                    viewModel.insertChatChannels(listOf(channel))
+                                    activity.binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
+                                    activity.onChannelClick(channel, 0)
+                                }
+                            }
+                        }
+                    }.addOnFailureListener {
+                        Log.d(TAG, "setUpPrimaryButton: ${it.localizedMessage}")
+                    }
+
+            }
+
         } else {
 
-            setUpLikeText(likesCount, user)
+            binding.userInfoLayout.profileMessageBtn.hide()
+            binding.userInfoLayout.profileLikeBtn.hide()
+            binding.userInfoLayout.profileEditBtn.show()
 
-            // set primary btn for current user
-            primaryBtn.text = getString(R.string.edit_profile)
-            primaryBtn.icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_round_arrow_forward_ios_24)
-            primaryBtn.iconGravity = MaterialButton.ICON_GRAVITY_END
-            val size = resources.getDimension(R.dimen.large_len)
-            primaryBtn.iconSize = size.toInt()
-
-            primaryBtn.setOnClickListener {
+            binding.userInfoLayout.profileEditBtn.setOnClickListener {
                 val currentUser = UserManager.currentUser
-                viewModel.setUserEditForm(currentUser)
                 viewModel.setCurrentImage(currentUser.photo.toUri())
 
-                findNavController().navigate(R.id.editProfileFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.editProfileFragment)
             }
         }
-
-        primaryBtn.show()
 
     }
 
@@ -283,7 +287,8 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
         post: Post?,
         chatChannel: ChatChannel?,
         comment: Comment?,
-        tag: String?
+        tag: String?,
+        message: Message?
     ) {
         activity.optionsFragment?.dismiss()
         when (option.item) {
@@ -291,100 +296,98 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding, MainViewModel>(), Op
                 if (user != null) {
                     val report = Report.getReportForUser(user)
                     val bundle = bundleOf(REPORT to report)
-                    findNavController().navigate(R.id.reportFragment, bundle, slideRightNavOptions())
+                    findNavController().navigate(R.id.reportFragment, bundle)
                 }
             }
             OPTION_23 -> {
                 // log out
                 UserManager.logOut(requireContext()) {
-                    findNavController().navigate(R.id.loginFragment, null, slideRightNavOptions())
+                    findNavController().navigate(R.id.action_profileFragment_to_navigation_auth)
                     viewModel.signOut {}
                 }
             }
             OPTION_24 -> {
                 // saved pr
-                findNavController().navigate(R.id.savedPostsFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.savedPostsFragment)
             }
             OPTION_25 -> {
                 // archive
-                findNavController().navigate(R.id.archiveFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.archiveFragment)
             }
             OPTION_26 -> {
                 // requests
-                findNavController().navigate(R.id.myRequestsFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.myRequestsFragment)
             }
             OPTION_27 -> {
                 // settings
-                findNavController().navigate(R.id.settingsFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.settingsFragment)
             }
             OPTION_31 -> {
-                findNavController().navigate(R.id.invitesFragment, null, slideRightNavOptions())
+                findNavController().navigate(R.id.invitesFragment)
             }
             OPTION_33 -> {
                 if (user != null) {
-                    val d = MessageDialogFragment.builder("Are you sure you want to block ${user.name}")
-                        .setPositiveButton("Block") { _, _ ->
-
-                            val hits = user.collaborations.intersect(UserManager.currentUser.posts)
-                            if (hits.isNotEmpty()) {
-                                // there are posts where the blocked user is a collaborator, ask the current user to remove them first
-                                val msg = "Cannot block ${user.name} because he/she is a collaborator in one of your posts. Remove them before blocking."
-                                onIssueWhileBlocking(msg)
-                            } else {
-                                block(user)
-                            }
-
-                        }.setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }.build()
-
-                    d.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-
+                    activity.blockUser(user)
                 }
             }
         }
     }
 
-    private fun block(user: User) {
-        FireUtility.blockUser(user) {
-
-            if (it.isSuccessful) {
-                // delete all posts that belong to that user
-                // delete all comments that belong to that user
-                viewModel.deleteCommentsByUserId(user.id)
-                viewModel.deletePostsByUserId(user.id)
-                viewModel.deletePreviousSearchByUserId(user.id)
-
-                val frag = MessageDialogFragment.builder("${user.name} is blocked. A blocked user cannot see your profile. They cannot see your work. To unblock any blocked users, go to, Settings-Blocked accounts.")
-                    .setTitle("This user is blocked.")
-                    .setIsHideable(false)
-                    .setIsDraggable(false)
-                    .setPositiveButton("Done") { a, _ ->
-                        a.dismiss()
-                        findNavController().navigateUp()
-                    }.build()
-
-                frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-            } else {
-                it.exception?.localizedMessage?.let { msg ->
-                    onIssueWhileBlocking(msg)
-                }
-            }
-        }
-    }
-
-    private fun onIssueWhileBlocking(msg: String) {
-        val f = MessageDialogFragment.builder(msg)
-            .setTitle("Could not block ...")
-            .build()
-
-        f.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-    }
-
+    // TODO("Check save user function.")
     override fun onDestroyView() {
         super.onDestroyView()
         mUser?.let { viewModel.saveUser(it) }
         userLikeListenerRegistration?.remove()
+    }
+
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentProfileBinding {
+        setMenu(R.menu.profile_menu, {
+            when (it.itemId) {
+                R.id.profile_option -> {
+                    val (choices, icons) = if (mUser == null || mUser?.id == UserManager.currentUserId) {
+                        arrayListOf(
+                            OPTION_24,
+                            OPTION_25,
+                            OPTION_26,
+                            OPTION_31,
+                            OPTION_27,
+                            OPTION_23
+                        ) to arrayListOf(
+                            R.drawable.ic_round_collections_bookmark_24,
+                            R.drawable.ic_round_archive_24,
+                            R.drawable.ic_round_post_add_24,
+                            R.drawable.ic_round_group_add_24,
+                            R.drawable.ic_round_settings_24,
+                            R.drawable.ic_round_logout_24
+                        )
+                    } else {
+                        arrayListOf(
+                            OPTION_14,
+                            OPTION_33
+                        ) to arrayListOf(
+                            R.drawable.ic_round_report_24,
+                            R.drawable.ic_round_block_24
+                        )
+                    }
+
+                    activity.optionsFragment = OptionsFragment.newInstance(
+                        null,
+                        choices,
+                        icons,
+                        listener = this,
+                        user = mUser
+                    )
+                    activity.optionsFragment?.show(
+                        requireActivity().supportFragmentManager,
+                        OptionsFragment.TAG
+                    )
+                }
+            }
+            true
+        }) {
+
+        }
+        return FragmentProfileBinding.inflate(inflater)
     }
 
 }
