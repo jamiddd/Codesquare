@@ -9,6 +9,7 @@ class UserMinimalComparator2: DiffUtil.ItemCallback<UserMinimal2>() {
         return oldItem.objectID == newItem.objectID
     }
 
+
     override fun areContentsTheSame(oldItem: UserMinimal2, newItem: UserMinimal2): Boolean {
         return oldItem == newItem
     }
