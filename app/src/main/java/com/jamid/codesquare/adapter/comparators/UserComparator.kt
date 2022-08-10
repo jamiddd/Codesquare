@@ -12,4 +12,5 @@ class UserComparator : DiffUtil.ItemCallback<User>() {
         return oldItem == newItem
     }
 
+
 }

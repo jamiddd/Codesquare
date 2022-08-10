@@ -11,4 +11,5 @@ class RankedRulesComparator: DiffUtil.ItemCallback<RankedRule>() {
     override fun areContentsTheSame(oldItem: RankedRule, newItem: RankedRule): Boolean {
         return oldItem == newItem
     }
+
 }

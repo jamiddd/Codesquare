@@ -11,6 +11,7 @@ class PostRequestComparator: DiffUtil.ItemCallback<PostRequest>() {
         return oldItem.requestId == newItem.requestId
     }
 
+
     override fun areContentsTheSame(
         oldItem: PostRequest,
         newItem: PostRequest

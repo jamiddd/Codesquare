@@ -33,6 +33,7 @@ class Message2Comparator: DiffUtil.ItemCallback<Message2>() {
     override fun areContentsTheSame(oldItem: Message2, newItem: Message2): Boolean {
         return oldItem == newItem
     }
+
 }
 
 

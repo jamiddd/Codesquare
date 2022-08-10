@@ -12,4 +12,5 @@ class MediaItemComparator: DiffUtil.ItemCallback<MediaItem>() {
         return oldItem == newItem
     }
 
+
 }

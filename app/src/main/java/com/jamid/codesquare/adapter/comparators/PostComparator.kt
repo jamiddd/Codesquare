@@ -10,6 +10,7 @@ class PostComparator: DiffUtil.ItemCallback<Post>() {
 
     override fun areContentsTheSame(oldItem: Post, newItem: Post)
         = oldItem == newItem
+
 }
 
 class Post2Comparator: DiffUtil.ItemCallback<Post2>() {

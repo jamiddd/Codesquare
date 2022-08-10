@@ -11,4 +11,5 @@ class SubscriptionComparator: DiffUtil.ItemCallback<OneTimeProduct>() {
     override fun areContentsTheSame(oldItem: OneTimeProduct, newItem: OneTimeProduct): Boolean {
         return oldItem == newItem
     }
+
 }

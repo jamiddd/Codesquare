@@ -13,4 +13,5 @@ class PlaceComparator: DiffUtil.ItemCallback<Place>() {
         return oldItem.latLng != newItem.latLng
     }
 
+
 }

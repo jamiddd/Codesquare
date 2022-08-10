@@ -11,4 +11,5 @@ class PostInviteComparator: DiffUtil.ItemCallback<PostInvite>() {
     override fun areContentsTheSame(oldItem: PostInvite, newItem: PostInvite): Boolean {
         return oldItem == newItem
     }
+
 }

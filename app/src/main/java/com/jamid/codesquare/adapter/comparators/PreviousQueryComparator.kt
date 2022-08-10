@@ -11,4 +11,5 @@ class PreviousQueryComparator: DiffUtil.ItemCallback<SearchQuery>() {
     override fun areContentsTheSame(oldItem: SearchQuery, newItem: SearchQuery): Boolean {
         return oldItem == newItem
     }
+
 }

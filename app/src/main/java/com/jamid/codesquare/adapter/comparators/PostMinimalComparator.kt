@@ -9,4 +9,5 @@ class PostMinimalComparator: DiffUtil.ItemCallback<PostMinimal2>() {
 
     override fun areContentsTheSame(oldItem: PostMinimal2, newItem: PostMinimal2)
             = oldItem == newItem
+
 }

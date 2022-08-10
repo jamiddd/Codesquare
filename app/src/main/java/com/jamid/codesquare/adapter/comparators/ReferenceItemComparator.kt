@@ -12,4 +12,5 @@ class ReferenceItemComparator : DiffUtil.ItemCallback<ReferenceItem>() {
         return oldItem == newItem
     }
 
+
 }
