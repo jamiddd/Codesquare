@@ -1,12 +1,10 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.annotation.SuppressLint
 import android.graphics.Color
 import android.text.SpannableString
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -17,14 +15,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.drawee.backends.pipeline.Fresco
-import com.facebook.imagepipeline.request.ImageRequest
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.Image
-import com.jamid.codesquare.data.MediaItem
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.databinding.PostItemBinding
@@ -44,9 +36,7 @@ class PostViewHolder(
     private val mediaClickListener: MediaClickListener,
     listener: PostClickListener? = null
 ) : SuperPostViewHolder(v), ImageClickListener, PostVideoListener {
-    init {
-        Log.d("Something", "Simple: ")
-    }
+
     // just for external use cases
     lateinit var post: Post
     private lateinit var binding: PostItemBinding
@@ -56,19 +46,7 @@ class PostViewHolder(
 
     // a click listener for all post related actions
     private val postClickListener = listener ?: view.context as PostClickListener
-    var hasAttachedOnce = false
-
-    @Deprecated("All updates must come through database itself")
-    var isPartialUpdate = false
-
-
-    var likeListener: ListenerRegistration? = null
-    var saveListener: ListenerRegistration? = null
-    var joinListener: ListenerRegistration? = null
-
     private var counterHideJob: Job? = null
-
-
 
     /**
      * To save or un-save the post. This function saves or un-saves the post and also requests the viewHolder
@@ -76,18 +54,7 @@ class PostViewHolder(
      *
      * */
     fun onSaveBtnClick() {
-        isPartialUpdate = true
         postClickListener.onPostSaveClick(post.copy())
-    }
-
-    /**
-     * To like or dislike the post. This function likes or dislikes the post and also requests the viewHolder
-     * to be laid out again with the updated post
-     *
-     * */
-    private fun onLikeBtnClick() {
-        isPartialUpdate = true
-        postClickListener.onPostLikeClick(post.copy())
     }
 
     /**
@@ -133,57 +100,6 @@ class PostViewHolder(
         val cText = "1/${post.mediaString.length}"
         counterText.text = cText
         counterText.show()
-
-
-        /*recyclerView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-
-            var totalScroll = 0
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                totalScroll += abs(dx)
-
-                if (totalScroll > recyclerView.measuredWidth/3) {
-
-                    val pos = if (sign(dx.toFloat()) == 1f) {
-                        (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
-                    } else {
-                        (recyclerView.layoutManager as LinearLayoutManager).findFirstVisibleItemPosition()
-                    }
-
-                    if (pos != -1) {
-                        cText = "${pos + 1}/${post.mediaString.length}"
-                        counterText.text = cText
-                    } else {
-                        Log.d(TAG, "onScrolled: Couldn't get position")
-                    }
-                } else {
-                    Log.d(TAG, "onScrolled: $totalScroll - ${recyclerView.measuredWidth/5}")
-                }
-            }
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                super.onScrollStateChanged(recyclerView, newState)
-                when (newState) {
-                    RecyclerView.SCROLL_STATE_DRAGGING -> {
-                        counterText.fadeIn().doOnEnd {
-                            fadeOutCounterText(counterText)
-                        }
-                    }
-                    RecyclerView.SCROLL_STATE_IDLE -> {
-                        Log.d(TAG, "onScrollStateChanged: state idle")
-                        totalScroll = 0
-
-                        val pos = (recyclerView.layoutManager as LinearLayoutManager).findLastVisibleItemPosition()
-                        if (pos != -1) {
-                            cText = "${pos + 1}/${post.mediaString.length}"
-                            counterText.text = cText
-                        }
-                    }
-                }
-            }
-
-        })*/
 
         fadeOutCounterText(counterText)
 
@@ -272,52 +188,67 @@ class PostViewHolder(
             }
         }
 
-        mediaAdapter = MediaAdapter(post.id, mediaClickListener =  mediaClickListener)
-        set()
+
+        if (mediaAdapter == null) {
+            mediaAdapter = MediaAdapter(post.id, mediaClickListener =  mediaClickListener)
+            set()
+        }
 
         setCountText(binding.postImagesCounter)
 
         val mediaItems = convertMediaListToMediaItemList(post.mediaList, post.mediaString)
-        prefetchImages(mediaItems)
 
         mediaAdapter?.submitList(mediaItems)
 
     }
 
-    private fun prefetchImages(mediaItems: List<MediaItem>) {
-        val imagePipeline = Fresco.getImagePipeline()
+    override fun bind(mPost: Post2?) {
+        if (mPost is Post2.Collab) {
+            binding = PostItemBinding.bind(view)
+            view.tag = mPost.post.id
 
-        for (item in mediaItems) {
-            if (item.type != image) {
-                val imageRequest = ImageRequest.fromUri(item.url)
-                imagePipeline.prefetchToDiskCache(imageRequest, view.context)
+            post = mPost.post
+            setPostCreatorInfo()
+            setMediaRecycler()
+            setStaticContent()
+            setLikeBtn3(post)
+            setMetadataText(post)
+            setSaveBtn3(post)
+            setJoinBtn()
+
+        }
+    }
+
+    private fun setLikeBtn3(post: Post) {
+        FireUtility.checkIfPostLiked(post) { isLiked: Boolean ->
+            post.isLiked = isLiked
+
+            binding.postLikeBtn.isSelected = post.isLiked
+
+            binding.postLikeBtn.setOnClickListener {
+
+                // making sure that we are sending a copy and not the actual reference
+                postClickListener.onPostLikeClick(post.copy())
+
+                // this is just to update the ui
+                if (post.isLiked) {
+                    post.likesCount--
+                    post.isLiked = false
+                    binding.postLikeBtn.isSelected = false
+                } else {
+                    post.likesCount++
+                    post.isLiked = true
+                    binding.postLikeBtn.isSelected = true
+                }
+
+                // update the like comment text
+                setMetadataText(post)
+
             }
         }
     }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun bind(mPost: Post2?) {
-        if (isPartialUpdate) {
-            isPartialUpdate = false
-            return
-        }
-
-        if (mPost is Post2.Collab) {
-            binding = PostItemBinding.bind(view)
-            view.tag = mPost.post.id
-            post = mPost.post
-            hasAttachedOnce = true
-
-            setPostCreatorInfo()
-            setMediaRecycler()
-            setStaticContent()
-            setMutableContent()
-
-        }
-
-    }
-
-    private fun setLikeBtn2() {
+    /*private fun setLikeBtn2() {
         setLikeCommentStats()
         likeListener?.remove()
         likeListener = Firebase.firestore.collection(USERS)
@@ -326,7 +257,6 @@ class PostViewHolder(
             .document(post.id)
             .addSnapshotListener { value, error ->
                 if (error != null) {
-                    Log.e(TAG, "setLikeButton2: ${error.localizedMessage}")
                     return@addSnapshotListener
                 }
 
@@ -340,9 +270,32 @@ class PostViewHolder(
 
                 setLikeCommentStats()
             }
+    }*/
+
+    private fun setSaveBtn3(post: Post) {
+        FireUtility.checkIfPostSaved(post) { isSaved: Boolean ->
+            post.isSaved = isSaved
+
+            binding.postSaveBtn.isSelected = post.isSaved
+
+            binding.postSaveBtn.setOnClickListener {
+
+                // making sure that we are sending a copy and not the actual reference
+                postClickListener.onPostSaveClick(post.copy())
+
+                // this is just to update the ui
+                if (post.isSaved) {
+                    post.isSaved = false
+                    binding.postSaveBtn.isSelected = false
+                } else {
+                    post.isSaved = true
+                    binding.postSaveBtn.isSelected = true
+                }
+            }
+        }
     }
 
-    private fun setSaveBtn2() {
+    /*private fun setSaveBtn2() {
         saveListener?.remove()
         saveListener = Firebase.firestore.collection(USERS)
             .document(UserManager.currentUserId)
@@ -350,7 +303,6 @@ class PostViewHolder(
             .document(post.id)
             .addSnapshotListener { value, error ->
                 if (error != null) {
-                    Log.e(TAG, "setSaveBtn2: ${error.localizedMessage}")
                     return@addSnapshotListener
                 }
 
@@ -361,14 +313,7 @@ class PostViewHolder(
                     onSaveBtnClick()
                 }
             }
-    }
-
-    private fun setMutableContent() {
-        setLikeBtn2()
-        setSaveBtn2()
-        setJoinBtn()
-    }
-
+    }*/
 
     /**
      * To update all the views that are immutable in nature, ie. the views that doesn't
@@ -421,20 +366,96 @@ class PostViewHolder(
         } else {
             binding.rankedText.show()
             if (post.rank == -2L) {
-                binding.rankedText.text = "IN REVIEW"
+                binding.rankedText.text = view.context.getString(R.string.in_review)
             } else {
-                binding.rankedText.text = "Ranked #${post.rank}"
+                val rt = "Ranked #${post.rank}"
+                binding.rankedText.text = rt
             }
         }
 
     }
 
 
-    /**
-     * To update likes, comment and contributors count
-     *
-     * */
-    private fun setLikeCommentStats() {
+    private fun setMetadataText(post: Post) {
+        val likesString = getLikesString(post.likesCount.toInt())
+        val commentsString = getCommentsString(post.commentsCount.toInt())
+        val contributorsString = getContributorsString(post.contributors.size)
+        val likeCommentText = "$likesString • $commentsString • $contributorsString"
+
+        // this is done so that, it is visible even when the functionality is not done
+        binding.postLikeCommentText.text = likeCommentText
+
+        val cs1 = object : ClickableSpan() {
+            override fun onClick(p0: View) {
+                postClickListener.onPostSupportersClick(post)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val cs2 = object : ClickableSpan() {
+            override fun onClick(p0: View) {
+                postClickListener.onPostCommentClick(post)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val cs3 = object : ClickableSpan() {
+            override fun onClick(p0: View) {
+                postClickListener.onPostContributorsClick(post)
+            }
+
+            override fun updateDrawState(ds: TextPaint) {
+                super.updateDrawState(ds)
+                ds.isUnderlineText = false
+                val color = if (view.context.isNightMode()) {
+                    Color.WHITE
+                } else {
+                    Color.GRAY
+                }
+                ds.color = color
+            }
+        }
+
+        val s1 = 0
+        val e1 = likesString.length
+
+        val s2 = e1 + 3
+        val e2 = s2 + commentsString.length
+
+        val s3 = e2 + 3
+        val e3 = s3 + contributorsString.length
+
+        val formattedString = SpannableString(likeCommentText)
+        formattedString.setSpan(cs1, s1, e1, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        formattedString.setSpan(cs2, s2, e2, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+        formattedString.setSpan(cs3, s3, e3, SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+        binding.postLikeCommentText.movementMethod = LinkMovementMethod.getInstance()
+
+        binding.postLikeCommentText.text = formattedString
+    }
+
+    /*private fun setLikeCommentStats() {
         val likesString = getLikesString(post.likesCount.toInt())
         val commentsString = getCommentsString(post.commentsCount.toInt())
         val contributorsString = getContributorsString(post.contributors.size)
@@ -508,7 +529,7 @@ class PostViewHolder(
         binding.postLikeCommentText.movementMethod = LinkMovementMethod.getInstance()
 
         binding.postLikeCommentText.text = formattedString
-    }
+    }*/
 
     private fun getCommentsString(size: Int): String {
         return if (size == 1) {
@@ -565,7 +586,6 @@ class PostViewHolder(
                 }
 
                 binding.postJoinBtn.setOnClickListener {
-                    isPartialUpdate = true
                     postClickListener.onPostJoinClick(post.copy())
                 }
             }

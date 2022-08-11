@@ -3193,6 +3193,61 @@ object FireUtility {
 
     }
 
+    fun getSimilarPosts(post: Post, onComplete: (posts: List<Post>) -> Unit) {
+        val query = if (post.tags.isNotEmpty()) {
+            Firebase.firestore.collection(POSTS)
+                .whereNotEqualTo("id", post.id)
+                .whereArrayContainsAny(TAGS, post.tags.take(minOf(post.tags.size, 10)))
+        } else {
+            Firebase.firestore.collection(POSTS)
+                .whereNotEqualTo("id", post.id)
+        }
+
+        query.orderBy("id", Query.Direction.DESCENDING)
+            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
+            .limit(10)
+            .get()
+            .addOnSuccessListener {
+                if (it.isEmpty) {
+                    logError(Exception("No similar posts for ${post.id}"))
+                    onComplete(emptyList())
+                } else {
+                    val posts = it.toObjects(Post::class.java)
+                    processPosts(posts)
+                    onComplete(posts)
+                }
+            }.addOnFailureListener {
+                logError(it)
+                onComplete(emptyList())
+            }
+    }
+
+    fun checkIfPostLiked(post: Post, function: (Boolean) -> Unit) {
+        currentUserRef
+            .collection(LIKED_POSTS)
+            .document(post.id)
+            .get()
+            .addOnSuccessListener {
+                function(it.exists())
+            }.addOnFailureListener {
+                function(false)
+                logError(it)
+            }
+    }
+
+    fun checkIfPostSaved(post: Post, function: (Boolean) -> Unit) {
+        currentUserRef
+            .collection(SAVED_POSTS)
+            .document(post.id)
+            .get()
+            .addOnSuccessListener {
+                function(it.exists())
+            }.addOnFailureListener {
+                logError(it)
+                function(false)
+            }
+    }
+
 
     /*fun setSecondLastCommentAsLastComment(lastComment: Comment, onComplete: (Result<Comment>) -> Unit) {
         commentChannelCollectionRef

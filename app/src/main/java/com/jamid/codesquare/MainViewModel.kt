@@ -2238,6 +2238,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return repo.getChannelContributors(chatChannelId)
     }
 
+    fun getPostReactive(id: String) : LiveData<Post> {
+        return repo.postDao.getReactivePost(id)
+    }
+
+    fun getSimilarPosts(postId: String, randomTag: String): LiveData<List<Post>> {
+        return repo.postDao.getSimilarPostsReactive(postId, "%$randomTag%")
+    }
+
 
     /*private val _galleryMediaItems = MutableLiveData<List<MediaItem>>()
     val galleryMediaItems: LiveData<List<MediaItem>> = _galleryMediaItems

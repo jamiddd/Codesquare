@@ -20,7 +20,7 @@ class PostComparator: DiffUtil.ItemCallback<Post>() {
 
 class Post2Comparator: DiffUtil.ItemCallback<Post2>() {
     override fun areItemsTheSame(oldItem: Post2, newItem: Post2): Boolean {
-        return when (oldItem) {
+        val x = when (oldItem) {
             is Post2.Advertise -> {
                 when (newItem) {
                     is Post2.Advertise -> oldItem.id == newItem.id
@@ -34,6 +34,8 @@ class Post2Comparator: DiffUtil.ItemCallback<Post2>() {
                 }
             }
         }
+        Log.d(tag, "areItemsTheSame: $x")
+        return x
     }
 
     init {
@@ -41,7 +43,25 @@ class Post2Comparator: DiffUtil.ItemCallback<Post2>() {
     }
 
     override fun areContentsTheSame(oldItem: Post2, newItem: Post2): Boolean {
-        return oldItem == newItem
+        val x = when (oldItem) {
+            is Post2.Advertise -> {
+                when (newItem) {
+                    is Post2.Advertise -> oldItem.id == newItem.id
+                    is Post2.Collab -> oldItem.id == newItem.post.id
+                }
+            }
+            is Post2.Collab -> {
+                when (newItem) {
+                    is Post2.Advertise -> oldItem.post.id == newItem.id
+                    is Post2.Collab -> oldItem.post.id == newItem.post.id
+                }
+            }
+        }
+
+        Log.d(tag, "areContentsTheSame: $x")
+        return x
     }
+
+    private val tag = "MyCheck"
 
 }

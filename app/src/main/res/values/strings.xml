@@ -300,5 +300,6 @@
     <string name="about_too_long">Try to keep the about section less than 200 letters</string>
     <string name="username_search_error">Something went wrong while checking for username uniqueness</string>
     <string name="username_exists_error">Username already exists</string>
+    <string name="in_review">IN REVIEW</string>
 
 </resources>

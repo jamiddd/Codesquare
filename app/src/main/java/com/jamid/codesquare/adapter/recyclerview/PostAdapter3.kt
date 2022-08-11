@@ -6,8 +6,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.ListAdapter
 import com.jamid.codesquare.R
-import com.jamid.codesquare.adapter.comparators.PostComparator
-import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.adapter.comparators.Post2Comparator
 import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.listeners.PostClickListener
@@ -16,7 +15,7 @@ class PostAdapter3(
     private val lifecycleOwner: LifecycleOwner,
     private val mediaClickListener: MediaClickListener,
     private val listener: PostClickListener? = null,
-) : ListAdapter<Post, SuperPostViewHolder>(PostComparator()) {
+) : ListAdapter<Post2, SuperPostViewHolder>(Post2Comparator()) {
     init {
         Log.d("Something", "Simple: ")
     }
@@ -40,7 +39,7 @@ class PostAdapter3(
     }
 
     override fun onBindViewHolder(holder: SuperPostViewHolder, position: Int) {
-        holder.bind(Post2.Collab(getItem(position)))
+        holder.bind(getItem(position))
     }
 
     /*override fun onViewRecycled(holder: SuperPostViewHolder) {
@@ -51,15 +50,10 @@ class PostAdapter3(
     }*/
 
     override fun getItemViewType(position: Int): Int {
-        val item = getItem(position)
-        return if (item != null) {
-            if (item.isAd) {
-                1
-            } else {
-                0
-            }
-        } else {
-            super.getItemViewType(position)
+        return when (getItem(position)) {
+            is Post2.Advertise -> 1
+            is Post2.Collab -> 0
+            null -> super.getItemViewType(position)
         }
     }
 

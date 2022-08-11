@@ -138,4 +138,8 @@ abstract class PostDao: BaseDao<Post>() {
     abstract suspend fun getPostById(key: String): Post?
 
 
+    @Query("SELECT * FROM posts WHERE tags LIKE :s AND id != :id ORDER BY createdAt DESC LIMIT 10")
+    abstract fun getSimilarPostsReactive(id: String, s: String): LiveData<List<Post>>
+
+
 }

@@ -99,8 +99,6 @@ class MediaRecyclerView @JvmOverloads constructor(
                     val cText = "${pos + 1}/${adapter?.itemCount ?: 0}"
                     mediaCounterText?.text = cText
                 }
-            } else {
-                Log.d(PostViewHolder.TAG, "onScrolled: $totalScroll - ${recyclerView.measuredWidth/5}")
             }
         }
 

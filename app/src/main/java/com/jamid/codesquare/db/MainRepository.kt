@@ -44,17 +44,17 @@ class MainRepository(private val db: CollabDatabase) {
         return chatChannelDao.messageRequests(currentUserId = UserManager.currentUserId)
     }
 
-    suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
-        val newPosts = posts.toMutableList()
+    private val oldAdsList = mutableListOf<Post>()
 
-        val totalAds = newPosts.size / 4 // 25% ads
+    private fun getAdsForPostBatch(posts: List<Post>): List<Post> {
+        val totalAds = posts.size / 4 // 25% ads
 
         val likesCountList = posts.map { it.likesCount }
         val createdAtList = posts.map { it.createdAt }
         val updatedAtList = posts.map { it.updatedAt }
         val viewsCountList = posts.map { it.viewsCount }
 
-        val adPosts = Array(totalAds) {
+        return Array(totalAds) {
             Post().apply {
                 id = randomId()
                 viewsCount = viewsCountList.random()
@@ -63,9 +63,13 @@ class MainRepository(private val db: CollabDatabase) {
                 updatedAt = updatedAtList.random()
                 isAd = true
             }
-        }
+        }.toList()
+    }
 
-        newPosts.addAll(adPosts)
+    suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
+        val newPosts = posts.toMutableList()
+        oldAdsList.addAll(getAdsForPostBatch(posts.toList()))
+        newPosts.addAll(oldAdsList)
 
         if (shouldProcess) {
             processPosts(newPosts)
@@ -90,9 +94,7 @@ class MainRepository(private val db: CollabDatabase) {
             val ir = ImageRequest.fromUri(post.creator.photo)
             pipeline.prefetchToDiskCache(ir, null)
         }
-
     }
-
 
     private suspend fun insertCurrentUser(user: User) {
         user.isCurrentUser = true

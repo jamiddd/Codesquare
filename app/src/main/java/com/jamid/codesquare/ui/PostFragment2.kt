@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -20,18 +19,22 @@ import com.jamid.codesquare.adapter.recyclerview.PostAdapter3
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPost2Binding
 import com.jamid.codesquare.listeners.ChipClickListener
 import com.jamid.codesquare.listeners.CommentMiniListener
+import kotlinx.coroutines.Job
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+
 // something simple
 class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener, ChipClickListener {
 
     private lateinit var post: Post
     private lateinit var userAdapter: UserAdapter
-    private lateinit var postAdapter: PostAdapter3
+    private var postAdapter: PostAdapter3? = null
     private val staticList = mutableListOf<Post>()
+    private var pAdapter: PostAdapter3? = null
 
     companion object {
         const val TAG = "PostFragment2"
@@ -47,94 +50,98 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
         super.onViewCreated(view, savedInstanceState)
 
         post = arguments?.getParcelable(POST) ?: throw NullPointerException("Post is null")
-        setStaticPostRecycler()
-    }
 
-    private fun setStaticPostRecycler() {
-        val list = listOf(post, Post.newInstance(UserManager.currentUser).apply { isAd = true })
-        staticList.clear()
-        staticList.addAll(list)
-
-        postAdapter = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
-            shouldShowJoinButton = true
-            allowContentClick = false
-        }
-
-        binding.staticPostRecycler.apply {
-            adapter = postAdapter
-            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
-            layoutManager = LinearLayoutManager(requireContext())
-        }
-
-        postAdapter.submitList(staticList)
-
-        binding.staticPostRecycler.post {
-            setPostExtraContent()
-            setJoinBtn()
-            setSimilarPosts()
-        }
-    }
-
-    private fun setSimilarPosts() = runDelayed(1700) {
-        val query = if (post.tags.isNotEmpty()) {
-            Firebase.firestore.collection(POSTS)
-                .whereArrayContainsAny(TAGS, post.tags.take(minOf(post.tags.size,10)))
-        } else {
-            Firebase.firestore.collection(POSTS)
-        }
-
-        query.orderBy(CREATED_AT, Query.Direction.DESCENDING)
-            .limit(10)
-            .get()
-            .addOnSuccessListener {
-                if (this@PostFragment2.isVisible) {
-                    if (!it.isEmpty) {
-                        val posts = it.toObjects(Post::class.java).filter { p -> p.id != post.id }
-                        processPosts(posts)
-//                        val posts = processPosts(it.toObjects(Post::class.java).toTypedArray()).filter { p -> p.id != post.id }
-
-                        if (posts.isNotEmpty()) {
-                            binding.similarPostsHeader.show()
-                            binding.divider21.show()
-                            binding.relatedPostsRecycler.show()
-                            val pAdapter = PostAdapter3(viewLifecycleOwner, activity, activity)
-
-                            binding.relatedPostsRecycler.apply {
-                                adapter = pAdapter
-                                addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
-                                layoutManager = LinearLayoutManager(requireContext())
-                            }
-
-                            pAdapter.submitList(posts.toList())
-
-                            binding.root.setOnScrollChangeListener { _, _, _, _, _ ->
-                                val posArray = IntArray(2)
-                                binding.similarPostsHeader.getLocationOnScreen(posArray)
-
-                                if (posArray[1] < 100 && binding.similarPostsHeader.isVisible) {
-                                    activity.binding.mainToolbar.title = "Similar posts"
-                                } else {
-                                    activity.binding.mainToolbar.title = "Post"
-                                }
-                            }
-                        } else {
-                            binding.similarPostsHeader.hide()
-                            binding.divider21.hide()
-                            binding.relatedPostsRecycler.hide()
+        viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
+            if (it != null) {
+                if (postAdapter != null) {
+                    if ((postAdapter?.currentList?.size ?: 0) > 1) {
+                        val ad = postAdapter?.currentList?.get(1)
+                        ad?.let { a ->
+                            postAdapter?.submitList(listOf(Post2.Collab(it), a))
                         }
                     } else {
-                        binding.similarPostsHeader.hide()
-                        binding.divider21.hide()
-                        binding.relatedPostsRecycler.hide()
+                        toast("Something is wrong.")
+                    }
+                } else {
+                    postAdapter = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
+                        shouldShowJoinButton = true
+                        allowContentClick = false
+                    }
+
+                    binding.staticPostRecycler.apply {
+                        adapter = postAdapter
+                        itemAnimator = null
+                        layoutManager = LinearLayoutManager(requireContext())
+                    }
+
+                    postAdapter?.submitList(listOf(
+                        Post2.Collab(it),
+                        Post2.Advertise(randomId())
+                    ))
+
+                    binding.staticPostRecycler.post {
+                        setPostExtraContent()
+                        similarPostsJob?.cancel()
+                        similarPostsJob = setSimilarPosts()
                     }
                 }
-            }.addOnFailureListener {
-                if (this@PostFragment2.isVisible) {
+            }
+        }
+    }
+
+    private var similarPostsJob: Job? = null
+
+
+    private fun setSimilarPosts() = runDelayed(1700) {
+
+        FireUtility.getSimilarPosts(post) {
+            if (it.isNotEmpty()) {
+                viewModel.insertPosts(it)
+            } else {
+                Log.d(TAG, "setSimilarPosts: No similar posts")
+            }
+        }
+
+        if (pAdapter == null)
+            pAdapter = PostAdapter3(viewLifecycleOwner, activity, activity)
+
+        if (post.tags.isNotEmpty()) {
+            val randomTag = post.tags.random()
+            viewModel.getSimilarPosts(post.id, randomTag).observe(viewLifecycleOwner) { posts ->
+                if (!posts.isNullOrEmpty()) {
+                    binding.similarPostsHeader.show()
+                    binding.divider21.show()
+                    binding.relatedPostsRecycler.show()
+
+                    binding.relatedPostsRecycler.apply {
+                        adapter = pAdapter
+                        layoutManager = LinearLayoutManager(requireContext())
+                    }
+
+                    pAdapter?.submitList(posts.map { Post2.Collab(it) })
+
+                    binding.root.setOnScrollChangeListener { _, _, _, _, _ ->
+                        val posArray = IntArray(2)
+                        binding.similarPostsHeader.getLocationOnScreen(posArray)
+
+                        if (posArray[1] < 100 && binding.similarPostsHeader.isVisible) {
+                            activity.binding.mainToolbar.title = "Similar posts"
+                        } else {
+                            activity.binding.mainToolbar.title = "Post"
+                        }
+                    }
+                } else {
                     binding.similarPostsHeader.hide()
                     binding.divider21.hide()
                     binding.relatedPostsRecycler.hide()
                 }
             }
+        } else {
+            binding.similarPostsHeader.hide()
+            binding.divider21.hide()
+            binding.relatedPostsRecycler.hide()
+        }
+
     }
 
     private fun setPostExtraContent() = runDelayed(700) {
@@ -167,7 +174,7 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
     }
 
     private fun addLinks(links: List<String>) {
-        val d = ContextCompat.getDrawable(requireContext(), R.drawable.forward_icon)
+        val d = ContextCompat.getDrawable(activity, R.drawable.forward_icon)
         binding.postExtraItem.postLinks.addTagChips(
             links,
             chipIcon = d,
@@ -190,7 +197,7 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
                     tag = tag
                 )
                 activity.optionsFragment?.show(
-                    requireActivity().supportFragmentManager,
+                    activity.supportFragmentManager,
                     OptionsFragment.TAG
                 )
             }
@@ -210,7 +217,11 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
             CHIP_TAGS -> {
                 findNavController().navigate(
                     R.id.tagFragment,
-                    bundleOf(TITLE to chip.text, "tag" to chip.text, SUB_TITLE to "Posts related to ${chip.text}")
+                    bundleOf(
+                        TITLE to chip.text,
+                        "tag" to chip.text,
+                        SUB_TITLE to "Posts related to ${chip.text}"
+                    )
                 )
             }
         }
@@ -275,6 +286,11 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
             }
     }
 
+    override fun onStop() {
+        super.onStop()
+        similarPostsJob?.cancel()
+    }
+
     private fun onContributorsFetched(contributors: List<User>) = requireActivity().runOnUiThread {
         userAdapter.submitList(contributors)
         val list = arrayListOf<User>()
@@ -300,10 +316,6 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
     }
 
     override fun onOptionClick(comment: Comment) {
-
-    }
-
-    private fun setJoinBtn() {
 
     }
 

@@ -20,6 +20,7 @@ import com.jamid.codesquare.adapter.recyclerview.CommentViewHolder
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter3
 import com.jamid.codesquare.data.Comment
 import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.databinding.FragmentCommentsBinding
 // something simple
 class CommentsFragment :
@@ -28,31 +29,26 @@ class CommentsFragment :
     private var parentPost: Post? = null
     private var parentComment: Comment? = null
     private val currentUser = UserManager.currentUser
-    private val staticList = mutableListOf<Post>()
 
-    private fun setStaticPostRecycler(post: Post?) {
-        val list = if (post != null) {
-            listOf(post, Post().apply { isAd = true })
+    private var postAdapter3: PostAdapter3? = null
+
+    private fun setStaticPostRecycler(posts: List<Post2>) {
+       /* val list = if (post != null) {
+            listOf(Post2.Collab(post), Post2.Advertise(randomId()))
         } else {
             listOf(Post().apply { isAd = true })
         }
 
         staticList.clear()
-        staticList.addAll(list)
-
-        val postAdapter = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
-            shouldShowJoinButton = false
-            allowContentClick = false
-        }
+        staticList.addAll(list)*/
 
         binding.commentPostRecycler.apply {
-            adapter = postAdapter
-            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
+            adapter = postAdapter3
             layoutManager = LinearLayoutManager(activity)
             itemAnimator = null
         }
 
-        postAdapter.submitList(list)
+        postAdapter3?.submitList(posts)
 
     }
 
@@ -81,7 +77,33 @@ class CommentsFragment :
         binding.commentsRecycler.post {
             val post = arguments?.getParcelable<Post>(POST)
             if (post != null) {
-                setStaticPostRecycler(post)
+                viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
+                    if (it != null) {
+                        if (postAdapter3 != null) {
+                            if ((postAdapter3?.currentList?.size ?: 0) > 1) {
+                                val ad = postAdapter3?.currentList?.get(1)
+                                ad?.let { a ->
+                                    setStaticPostRecycler(
+                                        listOf(Post2.Collab(it), a)
+                                    )
+                                }
+                            } else {
+                                toast("Something is wrong")
+                            }
+                        } else {
+                            postAdapter3 = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
+                                shouldShowJoinButton = true
+                            }
+
+                            setStaticPostRecycler(
+                                listOf(
+                                    Post2.Collab(it),
+                                    Post2.Advertise(randomId())
+                                )
+                            )
+                        }
+                    }
+                }
             } else {
                 binding.commentPostRecycler.hide()
             }

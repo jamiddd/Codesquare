@@ -89,12 +89,12 @@
             android:id="@+id/ad_media_container"
             style="@style/AppTheme.Fragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="0dp"
             android:contentDescription="@string/ad_view_showing_advertisement"
             android:maxHeight="250dp"
             app:layout_constraintBottom_toTopOf="@+id/ad_primary_action"
+            app:layout_constraintDimensionRatio="1.9:1"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHeight_max="250dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/ad_title_container">
 
@@ -102,8 +102,7 @@
                 android:id="@+id/ad_media_view"
                 style="@style/AppTheme.GenericBackground2"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="160dp">
+                android:layout_height="wrap_content">
 
             </com.google.android.gms.ads.nativead.MediaView>
         </FrameLayout>

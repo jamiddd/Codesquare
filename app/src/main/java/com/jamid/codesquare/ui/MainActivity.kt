@@ -912,6 +912,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         if (post.isLiked) {
             FireUtility.dislikePost2(post) {
                 if (it.isSuccessful) {
+
+                    Log.d(TAG, "onPostLikeClick: Disliked a post")
+
                     viewModel.insertPost(post)
                 } else {
                     viewModel.setCurrentError(it.exception)
@@ -928,6 +931,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             )
             FireUtility.likePost2(post) {
                 if (it.isSuccessful) {
+
+                    Log.d(TAG, "onPostLikeClick: Liked a post")
+
                     viewModel.insertPost(post)
                     sendNotification(notification)
                 } else {
@@ -2278,7 +2284,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                             if (!it1.isSuccessful) {
                                 Log.e(
                                     TAG,
-                                    "onPostRequestAccept: ${it1.exception?.localizedMessage}"
+                                    "sendNotification: ${it1.exception?.localizedMessage}"
                                 )
                             }
                         }

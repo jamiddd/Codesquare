@@ -146,7 +146,6 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
             }
         }
 
-
         viewModel.feedOption.observe(viewLifecycleOwner) { feedOption ->
             if (feedOption != null) {
 
@@ -250,8 +249,7 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
             }
         }
 
-
-
+        // can be delayed
         viewModel.isNewPostCreated.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it) {
@@ -268,6 +266,7 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
             }
         }
 
+        // can be delayed
         viewModel.updatedOldPost.observe(viewLifecycleOwner) {
             if (it != null) {
                 if (it) {
