@@ -85,17 +85,8 @@ abstract class BaseBottomFragment<T: ViewBinding>: BottomSheetDialogFragment() {
             }
         }
 
-        // TODO("when the height is not fullscreen, it is not rounded fix this.")
         if (fullscreen) {
             setHeight(getWindowHeight() - getStatusBarHeight())
-        /*    if (roundedExpanded) {
-                getBottomSheetBehavior()?.apply {
-                    halfExpandedRatio = halfRatio
-                    state = BottomSheetBehavior.STATE_HALF_EXPANDED
-                }
-            } else {
-                setExpandedAtStart()
-            }*/
         } else {
             setHeight(ViewGroup.LayoutParams.WRAP_CONTENT)
         }
@@ -154,23 +145,32 @@ abstract class BaseFragment<T: ViewBinding>: Fragment() {
         return binding.root
     }
 
-    fun setMenu(menuId: Int, onItemSelected: (menuItem: MenuItem) -> Boolean, onPrepare: (menu: Menu) -> Unit) {
+    fun setMenu(menuId: Int, onCreateMenu: (() -> Unit)? = null, onItemSelected: ((menuItem: MenuItem) -> Boolean)? = null, onPrepare: ((menu: Menu) -> Unit)? = null) {
         val menuHost = activity
 
         menuHost.addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 // Add menu items here
                 menuInflater.inflate(menuId, menu)
+                if (onCreateMenu != null) {
+                    onCreateMenu()
+                }
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return onItemSelected(menuItem)
+                return if (onItemSelected != null) {
+                    onItemSelected(menuItem)
+                } else {
+                    true
+                }
             }
 
             override fun onPrepareMenu(menu: Menu) {
                 super.onPrepareMenu(menu)
                 runDelayed(300) {
-                    onPrepare(menu)
+                    if (onPrepare != null) {
+                        onPrepare(menu)
+                    }
                 }
             }
 

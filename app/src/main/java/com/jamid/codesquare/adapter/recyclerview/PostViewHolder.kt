@@ -5,6 +5,7 @@ import android.text.SpannableString
 import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -23,7 +24,6 @@ import com.jamid.codesquare.databinding.PostItemBinding
 import com.jamid.codesquare.listeners.ImageClickListener
 import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.listeners.PostClickListener
-import com.jamid.codesquare.listeners.PostVideoListener
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -35,11 +35,11 @@ class PostViewHolder(
     private val lifecycleOwner: LifecycleOwner,
     private val mediaClickListener: MediaClickListener,
     listener: PostClickListener? = null
-) : SuperPostViewHolder(v), ImageClickListener, PostVideoListener {
+) : SuperPostViewHolder(v), ImageClickListener {
 
     // just for external use cases
     lateinit var post: Post
-    private lateinit var binding: PostItemBinding
+    lateinit var binding: PostItemBinding
     var shouldShowJoinBtn = true
     var shouldAllowContentClick = true
     private var mediaAdapter: MediaAdapter? = null
@@ -54,7 +54,19 @@ class PostViewHolder(
      *
      * */
     fun onSaveBtnClick() {
+        postClickListener.currentViewHolder = this
+
+        // making sure that we are sending a copy and not the actual reference
         postClickListener.onPostSaveClick(post.copy())
+
+        // this is just to update the ui
+        if (post.isSaved) {
+            post.isSaved = false
+            binding.postSaveBtn.isSelected = false
+        } else {
+            post.isSaved = true
+            binding.postSaveBtn.isSelected = true
+        }
     }
 
     /**
@@ -66,10 +78,12 @@ class PostViewHolder(
         binding.postUserName.text = post.creator.name
 
         binding.postUserImg.setOnClickListener {
+            postClickListener.currentViewHolder = this
             postClickListener.onPostCreatorClick(post.copy())
         }
 
         binding.postUserName.setOnClickListener {
+            postClickListener.currentViewHolder = this
             postClickListener.onPostCreatorClick(post.copy())
         }
 
@@ -82,6 +96,7 @@ class PostViewHolder(
             binding.userContainer.invalidate()
 
             binding.postLocation.setOnClickListener {
+                postClickListener.currentViewHolder = this
                 postClickListener.onPostLocationClick(post.copy())
             }
         } else {
@@ -211,21 +226,24 @@ class PostViewHolder(
             setPostCreatorInfo()
             setMediaRecycler()
             setStaticContent()
-            setLikeBtn3(post)
-            setMetadataText(post)
-            setSaveBtn3(post)
+            setLikeBtn3()
+            setMetadataText()
+            setSaveBtn3()
             setJoinBtn()
 
+            Log.d(TAG, "bind: ${mPost.post.name}")
         }
     }
 
-    private fun setLikeBtn3(post: Post) {
+    private fun setLikeBtn3() {
         FireUtility.checkIfPostLiked(post) { isLiked: Boolean ->
             post.isLiked = isLiked
 
             binding.postLikeBtn.isSelected = post.isLiked
 
             binding.postLikeBtn.setOnClickListener {
+
+                postClickListener.currentViewHolder = this
 
                 // making sure that we are sending a copy and not the actual reference
                 postClickListener.onPostLikeClick(post.copy())
@@ -242,7 +260,7 @@ class PostViewHolder(
                 }
 
                 // update the like comment text
-                setMetadataText(post)
+                setMetadataText()
 
             }
         }
@@ -272,25 +290,14 @@ class PostViewHolder(
             }
     }*/
 
-    private fun setSaveBtn3(post: Post) {
+    private fun setSaveBtn3() {
         FireUtility.checkIfPostSaved(post) { isSaved: Boolean ->
             post.isSaved = isSaved
 
             binding.postSaveBtn.isSelected = post.isSaved
 
             binding.postSaveBtn.setOnClickListener {
-
-                // making sure that we are sending a copy and not the actual reference
-                postClickListener.onPostSaveClick(post.copy())
-
-                // this is just to update the ui
-                if (post.isSaved) {
-                    post.isSaved = false
-                    binding.postSaveBtn.isSelected = false
-                } else {
-                    post.isSaved = true
-                    binding.postSaveBtn.isSelected = true
-                }
+                onSaveBtnClick()
             }
         }
     }
@@ -325,36 +332,38 @@ class PostViewHolder(
         binding.postTitle.text = post.name
         binding.postContent.text = post.content
 
-        binding.postContent.setOnClickListener {
-            if (shouldAllowContentClick) {
-                postClickListener.onPostClick(post.copy())
-            }
-        }
-
         val timeText = " • " + getTextForTime(post.createdAt)
         binding.postTime.text = timeText
 
         binding.postCommentBtn.setOnClickListener {
+            postClickListener.currentViewHolder = this
             postClickListener.onPostCommentClick(post.copy())
         }
 
 
-        binding.root.setOnClickListener {
-            if (shouldAllowContentClick) {
+        if (shouldAllowContentClick) {
+            binding.root.setOnClickListener {
+                postClickListener.currentViewHolder = this
                 postClickListener.onPostClick(post.copy())
             }
+        } else {
+            binding.root.background = null
         }
+
 
         FireUtility.getUser(post.creator.userId) { creator ->
             if (creator != null) {
-                binding.root.setOnLongClickListener {
-                    if (shouldAllowContentClick) {
+                if (shouldAllowContentClick) {
+                    binding.root.setOnLongClickListener {
+                        postClickListener.currentViewHolder = this
                         postClickListener.onPostOptionClick(post.copy(), creator)
+                        true
                     }
-                    true
                 }
 
+
                 binding.postOption.setOnClickListener {
+                    postClickListener.currentViewHolder = this
                     postClickListener.onPostOptionClick(post.copy(), creator)
                 }
 
@@ -376,7 +385,7 @@ class PostViewHolder(
     }
 
 
-    private fun setMetadataText(post: Post) {
+    private fun setMetadataText() {
         val likesString = getLikesString(post.likesCount.toInt())
         val commentsString = getCommentsString(post.commentsCount.toInt())
         val contributorsString = getContributorsString(post.contributors.size)
@@ -586,6 +595,7 @@ class PostViewHolder(
                 }
 
                 binding.postJoinBtn.setOnClickListener {
+                    postClickListener.currentViewHolder = this
                     postClickListener.onPostJoinClick(post.copy())
                 }
             }
@@ -620,43 +630,5 @@ class PostViewHolder(
     override fun onCloseBtnClick(view: View, image: Image, position: Int) {
     }
 
-    override fun onVideoBeingPlayed() {
-    }
-
-    override fun onVideoPaused() {
-    }
-
-    /*fun pause() {
-        if (!::binding.isInitialized){
-            Log.d(TAG, "pause: Binding is not initialized")
-            return
-        }
-
-        if (::binding.isInitialized) {
-            for (child in binding.postMediaRecycler.children) {
-                val vh = binding.postMediaRecycler.findContainingViewHolder(child)
-                (vh as? MediaViewHolder)?.pause()
-            }
-        }
-    }*/
-
-    /*fun play() {
-        *//*if (!::binding.isInitialized){
-            Log.d(TAG, "play: Binding is not initialized")
-            return
-        }
-
-        if (!binding.root.isVisibleOnScreen()) {
-            Log.d(TAG, "play: The view itself is not visible on screen")
-            return
-        }
-
-        if (::binding.isInitialized) {
-            for (child in binding.postMediaRecycler.children) {
-                val vh = binding.postMediaRecycler.findContainingViewHolder(child)
-                (vh as? MediaViewHolder)?.play()
-            }
-        }*//*
-    }*/
 
 }

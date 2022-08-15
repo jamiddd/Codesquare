@@ -42,11 +42,7 @@ class CommentsFragment :
         staticList.clear()
         staticList.addAll(list)*/
 
-        binding.commentPostRecycler.apply {
-            adapter = postAdapter3
-            layoutManager = LinearLayoutManager(activity)
-            itemAnimator = null
-        }
+
 
         postAdapter3?.submitList(posts)
 
@@ -79,11 +75,14 @@ class CommentsFragment :
             if (post != null) {
                 viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
                     if (it != null) {
+
+                        binding.commentsHeader.text = "Comments (${it?.commentsCount})"
+
                         if (postAdapter3 != null) {
                             if ((postAdapter3?.currentList?.size ?: 0) > 1) {
                                 val ad = postAdapter3?.currentList?.get(1)
                                 ad?.let { a ->
-                                    setStaticPostRecycler(
+                                    postAdapter3?.submitList(
                                         listOf(Post2.Collab(it), a)
                                     )
                                 }
@@ -95,7 +94,13 @@ class CommentsFragment :
                                 shouldShowJoinButton = true
                             }
 
-                            setStaticPostRecycler(
+                            binding.commentPostRecycler.apply {
+                                adapter = postAdapter3
+                                layoutManager = LinearLayoutManager(activity)
+                                itemAnimator = null
+                            }
+
+                            postAdapter3?.submitList(
                                 listOf(
                                     Post2.Collab(it),
                                     Post2.Advertise(randomId())
@@ -231,7 +236,10 @@ class CommentsFragment :
             )
 
             viewModel.sendComment(comment1, prevComment) {
-
+                if (parentComment != null) {
+                    parentComment!!.repliesCount++
+                    binding.commentsHeader.text = "Comments (${parentComment!!.repliesCount})"
+                }
             }
 
             binding.commentInputLayout.text.clear()

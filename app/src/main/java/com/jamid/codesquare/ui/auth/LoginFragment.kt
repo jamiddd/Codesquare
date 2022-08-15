@@ -86,34 +86,9 @@ class LoginFragment : BaseFragment<FragmentLoginBinding>(), GoogleSignInListener
             signInWithGoogle()
         }
 
-        /*binding.emailText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.emailText.error = null
-            binding.emailText.isErrorEnabled = false
-        }
-
-        binding.passwordText.editText?.doAfterTextChanged {
-            onTextChange()
-            binding.passwordText.error = null
-            binding.passwordText.isErrorEnabled = false
-        }*/
-        
-
         binding.signInBtn.setOnClickListener {
             signIn()
         }
-
-        /*UserManager.currentUserLive.observe(viewLifecycleOwner) {
-            val currentUser = it ?: return@observe
-
-            binding.signInBtn.isEnabled = true
-
-            if (currentUser.interests.isEmpty()) {
-                findNavController().navigate(R.id.profileImageFragment)
-            } else {
-                findNavController().navigate(R.id.action_global_feedFragment)
-            }
-        }*/
 
         binding.forgotPasswordBtn.setOnClickListener {
             val emailText = binding.emailText.editText?.text
@@ -290,27 +265,6 @@ class LoginFragment : BaseFragment<FragmentLoginBinding>(), GoogleSignInListener
             }
         }
 
-        /*FireUtility.signIn(email, password) {
-            if (it.isSuccessful) {
-                Log.d(TAG, "Login successful")
-            } else {
-                binding.signInBtn.isEnabled = true
-                loadingFragment?.dismiss()
-                viewModel.setCurrentError(it.exception)
-
-                when (it.exception) {
-                    is FirebaseAuthInvalidCredentialsException -> {
-                        binding.passwordText.showError("Either email or password do not match")
-                    }
-                    is FirebaseAuthInvalidUserException -> {
-                        binding.passwordText.showError("No user account exists with this email")
-                    }
-                    else -> {
-                        binding.passwordText.showError("Unknown error occurred. Maybe check your internet connection.")
-                    }
-                }
-            }
-        }*/
     }
 
     private fun onFinish(currentUser: User) {

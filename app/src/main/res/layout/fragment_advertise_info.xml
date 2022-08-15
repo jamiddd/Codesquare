@@ -48,16 +48,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView27" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/give_feedback_btn"
         style="@style/AppTheme.GenericBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/give_feedback"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/rate_us_btn"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView28" />
+
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/rate_us_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="Rate us on Play Store"
+        style="@style/AppTheme.GenericTextBtn"
+        app:layout_constraintTop_toBottomOf="@id/give_feedback_btn"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

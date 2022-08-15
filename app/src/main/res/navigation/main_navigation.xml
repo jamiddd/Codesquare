@@ -29,7 +29,12 @@
             android:label="Login"
             tools:layout="@layout/fragment_login">
 
-            <action android:id="@+id/action_loginFragment_to_navigationHome" app:destination="@+id/navigation_home" />
+            <action
+                android:id="@+id/action_loginFragment_to_navigationHome"
+                app:destination="@+id/navigation_home"
+                app:launchSingleTop="true"
+                app:popUpTo="@id/navigation_home"
+                app:popUpToInclusive="true" />
 
         </fragment>
         <fragment
@@ -77,7 +82,7 @@
             android:id="@+id/action_global_navigation_home"
             app:destination="@id/navigation_home"
             app:launchSingleTop="true"
-            app:popUpTo="@id/feedFragment"
+            app:popUpTo="@navigation/navigation_home"
             app:popUpToInclusive="true"/>
     </navigation>
 

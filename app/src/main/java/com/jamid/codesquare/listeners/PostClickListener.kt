@@ -1,10 +1,14 @@
 package com.jamid.codesquare.listeners
 
+import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.data.Post
 import com.jamid.codesquare.data.PostMinimal2
 import com.jamid.codesquare.data.User
 // something simple
 interface PostClickListener {
+
+    var currentViewHolder: PostViewHolder?
+
     fun onPostClick(post: Post) {}
     fun onPostClick(postMinimal2: PostMinimal2) {}
     fun onPostLikeClick(post: Post) {}

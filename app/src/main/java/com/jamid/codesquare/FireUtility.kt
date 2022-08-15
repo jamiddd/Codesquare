@@ -20,7 +20,7 @@ import com.google.firebase.storage.ktx.storage
 import com.jamid.codesquare.data.*
 import kotlinx.coroutines.tasks.await
 import java.io.File
-// something simple
+
 object FireUtility {
 
     private const val TAG = "FireUtility"
@@ -48,16 +48,21 @@ object FireUtility {
     private val postRequestsCollectionRef: CollectionReference = db.collection(POST_REQUESTS)
     private val interestsCollectionRef: CollectionReference = db.collection(INTERESTS)
     private val rankedRulesCollectionRef: CollectionReference = db.collection("rankedRules")
-    private val competitionsCollectionRef: CollectionReference = db.collection("competitions")
+//    private val competitionsCollectionRef: CollectionReference = db.collection("competitions")
     private val storageRef: StorageReference = storage.reference
 
     /*private val imagesRef: StorageReference = storageRef.child("images")
     private val documentsRef: StorageReference = storageRef.child("documents")
     private val videosRef: StorageReference = storageRef.child("videos")*/
 
-    private fun getQuerySnapshot(query: Query, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        val task = query.get()
-        task.addOnCompleteListener(onComplete)
+    private val listenersMap: MutableMap<String, ListenerRegistration> = mutableMapOf()
+
+    fun addFirestoreListener(key: String, query: Query, onAdd: (QuerySnapshot?, FirebaseFirestoreException?) -> Unit) {
+        listenersMap[key] = query.addSnapshotListener(onAdd)
+    }
+
+    fun removeFirestoreListener(key: String) {
+        listenersMap.remove(key)
     }
 
     suspend fun fetchItems(
@@ -129,24 +134,6 @@ object FireUtility {
             }
     }
 
-
-    private fun getDocument(
-        documentRef: DocumentReference,
-        onComplete: (task: Task<DocumentSnapshot>) -> Unit
-    ) {
-        documentRef.get()
-            .addOnCompleteListener(onComplete)
-    }
-
-    suspend fun getDocument(documentRef: DocumentReference): Result<DocumentSnapshot> {
-        return try {
-            val task = documentRef.get()
-            val result = task.await()
-            Result.Success(result)
-        } catch (e: Exception) {
-            Result.Error(e)
-        }
-    }
 
     fun signInWithGoogle(credential: AuthCredential, onComplete: (task: Task<AuthResult>) -> Unit) {
         Firebase.auth.signInWithCredential(credential)
@@ -272,7 +259,7 @@ object FireUtility {
         batch.commit().addOnCompleteListener(onComplete)
     }
 
-    suspend fun uploadItems2(items: List<UploadItem>): List<String> {
+    private suspend fun uploadItems2(items: List<UploadItem>): List<String> {
         val listOfRef = mutableListOf<StorageReference>()
         val listOfUploadTask = mutableListOf<UploadTask>()
 
@@ -343,7 +330,7 @@ object FireUtility {
         }
     }
 
-    fun uploadImage(locationId: String, image: Uri, onComplete: (image: Uri?) -> Unit) {
+    /*fun uploadImage(locationId: String, image: Uri, onComplete: (image: Uri?) -> Unit) {
         val randomImageName = randomId()
         val ref = storageRef.child("images/users/$locationId/$randomImageName.jpg")
         ref.putFile(image)
@@ -356,7 +343,7 @@ object FireUtility {
             }.addOnFailureListener {
                 onComplete(null)
             }
-    }
+    }*/
 
 
     suspend fun usernameExist(username: String): Result<Boolean> {
@@ -431,7 +418,13 @@ object FireUtility {
                 dataMap["about"] = changes.about
             }
 
-            if (changes.interests.isNotEmpty() && UserManager.currentUser.interests != changes.interests) {
+            if (changes.interests.isEmpty()) {
+                if (UserManager.currentUser.interests.isNotEmpty()) {
+                    dataMap["interests"] = changes.interests
+                } else {
+                    // it was empty before too
+                }
+            } else {
                 dataMap["interests"] = changes.interests
             }
 
@@ -480,13 +473,6 @@ object FireUtility {
             batch.commit()
                 .addOnCompleteListener(onComplete)
         }
-    }
-
-    fun checkIfUserNameTaken(username: String, onComplete: (task: Task<QuerySnapshot>) -> Unit) {
-        val query = usersCollectionRef
-            .whereEqualTo(USERNAME, username)
-
-        getQuerySnapshot(query, onComplete)
     }
 
     /*fun upvotePost(post: Post, onComplete: (newPost: Post, task: Task<Void>) -> Unit) {
@@ -733,7 +719,7 @@ object FireUtility {
         }
     }
 
-    fun savePost2(post: Post, onComplete: (newPost: Post, task: Task<Void>) -> Unit) {
+   /* fun savePost2(post: Post, onComplete: (newPost: Post, task: Task<Void>) -> Unit) {
         val batch = db.batch()
         val now = System.currentTimeMillis()
 
@@ -749,7 +735,7 @@ object FireUtility {
             post.isSaved = true
             onComplete(post, it)
         }
-    }
+    }*/
 
     /* fun savePost(post: Post, onComplete: (task: Task<Void>) -> Unit) {
 
@@ -779,7 +765,7 @@ object FireUtility {
         }
     }
 
-    fun undoSavePost(post: Post, onComplete: (newPost: Post, task: Task<Void>) -> Unit) {
+    /*fun undoSavePost(post: Post, onComplete: (newPost: Post, task: Task<Void>) -> Unit) {
         val batch = db.batch()
         val now = System.currentTimeMillis()
 
@@ -794,7 +780,7 @@ object FireUtility {
             post.isSaved = false
             onComplete(post, it)
         }
-    }
+    }*/
 
 /*
     fun unSavePost(post: Post, onComplete: (task: Task<Void>) -> Unit) {
@@ -1290,8 +1276,7 @@ object FireUtility {
     }*/
 
     suspend fun sendMessages(
-        messages: List<Message>,
-        isForward: Boolean = false
+        messages: List<Message>
     ): Result<List<Message>> {
 
         val chatChannelId = messages[0].chatChannelId
@@ -1351,16 +1336,12 @@ object FireUtility {
             if (lastMessage.type == text) {
                 val mediaMessages = messages.subList(0, messages.size - 2)
 
-                if (!isForward)
-                    getDownloadableUrl(mediaMessages)
-
+                getDownloadableUrl(mediaMessages)
 
                 val updatedList = concatWithTextMessage(mediaMessages, lastMessage)
                 send(updatedList)
             } else {
-                if (!isForward)
-                    getDownloadableUrl(messages)
-
+                getDownloadableUrl(messages)
                 send(messages)
             }
         } else {
@@ -1371,8 +1352,7 @@ object FireUtility {
             } else {
                 val mediaMessages = listOf(singleMessage)
 
-                if (!isForward)
-                    getDownloadableUrl(mediaMessages)
+                getDownloadableUrl(mediaMessages)
 
                 send(mediaMessages)
             }
@@ -1471,6 +1451,7 @@ object FireUtility {
         onComplete: (task: Task<FileDownloadTask.TaskSnapshot>) -> Unit
     ) {
         val path = "${message.type}s/messages/${message.messageId}/$name"
+        Log.d(TAG, "downloadMessageMedia: $path")
         downloadMedia(destinationFile, path, onComplete)
     }
 
@@ -1492,7 +1473,7 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
-    suspend fun sendMultipleMessageToMultipleChannels(
+    /*suspend fun sendMultipleMessageToMultipleChannels(
         messages: List<Message>,
         channels: List<ChatChannel>
     ): Result<List<Message>> {
@@ -1622,7 +1603,7 @@ object FireUtility {
 
             Result.Error(e)
         }
-    }
+    }*/
 
     fun updateDeliveryListOfMessages(
         currentUserId: String,
@@ -1949,12 +1930,7 @@ object FireUtility {
             }
     }
 
-    /**
-     * To get a post from firestore, not intended for use in main thread
-     * @see getPost use this method to get post from firestore in main thread
-     * @param postId The id of the post to fetch
-     * @return Result of post data
-     * */
+
     /*suspend fun getPost(postId: String): Result<Post>? {
         val ref = postsCollectionRef.document(postId)
         return when (val result = getDocument(ref)) {
@@ -1973,10 +1949,7 @@ object FireUtility {
         }
     }*/
 
-    /**
-     * @param postId Id of the post
-     * @param onComplete Callback function for getting the post
-     * */
+
     /*fun getPost(postId: String, onComplete: (Result<Post>?) -> Unit) {
         val ref = postsCollectionRef.document(postId)
         getDocument(ref) {
@@ -1992,11 +1965,7 @@ object FireUtility {
         }
     }*/
 
-    /**
-     * @param userId The id of the user to fetch
-     * @return Result<User> Contains either the user or an exception due to failure.
-     * This method is not intended to run on main thread
-     * */
+
    /* suspend fun getUser(userId: String): Result<User>? {
         val ref = usersCollectionRef.document(userId)
         return when (val result = getDocument(ref)) {
@@ -2030,12 +1999,6 @@ object FireUtility {
             }.addOnFailureListener(onFailureListener)
     }
 
-    /**
-     * @param userId The id of the user to fetch
-     * @param onComplete Callback function containing result of user data
-     *
-     * To get the user from firebase using userId [For use in main thread]
-     * */
     /*fun getUser(userId: String, onComplete: (Result<User>?) -> Unit) {
         val ref = usersCollectionRef.document(userId)
         getDocument(ref) {
@@ -2684,7 +2647,7 @@ object FireUtility {
             }
     }
 
-    fun updatePost(
+    /*fun updatePost(
         postId: String,
         changes: Map<String, Any?>,
         onComplete: (task: Task<Void>) -> Unit
@@ -2692,7 +2655,7 @@ object FireUtility {
         postsCollectionRef.document(postId)
             .update(changes)
             .addOnCompleteListener(onComplete)
-    }
+    }*/
 
     private fun getMediaStringForPost(mediaItems: List<MediaItem>): String {
         var s = ""
@@ -2845,7 +2808,7 @@ object FireUtility {
             .addOnCompleteListener(onComplete)
     }
 
-    fun updateComment(
+    /*fun updateComment(
         updatedComment: Comment,
         changes: Map<String, Any?>,
         onComplete: (newComment: Comment, Task<Transaction>) -> Unit
@@ -2871,7 +2834,7 @@ object FireUtility {
         }.addOnCompleteListener {
             onComplete(updatedComment, it)
         }
-    }
+    }*/
 
     fun updatePostRequest(
         requestId: String,
@@ -3038,9 +3001,9 @@ object FireUtility {
         getPost(postMinimal2.objectID) { post ->
             post?.let {
                 onCheck(
-                    ((blockedUsers.contains(post.creator.userId) || blockedUsers.intersect(post.contributors)
+                    ((blockedUsers.contains(post.creator.userId) || blockedUsers.intersect(post.contributors.toSet())
                         .isNotEmpty()) || (blockedBy.contains(post.creator.userId) || blockedBy.intersect(
-                        post.contributors
+                        post.contributors.toSet()
                     ).isNotEmpty()))
                 )
             }
@@ -3074,7 +3037,7 @@ object FireUtility {
             }
     }
 
-    fun getCompetitions(onComplete: (result: Result<List<Competition>>) -> Unit) {
+   /* fun getCompetitions(onComplete: (result: Result<List<Competition>>) -> Unit) {
         competitionsCollectionRef
             .whereEqualTo("currentStatus", "open")
             .get()
@@ -3087,7 +3050,7 @@ object FireUtility {
             }.addOnFailureListener {
                 onComplete(Result.Error(it))
             }
-    }
+    }*/
 
     suspend fun getItems(key: String?, size: Int): Result<List<Post>> {
         return try {
@@ -3119,7 +3082,7 @@ object FireUtility {
 
     }
 
-    suspend fun getUserSync(id: String): User? {
+    /*suspend fun getUserSync(id: String): User? {
         val task = usersCollectionRef.document(id).get()
         val res = task.await()
         val user = res.toObject(User::class.java)
@@ -3129,9 +3092,9 @@ object FireUtility {
         } else {
             null
         }
-    }
+    }*/
 
-    suspend fun getPostSync(id: String): Post? {
+   /* suspend fun getPostSync(id: String): Post? {
         val task = postsCollectionRef.document(id).get()
         val res = task.await()
         val post = res.toObject(Post::class.java)
@@ -3141,7 +3104,7 @@ object FireUtility {
         } else {
             null
         }
-    }
+    }*/
 
     fun createChannel(user: User, onComplete: (ChatChannel?) -> Unit) {
         val chatChannel = ChatChannel.newInstance(user)
@@ -3196,14 +3159,14 @@ object FireUtility {
     fun getSimilarPosts(post: Post, onComplete: (posts: List<Post>) -> Unit) {
         val query = if (post.tags.isNotEmpty()) {
             Firebase.firestore.collection(POSTS)
-                .whereNotEqualTo("id", post.id)
+                .whereNotEqualTo(ID, post.id)
                 .whereArrayContainsAny(TAGS, post.tags.take(minOf(post.tags.size, 10)))
         } else {
             Firebase.firestore.collection(POSTS)
-                .whereNotEqualTo("id", post.id)
+                .whereNotEqualTo(ID, post.id)
         }
 
-        query.orderBy("id", Query.Direction.DESCENDING)
+        query.orderBy(ID, Query.Direction.DESCENDING)
             .orderBy(CREATED_AT, Query.Direction.DESCENDING)
             .limit(10)
             .get()
@@ -3247,58 +3210,5 @@ object FireUtility {
                 function(false)
             }
     }
-
-
-    /*fun setSecondLastCommentAsLastComment(lastComment: Comment, onComplete: (Result<Comment>) -> Unit) {
-        commentChannelCollectionRef
-            .document(lastComment.commentChannelId)
-            .collection(COMMENTS)
-            .orderBy(CREATED_AT, Query.Direction.DESCENDING)
-            .startAfter(lastComment.createdAt)
-            .limit(1)
-            .get()
-            .addOnSuccessListener {
-                if (it != null && !it.isEmpty) {
-
-                    if (!it.isEmpty) {
-                        val secondLastComment = it.toObjects(Comment::class.java).first()
-
-                        val commentChannelChanges = mapOf(LAST_COMMENT to secondLastComment, UPDATED_AT to System.currentTimeMillis())
-
-                        commentChannelCollectionRef
-                            .document(lastComment.commentChannelId)
-                            .update(commentChannelChanges)
-                            .addOnSuccessListener {
-                                onComplete(Result.Success(secondLastComment))
-                            }.addOnFailureListener { it1 ->
-                                onComplete(Result.Error(it1))
-                            }
-                    } else {
-                        // there is no second comment
-                        db.collection(POSTS)
-                            .document(lastComment.postId)
-                            .get()
-                            .addOnSuccessListener { it1 ->
-
-                                if (it1 != null && it1.exists()) {
-                                    val post = it1.toObject(Post::class.java)!!
-                                    if (post.commentsCount.toInt() == 1) {
-                                        // is the last comment
-
-                                    }
-                                }
-
-                            }.addOnFailureListener { it1 ->
-                                onComplete(Result.Error(it1))
-                            }
-
-                    }
-
-                }
-            }.addOnFailureListener {
-                onComplete(Result.Error(it))
-            }
-    }*/
-
 
 }

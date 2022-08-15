@@ -18,9 +18,9 @@ class OnBoardingViewPager(private val fa: FragmentActivity): FragmentStateAdapte
         return when (position) {
             0 -> {
                 if (fa.isNightMode()) {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Get to know what people are doing right now.", R.raw.collaboration_dark))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Find new connections by doing things together", R.raw.collaboration_dark))
                 } else {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Get to know what people are doing right now.", R.raw.collaboration))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Find new connections by doing things together", R.raw.collaboration))
                 }
             }
             1 -> {
@@ -32,9 +32,9 @@ class OnBoardingViewPager(private val fa: FragmentActivity): FragmentStateAdapte
             }
             else -> {
                 if (fa.isNightMode()) {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections.", R.raw.communication_dark))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections", R.raw.communication_dark))
                 } else {
-                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections.", R.raw.communication))
+                    OnBoardingChildFragment.newInstance(OnBoardingData("Communicate and create new connections", R.raw.communication))
                 }
             }
         }

@@ -3,18 +3,18 @@ package com.jamid.codesquare.ui
 import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
 import androidx.core.net.toUri
-import androidx.core.text.isDigitsOnly
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.preference.*
+import androidx.preference.Preference
+import androidx.preference.PreferenceCategory
+import androidx.preference.PreferenceFragmentCompat
+import androidx.preference.PreferenceManager
 import com.google.android.material.transition.MaterialSharedAxis
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
-import com.jamid.codesquare.R
 // something simple
 class SettingsFragment : PreferenceFragmentCompat() {
 
@@ -33,22 +33,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         listView.overScrollMode = View.OVER_SCROLL_NEVER
-
-       /* val currentUser = UserManager.currentUser
-        if (currentUser.premiumState.toInt() == 1) {
-            //
-        } else {
-            listView.addOnScrollListener(object: RecyclerView.OnScrollListener() {
-                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    super.onScrolled(recyclerView, dx, dy)
-                    mScroll += dy
-                    if (mScroll < 100) {
-                        setSubscriptionSetting(listView)
-                    }
-                }
-            })
-        }*/
-
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -204,7 +188,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun setLocationSection() {
-        val radiusS = sharedPreference.getString(LOCATION_RADIUS, ONE)
+        /*val radiusS = sharedPreference.getString(LOCATION_RADIUS, ONE)
         val locationRadius = findPreference<EditTextPreference>(LOCATION_RADIUS)
         if (radiusS != ONE) {
             locationRadius?.setDefaultValue(radiusS)
@@ -225,7 +209,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
             }
             true
-        }
+        }*/
 
     }
 

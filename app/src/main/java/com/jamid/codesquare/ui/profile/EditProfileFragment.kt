@@ -3,7 +3,8 @@ package com.jamid.codesquare.ui.profile
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
 import androidx.core.net.toUri
 import androidx.core.view.children
 import androidx.core.view.size
@@ -26,50 +27,6 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding>(), AddTagsL
 
     private var profileImage: String? = null
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.edit_profle_menu, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        super.onOptionsItemSelected(item)
-
-        return when (item.itemId) {
-            R.id.edit_profile_save -> {
-
-                val name = binding.nameText.editText!!.text.trim().toString()
-                val username = binding.usernameText.editText!!.text.trim().toString()
-                val tag = binding.tagText.editText!!.text.trim().toString()
-                val about = binding.aboutText.editText!!.text.trim().toString()
-                val interests = getInterests()
-
-                val (photo, isPreUploadedImage) = if (profileImage == null) {
-                    val s: Uri? = null
-                    s to false
-                } else {
-                    val p = profileImage!!.toUri()
-                    if (p.scheme == "content") {
-                        p to false
-                    } else {
-                        p to true
-                    }
-                }
-
-                val userUpdate = UserUpdate(username, name, photo, isPreUploadedImage, tag, about, interests)
-
-                update(userUpdate)
-                true
-            }
-            else -> true
-        }
-    }
-
-
     private fun update(userUpdate: UserUpdate) = runOnBackgroundThread {
 
         val loading = MessageDialogFragment.builder(getString(R.string.profile_upload_loading_text))
@@ -78,46 +35,9 @@ class EditProfileFragment : BaseFragment<FragmentEditProfileBinding>(), AddTagsL
 
         loading.show(childFragmentManager, "LoadingFragment")
 
-/*
-val userUpdate = if (profileImage != null) {
-val image = profileImage!!.toUri()
-if (image.scheme == "content") {
-UserUpdate(
-userEditForm.username,
-userEditForm.name,
-profileImage!!.toUri(),
-false,
-userEditForm.tag,
-userEditForm.about,
-userEditForm.interests
-)
-} else {
-UserUpdate(
-userEditForm.username,
-userEditForm.name,
-profileImage!!.toUri(),
-true,
-userEditForm.tag,
-userEditForm.about,
-userEditForm.interests
-)
-}
-} else {
-UserUpdate(
-userEditForm.username,
-userEditForm.name,
-null,
-false,
-userEditForm.tag,
-userEditForm.about,
-userEditForm.interests
-)
-}
-*/
-
         when (val result = FireUtility.updateUser3(userUpdate)) {
             is Result.Error -> {
-                when (result.exception){
+                when (result.exception) {
                     is UniqueUsernameException -> {
                         binding.usernameText.isErrorEnabled = true
                         binding.usernameText.error = "Username is already taken"
@@ -173,7 +93,6 @@ userEditForm.interests
     private var job: Job? = null
 
     private fun onTextChange() {
-
         activity.binding.mainToolbar.menu.getItem(0).isEnabled = false
 
         binding.nameText.removeError()
@@ -340,6 +259,35 @@ userEditForm.interests
     }
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentEditProfileBinding {
+        setMenu(R.menu.edit_profle_menu, onItemSelected = {
+            when (it.itemId) {
+                R.id.edit_profile_save -> {
+
+                    val name = binding.nameText.editText!!.text.trim().toString()
+                    val username = binding.usernameText.editText!!.text.trim().toString()
+                    val tag = binding.tagText.editText!!.text.trim().toString()
+                    val about = binding.aboutText.editText!!.text.trim().toString()
+                    val interests = getInterests()
+
+                    val (photo, isPreUploadedImage) = if (profileImage == null) {
+                        val s: Uri? = null
+                        s to false
+                    } else {
+                        val p = profileImage!!.toUri()
+                        if (p.scheme == "content") {
+                            p to false
+                        } else {
+                            p to true
+                        }
+                    }
+
+                    val userUpdate = UserUpdate(username, name, photo, isPreUploadedImage, tag, about, interests)
+
+                    update(userUpdate)
+                }
+            }
+            true
+        })
         return FragmentEditProfileBinding.inflate(inflater)
     }
 

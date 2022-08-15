@@ -1,5 +1,6 @@
 package com.jamid.codesquare.db
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.facebook.drawee.backends.pipeline.Fresco
@@ -66,17 +67,44 @@ class MainRepository(private val db: CollabDatabase) {
         }.toList()
     }
 
+    var limit1: Long = 0
+    var limit2: Long = System.currentTimeMillis()
+
     suspend fun insertPosts(posts: Array<out Post>, shouldProcess: Boolean = true) {
+
+        var requireAdInsertion = false
+        if (posts.size > 1) {
+            val currentUpperLimit = posts.first().createdAt
+            val currentLowerLimit = posts.last().createdAt
+
+            if (currentLowerLimit > limit2 && currentUpperLimit < limit1) {
+                requireAdInsertion = false
+            }
+
+            if (currentUpperLimit > limit1) {
+                limit1 = currentUpperLimit
+                requireAdInsertion = true
+            }
+
+            if (currentLowerLimit < limit2) {
+                limit2 = currentLowerLimit
+                requireAdInsertion = true
+            }
+        }
+
         val newPosts = posts.toMutableList()
-        oldAdsList.addAll(getAdsForPostBatch(posts.toList()))
-        newPosts.addAll(oldAdsList)
+        if (requireAdInsertion) {
+            oldAdsList.addAll(getAdsForPostBatch(posts.toList()))
+            newPosts.addAll(oldAdsList)
+        } else {
+            Log.d(TAG, "insertPosts: No need to insert ads")
+        }
 
         if (shouldProcess) {
             processPosts(newPosts)
-            postDao.insert(newPosts)
-        } else {
-            postDao.insert(newPosts)
         }
+
+        postDao.insert(newPosts)
 
         val pipeline = Fresco.getImagePipeline()
         for (post in newPosts) {

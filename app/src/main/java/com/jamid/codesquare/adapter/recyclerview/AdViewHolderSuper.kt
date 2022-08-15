@@ -14,6 +14,7 @@ import androidx.palette.graphics.Palette
 import com.facebook.drawee.view.SimpleDraweeView
 import com.google.android.gms.ads.*
 import com.google.android.gms.ads.nativead.NativeAdOptions
+import com.jamid.codesquare.BuildConfig
 import com.jamid.codesquare.darkenColor
 import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.databinding.CustomPostAdBinding
@@ -24,7 +25,6 @@ import java.util.*
 
 /* "ca-app-pub-2159166722829360/7384689864" For play store version */
 /* "ca-app-pub-3940256099942544/2247696110" For test version*/
-
 
 class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPostViewHolder(v) {
 
@@ -58,7 +58,13 @@ class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPost
                 projectClickListener.onAdInfoClick()
             }
 
-            adLoader = AdLoader.Builder(view.context, "ca-app-pub-2159166722829360/7384689864")
+            val adUnitID = if (BuildConfig.DEBUG) {
+                "ca-app-pub-3940256099942544/2247696110"
+            } else {
+                "ca-app-pub-2159166722829360/7384689864"
+            }
+
+            adLoader = AdLoader.Builder(view.context, adUnitID)
                 .forNativeAd { nativeAd ->
 
                     nativeAdView.headlineView = binding.adHeadline
@@ -101,6 +107,8 @@ class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPost
 
                     if (nativeAd.icon != null) {
                         (nativeAdView.iconView as SimpleDraweeView).setImageURI(nativeAd.icon?.uri.toString())
+                    } else {
+                        (nativeAdView.iconView as SimpleDraweeView).hide()
                     }
 
                     if (nativeAd.body == null) {

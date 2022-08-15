@@ -1,7 +1,6 @@
 package com.jamid.codesquare
 
 import android.app.Application
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -34,10 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.set
@@ -77,7 +73,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun someFix() = viewModelScope.launch(Dispatchers.IO) {
 //        chatRepository.messageDao.deleteMessagesAfter()
 
-        Firebase.firestore.collection(CHAT_CHANNELS)
+        /*Firebase.firestore.collection(CHAT_CHANNELS)
             .get()
             .addOnSuccessListener {
                 if (it != null && !it.isEmpty) {
@@ -128,7 +124,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             }.addOnFailureListener {
                 Log.e(TAG, "someFix: ${it.localizedMessage}")
-            }
+            }*/
     }
 
     private val _externallyCreatedDocument = MutableLiveData<Uri?>()
@@ -454,6 +450,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 } else {
                     setCurrentError(it.exception)
                 }
+                onPostCreate(post)
                 onComplete(it)
             }
         }
@@ -1061,9 +1058,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             FireUtility.updatePost(
                 currentPost,
                 createPostMediaList.value!!,
-                thumbnailUrl,
-                onComplete
-            )
+                thumbnailUrl
+            ) { newPost, t ->
+                onPostUpdate(newPost)
+                onComplete(newPost, t)
+            }
         }
 
     private suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
@@ -1230,9 +1229,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val testImage = MutableLiveData<Uri>().apply { value = null }
 
     fun insertPosts(vararg posts: Post) = viewModelScope.launch(Dispatchers.IO) {
-        for (post in posts) {
-            postCache[post.id] = post
-        }
         repo.insertPosts(posts)
     }
 
@@ -1564,13 +1560,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * */
     fun sendMessages(
         listOfMessages: List<Message>,
-        isForward: Boolean = false,
-        onComplete: (taskResult: Result<List<Message>>) -> Unit
+        onComplete: ((taskResult: Result<List<Message>>) -> Unit)? = null
     ) = viewModelScope.launch(Dispatchers.IO) {
 
-        val result = FireUtility.sendMessages(listOfMessages, isForward)
+        val result = FireUtility.sendMessages(listOfMessages)
 
-        onComplete(result)
+        if (onComplete != null) {
+            onComplete(result)
+        }
 
         when (result) {
             is Result.Error -> setCurrentError(result.exception)
@@ -1747,10 +1744,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun deletePostById(postId: String) = viewModelScope.launch(Dispatchers.IO) {
-        if (postCache.containsKey(postId)) {
-            postCache.remove(postId)
-        }
-
         repo.deletePostById(postId)
     }
 
@@ -1832,11 +1825,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repo.insertPosts(arrayOf(post))
     }
 
-    private val _isNewPostCreated = MutableLiveData<Boolean?>()
-    val isNewPostCreated: LiveData<Boolean?> = _isNewPostCreated
+    private val _isNewPostCreated = MutableLiveData<String?>()
+    val isNewPostCreated: LiveData<String?> = _isNewPostCreated
 
-    fun setCreatedNewPost(b: Boolean?) {
-        _isNewPostCreated.postValue(b)
+    fun setCreatedNewPost(postId: String?) {
+        _isNewPostCreated.postValue(postId)
     }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -2077,7 +2070,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     onComplete(Result.Error(it))
                 }
         } else {
-            try {
+            /*try {
                 val url = URL(message.metadata!!.url)
                 val connection = url.openConnection() as HttpURLConnection?
 
@@ -2095,7 +2088,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } catch (e: Exception) {
                 onComplete(Result.Error(e))
-            }
+            }*/
         }
     }
 
@@ -2209,11 +2202,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    private val _updatedOldPost = MutableLiveData<Boolean>()
-    val updatedOldPost: LiveData<Boolean> = _updatedOldPost
+    private val _updatedOldPost = MutableLiveData<String?>()
+    val updatedOldPost: LiveData<String?> = _updatedOldPost
 
-    fun setUpdatedOldPost(s: Boolean) = viewModelScope.launch(Dispatchers.IO) {
-        _updatedOldPost.postValue(s)
+    fun setUpdatedOldPost(id: String?) = viewModelScope.launch(Dispatchers.IO) {
+        _updatedOldPost.postValue(id)
     }
 
     @OptIn(ExperimentalPagingApi::class)
@@ -2244,6 +2237,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getSimilarPosts(postId: String, randomTag: String): LiveData<List<Post>> {
         return repo.postDao.getSimilarPostsReactive(postId, "%$randomTag%")
+    }
+
+    fun onPostUpdate(newPost: Post) = viewModelScope.launch (Dispatchers.IO) {
+        repo.postDao.deletePostById(newPost.id)
+        repo.postDao.insert(newPost)
+        _currentPost.postValue(null)
+        _updatedOldPost.postValue(newPost.id)
+        _createPostMediaList.postValue(emptyList())
+    }
+
+    fun onPostCreate(post: Post) = viewModelScope.launch (Dispatchers.IO) {
+        setCurrentPost(null)
+        clearCreatePostMediaItems()
+        setCreatedNewPost(post.id)
     }
 
 

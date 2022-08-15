@@ -71,12 +71,6 @@ class UserRepository(db: CollabDatabase, private val scope: CoroutineScope) {
                 }
             }
         }
-
-        // TODO("Investigate why this")
-        /*scope.launch (Dispatchers.IO) {
-            userDao.clearTable()
-        }*/
-
     }
 
     private fun addTokenListener() {

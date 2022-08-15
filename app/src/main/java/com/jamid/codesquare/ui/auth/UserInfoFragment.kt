@@ -29,7 +29,8 @@ import com.jamid.codesquare.listeners.InterestItemClickListener
 import com.jamid.codesquare.listeners.SearchItemClickListener
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-// something simple
+
+
 class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClickListener, InterestItemClickListener {
 
     private lateinit var searchResultsAdapter: SearchResultsAdapter
@@ -69,7 +70,6 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClick
         }
 
         binding.doneBtn.setOnClickListener {
-
             binding.setupCompleteProgress.show()
             binding.doneBtn.disappear()
 
@@ -96,6 +96,7 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClick
             } else {
                 null
             }
+
             val userUpdate = UserUpdate(
                 null,
                 null,
@@ -107,11 +108,10 @@ class UserInfoFragment: BaseFragment<FragmentUserInfoBinding>(), SearchItemClick
             )
 
             runOnBackgroundThread {
-                when (val result = FireUtility.updateUser3(userUpdate)) {
+                when (FireUtility.updateUser3(userUpdate)) {
                     is Result.Error -> {
                         runOnMainThread {
                             binding.doneBtn.show()
-                            Log.e(TAG, "onViewCreated: ${result.exception.localizedMessage}")
                         }
                     }
                     is Result.Success -> {

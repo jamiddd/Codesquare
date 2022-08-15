@@ -43,9 +43,7 @@ class ChatDocumentsFragment: BaseFragment<FragmentChatDocumentsBinding>(), Messa
             runOnMainThread {
                 if (documentMessages.isNotEmpty()) {
                     binding.noDocumentsText.hide()
-                    runOnBackgroundThread {
-                        documentAdapter.submitList(getMediaItemsFromMessages(documentMessages))
-                    }
+                    documentAdapter.submitList(getMediaItemsFromMessages(documentMessages))
                 } else {
                     binding.noDocumentsText.show()
                 }

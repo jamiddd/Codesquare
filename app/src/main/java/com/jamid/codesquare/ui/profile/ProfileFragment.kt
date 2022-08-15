@@ -341,7 +341,7 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListen
     }
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentProfileBinding {
-        setMenu(R.menu.profile_menu, {
+        setMenu(R.menu.profile_menu, onItemSelected = {
             when (it.itemId) {
                 R.id.profile_option -> {
                     val (choices, icons) = if (mUser == null || mUser?.id == UserManager.currentUserId) {
@@ -384,9 +384,7 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListen
                 }
             }
             true
-        }) {
-
-        }
+        })
         return FragmentProfileBinding.inflate(inflater)
     }
 

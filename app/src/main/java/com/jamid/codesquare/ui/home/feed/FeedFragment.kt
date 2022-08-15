@@ -17,7 +17,6 @@ import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
@@ -72,7 +71,7 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
     }
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentPagerBinding {
-        setMenu(R.menu.home_menu, {
+        setMenu(R.menu.home_menu, onItemSelected = {
             // Handle the menu selection
             when (it.itemId) {
                 R.id.search -> {
@@ -110,19 +109,6 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentPagerBinding.bind(view)
-
-        val mAuth = Firebase.auth
-        if (mAuth.currentUser == null) {
-            findNavController().navigate(R.id.action_feedFragment_to_navigation_auth)
-        } else {
-            FireUtility.getUser(mAuth.currentUser!!.uid) {
-                if (it != null) {
-                    UserManager.updateUser(it)
-                } else {
-                    findNavController().navigate(R.id.action_feedFragment_to_navigation_auth)
-                }
-            }
-        }
 
         binding.pagerItemsRecycler.apply {
             val bottomPadding = resources.getDimension(R.dimen.large_padding).toInt()
@@ -250,35 +236,18 @@ class FeedFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>(), Locatio
         }
 
         // can be delayed
+
         viewModel.isNewPostCreated.observe(viewLifecycleOwner) {
             if (it != null) {
-                if (it) {
-                    runDelayed(300) {
-                        Snackbar.make(
-                            activity.binding.root,
-                            "Post uploaded successfully.",
-                            Snackbar.LENGTH_LONG
-                        ).setAnchorView(activity.binding.mainPrimaryBottom).show()
-                        binding.pagerItemsRecycler.scrollToPosition(0)
-                    }
-                    viewModel.setCreatedNewPost(false)
+                runDelayed(300) {
+                    Snackbar.make(
+                        activity.binding.root,
+                        "Post uploaded successfully.",
+                        Snackbar.LENGTH_LONG
+                    ).setAnchorView(activity.binding.mainPrimaryBottom).show()
+                    binding.pagerItemsRecycler.scrollToPosition(0)
                 }
-            }
-        }
-
-        // can be delayed
-        viewModel.updatedOldPost.observe(viewLifecycleOwner) {
-            if (it != null) {
-                if (it) {
-                    runDelayed(300) {
-                        Snackbar.make(
-                            activity.binding.root,
-                            "Post updated successfully",
-                            Snackbar.LENGTH_LONG
-                        ).setAnchorView(activity.binding.mainPrimaryBottom).show()
-                    }
-                    viewModel.setUpdatedOldPost(false)
-                }
+                viewModel.setCreatedNewPost(null)
             }
         }
 

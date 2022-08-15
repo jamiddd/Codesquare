@@ -143,9 +143,6 @@ class ChatRepository(
             for (m in messages) {
                 count++
             }
-
-            Log.d(TAG, "insertMessages: $count")
-
         }
 
     suspend fun updateMessage(message: Message) {

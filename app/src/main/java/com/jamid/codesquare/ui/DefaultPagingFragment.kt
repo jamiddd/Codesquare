@@ -1,13 +1,17 @@
 package com.jamid.codesquare.ui
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import androidx.core.animation.doOnEnd
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
+import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.databinding.FragmentPagerBinding
+
 // something simple
 abstract class DefaultPagingFragment<T: Any, VH: RecyclerView.ViewHolder> : PagingDataFragment<FragmentPagerBinding, T, VH>() {
 
@@ -22,13 +26,11 @@ abstract class DefaultPagingFragment<T: Any, VH: RecyclerView.ViewHolder> : Pagi
         binding.pagerItemsRecycler.apply {
             adapter = myPagingAdapter
             itemAnimator = null
-            /*addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL).apply {
-                ContextCompat.getDrawable(requireContext(), R.drawable.custom_gray_divider)?.let { setDrawable(it) }
-            })*/
             layoutManager = LinearLayoutManager(requireContext())
         }
 
         setSwipeRefresher()
+
 
     }
 

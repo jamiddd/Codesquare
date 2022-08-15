@@ -337,7 +337,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         clearActiveNotifications()
 
-
         playBillingController = PlayBillingController(this)
         lifecycle.addObserver(SnapshotListenerContainer(viewModel))
         networkManager = MyNetworkManager(this, this)
@@ -358,11 +357,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
 
         setBroadcastReceivers()
-
-//        binding.navHostFragment
-
-//        tempTest()
-
 
         viewModel.allUnreadNotifications.observe(this) { un ->
             if (!un.isNullOrEmpty()) {
@@ -385,6 +379,36 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                 }
             } else {
                 binding.mainPrimaryBottom.removeBadge(R.id.navigation_chats)
+            }
+        }
+
+        viewModel.updatedOldPost.observe(this) { postId ->
+            if (postId != null) {
+                viewModel.getPost(postId) {
+                    if (it != null) {
+                        findOldPostViewAndUpdate(it)
+                    } else {
+                        Log.d(TAG, "setupNavigation: No post found with id: $postId")
+                    }
+                }
+            }
+        }
+
+        val mAuth = Firebase.auth
+        if (mAuth.currentUser == null) {
+            if (navController.currentDestination?.id == R.id.feedFragment) {
+                navController.navigate(R.id.action_feedFragment_to_navigation_auth)
+            } else {
+                navController.navigate(R.id.feedFragment)
+                navController.navigate(R.id.action_feedFragment_to_navigation_auth)
+            }
+        } else {
+            FireUtility.getUser(mAuth.currentUser!!.uid) {
+                if (it != null) {
+                    UserManager.updateUser(it)
+                } else {
+                    navController.navigate(R.id.action_feedFragment_to_navigation_auth)
+                }
             }
         }
 
@@ -620,6 +644,25 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
         }
 
+    }
+
+    private fun findOldPostViewAndUpdate(post: Post) = runDelayed(400) {
+        val pagerRecycler = binding.root.findViewById<RecyclerView>(R.id.pager_items_recycler)
+        if (pagerRecycler != null) {
+            val v = pagerRecycler.findViewWithTag<View>(post.id)
+            if (v != null) {
+                val vh = pagerRecycler.findContainingViewHolder(v)
+                if (vh != null && vh is PostViewHolder) {
+                    vh.bind(Post2.Collab(post))
+                } else {
+                    Log.d(TAG, "findOldPostViewAndUpdate: No viewHolder found for view with id: ${v.id}")
+                }
+            } else {
+                Log.d(TAG, "findOldPostViewAndUpdate: No view found with tag: ${post.id}")
+            }
+        } else {
+            Log.d(TAG, "findOldPostViewAndUpdate: No paging recycler found")
+        }
     }
 
     private fun layoutChangesOnStart() {
@@ -890,6 +933,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     override fun onLocationClick(autocompletePrediction: AutocompletePrediction) {
 
     }
+
+    override var currentViewHolder: PostViewHolder? = null
 
     override fun onPostClick(post: Post) {
         val bundle = bundleOf(POST to post, "image_pos" to 0)
@@ -2587,15 +2632,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
             OPTION_10, OPTION_11 -> {
                 if (post != null) {
-                    val currentFeedRecycler = findViewById<RecyclerView>(R.id.pager_items_recycler)
-                    if (currentFeedRecycler != null) {
-                        val holderView = currentFeedRecycler.findViewWithTag<View>(post.id)
-                        val postViewHolder = currentFeedRecycler.getChildViewHolder(holderView)
-                        if (postViewHolder != null && postViewHolder is PostViewHolder) {
-                            postViewHolder.post = post
-                            postViewHolder.onSaveBtnClick()
-                        }
-                    }
+                    currentViewHolder?.onSaveBtnClick()
                 }
             }
             OPTION_12 -> {

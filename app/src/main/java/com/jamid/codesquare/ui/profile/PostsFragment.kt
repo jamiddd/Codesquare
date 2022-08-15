@@ -1,5 +1,6 @@
 package com.jamid.codesquare.ui.profile
 
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -29,8 +30,6 @@ class PostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
         val action = resources.getDimension(R.dimen.action_bar_height).toInt()
         binding.pagerItemsRecycler.setPadding(0, 0, 0, action)
 
-
-
         val subFieldName = "$CREATOR.$USER_ID"
 
         val otherUser = arguments?.getParcelable<User>(USER)
@@ -51,9 +50,6 @@ class PostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
             }
 
         } else {
-
-            Log.d(TAG, "onViewCreated: ${otherUser.name} -- ${otherUser.id}")
-
             val query = Firebase.firestore
                 .collection(POSTS)
                 .whereEqualTo(ARCHIVED, false)
@@ -105,6 +101,8 @@ class PostsFragment: DefaultPagingFragment<Post2, SuperPostViewHolder>() {
     override fun getPagingAdapter(): PagingDataAdapter<Post2, SuperPostViewHolder> {
         return PostAdapter(viewLifecycleOwner, activity)
     }
+
+
 
     companion object {
 

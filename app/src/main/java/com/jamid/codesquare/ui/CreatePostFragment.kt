@@ -46,7 +46,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
         isUpdateMode = true
         thumbnailUrl = post.thumbnail
         viewModel.setCurrentPost(post)
-
         val mediaItems = convertMediaListToMediaItemList(post.mediaList, post.mediaString)
         viewModel.setCreatePostMediaList(mediaItems)
     }
@@ -118,8 +117,6 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
         binding.userName.text = currentUser.name
         binding.userImg.setImageURI(currentUser.photo)
 
-        prefill()
-
         setBottomActions()
         setNavigation()
         setMediaRecycler()
@@ -147,63 +144,62 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
 
     override fun onResume() {
         super.onResume()
-        prefill()
+        viewModel.currentPost.value?.let {
+            prefill(it)
+        }
     }
 
     private fun setBottomActions() {
+        binding.addTagBtn.setOnClickListener {
+            val tags = getTags()
+            currentDialogFrag = AddTagsFragment.builder()
+                .setTitle("Add tag to post")
+                .setPrefill(tags)
+                .setListener(this)
+                .build()
 
-        runDelayed(1000) {
-            binding.addTagBtn.setOnClickListener {
-                val tags = getTags()
-                currentDialogFrag = AddTagsFragment.builder()
-                    .setTitle("Add tag to post")
-                    .setPrefill(tags)
-                    .setListener(this)
-                    .build()
+            currentDialogFrag?.show(activity.supportFragmentManager, AddTagsFragment.TAG)
+        }
+        binding.addLocationBtn.setOnClickListener {
+            currentDialogFrag = LocationFragment()
+            currentDialogFrag?.show(activity.supportFragmentManager, LocationFragment.TAG)
+        }
+        binding.addLinkBtn.setOnClickListener {
+            currentDialogFrag =
+                InputSheetFragment.builder("Add links to your existing post sources or files. Ex. Github, Google drive, etc.")
+                    .setTitle("Add link to post")
+                    .setHint("Ex: https://wwww.google.com")
+                    .setMessage("Make sure to give a proper url.")
+                    .setPositiveButton("Add link") { _, _, s ->
 
-                currentDialogFrag?.show(childFragmentManager, AddTagsFragment.TAG)
+                        // this cannot be an url
+                        if (!s.contains('.')) {
+                            Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
+                                .show()
+                            return@setPositiveButton
+                        }
+
+                        if (s.startsWith('.') || s.endsWith('.')) {
+                            Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
+                                .show()
+                            return@setPositiveButton
+                        }
+
+                        addLink(s)
+
+                    }.setNegativeButton("Cancel") { a, _ ->
+                        a.dismiss()
+                    }.build()
+
+            currentDialogFrag?.show(activity.supportFragmentManager, InputSheetFragment.TAG)
+        }
+
+        binding.addMediaBtn.setOnClickListener {
+            currentDialogFrag = GalleryFragment(itemSelectResultListener = this).apply {
+                title = "Select items"
+                primaryActionLabel = "Select"
             }
-            binding.addLocationBtn.setOnClickListener {
-                currentDialogFrag = LocationFragment()
-                currentDialogFrag?.show(childFragmentManager, LocationFragment.TAG)
-            }
-            binding.addLinkBtn.setOnClickListener {
-                currentDialogFrag =
-                    InputSheetFragment.builder("Add links to your existing post sources or files. Ex. Github, Google drive, etc.")
-                        .setTitle("Add link to post")
-                        .setHint("Ex: https://wwww.google.com")
-                        .setMessage("Make sure to give a proper url.")
-                        .setPositiveButton("Add link") { _, _, s ->
-
-                            // this cannot be an url
-                            if (!s.contains('.')) {
-                                Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
-                                    .show()
-                                return@setPositiveButton
-                            }
-
-                            if (s.startsWith('.') || s.endsWith('.')) {
-                                Snackbar.make(binding.root, "Not a proper url", Snackbar.LENGTH_LONG)
-                                    .show()
-                                return@setPositiveButton
-                            }
-
-                            addLink(s)
-
-                        }.setNegativeButton("Cancel") { a, _ ->
-                            a.dismiss()
-                        }.build()
-
-                currentDialogFrag?.show(childFragmentManager, InputSheetFragment.TAG)
-            }
-
-            binding.addMediaBtn.setOnClickListener {
-                currentDialogFrag = GalleryFragment(itemSelectResultListener = this).apply {
-                    title = "Select items"
-                    primaryActionLabel = "Select"
-                }
-                currentDialogFrag?.show(childFragmentManager, GalleryFragment.TAG)
-            }
+            currentDialogFrag?.show(activity.supportFragmentManager, GalleryFragment.TAG)
         }
     }
 
@@ -228,137 +224,130 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
     }
 
     private fun setMediaRecycler() {
-        runDelayed(1000) {
-            val helper: SnapHelper = LinearSnapHelper()
+        val helper: SnapHelper = LinearSnapHelper()
 
-            val lm = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
+        val lm = LinearLayoutManager(activity, LinearLayoutManager.HORIZONTAL, false)
 
-            var totalCount = 0
+        var totalCount = 0
 
-            fun setCounterText(currentPos: Int) {
-                if (totalCount != 0) {
-                    binding.mediaHelperLayout.mediaItemCounter.show()
-                    val t = "$currentPos/$totalCount"
-                    binding.mediaHelperLayout.mediaItemCounter.text = t
-                } else {
-                    binding.mediaHelperLayout.mediaItemCounter.hide()
-                }
+        fun setCounterText(currentPos: Int) {
+            if (totalCount != 0) {
+                binding.mediaHelperLayout.mediaItemCounter.show()
+                val t = "$currentPos/$totalCount"
+                binding.mediaHelperLayout.mediaItemCounter.text = t
+            } else {
+                binding.mediaHelperLayout.mediaItemCounter.hide()
             }
+        }
 
-            val mediaAdapter = MediaAdapter("", false, this)
+        val mediaAdapter = MediaAdapter("", false, this)
 
 
-            binding.mediaHelperLayout.imageCropBtn.show()
-            binding.mediaHelperLayout.imageCropBtn.setOnClickListener {
-                val pos = lm.findFirstVisibleItemPosition()
-                currentCropPos = pos
-                val item = viewModel.createPostMediaList.value!![pos]
+        binding.mediaHelperLayout.imageCropBtn.show()
+        binding.mediaHelperLayout.imageCropBtn.setOnClickListener {
+            val pos = lm.findFirstVisibleItemPosition()
+            currentCropPos = pos
+            val item = viewModel.createPostMediaList.value!![pos]
 
-                if (item.type == image) {
-                    if (item.url.toUri().scheme == "https" || item.url.toUri().scheme == "http") {
-                        Snackbar.make(binding.root, "This image cannot be cropped because this is an already uploaded image.", Snackbar.LENGTH_INDEFINITE)
-                            .setAnchorView(binding.createPostActions)
-                            .show()
-                    } else {
-                        val cropFragment = CropFragment2().apply {
-                            image = item.url
-                        }
-                        cropFragment.show(activity.supportFragmentManager, "CropFragment")
-                    }
-                } else {
-                    Snackbar.make(binding.root, "Video cannot be cropped.", Snackbar.LENGTH_LONG)
+            if (item.type == image) {
+                if (item.url.toUri().scheme == "https" || item.url.toUri().scheme == "http") {
+                    Snackbar.make(binding.root, "This image cannot be cropped because this is an already uploaded image.", Snackbar.LENGTH_INDEFINITE)
                         .setAnchorView(binding.createPostActions)
                         .show()
+                } else {
+                    val cropFragment = CropFragment2().apply {
+                        image = item.url
+                    }
+                    cropFragment.show(activity.supportFragmentManager, "CropFragment")
                 }
+            } else {
+                Snackbar.make(binding.root, "Video cannot be cropped.", Snackbar.LENGTH_LONG)
+                    .setAnchorView(binding.createPostActions)
+                    .show()
             }
+        }
 
-            viewModel.currentImage.observe(viewLifecycleOwner) {
-                if (it != null) {
-                    val metadata = getMetadataForFile(it)
-                    val mediaItem = if (metadata != null) {
-                        val mime = getMimeType(metadata.url.toUri())
-                        if (mime != null) {
-                            val type = if (mime.contains(video)) {
-                                video
-                            } else {
-                                image
-                            }
+        viewModel.currentImage.observe(viewLifecycleOwner) {
+            if (it != null) {
+                val metadata = getMetadataForFile(it)
+                val mediaItem = if (metadata != null) {
+                    val mime = getMimeType(metadata.url.toUri())
+                    if (mime != null) {
+                        val type = if (mime.contains(video)) {
+                            video
+                        } else {
+                            image
+                        }
 
-                            if (type == image) {
-                                val img = compressImage(activity, it)
-                                if (img != null) {
-                                    MediaItem(img.toString(), metadata.name, image, mime, sizeInBytes = metadata.size, ext = metadata.ext)
-                                } else {
-                                    Log.e(TAG, "Something went wrong while compressing image.")
-                                    null
-                                }
+                        if (type == image) {
+                            val img = compressImage(activity, it)
+                            if (img != null) {
+                                MediaItem(img.toString(), metadata.name, image, mime, sizeInBytes = metadata.size, ext = metadata.ext)
                             } else {
-                                if (metadata.size < VIDEO_SIZE_LIMIT) {
-                                    MediaItem(it.toString(), metadata.name, video, mime, sizeInBytes = metadata.size, ext = metadata.ext)
-                                } else {
-                                    Log.e(TAG, "Video selection omitted because video size is too large.")
-                                    null
-                                }
+                                Log.e(TAG, "Something went wrong while compressing image.")
+                                null
                             }
                         } else {
-                            Log.e(TAG, "Mime couldn't be generated for the given file: $it")
-                            null
+                            if (metadata.size < VIDEO_SIZE_LIMIT) {
+                                MediaItem(it.toString(), metadata.name, video, mime, sizeInBytes = metadata.size, ext = metadata.ext)
+                            } else {
+                                Log.e(TAG, "Video selection omitted because video size is too large.")
+                                null
+                            }
                         }
                     } else {
-                        Log.e(TAG, "ActivityResult: Metadata of the $it is null")
+                        Log.e(TAG, "Mime couldn't be generated for the given file: $it")
                         null
                     }
-
-                    if (mediaItem != null) {
-                        if (currentCropPos != -1) {
-                            viewModel.updateCreatePostList(mediaItem, currentCropPos)
-                        }
-                    } else {
-                        Log.d(TAG, "setMediaRecycler: Media Item nulll")
-                    }
-
+                } else {
+                    Log.e(TAG, "ActivityResult: Metadata of the $it is null")
+                    null
                 }
-            }
 
-
-            // setting up the recycler
-            binding.postMediaRecycler.apply {
-                mLifecycleOwner = viewLifecycleOwner
-                adapter = mediaAdapter
-
-                setMediaCounterText(binding.mediaHelperLayout.mediaItemCounter)
-
-                onFlingListener = null
-                helper.attachToRecyclerView(this)
-                layoutManager = lm
-                OverScrollDecoratorHelper.setUpOverScroll(binding.postMediaRecycler, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
-            }
-
-            binding.mediaHelperLayout.removeCurrentImgBtn.setOnClickListener {
-                val pos = lm.findFirstCompletelyVisibleItemPosition()
-                onMediaLayoutItemRemoved(pos)
-            }
-
-            binding.mediaHelperLayout.clearAllImagesBtn.setOnClickListener {
-                onMediaLayoutCleared()
-            }
-
-            viewModel.createPostMediaList.observe(viewLifecycleOwner) { mediaItems ->
-                if (!mediaItems.isNullOrEmpty()) {
-                    totalCount = mediaItems.size
-                    setCounterText(1)
-                    mediaAdapter.submitList(mediaItems)
-                    binding.postMediaContainer.show()
-
-                    runDelayed(500) {
-                        binding.postMediaRecycler.scrollToPosition(currentCropPos)
+                if (mediaItem != null) {
+                    if (currentCropPos != -1) {
+                        viewModel.updateCreatePostList(mediaItem, currentCropPos)
                     }
                 } else {
-                    binding.postMediaContainer.hide()
+                    Log.d(TAG, "setMediaRecycler: Media Item nulll")
                 }
+
             }
-        }.invokeOnCompletion {
-            Log.d(TAG, "setMediaRecycler: Time[$startTime - ${System.currentTimeMillis()}]")
+        }
+
+        // setting up the recycler
+        binding.postMediaRecycler.apply {
+            mLifecycleOwner = viewLifecycleOwner
+            adapter = mediaAdapter
+
+            setMediaCounterText(binding.mediaHelperLayout.mediaItemCounter)
+
+            onFlingListener = null
+            helper.attachToRecyclerView(this)
+            layoutManager = lm
+            OverScrollDecoratorHelper.setUpOverScroll(binding.postMediaRecycler, OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
+        }
+
+        binding.mediaHelperLayout.removeCurrentImgBtn.setOnClickListener {
+            val pos = lm.findFirstCompletelyVisibleItemPosition()
+            onMediaLayoutItemRemoved(pos)
+        }
+
+        binding.mediaHelperLayout.clearAllImagesBtn.setOnClickListener {
+            onMediaLayoutCleared()
+        }
+
+        viewModel.createPostMediaList.observe(viewLifecycleOwner) { mediaItems ->
+            if (!mediaItems.isNullOrEmpty()) {
+                totalCount = mediaItems.size
+                setCounterText(1)
+                mediaAdapter.submitList(mediaItems)
+                binding.postMediaContainer.show()
+
+                binding.postMediaRecycler.scrollToPosition(currentCropPos)
+            } else {
+                binding.postMediaContainer.hide()
+            }
         }
     }
 
@@ -467,28 +456,22 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
         setTags(allTags.distinct())
     }
 
-    private fun prefill() {
+    private fun prefill(currentPost: Post) {
         if (!hasInitiated) {
             hasInitiated = true
-            runDelayed(500) {
-                val currentPostState = viewModel.currentPost.value
-                if (currentPostState != null) {
 
+            /* This is must because the title and content are not refreshed
+              all the time by the observer, since it may lead to infinite loop */
 
-                    /* This is must because the title and content are not refreshed
-                    all the time by the observer, since it may lead to infinite loop */
+            binding.postTitleText.editText?.setText(currentPost.name)
+            binding.postContentText.editText?.setText(currentPost.content)
 
-                    binding.postTitleText.editText?.setText(currentPostState.name)
-                    binding.postContentText.editText?.setText(currentPostState.content)
+            Log.d(TAG, "setNonReactiveUiOnStartAndResume: ${currentPost.tags.size}")
 
-                    Log.d(TAG, "setNonReactiveUiOnStartAndResume: ${currentPostState.tags.size}")
+            setTags(currentPost.tags)
+            setLinks(currentPost.sources)
 
-                    setTags(currentPostState.tags)
-                    setLinks(currentPostState.sources)
-                }
-
-                setPostObserver()
-            }
+            setPostObserver()
         }
     }
 
@@ -565,6 +548,7 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
         viewModel.currentPost.observe(viewLifecycleOwner) { currentPost ->
             if (currentPost != null) {
                 setReactiveUi(currentPost)
+                prefill(currentPost)
             }
         }
 
@@ -649,7 +633,7 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
     }
 
     override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
-        if (!items.isNullOrEmpty()) {
+        if (items.isNotEmpty()) {
             val mediaList = viewModel.createPostMediaList.value ?: emptyList()
 
             // to maintain the order, in a way that the first image should always be the thumbnail
@@ -685,10 +669,9 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
     }
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentCreatePostBinding {
-        setMenu(R.menu.create_post_menu, {
-            when (it.itemId) {
+        setMenu(R.menu.create_post_menu, onItemSelected = { item ->
+            when (item.itemId) {
                 R.id.create_post -> {
-
                     if (!validatePostContent())
                         return@setMenu true
 
@@ -698,20 +681,12 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
                                 .setProgress()
                                 .build()
 
-                        dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
+                        dialogFragment.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
 
-                        viewModel.updatePost(thumbnailUrl!!) { newPost, task ->
+                        viewModel.updatePost(thumbnailUrl!!) { _, task ->
                             runOnMainThread {
                                 dialogFragment.dismiss()
-
                                 if (task.isSuccessful) {
-                                    viewModel.deletePostById(newPost.id)
-
-                                    // updating local post
-                                    viewModel.insertPosts(newPost)
-                                    viewModel.setCurrentPost(null)
-                                    viewModel.setUpdatedOldPost(true)
-                                    viewModel.clearCreatePostMediaItems()
                                     findNavController().navigateUp()
                                 } else {
                                     viewModel.setCurrentError(task.exception)
@@ -719,24 +694,18 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
                             }
                         }
                     } else {
-
                         val dialogFragment = MessageDialogFragment
                             .builder(getString(R.string.create_post_loading))
                             .setProgress()
                             .build()
 
-                        dialogFragment.show(childFragmentManager, MessageDialogFragment.TAG)
+                        dialogFragment.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
 
                         viewModel.createPost(thumbnailUrl!!) {
                             runOnMainThread {
-
                                 dialogFragment.dismiss()
-
                                 if (it.isSuccessful) {
                                     findNavController().navigateUp()
-                                    viewModel.setCurrentPost(null)
-                                    viewModel.clearCreatePostMediaItems()
-                                    viewModel.setCreatedNewPost(true)
                                 } else {
                                     viewModel.setCurrentError(it.exception)
                                 }
@@ -746,9 +715,7 @@ class CreatePostFragment : BaseFragment<FragmentCreatePostBinding>(),
                 }
             }
             true
-        }) {
-
-        }
+        })
         return FragmentCreatePostBinding.inflate(inflater)
     }
 

@@ -24,11 +24,11 @@
 
         <Preference
             app:key="profile_saved"
-            app:title="Saved projects" />
+            app:title="Saved posts" />
 
         <Preference
             app:key="profile_archived"
-            app:title="Archived projects" />
+            app:title="Archived posts" />
 
         <Preference
             app:key="my_requests"
@@ -44,7 +44,7 @@
 
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Location">
+  <!--  <PreferenceCategory app:title="Location">
 
         <EditTextPreference
             app:key="location_radius"
@@ -54,7 +54,7 @@
             app:summary="10 KM"
             app:dialogMessage="Set radius for location based search." />
 
-    </PreferenceCategory>
+    </PreferenceCategory>-->
 
  <!--   <PreferenceCategory app:title="Project">
 

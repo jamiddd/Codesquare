@@ -1,7 +1,9 @@
 package com.jamid.codesquare.ui
 
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.MenuItem
+import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.widget.SearchView
 import androidx.core.os.bundleOf
@@ -22,50 +24,36 @@ class PreSearchFragment: BaseFragment<FragmentPreSearchBinding>(), SearchItemCli
     private var searchView: SearchView? = null
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentPreSearchBinding {
-        setHasOptionsMenu(true)
-        return FragmentPreSearchBinding.inflate(inflater)
-    }
+        setMenu(R.menu.search_menu, {
+            val searchItem = activity.binding.mainToolbar.menu.getItem(0)
+            searchItem.expandActionView()
 
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
+            searchItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
+                override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
+                    return true
+                }
 
-        inflater.inflate(R.menu.search_menu, menu)
-        val searchItem = activity.binding.mainToolbar.menu.getItem(0)
-        searchItem.expandActionView()
+                override fun onMenuItemActionCollapse(p0: MenuItem?): Boolean {
+                    findNavController().navigateUp()
+                    return true
+                }
+            })
 
-        searchItem.setOnActionExpandListener(object: MenuItem.OnActionExpandListener {
-            override fun onMenuItemActionExpand(p0: MenuItem?): Boolean {
-                return true
-            }
+            searchView = searchItem.actionView as SearchView?
 
-            override fun onMenuItemActionCollapse(p0: MenuItem?): Boolean {
-                findNavController().navigateUp()
-                return true
+            searchView?.setOnQueryTextListener(this)
+            searchView?.isSubmitButtonEnabled = false
+
+
+            viewModel.currentSearchQueryString.observe(viewLifecycleOwner) { s ->
+                if (s != null) {
+                    searchView?.setQuery(s, false)
+                } else {
+                    searchView?.queryHint = "Search for collabs, users ..."
+                }
             }
         })
-
-        searchView = searchItem.actionView as SearchView?
-
-        searchView?.setOnQueryTextListener(this)
-        searchView?.isSubmitButtonEnabled = false
-
-
-        viewModel.currentSearchQueryString.observe(viewLifecycleOwner) { s ->
-            if (s != null) {
-                searchView?.setQuery(s, false)
-            } else {
-                searchView?.queryHint = "Search for projects, users ..."
-            }
-        }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            R.id.search_1 -> {
-                //
-            }
-        }
-        return super.onOptionsItemSelected(item)
+        return FragmentPreSearchBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

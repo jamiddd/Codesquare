@@ -12,9 +12,7 @@ import com.jamid.codesquare.databinding.PostSelectItemBinding
 import com.jamid.codesquare.listeners.PostSelectListener
 
 class PostSelectionAdapter(val listener: PostSelectListener? = null): PagingDataAdapter<PostWrapper, PostSelectionAdapter.PostSelectViewHolder>(PostWrapper.comparator) {
-    init {
-        Log.d("Something", "Simple: ")
-    }
+
     inner class PostSelectViewHolder(val view: View): RecyclerView.ViewHolder(view) {
 
         private lateinit var binding: PostSelectItemBinding

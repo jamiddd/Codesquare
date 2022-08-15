@@ -4,20 +4,12 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import androidx.navigation.fragment.findNavController
-import com.google.android.material.transition.MaterialSharedAxis
 import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.R
 import com.jamid.codesquare.databinding.FragmentAdvertiseInfoBinding
+
 // something simple
 class AdvertiseInfoFragment: BaseFragment<FragmentAdvertiseInfoBinding>() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-        returnTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-        reenterTransition = MaterialSharedAxis(MaterialSharedAxis.X, true)
-        exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
-    }
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentAdvertiseInfoBinding {
         return FragmentAdvertiseInfoBinding.inflate(inflater)
@@ -29,6 +21,43 @@ class AdvertiseInfoFragment: BaseFragment<FragmentAdvertiseInfoBinding>() {
         binding.giveFeedbackBtn.setOnClickListener {
             findNavController().navigate(R.id.feedbackFragment)
         }
+
+        /*binding.rateUsBtn.setOnClickListener {
+            val manager = if (BuildConfig.DEBUG) {
+                FakeReviewManager(activity)
+            } else {
+                ReviewManagerFactory.create(activity)
+            }
+
+            val request = manager.requestReviewFlow()
+            request.addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    // We got the ReviewInfo object
+                    val reviewInfo = task.result
+                    Log.d(TAG, "onViewCreated: $reviewInfo")
+                    manager.launchReviewFlow(activity, reviewInfo).addOnCompleteListener {
+                        if (!it.isSuccessful) {
+                            Log.d(TAG, "onViewCreated: ${it.exception?.localizedMessage}")
+                        } else {
+                            Log.d(TAG, "onViewCreated: SUCCESS")
+                        }
+                    }
+                } else {
+                    // There was some problem, log or handle the error code.
+                    @ReviewErrorCode
+                    val errorCode = when (val exception = task.exception) {
+                        is ReviewException -> {
+                            exception.errorCode
+                        }
+                        else -> {
+                            9999
+                        }
+                    }
+                    Log.d(TAG, "onViewCreated: $errorCode")
+                }
+            }
+
+        }*/
 
     }
 

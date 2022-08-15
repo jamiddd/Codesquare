@@ -6,7 +6,6 @@ import android.content.ContentValues
 import android.content.Context.CLIPBOARD_SERVICE
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -20,7 +19,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.FileProvider
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.updateLayoutParams
@@ -64,10 +62,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     }
     private var internalDocumentToBeSaved: File? = null
     private lateinit var otherUser: User
-
     private lateinit var post: Post
-
-    private val thumbnailsDir = "images/thumbnails"
     private val cameraDir = "images/camera"
 
     /* For future purposes - private var chatSendMode = ChatSendMode.Normal */
@@ -75,40 +70,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
-    }
-
-
-    private fun setBitmapDrawable(menu: Menu, bitmap: Bitmap) {
-        val scaledBitmap = if (bitmap.width >= bitmap.height) {
-            Bitmap.createBitmap(
-                bitmap,
-                bitmap.width / 2 - bitmap.height / 2,
-                0,
-                bitmap.height,
-                bitmap.height
-            )
-        } else {
-            Bitmap.createBitmap(
-                bitmap,
-                0,
-                bitmap.height / 2 - bitmap.width / 2,
-                bitmap.width,
-                bitmap.width
-            )
-        }
-
-        val length = resources.getDimension(R.dimen.unit_len) * 6
-
-        val drawable = RoundedBitmapDrawableFactory.create(resources, scaledBitmap).also {
-            it.cornerRadius = length
-        }
-
-        val item = menu.findItem(R.id.chat_detail_icon)
-        setMenuIcon(item, drawable)
-    }
-
-    private fun setMenuIcon(item: MenuItem, drawable: Drawable) {
-        item.icon = drawable
     }
 
     private fun setMenuImage(item: MenuItem, image: String) {
@@ -131,7 +92,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
         simpleDraweeView.setOnClickListener {
             if (chatChannel.type == CHANNEL_PRIVATE) {
-
                 if (::otherUser.isInitialized) {
                     val bundle = bundleOf(
                         CHAT_CHANNEL to chatChannel,
@@ -139,7 +99,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                     )
                     findNavController().navigate(R.id.chatDetailFragment2, bundle)
                 }
-
             } else {
                 val bundle = bundleOf(
                     CHAT_CHANNEL to chatChannel,
@@ -149,6 +108,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 findNavController().navigate(R.id.chatDetailFragment, bundle)
             }
         }
+
     }
 
     private fun onPrepMenu(menu: Menu) {
@@ -174,8 +134,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
         val largePadding = resources.getDimension(R.dimen.space_len).toInt()
         val smallestPadding = resources.getDimension(R.dimen.smallest_padding).toInt() * 2
-
-
 
         binding.pageChatRecycler.apply {
             layoutManager = LinearLayoutManager(activity, LinearLayoutManager.VERTICAL, true)
@@ -224,46 +182,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
 
         setExternalDocumentCreationListener()
-
-        /*chatFragmentViewModel.currentSendMode.observe(viewLifecycleOwner) {
-            val mode = it ?: return@observe
-
-            binding.sendBtn.setOnClickListener {
-                if (binding.msgTxt.text.isNullOrBlank()) {
-                    chatFragmentViewModel.setReplyMessage(null)
-                    return@setOnClickListener
-                }
-
-                val content = binding.msgTxt.text.trim().toString()
-
-
-                val replyMessage = chatFragmentViewModel.replyMessage.value
-
-                when (mode) {
-                    ChatSendMode.Reply -> {
-                        viewModel.sendTextMessage(
-                            chatChannel.chatChannelId,
-                            content,
-                            replyMessage?.messageId,
-                            replyMessage?.toReplyMessage()
-                        )
-                    }
-                    ChatSendMode.Normal -> {
-                        viewModel.sendTextMessage(
-                            chatChannel.chatChannelId,
-                            content,
-                            replyMessage?.messageId,
-                            replyMessage?.toReplyMessage()
-                        )
-                    }
-                }
-
-                binding.msgTxt.text.clear()
-
-                chatFragmentViewModel.setReplyMessage(null)
-
-            }
-        }*/
 
         checkForContributors()
 
@@ -360,7 +278,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
 
         runDelayed(250) {
-            if (chatChannel.type == "private") {
+            if (chatChannel.type == CHANNEL_PRIVATE) {
                 if (chatChannel.authorized || chatChannel.data1!!.userId == UserManager.currentUserId) {
                     onChatReady()
                 } else {
@@ -373,7 +291,8 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                         data2.name + " wants to chat with you."
                     }
 
-                    val frag = MessageDialogFragment.builder("Blocked users will not be able to send you messages, see your posts in the future. You can simply ignore by sliding down this sheet.")
+                    val frag = MessageDialogFragment
+                        .builder("Blocked users will not be able to send you messages, see your posts in the future. You can simply ignore by sliding down this sheet.")
                         .setTitle(msg)
                         .setPositiveButton("Accept") { _, _ ->
                             FireUtility.authorizeChat(chatChannel) {
@@ -381,7 +300,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                                     onChatReady()
                                     doMagic = true
                                 } else {
-                                    toast("Something went wrong! :(")
                                     findNavController().navigateUp()
                                 }
                             }
@@ -403,7 +321,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                             }
                         }.build()
 
-                    frag.scrim = false
                     frag.fullscreen = false
                     frag.show(activity.supportFragmentManager, "MessageDialogFragment")
                 }
@@ -441,7 +358,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         } else {
             findNavController().navigateUp()
         }
-
 
     }
 
@@ -555,7 +471,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
     override fun onMessageThumbnailNotDownload(message: Message) {
         super.onMessageThumbnailNotDownload(message)
-        Log.d(TAG, "onMessageThumbnailNotDownload: Saving thumbnail")
         saveThumbnail(message)
     }
 
@@ -680,30 +595,10 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
     }
 
-   /* fun onMessageNotDownloadedTest(message: Message, onDownload: (Message) -> Unit) {
-        val name = message.content + message.metadata!!.ext
-        val dirType = message.type.toPlural()
-        val fullPath = dirType + "/" + chatChannel.chatChannelId
-
-        getNestedDir(activity.filesDir, fullPath)?.let {
-            getFile(it, name)?.let { it1 ->
-                viewModel.saveMediaToFile(message, it1) { m ->
-                    // the download may finish after the user has moved to different fragment
-                    if (this.isVisible) {
-                        activity.runOnUiThread {
-                            onDownload(m)
-                        }
-                    }
-                }
-            }
-        }
-    }*/
-
     private fun saveThumbnail(message: Message) {
         val name = "thumb_" + message.content + ".jpg"
 
         fun download(file: File) {
-//            val uri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, file)
             viewModel.downloadMediaThumbnail(message, file) {
                 when (it) {
                     is Result.Error -> Log.e(TAG, "download: ${it.exception.localizedMessage}")
@@ -712,33 +607,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                     }
                 }
             }
-           /* if (message.type == video) {
-                val ref =
-                    Firebase.storage.reference.child("videos/messages/${message.messageId}/thumb_${message.content}.jpg")
-                ref.getFile(file)
-                    .addOnSuccessListener {
-                        message.metadata?.thumbnail =
-                            FileProvider.getUriForFile(activity, FILE_PROV_AUTH, file).toString()
-                        viewModel.updateMessage(message)
-                    }.addOnFailureListener {
-                        Log.e(TAG, "download: ${it.localizedMessage}")
-                    }
-            } else {
-                downloadBitmapUsingFresco(activity, message.metadata!!.url) { bitmap ->
-                    bitmap?.let {
-                        val destUri = FileProvider.getUriForFile(activity, FILE_PROV_AUTH, file)
-                        when (val res = createImageFile(bitmap, destUri)) {
-                            is Result.Error -> {
-                                Log.e(TAG, "saveThumbnailsBeforeSendingMessages: ${res.exception}")
-                            }
-                            is Result.Success -> {
-                                message.metadata!!.thumbnail = res.data
-                                viewModel.updateMessage(message)
-                            }
-                        }
-                    }
-                }
-            }*/
         }
 
         val fullPath = "images/thumbnails/${message.chatChannelId}"
@@ -748,42 +616,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
             }
         }
     }
-
-    /*private fun createNewFileAndDownload(
-        message: Message,
-        onComplete: (newMessage: Message) -> Unit
-    ) = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
-        if (message.type == video || message.type == image)
-            saveThumbnail(message)
-
-        val name = message.content + message.metadata!!.ext
-
-        fun download(file: File) {
-            FireUtility.downloadMessageMedia(file, name, message) {
-                if (it.isSuccessful) {
-                    message.isDownloaded = true
-                    viewModel.updateMessage(message)
-                    activity.runOnUiThread {
-                        onComplete(message)
-                    }
-                } else {
-                    file.delete()
-                    activity.runOnUiThread {
-                        onComplete(message)
-                    }
-                }
-            }
-        }
-
-        val dirType = message.type.toPlural()
-        val fullPath = dirType + "/" + chatChannel.chatChannelId
-
-        getNestedDir(activity.filesDir, fullPath)?.let {
-            getFile(it, name)?.let { it1 ->
-                download(it1)
-            }
-        }
-    }*/
 
     override fun onMessageRead(message: Message) {
         super.onMessageRead(message)
@@ -796,17 +628,22 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
     private inner class Helper(private val messages: ArrayList<Message>): ItemSelectResultListener<ChatChannel> {
         override fun onItemsSelected(items: List<ChatChannel>, externalSelect: Boolean) {
-
             // in the future all the messages can be sent in a single batch
             for (channel in items) {
-
                 val newMessages = mutableListOf<Message>()
                 val mediaItems = getMediaItemsFromMessages(messages)
 
                 for (i in messages.indices) {
                     val mediaItem = mediaItems[i].mediaItem
                     val oldMessage = messages[i]
-                    val metadata = Metadata(mediaItem.sizeInBytes, mediaItem.name, mediaItem.url, mediaItem.ext, 0, 0)
+                    val metadata = Metadata(
+                        mediaItem.sizeInBytes,
+                        mediaItem.name,
+                        mediaItem.url,
+                        mediaItem.ext,
+                        0,
+                        0
+                    )
 
                     val newMessage = Message(
                         randomId(),
@@ -816,8 +653,8 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                         UserManager.currentUserId,
                         UserManager.currentUser.minify(),
                         metadata,
-                        emptyList(),
-                        emptyList(),
+                        listOf(UserManager.currentUserId),
+                        listOf(UserManager.currentUserId),
                         System.currentTimeMillis(),
                         System.currentTimeMillis(),
                         null,
@@ -826,15 +663,15 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                         isSavedToFiles = false,
                         isCurrentUserMessage = true
                     )
-
                     newMessages.add(newMessage)
                 }
 
-                sendMessages(newMessages)
+                viewModel.insertMessages(newMessages)
+                sendMessages(newMessages, true)
+
             }
 
             findNavController().navigateUp()
-
         }
     }
 
@@ -864,8 +701,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
     }
 
-    private fun sendMessages(messages: List<Message>) {
-
+    private fun sendMessages(messages: List<Message>, isForwardedMessages: Boolean = false) {
         val videoMessages = messages.filter {
             it.type == video
         }
@@ -873,24 +709,29 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         if (videoMessages.isNotEmpty())
             uploadThumbnails(videoMessages)
 
-        viewModel.sendMessages(messages) { taskResult ->
-            runOnMainThread {
-                activity.binding.mainProgressBar.hide()
+        if (isForwardedMessages) {
+            viewModel.sendMessages(messages)
+        } else {
+            viewModel.sendMessages(messages) { taskResult ->
+                runOnMainThread {
+                    activity.binding.mainProgressBar.hide()
 
-                binding.msgTxt.hint = "Write something here ..."
-                binding.sendBtn.enable()
-                binding.attachBtn.enable()
+                    binding.msgTxt.hint = "Write something here ..."
+                    binding.sendBtn.enable()
+                    binding.attachBtn.enable()
 
-                when (taskResult) {
-                    is Result.Error -> {
-                        toast("Something went wrong while uploading documents")
-                    }
-                    is Result.Success -> {
+                    when (taskResult) {
+                        is Result.Error -> {
+                            toast("Something went wrong while uploading documents")
+                        }
+                        is Result.Success -> {
 
+                        }
                     }
                 }
             }
         }
+
     }
 
     override fun onOptionClick(
@@ -1021,8 +862,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
             )
         }
 
-        Log.d(TAG, "saveMediaToDevice: $destinationUri")
-
         if (Build.VERSION.SDK_INT >= 29) {
             contentValues.put(
                 MediaStore.MediaColumns.DATE_TAKEN,
@@ -1062,15 +901,15 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun createFile(pickerInitialUri: Uri, mime: String, name: String) {
+    private fun createFile(mime: String, name: String) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = mime
             putExtra(Intent.EXTRA_TITLE, name)
 
-            // Optionally, specify a URI for the directory that should be opened in
-            // the system file picker before your app creates the document.
-            putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                putExtra(DocumentsContract.EXTRA_INITIAL_URI, MediaStore.Downloads.EXTERNAL_CONTENT_URI)
+            }
         }
 
         activity.fileSaverLauncher.launch(intent)
@@ -1136,7 +975,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
                             if (Build.VERSION.SDK_INT >= 29) {
                                 internalDocumentToBeSaved = it1
-                                createFile(MediaStore.Downloads.EXTERNAL_CONTENT_URI, m, name)
+                                createFile(m, name)
                             } else {
                                 val extUri = saveMediaToDevice(it1, name, message.type, m)
                                 if (extUri != null) {
@@ -1371,7 +1210,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     }
 
     override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
-        if (!items.isNullOrEmpty()) {
+        if (items.isNotEmpty()) {
 
             fun send() {
                 activity.binding.mainProgressBar.show()
@@ -1447,9 +1286,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChat2Binding {
         if (chatChannel.type == CHANNEL_PRIVATE) {
-            setMenu(R.menu.new_chat_menu, {
-                true
-            }) {
+            setMenu(R.menu.new_chat_menu) {
                 onPrepMenu(it)
             }
 
@@ -1469,9 +1306,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
             FireUtility.getPost(chatChannel.postId) {
                 it?.let {
                     post = it
-                    setMenu(R.menu.new_chat_menu, {
-                        true
-                    }) {
+                    setMenu(R.menu.new_chat_menu) {
                         onPrepMenu(it)
                     }
                 }

@@ -20,7 +20,7 @@ class ChatRulesFragment : BaseFragment<FragmentChatRulesBinding>() {
     private val shouldUpdate = MutableLiveData<Boolean>()
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatRulesBinding {
-        setMenu(R.menu.update_guidelines_menu, { item ->
+        setMenu(R.menu.update_guidelines_menu, onItemSelected = { item ->
             when (item.itemId) {
                 R.id.update_guidelines -> {
                     val updatedRule = binding.channelRulesText.text.trim()

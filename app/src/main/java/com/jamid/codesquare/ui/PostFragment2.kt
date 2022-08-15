@@ -33,7 +33,6 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
     private lateinit var post: Post
     private lateinit var userAdapter: UserAdapter
     private var postAdapter: PostAdapter3? = null
-    private val staticList = mutableListOf<Post>()
     private var pAdapter: PostAdapter3? = null
 
     companion object {
@@ -51,9 +50,18 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
 
         post = arguments?.getParcelable(POST) ?: throw NullPointerException("Post is null")
 
+        binding.staticPostRecycler.apply {
+            itemAnimator = null
+            layoutManager = LinearLayoutManager(requireContext())
+        }
+
         viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
             if (it != null) {
+
                 if (postAdapter != null) {
+
+                    binding.staticPostRecycler.adapter = postAdapter
+
                     if ((postAdapter?.currentList?.size ?: 0) > 1) {
                         val ad = postAdapter?.currentList?.get(1)
                         ad?.let { a ->
@@ -63,36 +71,33 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
                         toast("Something is wrong.")
                     }
                 } else {
+
                     postAdapter = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
                         shouldShowJoinButton = true
                         allowContentClick = false
                     }
 
-                    binding.staticPostRecycler.apply {
-                        adapter = postAdapter
-                        itemAnimator = null
-                        layoutManager = LinearLayoutManager(requireContext())
-                    }
+                    binding.staticPostRecycler.adapter = postAdapter
 
                     postAdapter?.submitList(listOf(
                         Post2.Collab(it),
                         Post2.Advertise(randomId())
                     ))
 
-                    binding.staticPostRecycler.post {
-                        setPostExtraContent()
-                        similarPostsJob?.cancel()
-                        similarPostsJob = setSimilarPosts()
-                    }
                 }
             }
+        }
+
+        binding.staticPostRecycler.post {
+            setPostExtraContent()
+            setSimilarPosts()
         }
     }
 
     private var similarPostsJob: Job? = null
+    private var postExtraContentJob: Job? = null
 
-
-    private fun setSimilarPosts() = runDelayed(1700) {
+    private fun setSimilarPosts() {
 
         FireUtility.getSimilarPosts(post) {
             if (it.isNotEmpty()) {
@@ -144,7 +149,7 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
 
     }
 
-    private fun setPostExtraContent() = runDelayed(700) {
+    private fun setPostExtraContent() {
         binding.postExtraItem.root.show()
 
         binding.postExtraItem.apply {
@@ -242,33 +247,17 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
             )
         }
 
-        Firebase.firestore.collection(USERS)
-            .whereArrayContains(COLLABORATIONS, post.id)
+        val task = Firebase.firestore.collection(USERS)
+            .whereArrayContains(CHAT_CHANNELS, post.chatChannel)
             .limit(5)
             .get()
             .addOnSuccessListener {
                 if (it != null && !it.isEmpty) {
-                    val contributors = mutableListOf<User>()
                     val users = it.toObjects(User::class.java)
-                    contributors.addAll(users)
-
-                    FireUtility.getUser(post.creator.userId) { it1 ->
-                        if (it1 != null) {
-                            contributors.add(it1)
-                        }
-                        onContributorsFetched(contributors)
-                    }
-                } else {
-                    FireUtility.getUser(post.creator.userId) { it1 ->
-                        if (it1 != null) {
-                            onContributorsFetched(listOf(it1))
-                        }
-                    }
+                    onContributorsFetched(users)
+                    binding.postExtraItem.contributorsHeader.show()
+                    binding.postExtraItem.postContributorsRecycler.show()
                 }
-
-                binding.postExtraItem.contributorsHeader.show()
-                binding.postExtraItem.postContributorsRecycler.show()
-
             }.addOnFailureListener {
                 Log.e(TAG, "setContributors: ${it.localizedMessage}")
                 Snackbar.make(
@@ -288,11 +277,14 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
 
     override fun onStop() {
         super.onStop()
+        postExtraContentJob?.cancel()
         similarPostsJob?.cancel()
     }
 
-    private fun onContributorsFetched(contributors: List<User>) = requireActivity().runOnUiThread {
+    private fun onContributorsFetched(contributors: List<User>) {
+
         userAdapter.submitList(contributors)
+
         val list = arrayListOf<User>()
         for (item in contributors) {
             list.add(item)

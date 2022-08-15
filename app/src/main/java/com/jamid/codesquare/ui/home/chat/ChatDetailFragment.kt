@@ -10,7 +10,6 @@ import androidx.navigation.navGraphViewModels
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
@@ -24,15 +23,12 @@ import com.jamid.codesquare.listeners.UserClickListener
 import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.ChatViewModelFactory
 import com.jamid.codesquare.ui.OptionsFragment
-// something simple
 
-// TODO("Show images from post on the top")
 class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickListener, MediaClickListener {
 
     private lateinit var userAdapter: UserAdapter
     private lateinit var chatChannel: ChatChannel
     private var post: Post? = null
-    private var contributorsListener: ListenerRegistration? = null
     private val savedList = mutableListOf<MediaItemWrapper>()
 
     private val chatViewModel: ChatViewModel by navGraphViewModels(R.id.navigation_chats) {
@@ -67,7 +63,6 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
             layoutManager = LinearLayoutManager(activity)
         }
 
-
         viewModel.getReactiveChatChannel(chatChannel.chatChannelId)
             .observe(viewLifecycleOwner) { reactiveChatChannel ->
                 if (reactiveChatChannel != null) {
@@ -95,7 +90,6 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
                     binding.chatMediaHeader.setOnClickListener {
                         findNavController().navigate(R.id.chatMediaFragment, bundleOf(CHAT_CHANNEL to chatChannel))
                     }
-
                 }
             }
 
@@ -108,18 +102,19 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
             }
 
             runDelayed(1000) {
-                contributorsListener = Firebase.firestore.collection(USERS)
+                val query = Firebase.firestore.collection(USERS)
                     .whereArrayContains(CHAT_CHANNELS, chatChannel.chatChannelId)
-                    .addSnapshotListener { querySnapshot, error ->
-                        if (error != null) {
-                            Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
-                        }
 
-                        if (querySnapshot != null && !querySnapshot.isEmpty) {
-                            val users = querySnapshot.toObjects(User::class.java)
-                            viewModel.insertUsers(users)
-                        }
+                FireUtility.addFirestoreListener(chatChannel.chatChannelId, query) { value, error ->
+                    if (error != null) {
+                        Log.e(TAG, "onViewCreated: ${error.localizedMessage}")
                     }
+
+                    if (value != null && !value.isEmpty) {
+                        val users = value.toObjects(User::class.java)
+                        viewModel.insertUsers(users)
+                    }
+                }
             }
         }
 
@@ -176,9 +171,11 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
 
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        contributorsListener?.remove()
+
+    override fun onStop() {
+        super.onStop()
+        Log.d(TAG, "onStop: Removing listener")
+        FireUtility.removeFirestoreListener(chatChannel.chatChannelId)
     }
 
     private lateinit var gridMediaAdapter: GridMediaAdapter
@@ -344,7 +341,7 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatDetailBinding {
         if (chatChannel.type != CHANNEL_PRIVATE) {
-            setMenu(R.menu.chat_detail_fragment_menu, {
+            setMenu(R.menu.chat_detail_fragment_menu, onItemSelected = {
                 when (it.itemId) {
                     R.id.chat_option -> {
                         val (a, b) = if (post?.isMadeByMe == true) {
@@ -376,9 +373,7 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
                     }
                 }
                 true
-            }) {
-
-            }
+            })
         }
         return FragmentChatDetailBinding.inflate(inflater)
     }

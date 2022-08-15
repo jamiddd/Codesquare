@@ -30,10 +30,7 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.updateImageBtn.setOnClickListener {
-            val fragment = DefaultProfileImageSheet().apply {
-                fullscreen = true
-                scrim = false
-            }
+            val fragment = DefaultProfileImageSheet()
             fragment.show(activity.supportFragmentManager, DefaultProfileImageSheet.TAG)
         }
 

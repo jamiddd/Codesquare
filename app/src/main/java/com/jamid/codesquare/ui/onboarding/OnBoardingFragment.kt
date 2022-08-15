@@ -3,33 +3,21 @@ package com.jamid.codesquare.ui.onboarding
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
-import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.R
 import com.jamid.codesquare.adapter.viewpager.OnBoardingViewPager
 import com.jamid.codesquare.databinding.FragmentOnBoardingBinding
 import com.jamid.codesquare.hideKeyboard
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
+
 // something simple
-class OnBoardingFragment: Fragment() {
-
-    private lateinit var binding: FragmentOnBoardingBinding
-    private val viewModel: MainViewModel by activityViewModels()
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        binding = FragmentOnBoardingBinding.inflate(inflater)
-        return binding.root
+class OnBoardingFragment: BaseFragment<FragmentOnBoardingBinding>() {
+    override fun onCreateBinding(inflater: LayoutInflater): FragmentOnBoardingBinding {
+        return FragmentOnBoardingBinding.inflate(inflater)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -37,14 +25,13 @@ class OnBoardingFragment: Fragment() {
 
         binding.onBoardingPager.adapter = OnBoardingViewPager(requireActivity())
 
-        viewLifecycleOwner.lifecycleScope.launch {
-            delay(400)
+        OverScrollDecoratorHelper.setUpOverScroll((binding.onBoardingPager.getChildAt(0) as RecyclerView), OverScrollDecoratorHelper.ORIENTATION_HORIZONTAL)
+
+        runDelayed(400) {
             hideKeyboard()
         }
 
-        TabLayoutMediator(binding.onBoardingTabs, binding.onBoardingPager) { _, _ ->
-
-        }.attach()
+        TabLayoutMediator(binding.onBoardingTabs, binding.onBoardingPager) { _, _ -> }.attach()
 
         binding.nextBtn.setOnClickListener {
             val currentItem = binding.onBoardingPager.currentItem
