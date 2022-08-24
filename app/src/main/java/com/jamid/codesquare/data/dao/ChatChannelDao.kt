@@ -38,4 +38,7 @@ abstract class ChatChannelDao: BaseDao<ChatChannel>() {
     @Query("SELECT * FROM chat_channels WHERE archived = 0 AND authorized = 1 AND isNewLastMessage = 1")
     abstract fun getUnreadChatChannels(): LiveData<List<ChatChannel>>
 
+    @Query("SELECT * FROM chat_channels WHERE archived = 1 AND authorized = 1 ORDER BY updatedAt DESC")
+    abstract fun archivedChannels(): LiveData<List<ChatChannel>>
+
 }

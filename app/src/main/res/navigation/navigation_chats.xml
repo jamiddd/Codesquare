@@ -373,6 +373,12 @@
         tools:layout="@layout/fragment_chat_detail_2"
         android:label="Details" />
 
+    <fragment
+        android:id="@+id/chatArchiveFragment"
+        android:name="com.jamid.codesquare.ui.ChatArchiveFragment"
+        tools:layout="@layout/fragment_chat_archive"
+        android:label="Archived Chats" />
+
    <!-- <fragment
         android:id="@+id/rankedEntryFragment"
         android:name="com.jamid.codesquare.ui.RankedEntryFragment"

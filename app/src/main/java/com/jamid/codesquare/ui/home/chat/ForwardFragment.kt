@@ -140,6 +140,10 @@ class ForwardFragment(private val itemSelectResultListener: ItemSelectResultList
 
     }
 
+    override fun onChannelOptionClick(chatChannel: ChatChannel) {
+
+    }
+
     override fun onCreateBinding(inflater: LayoutInflater): FragmentForwardBinding {
         return FragmentForwardBinding.inflate(inflater)
     }

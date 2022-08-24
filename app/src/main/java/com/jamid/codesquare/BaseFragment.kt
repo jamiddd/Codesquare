@@ -191,8 +191,9 @@ abstract class BaseFragment<T: ViewBinding>: Fragment() {
         exitTransition = MaterialSharedAxis(MaterialSharedAxis.X, false)
     }
 
+    // TODO("Let this block run in main thread, and fetch data in IO thread")
     open fun runOnBackgroundThread(block: suspend CoroutineScope.() -> Unit): Job {
-        return viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO, block = block)
+        return viewLifecycleOwner.lifecycleScope.launch(block = block)
     }
 
     open fun runDelayed(duration: Long, block: () -> Unit): Job {

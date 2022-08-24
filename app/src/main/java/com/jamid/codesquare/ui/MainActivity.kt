@@ -2774,6 +2774,75 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     }
                 }
             }
+            ARCHIVE_ -> {
+                if (chatChannel != null) {
+                    // archive chat channel
+                    archiveChatChannel(chatChannel)
+                }
+            }
+            UNARCHIVE_ -> {
+                if (chatChannel != null) {
+                    unarchiveChatChannel(chatChannel)
+                }
+            }
+            MUTE_ -> {
+                if (chatChannel != null) {
+                    muteChatChannel(chatChannel)
+                }
+            }
+            UNMUTE_ -> {
+                if (chatChannel != null) {
+                    unMuteChatChannel(chatChannel)
+                }
+            }
+        }
+    }
+
+    private fun muteChatChannel(chatChannel: ChatChannel) {
+        FireUtility.muteChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.mute = true
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "muteChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "muteChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun unMuteChatChannel(chatChannel: ChatChannel) {
+        FireUtility.unMuteChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.mute = false
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "unMuteChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "unMuteChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun unarchiveChatChannel(chatChannel: ChatChannel) {
+        FireUtility.unarchiveChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.archived = false
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "unarchiveChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "archiveChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun archiveChatChannel(chatChannel: ChatChannel) {
+        FireUtility.archiveChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.archived = true
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "archiveChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "archiveChatChannel: ${task.exception?.localizedMessage}")
+            }
         }
     }
 
@@ -3071,6 +3140,27 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     override fun onChannelUnread(chatChannel: ChatChannel) {
 
+    }
+
+    override fun onChannelOptionClick(chatChannel: ChatChannel) {
+
+        val archived = if (chatChannel.archived) {
+            UNARCHIVE_
+        } else {
+            ARCHIVE_
+        }
+
+        /*val mute = if (chatChannel.mute) {
+            UNMUTE_
+        } else {
+            MUTE_
+        }*/
+
+        val options = arrayListOf(archived/*, mute*/)
+        val icons = arrayListOf(R.drawable.ic_round_archive_24/*, R.drawable.ic_round_volume_mute_24*/)
+
+        optionsFragment = OptionsFragment.newInstance(chatChannel.postTitle, options, icons, this, chatChannel = chatChannel)
+        optionsFragment?.show(supportFragmentManager, "ChatChannelOption")
     }
 
     fun dispatchTakePictureIntent() {

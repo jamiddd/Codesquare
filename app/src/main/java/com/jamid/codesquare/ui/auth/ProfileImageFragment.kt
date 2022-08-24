@@ -12,6 +12,9 @@ import com.jamid.codesquare.data.Result
 import com.jamid.codesquare.data.UserUpdate
 import com.jamid.codesquare.databinding.FragmentProfileImageBinding
 import com.jamid.codesquare.ui.DefaultProfileImageSheet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 // something simple
 class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
 
@@ -45,7 +48,6 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
         binding.userName.text = currentUser.name
 
         binding.imageUpdateNextBtn.setOnClickListener {
-
             // updating UI on next btn click
             binding.profileImageCompleteProgress.show()
             binding.imageUpdateNextBtn.disappear()
@@ -88,8 +90,9 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
             }
 
             runOnBackgroundThread {
-                when (val result = FireUtility.updateUser3(userUpdate)) {
+                when (val result = withContext(Dispatchers.IO) { FireUtility.updateUser3(userUpdate) }) {
                     is Result.Error -> {
+                        /* change this to a separate function*/
                         binding.profileImageCompleteProgress.hide()
                         binding.imageUpdateNextBtn.show()
                         binding.skipImageUpdateBtn.enable()
@@ -102,11 +105,9 @@ class ProfileImageFragment : BaseFragment<FragmentProfileImageBinding>() {
                         }
                     }
                     is Result.Success -> {
-                        runOnMainThread {
-                            findNavController().navigate(
-                                R.id.userInfoFragment,
-                            )
-                        }
+                        findNavController().navigate(
+                            R.id.userInfoFragment,
+                        )
                     }
                 }
             }

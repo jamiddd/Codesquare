@@ -11,29 +11,29 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.chip.Chip
-import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.PostAdapter3
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
-import com.jamid.codesquare.data.Comment
-import com.jamid.codesquare.data.Post
-import com.jamid.codesquare.data.Post2
-import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.*
 import com.jamid.codesquare.databinding.FragmentPost2Binding
 import com.jamid.codesquare.listeners.ChipClickListener
 import com.jamid.codesquare.listeners.CommentMiniListener
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 
-// something simple
+
 class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener, ChipClickListener {
 
     private lateinit var post: Post
     private lateinit var userAdapter: UserAdapter
-    private var postAdapter: PostAdapter3? = null
+    private val staticPostAdapter: PostAdapter3 by lazy { PostAdapter3(viewLifecycleOwner, activity, activity).apply {
+        shouldShowJoinButton = true
+        allowContentClick = false
+    }}
     private var pAdapter: PostAdapter3? = null
+    private val adId = randomId()
+    private val staticPostList = mutableListOf<Post2>(Post2.Advertise(adId))
 
     companion object {
         const val TAG = "PostFragment2"
@@ -52,50 +52,25 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
 
         binding.staticPostRecycler.apply {
             itemAnimator = null
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = LinearLayoutManager(activity)
         }
 
-        viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
+        viewModel.getPost(post.id).observe(viewLifecycleOwner) {
             if (it != null) {
-
-                if (postAdapter != null) {
-
-                    binding.staticPostRecycler.adapter = postAdapter
-
-                    if ((postAdapter?.currentList?.size ?: 0) > 1) {
-                        val ad = postAdapter?.currentList?.get(1)
-                        ad?.let { a ->
-                            postAdapter?.submitList(listOf(Post2.Collab(it), a))
-                        }
-                    } else {
-                        toast("Something is wrong.")
-                    }
+                binding.staticPostRecycler.adapter = staticPostAdapter
+                if (staticPostList.size == 1) {
+                    staticPostList.add(0, Post2.Collab(it))
                 } else {
-
-                    postAdapter = PostAdapter3(viewLifecycleOwner, activity, activity).apply {
-                        shouldShowJoinButton = true
-                        allowContentClick = false
-                    }
-
-                    binding.staticPostRecycler.adapter = postAdapter
-
-                    postAdapter?.submitList(listOf(
-                        Post2.Collab(it),
-                        Post2.Advertise(randomId())
-                    ))
-
+                    staticPostList[0] = Post2.Collab(it)
                 }
+
+                staticPostAdapter.submitList(staticPostList)
             }
         }
 
-        binding.staticPostRecycler.post {
-            setPostExtraContent()
-            setSimilarPosts()
-        }
+        setPostExtraContent()
+        setSimilarPosts()
     }
-
-    private var similarPostsJob: Job? = null
-    private var postExtraContentJob: Job? = null
 
     private fun setSimilarPosts() {
 
@@ -142,18 +117,24 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
                 }
             }
         } else {
-            binding.similarPostsHeader.hide()
-            binding.divider21.hide()
-            binding.relatedPostsRecycler.hide()
+            onSimilarPostsNotFound()
         }
-
     }
+
+    
+
+    private fun onSimilarPostsNotFound() {
+        binding.similarPostsHeader.hide()
+        binding.divider21.hide()
+        binding.relatedPostsRecycler.hide()
+    }
+
 
     private fun setPostExtraContent() {
         binding.postExtraItem.root.show()
 
         binding.postExtraItem.apply {
-            // Tags related
+
             if (post.tags.isNotEmpty()) {
                 tagsHeader.show()
                 postTags.show()
@@ -247,55 +228,43 @@ class PostFragment2 : BaseFragment<FragmentPost2Binding>(), CommentMiniListener,
             )
         }
 
-        val task = Firebase.firestore.collection(USERS)
-            .whereArrayContains(CHAT_CHANNELS, post.chatChannel)
-            .limit(5)
-            .get()
-            .addOnSuccessListener {
-                if (it != null && !it.isEmpty) {
-                    val users = it.toObjects(User::class.java)
-                    onContributorsFetched(users)
-                    binding.postExtraItem.contributorsHeader.show()
-                    binding.postExtraItem.postContributorsRecycler.show()
-                }
-            }.addOnFailureListener {
-                Log.e(TAG, "setContributors: ${it.localizedMessage}")
-                Snackbar.make(
-                    binding.root,
-                    "Something went wrong while trying to fetch contributors. Try again later ..",
-                    Snackbar.LENGTH_LONG
-                )
-                    .setBackgroundTint(
-                        ContextCompat.getColor(
-                            requireContext(),
-                            R.color.error_color
-                        )
-                    )
-                    .show()
+        runOnBackgroundThread {
+            val contributorsFetchResult = withContext(Dispatchers.IO) {
+                FireUtility.getContributors(post.chatChannel, 5)
             }
-    }
 
-    override fun onStop() {
-        super.onStop()
-        postExtraContentJob?.cancel()
-        similarPostsJob?.cancel()
+            when (contributorsFetchResult) {
+                is Result.Error -> {
+                    // TODO("Show error")
+                }
+                is Result.Success -> {
+                    onContributorsFetched(contributorsFetchResult.data)
+                }
+            }
+        }
+
     }
 
     private fun onContributorsFetched(contributors: List<User>) {
+        binding.postExtraItem.apply {
 
-        userAdapter.submitList(contributors)
+            contributorsHeader.show()
+            postContributorsRecycler.show()
 
-        val list = arrayListOf<User>()
-        for (item in contributors) {
-            list.add(item)
-        }
+            userAdapter.submitList(contributors)
 
-        binding.postExtraItem.contributorsHeader.setOnClickListener {
-            findNavController().navigate(
-                R.id.postContributorsFragment, bundleOf(
-                    POST to post, TITLE to "Contributors", SUB_TITLE to post.name
+            val list = arrayListOf<User>()
+            for (item in contributors) {
+                list.add(item)
+            }
+
+            contributorsHeader.setOnClickListener {
+                findNavController().navigate(
+                    R.id.postContributorsFragment, bundleOf(
+                        POST to post, TITLE to "Contributors", SUB_TITLE to post.name
+                    )
                 )
-            )
+            }
         }
     }
 

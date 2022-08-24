@@ -13,13 +13,21 @@ import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
-// something simple
+
 class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
 
     private lateinit var chatChannelAdapter2: ChatChannelAdapter2
     private var hasTriedOnce = false
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatList2Binding {
+        setMenu(R.menu.chat_list_menu, onItemSelected = {
+            when (it.itemId) {
+                R.id.chat_list_archive -> {
+                    findNavController().navigate(R.id.chatArchiveFragment)
+                }
+            }
+            true
+        })
         return FragmentChatList2Binding.inflate(inflater)
     }
 

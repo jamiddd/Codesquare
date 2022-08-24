@@ -3,7 +3,6 @@ package com.jamid.codesquare.adapter.recyclerview
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.style.StyleSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,9 +18,7 @@ class ChatChannelViewHolder(
 ) : RecyclerView.ViewHolder(view) {
 
     var isSelectMode = false
-    init {
-        Log.d("Something", "Simple: ")
-    }
+
     fun bind(chatChannelWrapper: ChatChannelWrapper?) {
         if (chatChannelWrapper != null) {
             val chatChannel = chatChannelWrapper.chatChannel
@@ -123,6 +120,12 @@ class ChatChannelViewHolder(
                 view.setOnClickListener {
                     channelListener.onChannelClick(chatChannel, bindingAdapterPosition)
                 }
+
+                view.setOnLongClickListener {
+                    channelListener.onChannelOptionClick(chatChannel)
+                    true
+                }
+
             }
 
         }

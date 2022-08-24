@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -1049,7 +1050,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun getLocalChannelContributors(chatChannel: String): List<User> {
-        return repo.getLocalChannelContributors(chatChannel)
+        return withContext(Dispatchers.IO) {
+            repo.getLocalChannelContributors(chatChannel)
+        }
     }
 
     fun updatePost(thumbnailUrl: String, onComplete: (Post, task: Task<Void>) -> Unit) =
@@ -1899,7 +1902,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /* User related functions end */
 
     suspend fun getPostRequestByNotificationId(id: String): PostRequest? {
-        return repo.getPostRequestByNotificationId(id)
+        return withContext(Dispatchers.IO) {
+            repo.getPostRequestByNotificationId(id)
+        }
     }
 
     /*@OptIn(ExperimentalPagingApi::class)
@@ -2231,7 +2236,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return repo.getChannelContributors(chatChannelId)
     }
 
-    fun getPostReactive(id: String) : LiveData<Post> {
+    fun getPost(id: String) : LiveData<Post> {
         return repo.postDao.getReactivePost(id)
     }
 
@@ -2251,6 +2256,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         setCurrentPost(null)
         clearCreatePostMediaItems()
         setCreatedNewPost(post.id)
+    }
+
+    fun archivedChatChannels(): LiveData<List<ChatChannel>> {
+        return repo.chatChannelDao.archivedChannels()
     }
 
 

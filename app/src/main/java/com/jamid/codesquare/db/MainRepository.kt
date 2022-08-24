@@ -12,7 +12,7 @@ import java.io.File// something simple
 class MainRepository(private val db: CollabDatabase) {
 
     private val interestDao = db.interestDao()
-    private val chatChannelDao = db.chatChannelDao()
+    val chatChannelDao = db.chatChannelDao()
     val postDao = db.postDao()
 
     val userMinimalDao = db.userMinimalDao()

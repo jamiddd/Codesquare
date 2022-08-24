@@ -60,6 +60,13 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     private val chatViewModel: ChatViewModel by navGraphViewModels(R.id.navigation_chats) {
         ChatViewModelFactory(requireContext())
     }
+
+    private var isData1CurrentUser = false
+    private var isChannelPrivate = false
+
+    private lateinit var currentUserMinimal: UserMinimal
+    private lateinit var otherUserMinimal: UserMinimal
+
     private var internalDocumentToBeSaved: File? = null
     private lateinit var otherUser: User
     private lateinit var post: Post
@@ -70,6 +77,22 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         chatChannel = arguments?.getParcelable(CHAT_CHANNEL) ?: return
+
+        isChannelPrivate = chatChannel.type == CHANNEL_PRIVATE
+
+        if (isChannelPrivate) {
+            isData1CurrentUser = chatChannel.data1?.userId == UserManager.currentUserId
+
+            if (isData1CurrentUser) {
+                currentUserMinimal = chatChannel.data1!!
+                otherUserMinimal = chatChannel.data2!!
+            } else {
+                otherUserMinimal = chatChannel.data1!!
+                currentUserMinimal = chatChannel.data2!!
+            }
+        }
+
+
     }
 
     private fun setMenuImage(item: MenuItem, image: String) {
@@ -112,11 +135,11 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     }
 
     private fun onPrepMenu(menu: Menu) {
-        val image = if (chatChannel.type == CHANNEL_PRIVATE) {
-            if (chatChannel.data1!!.userId != UserManager.currentUserId) {
-                chatChannel.data1!!.photo
+        val image = if (isChannelPrivate) {
+            if (isData1CurrentUser) {
+                currentUserMinimal.photo
             } else {
-                chatChannel.data2!!.photo
+                otherUserMinimal.photo
             }
         } else {
             chatChannel.postImage
@@ -278,66 +301,68 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
 
         runDelayed(250) {
-            if (chatChannel.type == CHANNEL_PRIVATE) {
-                if (chatChannel.authorized || chatChannel.data1!!.userId == UserManager.currentUserId) {
-                    onChatReady()
+            if (isChannelPrivate) {
+                if (chatChannel.authorized || isData1CurrentUser) {
+                    handleBlockedUserPrivateChat()
                 } else {
-                    val data1 = chatChannel.data1!!
-                    val data2 = chatChannel.data2!!
-
-                    val msg = if (data1.userId != UserManager.currentUserId) {
-                        data1.name + " wants to chat with you."
-                    } else {
-                        data2.name + " wants to chat with you."
-                    }
+                    val msg = otherUserMinimal.name + " wants to chat with you."
 
                     val frag = MessageDialogFragment
-                        .builder("Blocked users will not be able to send you messages, see your posts in the future. You can simply ignore by sliding down this sheet.")
+                        .builder(getString(R.string.chat_initial_block_msg))
                         .setTitle(msg)
-                        .setPositiveButton("Accept") { _, _ ->
-                            FireUtility.authorizeChat(chatChannel) {
-                                if (it.isSuccessful) {
-                                    onChatReady()
-                                    doMagic = true
-                                } else {
-                                    findNavController().navigateUp()
-                                }
-                            }
-                        }.setNegativeButton("Block") { _, _ ->
-                            val userId = if (data1.userId != UserManager.currentUserId) {
-                                data1.userId
-                            } else {
-                                data2.userId
-                            }
-
-                            FireUtility.deleteTempPrivateChat(chatChannel) {
-                                if (it.isSuccessful) {
-                                    FireUtility.getUser(userId) { user ->
-                                        if (user != null) {
-                                            activity.blockUser(user)
-                                        }
-                                    }
-                                }
-                            }
+                        .setPositiveButton(getString(R.string.accept)) { _, _ ->
+                            authorizeChat()
+                        }.setNegativeButton(getString(R.string.block)) { _, _ ->
+                            deleteChatAndBlockUser()
                         }.build()
 
-                    frag.fullscreen = false
-                    frag.show(activity.supportFragmentManager, "MessageDialogFragment")
+                    frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
                 }
             } else {
-                onChatReady()
+                handleBlockedUserPrivateChat()
             }
 
             chatViewModel.prefetchChatMediaItems(chatChannel)
 
         }
 
+        prefetchAndConvertMediaItems()
+        setCustomNavigation()
+
+    }
+
+    private fun deleteChatAndBlockUser() {
+        FireUtility.deleteTempPrivateChat(chatChannel) {
+            if (it.isSuccessful) {
+                FireUtility.getUser(otherUserMinimal.userId) { user ->
+                    if (user != null) {
+                        activity.blockUser(user)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun authorizeChat() {
+        FireUtility.authorizeChat(chatChannel) {
+            if (it.isSuccessful) {
+                onChatReady()
+                doMagic = true
+            } else {
+                findNavController().navigateUp()
+            }
+        }
+    }
+
+    private fun prefetchAndConvertMediaItems() {
         chatViewModel.initialMediaMessages.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
                 chatViewModel.convertInitialMessagesToMediaItems(requireContext(), it)
             }
         }
+    }
 
+    private fun setCustomNavigation() {
         activity.binding.mainToolbar.setNavigationOnClickListener {
             onBackPressed()
         }
@@ -347,7 +372,29 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 onBackPressed()
             }
         })
+    }
 
+    private fun handleBlockedUserPrivateChat() {
+        if (chatChannel.type == CHANNEL_PRIVATE) {
+            if (UserManager.currentUser.blockedUsers.contains(otherUserMinimal.userId)) {
+                // show a dialog that asks whether to unblock or go back
+
+                MessageDialogFragment.builder("${otherUserMinimal.name} has been blocked by you. Do you want to unblock ?")
+                    .setTitle("Blocked User")
+                    .setPositiveButton("Unblock") { a, b ->
+                        FireUtility.getUser(otherUserMinimal.userId) { user ->
+
+                        }
+                    }
+                    .setNegativeButton("Back") { a, b ->
+
+                    }
+                    .build()
+
+            }
+        } else {
+            onChatReady()
+        }
     }
 
     private fun onBackPressed() {
@@ -367,11 +414,9 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         binding.msgTxt.requestFocus()
     }
 
-    /* TODO("Check if we really need this?") */
     private fun checkForContributors() = runOnBackgroundThread {
         val contributorIds = chatChannel.contributors.toSet()
         val localContributors = viewModel.getLocalChannelContributors("%${chatChannel.chatChannelId}%")
-
         val localIds = localContributors.map { it.id }.toSet()
         val newUsers = contributorIds.minus(localIds)
 
