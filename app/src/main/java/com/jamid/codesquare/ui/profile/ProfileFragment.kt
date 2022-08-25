@@ -224,6 +224,7 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListen
 
             binding.userInfoLayout.profileMessageBtn.setOnClickListener {
 
+                // convert this to utility function
                 Firebase.firestore.collection(CHAT_CHANNELS)
                     .whereIn("postId", listOf(UserManager.currentUserId + "," + user.id, user.id + "," + UserManager.currentUserId))
                     .get()
@@ -231,13 +232,13 @@ class ProfileFragment: BaseFragment<FragmentProfileBinding>(), OptionClickListen
                         if (!it.isEmpty) {
                             val channel = it.toObjects(ChatChannel::class.java).first()
                             activity.binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
-                            activity.onChannelClick(channel, 0)
+                            activity.onChannelClick(channel.toChatChannelWrapper(), 0)
                         } else {
                             FireUtility.createChannel(user) { channel ->
                                 if (channel != null) {
                                     viewModel.insertChatChannels(listOf(channel))
                                     activity.binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
-                                    activity.onChannelClick(channel, 0)
+                                    activity.onChannelClick(channel.toChatChannelWrapper(), 0)
                                 }
                             }
                         }

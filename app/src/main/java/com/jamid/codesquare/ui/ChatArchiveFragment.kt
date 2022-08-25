@@ -6,7 +6,6 @@ import android.view.View
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
-import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentChatArchiveBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
@@ -36,7 +35,7 @@ class ChatArchiveFragment: BaseFragment<FragmentChatArchiveBinding>() {
             if (!archivedChannels.isNullOrEmpty()) {
                 binding.archivedChannelsRecycler.show()
                 binding.archivedInfoText.hide()
-                chatChannelAdapter.submitList(archivedChannels.map { ChatChannelWrapper(it, it.chatChannelId, false, -1) })
+                chatChannelAdapter.submitList(archivedChannels)
             } else {
                 binding.archivedChannelsRecycler.hide()
                 binding.archivedInfoText.text = "No archived chats"

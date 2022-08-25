@@ -66,24 +66,24 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
         viewModel.getReactiveChatChannel(chatChannel.chatChannelId)
             .observe(viewLifecycleOwner) { reactiveChatChannel ->
                 if (reactiveChatChannel != null) {
-                    chatChannel = reactiveChatChannel
+                    chatChannel = reactiveChatChannel.chatChannel
                     userAdapter.associatedChatChannel = chatChannel
 
-                    if (reactiveChatChannel.type == CHANNEL_PRIVATE) {
+                    if (chatChannel.type == CHANNEL_PRIVATE) {
                         binding.updateGuidelinesBtn.hide()
                     } else {
-                        if (reactiveChatChannel.administrators.contains(currentUser.id)) {
+                        if (chatChannel.administrators.contains(currentUser.id)) {
                             binding.updateGuidelinesBtn.show()
                         } else {
                             binding.updateGuidelinesBtn.hide()
                         }
                     }
 
-                    setRules(reactiveChatChannel)
+                    setRules(chatChannel)
 
                     binding.updateGuidelinesBtn.setOnClickListener {
                         findNavController().navigate(R.id.channelGuidelinesFragment, bundleOf(
-                            CHAT_CHANNEL to reactiveChatChannel
+                            CHAT_CHANNEL to chatChannel
                         ))
                     }
 

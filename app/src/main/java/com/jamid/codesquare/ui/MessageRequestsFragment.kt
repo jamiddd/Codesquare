@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.BaseFragment
 import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
-import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentMessageRequestsBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.show
@@ -35,15 +34,15 @@ class MessageRequestsFragment: BaseFragment<FragmentMessageRequestsBinding>() {
             if (!it.isNullOrEmpty()) {
                 binding.noMessageRequests.hide()
 
-                it.forEach { chatChannel ->
-                    FireUtility.getChatChannel(chatChannel.chatChannelId) { it1 ->
+                it.forEach { chatChannelWrapper ->
+                    FireUtility.getChatChannel(chatChannelWrapper.chatChannel.chatChannelId) { it1 ->
                         if (it1 == null) {
-                            viewModel.deleteLocalChatChannelById(chatChannel.chatChannelId)
+                            viewModel.deleteLocalChatChannelById(chatChannelWrapper.chatChannel.chatChannelId)
                         }
                     }
                 }
 
-                chatChannelAdapter.submitList(it.map { it1 -> ChatChannelWrapper(it1) })
+                chatChannelAdapter.submitList(it)
             } else {
                 binding.noMessageRequests.show()
                 runDelayed(300) {

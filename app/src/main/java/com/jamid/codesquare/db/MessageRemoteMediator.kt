@@ -8,7 +8,7 @@ import com.jamid.codesquare.data.Message
 @ExperimentalPagingApi
 class MessageRemoteMediator(
     query: Query,
-    private val chatRepository: ChatRepository,
+    private val repo: MainRepository,
     private val filter: (message: Message) -> Boolean
 ): FirebaseRemoteMediator<Int, Message>(query) {
 
@@ -18,7 +18,7 @@ class MessageRemoteMediator(
             filter(it)
         }
 
-        chatRepository.insertChannelMessages(toBeSavedMessages)
+        repo.insertChannelMessages(toBeSavedMessages)
     }
 
     override suspend fun onRefresh() {

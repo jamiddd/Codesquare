@@ -1,9 +1,9 @@
 package com.jamid.codesquare.listeners
 
-import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
 
 interface ChatChannelClickListener {
-    fun onChannelClick(chatChannel: ChatChannel, pos: Int)
-    fun onChannelUnread(chatChannel: ChatChannel)
-    fun onChannelOptionClick(chatChannel: ChatChannel)
+    fun onChannelClick(chatChannelWrapper: ChatChannelWrapper, pos: Int)
+    fun onChannelUnread(chatChannelWrapper: ChatChannelWrapper)
+    fun onChannelOptionClick(chatChannelWrapper: ChatChannelWrapper)
 }

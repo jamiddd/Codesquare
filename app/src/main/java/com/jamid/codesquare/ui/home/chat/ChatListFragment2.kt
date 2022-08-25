@@ -11,13 +11,11 @@ import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.data.ChatChannel
-import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.databinding.FragmentChatList2Binding
 
 class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
 
     private lateinit var chatChannelAdapter2: ChatChannelAdapter2
-    private var hasTriedOnce = false
 
     override fun onCreateBinding(inflater: LayoutInflater): FragmentChatList2Binding {
         setMenu(R.menu.chat_list_menu, onItemSelected = {
@@ -49,34 +47,30 @@ class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
         viewModel.chatChannels(UserManager.currentUserId).observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
 
-                for (chatChannel in it) {
+                for (chatChannelWrapper in it) {
                     // if the current user is the first sender and the channel is not authorized
-                    if (!chatChannel.authorized && chatChannel.data1?.userId == UserManager.currentUserId && chatChannel.lastMessage == null) {
+                    if (!chatChannelWrapper.chatChannel.authorized && chatChannelWrapper.chatChannel.data1?.userId == UserManager.currentUserId && chatChannelWrapper.chatChannel.lastMessage == null) {
                         // delete the chat cause it's temporary
-                        FireUtility.deleteTempPrivateChat(chatChannel) { t ->
+                        FireUtility.deleteTempPrivateChat(chatChannelWrapper.chatChannel) { t ->
                             if (t.isSuccessful)
-                                viewModel.deleteLocalChatChannelById(chatChannel.chatChannelId)
+                                viewModel.deleteLocalChatChannelById(chatChannelWrapper.chatChannel.chatChannelId)
                         }
                     }
                 }
 
-                for (chatChannel in it) {
-                    FireUtility.getChatChannel(chatChannel.chatChannelId) {it1 ->
+                for (chatChannelWrapper in it) {
+                    FireUtility.getChatChannel(chatChannelWrapper.chatChannel.chatChannelId) {it1 ->
                         if (it1 == null) {
-                            viewModel.deleteLocalChatChannelById(chatChannel.chatChannelId)
+                            viewModel.deleteLocalChatChannelById(chatChannelWrapper.chatChannel.chatChannelId)
                         }
                     }
                 }
 
                 onChatChannelExists()
 
-                chatChannelAdapter2.submitList(it.map { it1 -> ChatChannelWrapper(it1, id = it1.chatChannelId) })
+                chatChannelAdapter2.submitList(it)
             } else {
                 onChatChannelNotFound()
-
-                if (UserManager.currentUser.chatChannels.isNotEmpty()) {
-                    tryToFix()
-                }
             }
         }
 
@@ -109,7 +103,7 @@ class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
 
         val chatC = arguments?.getParcelable<ChatChannel>(CHAT_CHANNEL)
         chatC?.let {
-            activity.onChannelClick(chatC, 0)
+            activity.onChannelClick(it.toChatChannelWrapper(), 0)
         }
 
     }
@@ -133,14 +127,6 @@ class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
                     viewModel.setCurrentError(it.exception)
                 }
             }
-    }
-
-    @Deprecated("Find a better solution")
-    private fun tryToFix() {
-        if (!hasTriedOnce) {
-            hasTriedOnce = true
-            getChannels()
-        }
     }
 
     private fun onChatChannelExists() {
