@@ -55,8 +55,8 @@ abstract class ChatChannelWrapperDao: BaseDao<ChatChannelWrapper>() {
     @Query("SELECT * FROM chat_channel_wrapper WHERE chatChannel_archived = 0 AND chatChannel_authorized = 1 AND isRead = 0")
     abstract fun getUnreadChatChannels(): LiveData<List<ChatChannelWrapper>>
 
-    @Query("SELECT * FROM chat_channel_wrapper WHERE chatChannel_archived = 1 AND chatChannel_authorized = 1 ORDER BY chatChannel_updatedAt DESC")
-    abstract fun archivedChannels(): LiveData<List<ChatChannelWrapper>>
+    @Query("SELECT * FROM chat_channel_wrapper WHERE chatChannel_archived = 1 AND (chatChannel_authorized = 1 OR chatChannel_message_data1_userId = :currentUserId) ORDER BY chatChannel_updatedAt DESC")
+    abstract fun archivedChannels(currentUserId: String): LiveData<List<ChatChannelWrapper>>
 
     @Query("DELETE FROM chat_channel_wrapper")
     abstract suspend fun clearTable()

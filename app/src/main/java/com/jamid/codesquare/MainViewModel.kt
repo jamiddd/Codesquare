@@ -2269,8 +2269,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         setCreatedNewPost(post.id)
     }
 
-    fun archivedChatChannels(): LiveData<List<ChatChannelWrapper>> {
-        return repo.archivedChannels()
+    fun archivedChatChannels(currentUserId: String): LiveData<List<ChatChannelWrapper>> {
+        return repo.archivedChannels(currentUserId)
     }
 
     fun insertChannelMessages(messages: List<Message>) {

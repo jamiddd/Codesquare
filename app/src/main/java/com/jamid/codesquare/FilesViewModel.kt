@@ -25,21 +25,12 @@ class FilesViewModel: ViewModel() {
     }
 
     fun addMediaItemsToList(items: List<MediaItemWrapper>)  = viewModelScope.launch (Dispatchers.IO) {
-
-        Log.d(TAG, "addMediaItemsToList: adding items to list")
-
         val existingList = selectMediaItems.value
         if (existingList != null) {
-
-            Log.d(TAG, "addMediaItemsToList: Really adding")
-
             val newList = existingList.toMutableList()
             newList.addAll(items)
             setSelectMediaItems(newList)
         } else {
-
-            Log.d(TAG, "addMediaItemsToList: setting list")
-
             setSelectMediaItems(items)
         }
     }

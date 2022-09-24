@@ -3140,7 +3140,17 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val options = arrayListOf(archived/*, mute*/)
         val icons = arrayListOf(R.drawable.ic_round_archive_24/*, R.drawable.ic_round_volume_mute_24*/)
 
-        optionsFragment = OptionsFragment.newInstance(chatChannel.postTitle, options, icons, this, chatChannel = chatChannel)
+        val title = if (chatChannel.type == CHANNEL_PRIVATE) {
+            if (chatChannel.data1?.userId == UserManager.currentUserId) {
+                chatChannel.data2?.name
+            } else {
+                chatChannel.data1?.name
+            }
+        } else {
+            chatChannel.postTitle
+        }
+
+        optionsFragment = OptionsFragment.newInstance(title, options, icons, this, chatChannel = chatChannel)
         optionsFragment?.show(supportFragmentManager, "ChatChannelOption")
     }
 

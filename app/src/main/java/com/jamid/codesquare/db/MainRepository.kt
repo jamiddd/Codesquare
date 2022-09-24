@@ -92,6 +92,8 @@ class MainRepository(private val db: CollabDatabase, private val scope: Coroutin
 
                 if (value != null && !value.isEmpty) {
 
+                    Log.d(TAG, "setChannelListener: Found channels (${value.size()})")
+
                     scope.launch(Dispatchers.IO) {
                         clearChatChannels()
 
@@ -579,8 +581,8 @@ class MainRepository(private val db: CollabDatabase, private val scope: Coroutin
         return userDao.getChannelContributorsLive("%$chatChannelId%")
     }
 
-    fun archivedChannels(): LiveData<List<ChatChannelWrapper>> {
-        return db.chatChannelWrapperDao().archivedChannels()
+    fun archivedChannels(currentUserId: String): LiveData<List<ChatChannelWrapper>> {
+        return db.chatChannelWrapperDao().archivedChannels(currentUserId)
     }
 
     fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannelWrapper> {

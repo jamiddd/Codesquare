@@ -3,8 +3,10 @@ package com.jamid.codesquare.ui
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jamid.codesquare.BaseFragment
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.ChatChannelAdapter2
 import com.jamid.codesquare.databinding.FragmentChatArchiveBinding
 import com.jamid.codesquare.hide
@@ -26,11 +28,12 @@ class ChatArchiveFragment: BaseFragment<FragmentChatArchiveBinding>() {
         binding.archivedChannelsRecycler.apply {
             adapter = chatChannelAdapter
             layoutManager = LinearLayoutManager(activity)
+            addItemDecoration(DividerItemDecoration(activity, DividerItemDecoration.VERTICAL))
         }
 
         binding.archivedChannelsProgress.show()
 
-        viewModel.archivedChatChannels().observe(viewLifecycleOwner) { archivedChannels ->
+        viewModel.archivedChatChannels(UserManager.currentUserId).observe(viewLifecycleOwner) { archivedChannels ->
             binding.archivedChannelsProgress.hide()
             if (!archivedChannels.isNullOrEmpty()) {
                 binding.archivedChannelsRecycler.show()
