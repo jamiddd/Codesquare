@@ -304,5 +304,6 @@
     <string name="chat_initial_block_msg">Blocked users will not be able to send you messages, see your posts in the future. You can simply ignore by sliding down this sheet.</string>
     <string name="block">Block</string>
     <string name="no_last_message">No messages yet</string>
+    <string name="unblock">Unblock</string>
 
 </resources>

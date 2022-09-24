@@ -50,7 +50,7 @@ import java.io.FileOutputStream
 /*enum class ChatSendMode {
     Reply, Normal
 }*/
-// something simple
+
 class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, MessageViewHolder2<Message2>>(),
     MessageListener3, OptionClickListener,
     ItemSelectResultListener<MediaItem> {
@@ -177,6 +177,68 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
             )
         }
 
+        if (!isAuthorized()) {
+            if (isChannelPrivate && !chatChannel.authorized) {
+
+                if (!isData1CurrentUser) {
+                    val title = otherUserMinimal.name + " wants to chat with you."
+
+                    val frag = MessageDialogFragment
+                        .builder(getString(R.string.chat_initial_block_msg))
+                        .setTitle(title)
+                        .setPositiveButton(getString(R.string.accept)) { _, _ ->
+                            onAuthorized()
+                        }.setNegativeButton(getString(R.string.block)) { _, _ ->
+                            deleteChatAndBlockUser()
+                        }.build()
+
+                    frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
+                } else {
+                    onAuthorized()
+                }
+
+            }
+
+            if (isChannelPrivate && otherUserMinimal.isBlocked()) {
+                val title = otherUserMinimal.name + " is blocked."
+
+                val frag = MessageDialogFragment
+                    .builder("This user is blocked. To start a chat with this user, you have to unblock this user first.")
+                    .setTitle(title)
+                    .setPositiveButton(getString(R.string.unblock)) { _, _ ->
+                        FireUtility.unblockUser(otherUser) {
+                            if (it.isSuccessful) {
+                                onAuthorized()
+                            } else {
+                                Log.e(TAG, "onViewCreated: ${it.exception?.localizedMessage}")
+                            }
+                        }
+                    }.setNegativeButton(getString(R.string.cancel)) { d, _ ->
+                        d.dismiss()
+                    }.build()
+
+                frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
+            }
+
+            Log.d(TAG, "onViewCreated: None of the reasons for not being authorized")
+
+            return
+        } else {
+
+            Log.d(TAG, "onViewCreated: Authorized chat")
+
+            onAuthorized()
+        }
+
+        viewModel.preUploadMediaItems.observe(viewLifecycleOwner) {
+            if (!it.isNullOrEmpty()) {
+                onItemsSelected(it, true)
+            }
+        }
+
+    }
+
+    private fun setAttachBtn() {
         binding.attachBtn.setOnClickListener {
             hideKeyboard()
             val options = arrayListOf(OPTION_8, OPTION_9, OPTION_37)
@@ -193,23 +255,10 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 OptionsFragment.TAG
             )
         }
+    }
 
-        viewModel.cameraPhotoUri.observe(viewLifecycleOwner) {
-            if (it != null) {
-                val mediaItem = getFileAsMediaItem(cameraDir, it.lastPathSegment!!)
-                if (mediaItem != null)
-                    onItemsSelected(listOf(mediaItem), true)
-
-                viewModel.setCameraImage(null)
-            }
-        }
-
-        setExternalDocumentCreationListener()
-
-        checkForContributors()
-
+    private fun setReplyMessage() {
         chatViewModel.replyMessage.observe(viewLifecycleOwner) { message ->
-
             if (message != null) {
                 val replyToView = View.inflate(activity, R.layout.reply_to_layout, null)
                 binding.root.addView(replyToView)
@@ -228,9 +277,9 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 }
 
                 replyToBinding.replyMessageContent.text = when (message.type) {
-                    image -> "Image"
-                    video -> "Video"
-                    document -> "Document"
+                    image -> IMAGE_
+                    video -> VIDEO_
+                    document -> DOCUMENT_
                     else -> message.content
                 }
 
@@ -299,36 +348,52 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 }
             }
         }
+    }
 
-        runDelayed(250) {
-            if (isChannelPrivate) {
-                if (chatChannel.authorized || isData1CurrentUser) {
-                    handleBlockedUserPrivateChat()
-                } else {
-                    val msg = otherUserMinimal.name + " wants to chat with you."
+    private fun setCamera() {
+        viewModel.cameraPhotoUri.observe(viewLifecycleOwner) {
+            if (it != null) {
+                val mediaItem = getFileAsMediaItem(cameraDir, it.lastPathSegment!!)
+                if (mediaItem != null)
+                    onItemsSelected(listOf(mediaItem), true)
 
-                    val frag = MessageDialogFragment
-                        .builder(getString(R.string.chat_initial_block_msg))
-                        .setTitle(msg)
-                        .setPositiveButton(getString(R.string.accept)) { _, _ ->
-                            authorizeChat()
-                        }.setNegativeButton(getString(R.string.block)) { _, _ ->
-                            deleteChatAndBlockUser()
-                        }.build()
-
-                    frag.show(activity.supportFragmentManager, MessageDialogFragment.TAG)
-                }
-            } else {
-                handleBlockedUserPrivateChat()
+                viewModel.setCameraImage(null)
             }
-
-            chatViewModel.prefetchChatMediaItems(chatChannel)
-
         }
+    }
 
+    private fun onAuthorized() {
+
+        setAttachBtn()
+        setExternalDocumentCreationListener()
+        checkForContributors()
         prefetchAndConvertMediaItems()
         setCustomNavigation()
+        setReplyMessage()
+        setCamera()
 
+        onChatReady()
+
+        runDelayed(250) {
+            chatViewModel.prefetchChatMediaItems(chatChannel)
+        }
+
+    }
+
+    private fun isAuthorized() = if (chatChannel.type == CHANNEL_PRIVATE) {
+        if (chatChannel.authorized) {
+            val user1 = chatChannel.data1!!
+            val user2 = chatChannel.data2!!
+            if (user1.isCurrentUser()) {
+                !user2.isBlocked()
+            } else {
+                !user1.isBlocked()
+            }
+        } else {
+            false
+        }
+    } else {
+        true
     }
 
     private fun deleteChatAndBlockUser() {
@@ -343,16 +408,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
     }
 
-    private fun authorizeChat() {
-        FireUtility.authorizeChat(chatChannel) {
-            if (it.isSuccessful) {
-                onChatReady()
-                doMagic = true
-            } else {
-                findNavController().navigateUp()
-            }
-        }
-    }
 
     private fun prefetchAndConvertMediaItems() {
         chatViewModel.initialMediaMessages.observe(viewLifecycleOwner) {
@@ -374,28 +429,6 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         })
     }
 
-    private fun handleBlockedUserPrivateChat() {
-        if (chatChannel.type == CHANNEL_PRIVATE) {
-            if (UserManager.currentUser.blockedUsers.contains(otherUserMinimal.userId)) {
-                // show a dialog that asks whether to unblock or go back
-
-                MessageDialogFragment.builder("${otherUserMinimal.name} has been blocked by you. Do you want to unblock ?")
-                    .setTitle("Blocked User")
-                    .setPositiveButton("Unblock") { a, b ->
-                        FireUtility.getUser(otherUserMinimal.userId) { user ->
-
-                        }
-                    }
-                    .setNegativeButton("Back") { a, b ->
-
-                    }
-                    .build()
-
-            }
-        } else {
-            onChatReady()
-        }
-    }
 
     private fun onBackPressed() {
         chatViewModel.clearData()
@@ -799,10 +832,17 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
                 frag.show(activity.supportFragmentManager, "GalleryFrag")
             }
             OPTION_9 -> {
-                val frag = FilesFragment(itemSelectResultListener = this)
-                frag.title = "Select files"
-                frag.primaryActionLabel = "Send"
-                frag.show(activity.supportFragmentManager, "FilesFrag")
+                val (itemType, mimeTypes) = "*/*" to null
+                (requireActivity() as MainActivity).selectMediaItems(
+                    true,
+                    itemType,
+                    mimeTypes
+                )
+
+//                val frag = FilesFragment(itemSelectResultListener = this)
+//                frag.title = "Select files"
+//                frag.primaryActionLabel = "Send"
+//                frag.show(activity.supportFragmentManager, "FilesFrag")
             }
             OPTION_19 -> {
                 // reply
@@ -1254,6 +1294,12 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        viewModel.setSelectMediaItems(emptyList())
+        viewModel.setPreUploadMediaItems(emptyList())
+    }
+
     override fun onItemsSelected(items: List<MediaItem>, externalSelect: Boolean) {
         if (items.isNotEmpty()) {
 
@@ -1300,7 +1346,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
 
                 val frag = MessageDialogFragment.builder(msg)
                     .setTitle("Sending ...")
-                    .setPositiveButton("Send") { _, b ->
+                    .setPositiveButton("Send") { _, _ ->
                        send()
                     }.setNegativeButton("Cancel") { a, _ ->
                         a.dismiss()
