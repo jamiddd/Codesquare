@@ -1,15 +1,13 @@
 package com.jamid.codesquare.adapter.recyclerview
 
-import android.graphics.Typeface
-import android.text.SpannableString
-import android.text.style.StyleSpan
-import android.util.Log
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.ChatChannelWrapper
+import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.ChatChannelItemBinding
 import com.jamid.codesquare.listeners.ChatChannelClickListener
 
@@ -19,90 +17,56 @@ class ChatChannelViewHolder(
 ) : RecyclerView.ViewHolder(view) {
 
     var isSelectMode = false
-    init {
-        Log.d("Something", "Simple: ")
+
+    private fun getContent(message: Message): String {
+        fun default(): String {
+            return when (message.type) {
+                image -> IMAGE_
+                document -> DOCUMENT_
+                video -> VIDEO_
+                else -> message.content
+            }
+        }
+
+        return if (message.type == CHANNEL_PRIVATE) {
+            default()
+        } else {
+            if (message.senderId != UserManager.currentUserId) {
+                message.sender.name + ": " + default()
+            } else {
+                "You: ${default()}"
+            }
+        }
     }
+
     fun bind(chatChannelWrapper: ChatChannelWrapper?) {
         if (chatChannelWrapper != null) {
             val chatChannel = chatChannelWrapper.chatChannel
             val binding = ChatChannelItemBinding.bind(view)
 
             val lastMessage = chatChannel.lastMessage
-            binding.channelTime.text = getTextForTime(chatChannel.updatedAt)
 
-            if (chatChannel.type == "private") {
-                val data1 = chatChannel.data1!!
-                val data2 = chatChannel.data2!!
-                if (data1.userId != UserManager.currentUserId) {
-                    binding.channelName.text = data1.name
-                    binding.channelImg.setImageURI(data1.photo)
-                } else {
-                    binding.channelName.text = data2.name
-                    binding.channelImg.setImageURI(data2.photo)
-                }
-            } else {
-                binding.channelImg.setImageURI(chatChannel.postImage)
-                binding.channelName.text = chatChannel.postTitle
-            }
+            binding.channelTime.text = getTextForTime(chatChannel.updatedAt)
+            binding.channelName.text = chatChannelWrapper.channelName
+            binding.channelImg.setImageURI(chatChannelWrapper.thumbnail)
 
             if (lastMessage != null) {
-                if (chatChannel.type == "private") {
-                    val content = when (lastMessage.type) {
-                        image -> "Image"
-                        document -> "Document"
-                        video -> "Video"
-                        else -> lastMessage.content
-                    }
-
-                    if (lastMessage.readList.contains(UserManager.currentUserId)) {
-                        binding.channelLastMessage.text = content
-                    } else {
-                        val sp = SpannableString(content)
-                        sp.setSpan(
-                            StyleSpan(Typeface.BOLD),
-                            0,
-                            content.length,
-                            SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
-                        )
-                        binding.channelLastMessage.text = sp
-                    }
-
+                val isRead = lastMessage.readList.contains(UserManager.currentUserId)
+                val content = if (isRead) {
+                    getContent(lastMessage)
                 } else {
-                    val content = when (lastMessage.type) {
-                        image -> "Image"
-                        document -> "Document"
-                        video -> "Video"
-                        else -> lastMessage.content
-                    }
-
-                    if (lastMessage.senderId != UserManager.currentUserId) {
-
-                        val lastMessageText = "${lastMessage.sender.name}: $content"
-
-                        if (lastMessage.readList.contains(UserManager.currentUserId)) {
-                            binding.channelLastMessage.text = lastMessageText
-                        } else {
-                            val sp = SpannableString(lastMessageText)
-                            sp.setSpan(
-                                StyleSpan(Typeface.BOLD),
-                                0,
-                                lastMessageText.length,
-                                SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
-                            )
-                            binding.channelLastMessage.text = sp
-                        }
-                    } else {
-                        val lastMessageText = "You: $content"
-                        binding.channelLastMessage.text = lastMessageText
-                    }
+                    getContent(lastMessage).toBold()
                 }
+
+                binding.channelLastMessage.text = content
+
+                setBackgroundColor(isRead)
             } else {
                 binding.channelTime.hide()
-                binding.channelLastMessage.text = "No messages yet"
+                binding.channelLastMessage.text = view.context.getString(R.string.no_last_message)
             }
 
             if (isSelectMode) {
-
                 binding.channelTime.hide()
                 binding.channelLastMessage.hide()
                 binding.chatSelectRadioBtn.show()
@@ -111,7 +75,7 @@ class ChatChannelViewHolder(
                 binding.chatSelectRadioBtn.isChecked = chatChannelWrapper.isSelected
 
                 view.setOnClickListener {
-                    channelListener.onChannelClick(chatChannel, bindingAdapterPosition)
+                    channelListener.onChannelClick(chatChannelWrapper, bindingAdapterPosition)
                 }
 
             } else {
@@ -121,10 +85,26 @@ class ChatChannelViewHolder(
                 binding.chatSelectRadioBtn.hide()
 
                 view.setOnClickListener {
-                    channelListener.onChannelClick(chatChannel, bindingAdapterPosition)
+                    channelListener.onChannelClick(chatChannelWrapper, bindingAdapterPosition)
+                }
+
+                view.setOnLongClickListener {
+                    channelListener.onChannelOptionClick(chatChannelWrapper)
+                    true
                 }
             }
+        }
+    }
 
+    private fun setBackgroundColor(isRead: Boolean) {
+        if (isRead) {
+            view.setBackgroundColor(Color.TRANSPARENT)
+        } else {
+            view.setBackgroundColor(if (view.context.isNightMode()) {
+                view.context.getColorResource(R.color.lightest_blue_night)
+            } else {
+                view.context.getColorResource(R.color.lightest_blue)
+            })
         }
     }
 

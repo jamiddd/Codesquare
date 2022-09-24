@@ -71,7 +71,7 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-// something simple
+
 class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteListener,
     PostClickListener, PostRequestListener, UserClickListener, ChatChannelClickListener,
     NotificationItemClickListener, CommentListener, OptionClickListener, NetworkStateListener,
@@ -109,14 +109,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         R.id.userInfoFragment,
         R.id.forgotPasswordFragment2
     )
-    /*private val bottomBarLessFragments = mutableListOf(
-        R.id.commentsFragment,
-        R.id.createPostFragment,
-        R.id.editProfileFragment,
-        R.id.settingsFragment
-    ).apply {
-        addAll(authFragments)
-    }*/
 
     private val tabbedFragments = arrayOf(
         R.id.searchFragment,
@@ -176,9 +168,9 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                             val lastMessage = chatChannel.lastMessage
                             if (lastMessage != null) {
                                 val content = when (lastMessage.type) {
-                                    image -> "Image"
-                                    document -> "Document"
-                                    video -> "Video"
+                                    image -> IMAGE_
+                                    document -> DOCUMENT_
+                                    video -> VIDEO_
                                     else -> lastMessage.content
                                 }
 
@@ -194,7 +186,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                                 showTopSnack(ss, lastMessage.sender.photo, action = {
                                     binding.mainPrimaryBottom.selectedItemId = R.id.navigation_chats
                                     runDelayed(400) {
-                                        onChannelClick(chatChannel, 0)
+                                        onChannelClick(chatChannel.toChatChannelWrapper(), 0)
                                     }
                                 })
                             }
@@ -204,20 +196,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
             }
         }
     }
-
-
-    /*fun stringForTime(timeMs: Float): String {
-        val totalSeconds = (timeMs / 1000).toInt()
-        val seconds = totalSeconds % 60
-        val minutes = totalSeconds / 60 % 60
-        val hours = totalSeconds / 3600
-        val mFormatter = Formatter()
-        return if (hours > 0) {
-            mFormatter.format("%d:%02d:%02d", hours, minutes, seconds).toString()
-        } else {
-            mFormatter.format("%02d:%02d", minutes, seconds).toString()
-        }
-    }*/
 
 
     /* Notifications that arrive when the app is in foreground*/
@@ -444,7 +422,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
                     if (value != null && !value.isEmpty) {
                         val messages = value.toObjects(Message::class.java)
-                        viewModel.chatRepository.insertChannelMessages(messages)
+                        viewModel.insertChannelMessages(messages)
                     }
 
                 }
@@ -708,9 +686,10 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
                     val chatChannelId = extras[CHANNEL_ID] as String?
                     if (chatChannelId != null) {
+                        ChatChannel
                         FireUtility.getChatChannel(chatChannelId) {
                             if (it != null) {
-                                onChannelClick(it, 0)
+                                onChannelClick(it.toChatChannelWrapper(), 0)
                             }
                         }
                     }
@@ -2774,6 +2753,75 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     }
                 }
             }
+            ARCHIVE_ -> {
+                if (chatChannel != null) {
+                    // archive chat channel
+                    archiveChatChannel(chatChannel)
+                }
+            }
+            UNARCHIVE_ -> {
+                if (chatChannel != null) {
+                    unarchiveChatChannel(chatChannel)
+                }
+            }
+            MUTE_ -> {
+                if (chatChannel != null) {
+                    muteChatChannel(chatChannel)
+                }
+            }
+            UNMUTE_ -> {
+                if (chatChannel != null) {
+                    unMuteChatChannel(chatChannel)
+                }
+            }
+        }
+    }
+
+    private fun muteChatChannel(chatChannel: ChatChannel) {
+        FireUtility.muteChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.mute = true
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "muteChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "muteChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun unMuteChatChannel(chatChannel: ChatChannel) {
+        FireUtility.unMuteChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.mute = false
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "unMuteChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "unMuteChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun unarchiveChatChannel(chatChannel: ChatChannel) {
+        FireUtility.unarchiveChatChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.archived = false
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "unarchiveChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "archiveChatChannel: ${task.exception?.localizedMessage}")
+            }
+        }
+    }
+
+    private fun archiveChatChannel(chatChannel: ChatChannel) {
+        FireUtility.archiveChannel(chatChannel) { task ->
+            if (task.isSuccessful) {
+                chatChannel.archived = true
+                viewModel.insertChatChannels(listOf(chatChannel))
+                Log.d(TAG, "archiveChatChannel: ${chatChannel.postTitle}")
+            } else {
+                Log.e(TAG, "archiveChatChannel: ${task.exception?.localizedMessage}")
+            }
         }
     }
 
@@ -3041,11 +3089,13 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         d.show(supportFragmentManager, MessageDialogFragment.TAG)
     }
 
-    override fun onChannelClick(chatChannel: ChatChannel, pos: Int) {
-        chatChannel.isNewLastMessage = false
-        viewModel.updateChatChannel(chatChannel)
+    override fun onChannelClick(chatChannelWrapper: ChatChannelWrapper, pos: Int) {
+        chatChannelWrapper.isRead = true
+        viewModel.insertChatChannelWrappers(listOf(chatChannelWrapper))
 
-        val title = if (chatChannel.type == "private") {
+        val chatChannel = chatChannelWrapper.chatChannel
+
+        val title = if (chatChannel.type == CHANNEL_PRIVATE) {
             val data1 = chatChannel.data1!!
             val data2 = chatChannel.data2!!
 
@@ -3069,8 +3119,39 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         )
     }
 
-    override fun onChannelUnread(chatChannel: ChatChannel) {
+    override fun onChannelUnread(chatChannelWrapper: ChatChannelWrapper) {
 
+    }
+
+    override fun onChannelOptionClick(chatChannelWrapper: ChatChannelWrapper) {
+        val chatChannel = chatChannelWrapper.chatChannel
+        val archived = if (chatChannel.archived) {
+            UNARCHIVE_
+        } else {
+            ARCHIVE_
+        }
+
+        /*val mute = if (chatChannel.mute) {
+            UNMUTE_
+        } else {
+            MUTE_
+        }*/
+
+        val options = arrayListOf(archived/*, mute*/)
+        val icons = arrayListOf(R.drawable.ic_round_archive_24/*, R.drawable.ic_round_volume_mute_24*/)
+
+        val title = if (chatChannel.type == CHANNEL_PRIVATE) {
+            if (chatChannel.data1?.userId == UserManager.currentUserId) {
+                chatChannel.data2?.name
+            } else {
+                chatChannel.data1?.name
+            }
+        } else {
+            chatChannel.postTitle
+        }
+
+        optionsFragment = OptionsFragment.newInstance(title, options, icons, this, chatChannel = chatChannel)
+        optionsFragment?.show(supportFragmentManager, "ChatChannelOption")
     }
 
     fun dispatchTakePictureIntent() {

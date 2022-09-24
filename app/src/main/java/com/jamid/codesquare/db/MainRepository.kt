@@ -5,14 +5,21 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.imagepipeline.request.ImageRequest
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.jamid.codesquare.*
 import com.jamid.codesquare.data.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File// something simple
 
-class MainRepository(private val db: CollabDatabase) {
+class MainRepository(private val db: CollabDatabase, private val scope: CoroutineScope, private val root: File) {
 
     private val interestDao = db.interestDao()
-    private val chatChannelDao = db.chatChannelDao()
     val postDao = db.postDao()
 
     val userMinimalDao = db.userMinimalDao()
@@ -31,18 +38,115 @@ class MainRepository(private val db: CollabDatabase) {
 
     val allPreviousQueries = searchQueryDao.prevQueries()
 
-    fun chatChannels(currentUserId: String) = chatChannelDao.chatChannels(currentUserId)
+    private var chatChannelsListenerRegistration: ListenerRegistration? = null
+
+    private var currentUserId: String = ""
+
+    init {
+        Firebase.auth.addAuthStateListener {
+            val currentFirebaseUser = it.currentUser
+            if (currentFirebaseUser == null) {
+                // is not signed in
+            } else {
+                // is signed in
+                currentUserId = currentFirebaseUser.uid
+                setChannelListener()
+            }
+        }
+
+    }
+
+    fun insertMessages(root: File, messages: List<Message>, preProcessed: Boolean = false) =
+        scope.launch(Dispatchers.IO) {
+            if (!preProcessed) {
+                processMessages(root, messages)
+                messageDao.insertMessages(messages)
+            } else {
+                messageDao.insertMessages(messages)
+            }
+        }
+
+//    fun chatChannels(currentUserId: String) = chatChannelDao.chatChannels(currentUserId)
+
+
+
+    fun chatChannelWrappers(currentUserId: String) = db.chatChannelWrapperDao().chatChannelWrappers(currentUserId)
 
     val allUnreadNotifications = notificationDao.allUnreadNotifications()
 
     val errors = MutableLiveData<Exception>()
 
+    private fun setChannelListener() {
+        chatChannelsListenerRegistration?.remove()
+        chatChannelsListenerRegistration = Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereArrayContains(CONTRIBUTORS, currentUserId)
+            .addSnapshotListener { value, error ->
+
+                if (error != null) {
+                    Log.e(
+                        TAG,
+                        "initializeListeners: Something went wrong - ${error.localizedMessage}"
+                    )
+                    return@addSnapshotListener
+                }
+
+                if (value != null && !value.isEmpty) {
+
+                    Log.d(TAG, "setChannelListener: Found channels (${value.size()})")
+
+                    scope.launch(Dispatchers.IO) {
+                        clearChatChannels()
+
+                        val chatChannels = value.toObjects(ChatChannel::class.java)
+                        insertChatChannels2(chatChannels)
+                    }
+                }
+            }
+    }
+
+    fun insertChannelMessages(messages: List<Message>) = scope.launch(Dispatchers.IO) {
+        val uid = Firebase.auth.currentUser?.uid
+        if (messages.isNotEmpty() && uid != null) {
+
+            val firstTimeMessages = messages.filter { message ->
+                !message.deliveryList.contains(uid)
+            }
+
+            val alreadyDeliveredMessages = messages.filter { message ->
+                message.deliveryList.contains(uid)
+            }
+
+            insertMessages(root, alreadyDeliveredMessages)
+
+            // update the delivery list
+            updateDeliveryListOfMessages(uid, firstTimeMessages) { it1 ->
+                if (!it1.isSuccessful) {
+                    errors.postValue(it1.exception)
+                } else {
+                    insertMessages(root, firstTimeMessages)
+                }
+            }
+        }
+    }
+
+    private fun updateDeliveryListOfMessages(
+        currentUserId: String,
+        messages: List<Message>,
+        onComplete: (task: Task<Void>) -> Unit
+    ) {
+        FireUtility.updateDeliveryListOfMessages(currentUserId, messages, onComplete)
+    }
+
+    suspend fun clearChatChannels() {
+        db.chatChannelWrapperDao().clearTable()
+    }
+
     suspend fun clearLikedByTable() {
         likedByDao.clearTable()
     }
 
-    fun messageRequests(): LiveData<List<ChatChannel>> {
-        return chatChannelDao.messageRequests(currentUserId = UserManager.currentUserId)
+    fun messageRequests(): LiveData<List<ChatChannelWrapper>> {
+        return db.chatChannelWrapperDao().messageRequests(currentUserId = UserManager.currentUserId)
     }
 
     private val oldAdsList = mutableListOf<Post>()
@@ -160,7 +264,7 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
     // the contributors must be downloaded before the channels
-    suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
+   /* suspend fun insertChatChannels(chatChannels: List<ChatChannel>) {
         val currentUserId = UserManager.currentUserId
         val newListOfChatChannels = mutableListOf<ChatChannel>()
         for (chatChannel in chatChannels) {
@@ -172,6 +276,12 @@ class MainRepository(private val db: CollabDatabase) {
             newListOfChatChannels.add(chatChannel)
         }
         chatChannelDao.insert(newListOfChatChannels)
+    }*/
+
+    suspend fun insertChatChannels2(chatChannels: List<ChatChannel>) {
+        db.chatChannelWrapperDao().insert(chatChannels.map {
+            it.toChatChannelWrapper()
+        })
     }
 
     private fun processMessages(root: File, messages: List<Message>): List<Message> {
@@ -211,7 +321,7 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
     suspend fun getLocalChatChannel(chatChannel: String): ChatChannel? {
-        return chatChannelDao.getChatChannel(chatChannel)
+        return db.chatChannelWrapperDao().getChatChannel(chatChannel)?.chatChannel
     }
 
     suspend fun deletePostRequest(postRequest: PostRequest) {
@@ -352,7 +462,7 @@ class MainRepository(private val db: CollabDatabase) {
     }
 
     suspend fun deleteLocalChatChannelById(chatChannelId: String) {
-        chatChannelDao.deleteChatChannelById(chatChannelId)
+        db.chatChannelWrapperDao().deleteChatChannelById(chatChannelId)
     }
 
     fun getReactiveUser(userId: String): LiveData<User> {
@@ -419,12 +529,12 @@ class MainRepository(private val db: CollabDatabase) {
         return notificationDao.getUnreadNotifications(2)
     }
 
-    suspend fun updateChatChannel(chatChannel: ChatChannel) {
-        chatChannelDao.update(chatChannel)
-    }
+//    suspend fun updateChatChannel(chatChannel: ChatChannel) {
+//        chatChannelDao.update(chatChannel)
+//    }
 
-    fun getUnreadChatChannels(): LiveData<List<ChatChannel>> {
-        return chatChannelDao.getUnreadChatChannels()
+    fun getUnreadChatChannels(): LiveData<List<ChatChannelWrapper>> {
+        return db.chatChannelWrapperDao().getUnreadChatChannels()
     }
 
     suspend fun deleteCommentsByUserId(id: String) {
@@ -471,13 +581,25 @@ class MainRepository(private val db: CollabDatabase) {
         return userDao.getChannelContributorsLive("%$chatChannelId%")
     }
 
+    fun archivedChannels(currentUserId: String): LiveData<List<ChatChannelWrapper>> {
+        return db.chatChannelWrapperDao().archivedChannels(currentUserId)
+    }
+
+    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannelWrapper> {
+        return db.chatChannelWrapperDao().getReactiveChatChannel(chatChannelId)
+    }
+
+    suspend fun insertChatChannelWrappers(chatChannelWrappers: List<ChatChannelWrapper>) {
+        db.chatChannelWrapperDao().insert(chatChannelWrappers)
+    }
+
     companion object {
 
         @Volatile private var instance: MainRepository? = null
 
-        fun getInstance(db: CollabDatabase): MainRepository {
+        fun getInstance(db: CollabDatabase, scope: CoroutineScope, root: File): MainRepository {
             return instance ?: synchronized(this) {
-                instance ?: MainRepository(db)
+                instance ?: MainRepository(db, scope, root)
             }
         }
 

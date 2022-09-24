@@ -33,12 +33,7 @@ class ForwardFragment(private val itemSelectResultListener: ItemSelectResultList
             if (!it.isNullOrEmpty()) {
                 binding.noItemsText.hide()
                 savedChannels.clear()
-                savedChannels.addAll(it.map { it1 ->
-                    ChatChannelWrapper(
-                        it1,
-                        id = it1.chatChannelId
-                    )
-                })
+                savedChannels.addAll(it)
                 chatChannelAdapter2.submitList(
                     savedChannels/*.filter { it1 -> it1.chatChannelId != chatChannelId }
                     */
@@ -90,27 +85,22 @@ class ForwardFragment(private val itemSelectResultListener: ItemSelectResultList
             }
     }
 
-    override fun onChannelClick(chatChannel: ChatChannel, pos: Int) {
+    override fun onChannelClick(chatChannelWrapper: ChatChannelWrapper, pos: Int) {
         val existing = selectedChannels.find {
-            it.id == chatChannel.chatChannelId
+            it.id == chatChannelWrapper.chatChannel.chatChannelId
         }
 
         if (existing == null) {
             // adding
             selectedChannels.add(
-                ChatChannelWrapper(
-                    chatChannel,
-                    chatChannel.chatChannelId,
-                    true,
-                    -1
-                )
+                chatChannelWrapper
             )
             savedChannels[pos].isSelected = true
 
         } else {
             // removing
             for (i in selectedChannels.indices) {
-                if (selectedChannels[i].id == chatChannel.chatChannelId) {
+                if (selectedChannels[i].id == chatChannelWrapper.chatChannel.chatChannelId) {
                     selectedChannels.removeAt(i)
                     break
                 }
@@ -136,7 +126,11 @@ class ForwardFragment(private val itemSelectResultListener: ItemSelectResultList
         }
     }
 
-    override fun onChannelUnread(chatChannel: ChatChannel) {
+    override fun onChannelUnread(chatChannelWrapper: ChatChannelWrapper) {
+
+    }
+
+    override fun onChannelOptionClick(chatChannelWrapper: ChatChannelWrapper) {
 
     }
 

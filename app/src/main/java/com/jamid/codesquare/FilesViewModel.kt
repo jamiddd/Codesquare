@@ -14,7 +14,6 @@ import com.jamid.codesquare.data.MediaItemWrapper
 import com.jamid.codesquare.ui.ItemSelectType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 // something simple
 class FilesViewModel: ViewModel() {
 
@@ -26,21 +25,12 @@ class FilesViewModel: ViewModel() {
     }
 
     fun addMediaItemsToList(items: List<MediaItemWrapper>)  = viewModelScope.launch (Dispatchers.IO) {
-
-        Log.d(TAG, "addMediaItemsToList: adding items to list")
-
         val existingList = selectMediaItems.value
         if (existingList != null) {
-
-            Log.d(TAG, "addMediaItemsToList: Really adding")
-
             val newList = existingList.toMutableList()
             newList.addAll(items)
             setSelectMediaItems(newList)
         } else {
-
-            Log.d(TAG, "addMediaItemsToList: setting list")
-
             setSelectMediaItems(items)
         }
     }
@@ -67,11 +57,11 @@ class FilesViewModel: ViewModel() {
                 "(" + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE + " OR " + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") AND " + MediaStore.Files.FileColumns.SIZE + "< 15728640"     //Selection criteria
             }
             ItemSelectType.DOCUMENT -> {
-                null
+                MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_NONE
             }
         }
 
-        selection = if (selection.isNullOrBlank()) {
+        selection = if (selection.isBlank()) {
             MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
         } else {
             selection + " AND " + MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
@@ -139,10 +129,9 @@ class FilesViewModel: ViewModel() {
                     }
                 }
 
-                val file = File("")
-                file.extension
+                Log.d(TAG, "loadItemsFromExternal: ${cursor.getString(nameCol)} -- ${cursor.getLong(modifiedCol)} -- ${cursor.getLong(sizeCol)}")
 
-                val name = cursor.getString(nameCol)
+                val name = cursor.getString(nameCol) ?: (randomId() + ".pdf")
                 val dateModified = cursor.getLong(modifiedCol)
                 val size = cursor.getLong(sizeCol)
                 val createdAt = cursor.getLong(dateAddedCol)

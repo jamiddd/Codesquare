@@ -3211,4 +3211,45 @@ object FireUtility {
             }
     }
 
+
+    suspend fun getContributors(chatChannelId: String, limit: Int): Result<List<User>> {
+        return try {
+            val task = usersCollectionRef.whereArrayContains(CHAT_CHANNELS, chatChannelId)
+                .limit(limit.toLong())
+                .get()
+
+            val qs = task.await()
+            val users = qs.toObjects(User::class.java)
+            processUsers(users)
+            Result.Success(users)
+        } catch (e: Exception) {
+            Result.Error(e)
+        }
+    }
+
+    fun archiveChannel(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+        chatChannelCollectionRef.document(chatChannel.chatChannelId)
+            .update(mapOf("archived" to true, UPDATED_AT to System.currentTimeMillis()))
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun unarchiveChatChannel(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+        chatChannelCollectionRef.document(chatChannel.chatChannelId)
+            .update(mapOf("archived" to false, UPDATED_AT to System.currentTimeMillis()))
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun muteChatChannel(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+        chatChannelCollectionRef.document(chatChannel.chatChannelId)
+            .update(mapOf("mute" to true, UPDATED_AT to System.currentTimeMillis()))
+            .addOnCompleteListener(onComplete)
+    }
+
+    fun unMuteChatChannel(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+        chatChannelCollectionRef.document(chatChannel.chatChannelId)
+            .update(mapOf("mute" to false, UPDATED_AT to System.currentTimeMillis()))
+            .addOnCompleteListener(onComplete)
+    }
+
+
 }

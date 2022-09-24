@@ -33,6 +33,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,17 +44,21 @@ typealias AlgoliaQuery = com.algolia.search.model.search.Query
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repo: MainRepository
-    val chatRepository: ChatRepository
+//    val chatRepository: ChatRepository
     private val userRepository: UserRepository
 
     private val _competitions = MutableLiveData<List<Competition>>().apply { value = emptyList() }
     val competitions: LiveData<List<Competition>> = _competitions
 
+    private val root: File
+
     init {
         val db = CollabDatabase.getInstance(application.applicationContext)
-        repo = MainRepository.getInstance(db)
-        chatRepository = ChatRepository(db, viewModelScope, application.applicationContext)
+        root = application.applicationContext.filesDir
+        repo = MainRepository.getInstance(db, viewModelScope, root)
+//        chatRepository = ChatRepository(db, viewModelScope, application.applicationContext)
         userRepository = UserRepository(db, viewModelScope)
+
 
         /* TODO("Think about this, if this is necessary") */
         viewModelScope.launch(Dispatchers.IO) {
@@ -195,10 +200,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
 
-    fun chatChannels(currentUserId: String) = repo.chatChannels(currentUserId)
+    fun chatChannels(currentUserId: String) = repo.chatChannelWrappers(currentUserId)
     val errors = repo.errors
 
-    fun messageRequests(): LiveData<List<ChatChannel>> {
+    fun messageRequests(): LiveData<List<ChatChannelWrapper>> {
         return repo.messageRequests()
     }
 
@@ -1049,7 +1054,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     suspend fun getLocalChannelContributors(chatChannel: String): List<User> {
-        return repo.getLocalChannelContributors(chatChannel)
+        return withContext(Dispatchers.IO) {
+            repo.getLocalChannelContributors(chatChannel)
+        }
     }
 
     fun updatePost(thumbnailUrl: String, onComplete: (Post, task: Task<Void>) -> Unit) =
@@ -1079,21 +1086,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }*/
 
     fun insertMessages(messages: List<Message>) = viewModelScope.launch(Dispatchers.IO) {
-        chatRepository.insertMessages(messages)
+        repo.insertMessages(root, messages)
     }
 
-    fun insertChatChannels(chatChannels: List<ChatChannel>) =
-        viewModelScope.launch(Dispatchers.IO) {
-            repo.insertChatChannels(chatChannels)
-        }
+//    fun insertChatChannels(chatChannels: List<ChatChannel>) =
+//        viewModelScope.launch(Dispatchers.IO) {
+//            repo.insertChatChannels(chatChannels)
+//        }
+
+    fun insertChatChannels(chatChannels: List<ChatChannel>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertChatChannels2(chatChannels)
+    }
+
+    fun insertChatChannelWrappers(chatChannelWrappers: List<ChatChannelWrapper>) = viewModelScope.launch (Dispatchers.IO) {
+        repo.insertChatChannelWrappers(chatChannelWrappers)
+    }
 
     suspend fun getDocumentMessages(chatChannelId: String): List<Message> {
         return repo.getDocumentMessages(chatChannelId)
     }
 
-    fun getDocumentMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
+    /*fun getDocumentMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
         return chatRepository.messageDao.getDocumentMessages(chatChannelId, limit)
-    }
+    }*/
 
     @OptIn(ExperimentalPagingApi::class)
     fun getTagPosts(tag: String, query: Query): Flow<PagingData<Post2>> {
@@ -1458,14 +1473,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         ),
             remoteMediator = MessageRemoteMediator(
                 query,
-                chatRepository
+                repo
             ) {
                 !(currentUser.blockedUsers.contains(it.senderId) || currentUser.blockedBy.contains(
                     it.senderId
                 ))
             }
         ) {
-            chatRepository.messageDao.getChannelPagedMessages(chatChannelId)
+            repo.messageDao.getChannelPagedMessages(chatChannelId)
         }.flow.map { pagingData ->
             pagingData.map { message ->
                 Message2.MessageItem(message)
@@ -1547,7 +1562,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             FireUtility.sendTextMessage(chatChannelId, content, replyTo, replyMessage)) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
-                chatRepository.insertMessage(result.data, true)
+                repo.insertMessages(root, listOf(result.data), true)
             }
         }
     }
@@ -1573,8 +1588,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             is Result.Error -> setCurrentError(result.exception)
             is Result.Success -> {
                 val messages = result.data
-
-                chatRepository.insertMessages(messages)
+                repo.insertMessages(root, messages)
             }
         }
     }
@@ -1648,8 +1662,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @return A reactive chat channel that reacts to changes in the local database
      *
      * */
-    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannel> {
-        return chatRepository.getReactiveChatChannel(chatChannelId)
+    fun getReactiveChatChannel(chatChannelId: String): LiveData<ChatChannelWrapper> {
+        return repo.getReactiveChatChannel(chatChannelId)
     }
 
 
@@ -1659,7 +1673,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * @param message The message to be updated
      * */
     fun updateMessage(message: Message) = viewModelScope.launch(Dispatchers.IO) {
-        chatRepository.messageDao.update(message)
+        repo.messageDao.update(message)
     }
 
     /*fun getContributors(chatChannelId: String, limit: Int = 6): LiveData<List<User>> {
@@ -1688,7 +1702,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun clearAllChannels() = viewModelScope.launch(Dispatchers.IO) {
-        chatRepository.clearChatChannels()
+        repo.clearChatChannels()
     }
 
     // We cannot set snapshot listener in every post that's why,
@@ -1868,11 +1882,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return repo.getUnreadInviteNotifications()
     }
 
-    fun updateChatChannel(chatChannel: ChatChannel) = viewModelScope.launch(Dispatchers.IO) {
-        repo.updateChatChannel(chatChannel)
-    }
+//    fun updateChatChannel(chatChannel: ChatChannel) = viewModelScope.launch(Dispatchers.IO) {
+//        repo.updateChatChannel(chatChannel)
+//    }
 
-    fun getUnreadChatChannels(): LiveData<List<ChatChannel>> {
+    fun getUnreadChatChannels(): LiveData<List<ChatChannelWrapper>> {
         return repo.getUnreadChatChannels()
     }
 
@@ -1899,7 +1913,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     /* User related functions end */
 
     suspend fun getPostRequestByNotificationId(id: String): PostRequest? {
-        return repo.getPostRequestByNotificationId(id)
+        return withContext(Dispatchers.IO) {
+            repo.getPostRequestByNotificationId(id)
+        }
     }
 
     /*@OptIn(ExperimentalPagingApi::class)
@@ -1941,11 +1957,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _createPostMediaList.postValue(emptyList())
     }
 
-    fun getMultiMediaMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
+    /*fun getMultiMediaMessages(chatChannelId: String, limit: Int = 6): LiveData<List<Message>> {
         return chatRepository.messageDao.getMultiMediaMessages(chatChannelId, limit)
-    }
+    }*/
 
-    suspend fun getMultimediaMessagesSync(
+    /*suspend fun getMultimediaMessagesSync(
         chatChannelId: String,
         after: Long? = null
     ): List<Message> {
@@ -1954,7 +1970,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } else {
             chatRepository.messageDao.getMultiMediaMessagesSync(chatChannelId)
         }
-    }
+    }*/
 
     @OptIn(ExperimentalPagingApi::class)
     fun getRankedCategoryItems(category: String, query: Query): Flow<PagingData<Post2>> {
@@ -2027,7 +2043,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun getMessageByMediaItemName(name: String, onComplete: (message: Message?) -> Unit) =
         viewModelScope.launch(Dispatchers.IO) {
-            onComplete(chatRepository.messageDao.getMessageByMediaItemName(name))
+            onComplete(repo.messageDao.getMessageByMediaItemName(name))
         }
 
 
@@ -2231,7 +2247,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return repo.getChannelContributors(chatChannelId)
     }
 
-    fun getPostReactive(id: String) : LiveData<Post> {
+    fun getPost(id: String) : LiveData<Post> {
         return repo.postDao.getReactivePost(id)
     }
 
@@ -2253,164 +2269,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         setCreatedNewPost(post.id)
     }
 
-
-    /*private val _galleryMediaItems = MutableLiveData<List<MediaItem>>()
-    val galleryMediaItems: LiveData<List<MediaItem>> = _galleryMediaItems
-
-    fun addItemsToGalleryMediaItems(items: List<MediaItem>) {
-        val existingList = mutableListOf<MediaItem>()
-        if (_galleryMediaItems.value != null) {
-            existingList.addAll(_galleryMediaItems.value!!)
-            existingList.addAll(items)
-            _galleryMediaItems.postValue(existingList)
-        } else {
-            _galleryMediaItems.postValue(items)
-        }
+    fun archivedChatChannels(currentUserId: String): LiveData<List<ChatChannelWrapper>> {
+        return repo.archivedChannels(currentUserId)
     }
 
-    fun prefetchInitialMediaItems(cr: ContentResolver, type: ItemSelectType) = viewModelScope.launch (Dispatchers.IO) {
-        loadItemsFromExternal(cr, type)
+    fun insertChannelMessages(messages: List<Message>) {
+        repo.insertChannelMessages(messages)
     }
-
-    var hasReachedEnd = false
-
-    fun loadItemsFromExternal(
-        contentResolver: ContentResolver,
-        type: ItemSelectType,
-        limit: Int = 50,
-        lastItemSortAnchor: Long = System.currentTimeMillis()
-    ) {
-        val mediaItems = mutableListOf<MediaItem>()
-        val collection =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                MediaStore.Files.getContentUri(
-                    MediaStore.VOLUME_EXTERNAL_PRIMARY
-                )
-            } else {
-                MediaStore.Files.getContentUri("external")
-            }
-
-        var selection = when (type) {
-            ItemSelectType.GALLERY_ONLY_IMG -> {
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
-            }
-            ItemSelectType.GALLERY_ONLY_VID -> {
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") AND " + MediaStore.Files.FileColumns.SIZE + "< 15728640"
-            }
-            ItemSelectType.GALLERY -> {
-                "(" + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE + " OR " + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") AND " + MediaStore.Files.FileColumns.SIZE + "< 15728640"     //Selection criteria
-            }
-            ItemSelectType.DOCUMENT -> {
-                null
-            }
-        }
-
-        selection = if (selection.isNullOrBlank()) {
-            MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
-        } else {
-            selection + " AND " + MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
-        }
-
-        val selectionArgs = arrayOf<String>()
-
-        val sortOrder: String = MediaStore.Files.FileColumns.DATE_MODIFIED + " DESC"
-        val projection = arrayOf(
-            MediaStore.Files.FileColumns._ID,
-            MediaStore.Files.FileColumns.MIME_TYPE,
-            MediaStore.Files.FileColumns.DATE_ADDED,
-            MediaStore.Files.FileColumns.DATE_MODIFIED,
-            MediaStore.Files.FileColumns.DISPLAY_NAME,
-            MediaStore.Files.FileColumns.SIZE
-        )
-
-        val cursor =
-            contentResolver.query(collection, projection, selection, selectionArgs, sortOrder)
-
-        if (cursor != null) {
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-            val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
-            val dateAddedCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_ADDED)
-            val modifiedCol =
-                cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
-            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-
-            var count = 0
-
-            while (cursor.moveToNext() && count < limit) {
-                val id = cursor.getLong(idCol)
-                val mimeType = cursor.getString(mimeCol)
-
-                val (t, fileUri) = when (type) {
-                    ItemSelectType.GALLERY_ONLY_IMG -> {
-                        image to ContentUris.withAppendedId(
-                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                            id
-                        )
-                    }
-                    ItemSelectType.GALLERY_ONLY_VID -> {
-                        video to ContentUris.withAppendedId(
-                            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                            id
-                        )
-                    }
-                    ItemSelectType.GALLERY -> {
-                        if (mimeType.contains(video)) {
-                            video to ContentUris.withAppendedId(
-                                MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                                id
-                            )
-                        } else {
-                            image to ContentUris.withAppendedId(
-                                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                                id
-                            )
-                        }
-                    }
-                    ItemSelectType.DOCUMENT -> {
-                        document to ContentUris.withAppendedId(
-                            MediaStore.Files.getContentUri("external"),
-                            id
-                        )
-                    }
-                }
-
-                val file = File("")
-                file.extension
-
-                val name = cursor.getString(nameCol)
-                val dateModified = cursor.getLong(modifiedCol)
-                val size = cursor.getLong(sizeCol)
-                val createdAt = cursor.getLong(dateAddedCol)
-
-                val ext = if (name.split('.').size > 1) {
-                    "." + name.substringAfterLast('.', "")
-                } else {
-                    if (mimeType.contains("video")) {
-                        ".mp4"
-                    } else {
-                        ".jpg"
-                    }
-                }
-
-                val mediaItem = MediaItem(
-                    fileUri.toString(),
-                    name, t, mimeType ?: "", size, ext, "", null, createdAt, dateModified
-                )
-                mediaItems.add(mediaItem)
-                count++
-            }
-            cursor.close()
-        }
-
-        if (mediaItems.size < 50) {
-            hasReachedEnd = true
-        }
-
-        addItemsToGalleryMediaItems(mediaItems)
-
-    }*/
-
 
     companion object {
         private const val TAG = "MainViewModel"

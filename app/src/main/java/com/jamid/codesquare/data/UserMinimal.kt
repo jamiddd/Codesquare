@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.Serializable
@@ -24,7 +25,18 @@ data class UserMinimal(
     var premiumState: Long
 ): Parcelable {
     constructor() : this(randomId(), "", "", "", -1)
-    // something simple
+
+    @Exclude
+    fun isCurrentUser(): Boolean {
+        return UserManager.currentUserId == this.userId
+    }
+
+    @Exclude
+    fun isBlocked(): Boolean {
+        return UserManager.currentUser.blockedUsers.contains(this.userId)
+    }
+
+    @Exclude
     fun toUser(): User {
         return User.newUser(userId, name, email = "").also {
             it.photo = photo

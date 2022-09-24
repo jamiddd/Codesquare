@@ -73,7 +73,7 @@ class CommentsFragment :
         binding.commentsRecycler.post {
             val post = arguments?.getParcelable<Post>(POST)
             if (post != null) {
-                viewModel.getPostReactive(post.id).observe(viewLifecycleOwner) {
+                viewModel.getPost(post.id).observe(viewLifecycleOwner) {
                     if (it != null) {
 
                         binding.commentsHeader.text = "Comments (${it?.commentsCount})"

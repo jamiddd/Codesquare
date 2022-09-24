@@ -81,6 +81,7 @@ android {
         freeCompilerArgs += "-Xopt-in=kotlin.RequiresOptIn"
         jvmTarget = JavaVersion.VERSION_11.toString()
     }
+    namespace 'com.jamid.codesquare'
 
     configurations.all {
         resolutionStrategy {

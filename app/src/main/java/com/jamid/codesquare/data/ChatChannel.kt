@@ -5,8 +5,9 @@ import androidx.annotation.Keep
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.IgnoreExtraProperties
+import com.jamid.codesquare.CHANNEL_GROUP
+import com.jamid.codesquare.CHANNEL_PRIVATE
 import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.randomId
 import kotlinx.parcelize.Parcelize
@@ -30,8 +31,6 @@ data class ChatChannel(
     var contributorsCount: Long,
     var createdAt: Long,
     var updatedAt: Long,
-    @Exclude @set: Exclude @get: Exclude
-    var isNewLastMessage: Boolean = false,
     var mute: Boolean = false,
     var archived: Boolean = false,
     var authorized: Boolean = false,
@@ -40,9 +39,7 @@ data class ChatChannel(
     @Embedded(prefix = "message_data1_")
     var data1: UserMinimal? = null,
     @Embedded(prefix = "message_data2_")
-    var data2: UserMinimal? = null,
-    @Exclude @set: Exclude @get: Exclude
-    var thumbnail: String? = null
+    var data2: UserMinimal? = null
 ): Parcelable {
     constructor(): this(
         randomId(),
@@ -59,37 +56,47 @@ data class ChatChannel(
         updatedAt = System.currentTimeMillis(),
         lastMessage = null
     )
-// something simple
+
+    fun toChatChannelWrapper(): ChatChannelWrapper {
+        val isRead = this.lastMessage?.readList?.contains(UserManager.currentUserId) == true
+        val (name, thumbnail) = if (this.type != CHANNEL_PRIVATE) {this.postTitle to this.postImage} else {
+            if (this.data1?.userId == UserManager.currentUserId) {
+                this.data2?.name to this.data2?.photo
+            } else {
+                this.data1?.name to this.data1?.photo
+            }
+        }
+        return ChatChannelWrapper(this, this.chatChannelId, name.orEmpty(), false, isRead, thumbnail)
+    }
 
     companion object {
-        fun newInstance(post: Post): ChatChannel {
-            val chatChannel = ChatChannel()
-            chatChannel.postId = post.id
-            chatChannel.postTitle = post.name
-            chatChannel.postImage = post.thumbnail.ifBlank {
-                post.mediaList.firstOrNull {
-                    !it.contains(".mp4")
-                } ?: ""
+        fun newInstance(post: Post) =
+            ChatChannel().apply {
+                postId = post.id
+                postTitle = post.name
+                postImage = post.thumbnail.ifBlank {
+                    post.mediaList.firstOrNull {
+                        !it.contains(".mp4")
+                    } ?: ""
+                }
+                contributorsCount = post.contributors.size.toLong()
+                contributors = post.contributors
+                administrators = listOf(post.creator.userId)
+                contributors = listOf(post.creator.userId)
+                createdAt = post.createdAt
+                updatedAt = post.updatedAt
+                tokens = listOf(UserManager.currentUserId)
+                authorized = true
+                type = CHANNEL_GROUP
             }
-            chatChannel.contributorsCount = post.contributors.size.toLong()
-            chatChannel.contributors = post.contributors
-            chatChannel.administrators = listOf(post.creator.userId)
-            chatChannel.contributors = listOf(post.creator.userId)
-            chatChannel.createdAt = post.createdAt
-            chatChannel.updatedAt = post.updatedAt
-            chatChannel.tokens = listOf(UserManager.currentUserId)
-            chatChannel.authorized = true
-            chatChannel.type = "group"
-            return chatChannel
-        }
 
-        fun newInstance(user: User): ChatChannel {
-            return ChatChannel().apply {
+        fun newInstance(user: User) =
+            ChatChannel().apply {
                 chatChannelId = randomId()
                 postId = user.id + "," + UserManager.currentUserId
                 postTitle = ""
                 postImage = ""
-                type = "private"
+                type = CHANNEL_PRIVATE
                 rules = ""
                 administrators = emptyList()
                 contributors = listOf(user.id, UserManager.currentUserId)
@@ -105,7 +112,6 @@ data class ChatChannel(
                 data1 = UserManager.currentUser.minify()
                 data2 = user.minify()
             }
-        }
 
     }
 

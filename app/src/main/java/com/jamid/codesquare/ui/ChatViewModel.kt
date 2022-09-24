@@ -11,6 +11,8 @@ import com.jamid.codesquare.document
 import com.jamid.codesquare.getMediaItemsFromMessages
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+
 // something simple
 @Suppress("UNCHECKED_CAST")
 class ChatViewModelFactory(private val context: Context): ViewModelProvider.Factory {
@@ -31,8 +33,14 @@ class ChatViewModel(context: Context): ViewModel() {
         _currentSendMode.postValue(mode)
     }*/
 
+    private val root: File
+
+    init {
+        root = context.filesDir
+    }
+
     private val db: CollabDatabase = CollabDatabase.getInstance(context)
-    private val repo: MainRepository = MainRepository.getInstance(db)
+    private val repo: MainRepository = MainRepository.getInstance(db, viewModelScope, root)
 
     fun setReplyMessage(message: Message?) {
         _replyMessage.postValue(message)

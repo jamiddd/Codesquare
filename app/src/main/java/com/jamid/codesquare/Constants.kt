@@ -181,3 +181,11 @@ const val RANK_CATEGORY_COUNT = 2
 
 const val CHANNEL_PRIVATE = "private"
 const val CHANNEL_GROUP = "group"
+
+const val UNARCHIVE_ = "Unarchive"
+const val ARCHIVE_ = "Archive"
+const val MUTE_ = "Mute"
+const val UNMUTE_ = "Unmute"
+const val IMAGE_ = "Image"
+const val VIDEO_ = "Video"
+const val DOCUMENT_ = "Document"

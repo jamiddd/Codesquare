@@ -11,10 +11,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.Rect
+import android.graphics.*
 import android.graphics.drawable.Drawable
 import android.media.ThumbnailUtils
 import android.net.Uri
@@ -22,7 +19,9 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import android.text.SpannableString
 import android.text.format.DateUtils
+import android.text.style.StyleSpan
 import android.util.Log
 import android.util.Patterns
 import android.util.Size
@@ -85,6 +84,17 @@ import kotlin.math.roundToInt
 fun TextInputLayout.removeError() {
     this.error = null
     this.isErrorEnabled = false
+}
+
+fun String.toBold(): SpannableString {
+    val sp = SpannableString(this)
+    sp.setSpan(
+        StyleSpan(Typeface.BOLD),
+        0,
+        this.length,
+        SpannableString.SPAN_EXCLUSIVE_EXCLUSIVE
+    )
+    return sp
 }
 
 fun TextInputLayout.showError(error: String) {
