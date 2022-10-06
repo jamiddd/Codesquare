@@ -14,7 +14,11 @@ import android.os.ParcelFileDescriptor
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -33,14 +37,82 @@ import com.facebook.drawee.view.SimpleDraweeView
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import com.jamid.codesquare.*
+import com.jamid.codesquare.AdapterState
+import com.jamid.codesquare.CHANNEL_PRIVATE
+import com.jamid.codesquare.CHAT_CHANNEL
+import com.jamid.codesquare.CHAT_CHANNELS
+import com.jamid.codesquare.DOCUMENT_
+import com.jamid.codesquare.FILE_PROV_AUTH
+import com.jamid.codesquare.FireUtility
+import com.jamid.codesquare.IMAGE_
+import com.jamid.codesquare.MESSAGE
+import com.jamid.codesquare.MESSAGES
+import com.jamid.codesquare.OPTION_19
+import com.jamid.codesquare.OPTION_20
+import com.jamid.codesquare.OPTION_21
+import com.jamid.codesquare.OPTION_35
+import com.jamid.codesquare.OPTION_36
+import com.jamid.codesquare.OPTION_37
+import com.jamid.codesquare.OPTION_8
+import com.jamid.codesquare.OPTION_9
+import com.jamid.codesquare.POST
+import com.jamid.codesquare.PagingDataFragment
+import com.jamid.codesquare.R
+import com.jamid.codesquare.TAG
+import com.jamid.codesquare.TITLE
+import com.jamid.codesquare.USER
+import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.VIDEO_
 import com.jamid.codesquare.adapter.recyclerview.MessageAdapter3
 import com.jamid.codesquare.adapter.recyclerview.MessageViewHolder2
-import com.jamid.codesquare.data.*
-import com.jamid.codesquare.databinding.*
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Message2
+import com.jamid.codesquare.data.Metadata
+import com.jamid.codesquare.data.Option
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.databinding.FragmentChat2Binding
+import com.jamid.codesquare.databinding.MessageDefaultDocumentItemBinding
+import com.jamid.codesquare.databinding.MessageDefaultDocumentRightItemBinding
+import com.jamid.codesquare.databinding.MessageDefaultImageItemBinding
+import com.jamid.codesquare.databinding.MessageDefaultImageRightItemBinding
+import com.jamid.codesquare.databinding.MessageDefaultVideoItemBinding
+import com.jamid.codesquare.databinding.MessageDefaultVideoRightItemBinding
+import com.jamid.codesquare.databinding.MessageItemDefaultBinding
+import com.jamid.codesquare.databinding.MessageItemDefaultRightBinding
+import com.jamid.codesquare.databinding.MessageReplyViewLayoutBinding
+import com.jamid.codesquare.databinding.ReplyToLayoutBinding
+import com.jamid.codesquare.disable
+import com.jamid.codesquare.document
+import com.jamid.codesquare.enable
+import com.jamid.codesquare.getFile
+import com.jamid.codesquare.getFileAsMediaItem
+import com.jamid.codesquare.getImageResource
+import com.jamid.codesquare.getMediaItemsFromMessages
+import com.jamid.codesquare.getMimeType
+import com.jamid.codesquare.getNestedDir
+import com.jamid.codesquare.getObjectThumbnail
+import com.jamid.codesquare.getTextForSizeInBytes
+import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.hideKeyboard
+import com.jamid.codesquare.image
 import com.jamid.codesquare.listeners.ItemSelectResultListener
 import com.jamid.codesquare.listeners.OptionClickListener
+import com.jamid.codesquare.randomId
+import com.jamid.codesquare.show
+import com.jamid.codesquare.showKeyboard
+import com.jamid.codesquare.slideReset
+import com.jamid.codesquare.text
+import com.jamid.codesquare.toPlural
+import com.jamid.codesquare.toast
 import com.jamid.codesquare.ui.home.chat.ForwardFragment
+import com.jamid.codesquare.video
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -137,9 +209,9 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     private fun onPrepMenu(menu: Menu) {
         val image = if (isChannelPrivate) {
             if (isData1CurrentUser) {
-                currentUserMinimal.photo
-            } else {
                 otherUserMinimal.photo
+            } else {
+                currentUserMinimal.photo
             }
         } else {
             chatChannel.postImage
