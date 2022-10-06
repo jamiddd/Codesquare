@@ -9,7 +9,18 @@ import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.*
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Transaction
+import com.google.firebase.firestore.WriteBatch
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FileDownloadTask
@@ -17,7 +28,29 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.UploadTask
 import com.google.firebase.storage.ktx.storage
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.CommentChannel
+import com.jamid.codesquare.data.Feedback
+import com.jamid.codesquare.data.ImageUploadException
+import com.jamid.codesquare.data.InterestItem
+import com.jamid.codesquare.data.LikedBy
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.MessageMinimal
+import com.jamid.codesquare.data.Notification
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.PostInvite
+import com.jamid.codesquare.data.PostMinimal2
+import com.jamid.codesquare.data.PostRequest
+import com.jamid.codesquare.data.RankedRule
+import com.jamid.codesquare.data.ReferenceItem
+import com.jamid.codesquare.data.Report
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.UploadItem
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.data.UserUpdate
 import kotlinx.coroutines.tasks.await
 import java.io.File
 
@@ -3118,22 +3151,7 @@ object FireUtility {
             }
     }
 
-    fun authorizeChat(chatChannel: ChatChannel, onComplete: (Task<Void>) -> Unit) {
-        val batch = db.batch()
-
-        batch.update(chatChannelCollectionRef.document(chatChannel.chatChannelId), "authorized", true)
-        val user1 = chatChannel.data1!!
-        val user2 = chatChannel.data2!!
-
-        batch.update(usersCollectionRef.document(user1.userId), CHAT_CHANNELS, FieldValue.arrayUnion(chatChannel.chatChannelId))
-        batch.update(usersCollectionRef.document(user2.userId), CHAT_CHANNELS, FieldValue.arrayUnion(chatChannel.chatChannelId))
-
-        usersCollectionRef.document(user2.userId)
-
-        batch.commit().addOnCompleteListener(onComplete)
-    }
-
-    fun deleteTempPrivateChat(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
+    fun deletePrivateChat(chatChannel: ChatChannel, onComplete: (task: Task<Void>) -> Unit) {
 
         val batch = db.batch()
 

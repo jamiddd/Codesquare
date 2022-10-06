@@ -7,7 +7,12 @@ import android.text.TextPaint
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.RatingBar
@@ -23,7 +28,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.LinearSnapHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.view.SimpleDraweeView
-import com.google.android.gms.ads.*
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
@@ -31,18 +40,57 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
+import com.jamid.codesquare.BaseFragment
+import com.jamid.codesquare.COLLABORATIONS
+import com.jamid.codesquare.COMMENTS
+import com.jamid.codesquare.COMMENT_CHANNELS
+import com.jamid.codesquare.FireUtility
+import com.jamid.codesquare.LIKED_POSTS
+import com.jamid.codesquare.LIKED_USERS
+import com.jamid.codesquare.MainViewModel
+import com.jamid.codesquare.OPTION_12
+import com.jamid.codesquare.OPTION_13
+import com.jamid.codesquare.OPTION_14
+import com.jamid.codesquare.OPTION_15
+import com.jamid.codesquare.OPTION_28
+import com.jamid.codesquare.OPTION_29
+import com.jamid.codesquare.OPTION_7
+import com.jamid.codesquare.POST
+import com.jamid.codesquare.POSTS
 import com.jamid.codesquare.R
+import com.jamid.codesquare.SAVED_POSTS
+import com.jamid.codesquare.SUB_TITLE
+import com.jamid.codesquare.TITLE
+import com.jamid.codesquare.UPDATED_AT
+import com.jamid.codesquare.USERS
+import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.ViewHolderState
 import com.jamid.codesquare.adapter.recyclerview.HorizontalMediaAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.convertMediaListToMediaItemList
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.CommentChannel
+import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.User
 import com.jamid.codesquare.databinding.FragmentPostBinding
-import com.jamid.codesquare.listeners.*
+import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.isNightMode
+import com.jamid.codesquare.listeners.CommentMiniListener
+import com.jamid.codesquare.listeners.HorizontalMediaItemClickListener
+import com.jamid.codesquare.listeners.ImageClickListener
+import com.jamid.codesquare.listeners.PostClickListener
+import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.show
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.everything.android.ui.overscroll.OverScrollDecoratorHelper
-import java.util.*
+import java.util.Locale
 // something simple
 class PostFragment : BaseFragment<FragmentPostBinding>(), ImageClickListener, CommentMiniListener, HorizontalMediaItemClickListener {
 
@@ -281,7 +329,7 @@ class PostFragment : BaseFragment<FragmentPostBinding>(), ImageClickListener, Co
             .withAdListener(object: AdListener() {
                 override fun onAdFailedToLoad(loadAdError: LoadAdError) {
                     super.onAdFailedToLoad(loadAdError)
-                    postClickListener.onAdError(post)
+                    postClickListener.onAdError(Post2.Advertise(post.id), 1)
                 }
 
                 override fun onAdLoaded() {

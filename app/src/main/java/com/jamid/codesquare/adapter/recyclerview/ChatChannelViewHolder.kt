@@ -1,15 +1,30 @@
 package com.jamid.codesquare.adapter.recyclerview
 
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.jamid.codesquare.*
+import com.jamid.codesquare.CHANNEL_PRIVATE
+import com.jamid.codesquare.DOCUMENT_
+import com.jamid.codesquare.IMAGE_
+import com.jamid.codesquare.R
+import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.VIDEO_
 import com.jamid.codesquare.data.ChatChannelWrapper
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.databinding.ChatChannelItemBinding
+import com.jamid.codesquare.document
+import com.jamid.codesquare.getColorResource
+import com.jamid.codesquare.getTextForTime
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.image
+import com.jamid.codesquare.isNightMode
 import com.jamid.codesquare.listeners.ChatChannelClickListener
+import com.jamid.codesquare.show
+import com.jamid.codesquare.toBold
+import com.jamid.codesquare.video
 
 class ChatChannelViewHolder(
     val view: View,
@@ -49,6 +64,9 @@ class ChatChannelViewHolder(
             binding.channelTime.text = getTextForTime(chatChannel.updatedAt)
             binding.channelName.text = chatChannelWrapper.channelName
             binding.channelImg.setImageURI(chatChannelWrapper.thumbnail)
+
+            Log.d("ChatChannelViewHolder", "bind: ${chatChannelWrapper.thumbnail}")
+            
 
             if (lastMessage != null) {
                 val isRead = lastMessage.readList.contains(UserManager.currentUserId)

@@ -51,7 +51,7 @@ class ChatListFragment2: BaseFragment<FragmentChatList2Binding>() {
                     // if the current user is the first sender and the channel is not authorized
                     if (!chatChannelWrapper.chatChannel.authorized && chatChannelWrapper.chatChannel.data1?.userId == UserManager.currentUserId && chatChannelWrapper.chatChannel.lastMessage == null) {
                         // delete the chat cause it's temporary
-                        FireUtility.deleteTempPrivateChat(chatChannelWrapper.chatChannel) { t ->
+                        FireUtility.deletePrivateChat(chatChannelWrapper.chatChannel) { t ->
                             if (t.isSuccessful)
                                 viewModel.deleteLocalChatChannelById(chatChannelWrapper.chatChannel.chatChannelId)
                         }

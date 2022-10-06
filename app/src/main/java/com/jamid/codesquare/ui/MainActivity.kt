@@ -28,7 +28,11 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.os.bundleOf
-import androidx.core.view.*
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.NavController
@@ -54,23 +58,149 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
+import com.jamid.codesquare.ARCHIVE_
+import com.jamid.codesquare.CHANNEL_ID
+import com.jamid.codesquare.CHANNEL_PRIVATE
+import com.jamid.codesquare.CHAT_CHANNEL
+import com.jamid.codesquare.CHAT_CHANNELS
+import com.jamid.codesquare.COMMENT
+import com.jamid.codesquare.COMMENT_CHANNEL_ID
+import com.jamid.codesquare.CONTRIBUTORS
+import com.jamid.codesquare.CREATED_AT
+import com.jamid.codesquare.DOCUMENT_
+import com.jamid.codesquare.FILE_PROV_AUTH
+import com.jamid.codesquare.FilterFragment
+import com.jamid.codesquare.FireUtility
 import com.jamid.codesquare.FireUtility.dislikeUser2
 import com.jamid.codesquare.FireUtility.likeUser2
+import com.jamid.codesquare.IMAGE_
+import com.jamid.codesquare.INTERESTS
+import com.jamid.codesquare.MESSAGES
+import com.jamid.codesquare.MUTE_
+import com.jamid.codesquare.MyNetworkManager
+import com.jamid.codesquare.NOTIFICATION_ID
+import com.jamid.codesquare.OPTION_1
+import com.jamid.codesquare.OPTION_10
+import com.jamid.codesquare.OPTION_11
+import com.jamid.codesquare.OPTION_12
+import com.jamid.codesquare.OPTION_13
+import com.jamid.codesquare.OPTION_14
+import com.jamid.codesquare.OPTION_15
+import com.jamid.codesquare.OPTION_16
+import com.jamid.codesquare.OPTION_18
+import com.jamid.codesquare.OPTION_19
+import com.jamid.codesquare.OPTION_2
+import com.jamid.codesquare.OPTION_20
+import com.jamid.codesquare.OPTION_21
+import com.jamid.codesquare.OPTION_22
+import com.jamid.codesquare.OPTION_23
+import com.jamid.codesquare.OPTION_24
+import com.jamid.codesquare.OPTION_25
+import com.jamid.codesquare.OPTION_26
+import com.jamid.codesquare.OPTION_27
+import com.jamid.codesquare.OPTION_28
+import com.jamid.codesquare.OPTION_29
+import com.jamid.codesquare.OPTION_3
+import com.jamid.codesquare.OPTION_30
+import com.jamid.codesquare.OPTION_31
+import com.jamid.codesquare.OPTION_32
+import com.jamid.codesquare.OPTION_34
+import com.jamid.codesquare.OPTION_4
+import com.jamid.codesquare.OPTION_5
+import com.jamid.codesquare.OPTION_6
+import com.jamid.codesquare.OPTION_7
+import com.jamid.codesquare.OPTION_8
+import com.jamid.codesquare.OPTION_9
+import com.jamid.codesquare.PARENT
+import com.jamid.codesquare.POST
+import com.jamid.codesquare.POST_ID
+import com.jamid.codesquare.PREVIOUS_POST
+import com.jamid.codesquare.PlayBillingController
+import com.jamid.codesquare.R
+import com.jamid.codesquare.REPORT
+import com.jamid.codesquare.SENDER_ID
+import com.jamid.codesquare.SUB_TITLE
+import com.jamid.codesquare.SnapshotListenerContainer
+import com.jamid.codesquare.TITLE
+import com.jamid.codesquare.TYPE
+import com.jamid.codesquare.UNARCHIVE_
+import com.jamid.codesquare.UNMUTE_
+import com.jamid.codesquare.UPDATED_AT
+import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.VIDEO_
+import com.jamid.codesquare.adapter.recyclerview.PostAdapter
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.addItemToList
+import com.jamid.codesquare.convertBitmapToFile
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.Image
+import com.jamid.codesquare.data.Location
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.MediaItemWrapper
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Notification
+import com.jamid.codesquare.data.Option
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
+import com.jamid.codesquare.data.PostInvite
+import com.jamid.codesquare.data.PostMinimal2
+import com.jamid.codesquare.data.PostRequest
+import com.jamid.codesquare.data.Report
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.databinding.ActivityMain2Binding
 import com.jamid.codesquare.databinding.FragmentImageViewBinding
 import com.jamid.codesquare.databinding.TopSnackBinding
-import com.jamid.codesquare.listeners.*
+import com.jamid.codesquare.document
+import com.jamid.codesquare.getColorResource
+import com.jamid.codesquare.getFile
+import com.jamid.codesquare.getImageResource
+import com.jamid.codesquare.getNestedDir
+import com.jamid.codesquare.getTextForSizeInBytes
+import com.jamid.codesquare.getWindowWidth
+import com.jamid.codesquare.hide
+import com.jamid.codesquare.hideKeyboard
+import com.jamid.codesquare.image
+import com.jamid.codesquare.isNightMode
+import com.jamid.codesquare.listeners.ChatChannelClickListener
+import com.jamid.codesquare.listeners.CommentListener
+import com.jamid.codesquare.listeners.LocationItemClickListener
+import com.jamid.codesquare.listeners.MediaClickListener
+import com.jamid.codesquare.listeners.NetworkStateListener
+import com.jamid.codesquare.listeners.NotificationItemClickListener
+import com.jamid.codesquare.listeners.OptionClickListener
+import com.jamid.codesquare.listeners.PostClickListener
+import com.jamid.codesquare.listeners.PostInviteListener
+import com.jamid.codesquare.listeners.PostRequestListener
+import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.processPost
+import com.jamid.codesquare.randomId
+import com.jamid.codesquare.removeItemFromList
+import com.jamid.codesquare.show
+import com.jamid.codesquare.showKeyboard
+import com.jamid.codesquare.slideDown
+import com.jamid.codesquare.slideReset
+import com.jamid.codesquare.slideUp
+import com.jamid.codesquare.toast
 import com.jamid.codesquare.ui.zoomableView.DoubleTapGestureListener
 import com.jamid.codesquare.ui.zoomableView.MultiGestureListener
 import com.jamid.codesquare.ui.zoomableView.TapListener
-import kotlinx.coroutines.*
+import com.jamid.codesquare.userImages
+import com.jamid.codesquare.video
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Locale
+import kotlin.collections.contains
 
 class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteListener,
     PostClickListener, PostRequestListener, UserClickListener, ChatChannelClickListener,
@@ -97,7 +227,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
     var optionsFragment: OptionsFragment? = null
     private var isNetworkAvailable = false
 
-    var currentBottomAnchor: View? = null
+    private var currentBottomAnchor: View? = null
 
     private val authFragments = arrayOf(
         R.id.loginFragment,
@@ -247,7 +377,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         editor.apply()
     }
 
-    var initialNavColor = Color.BLACK
+    private var initialNavColor = Color.BLACK
 
     @SuppressLint("UnsafeOptInUsageError")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1227,8 +1357,13 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         navController.navigate(R.id.advertiseInfoFragment)
     }
 
-    override fun onAdError(post: Post) {
-        viewModel.deleteLocalPost(post)
+    override fun onAdError(post: Post2, position: Int) {
+        if (post is Post2.Advertise) {
+            Log.d(TAG, "onAdError: $position")
+            viewModel.deleteLocalPost(Post().apply { id = post.id })
+            val recycler = binding.root.findViewById<RecyclerView>(R.id.pager_items_recycler)
+            (recycler.adapter as PostAdapter).notifyItemChanged(position)
+        }
     }
 
     override fun onPostLocationClick(post: Post) {
@@ -2187,7 +2322,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    @Suppress("LABEL_NAME_CLASH")
     override fun onCheckForStaleData(notification: Notification) {
 
         fun onChangeNeeded(user: User) {
@@ -2241,7 +2375,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
 
     }
 
-    @Suppress("LABEL_NAME_CLASH")
     override fun onPostInviteAccept(postInvite: PostInvite, onFailure: () -> Unit) {
 
         val currentUser = UserManager.currentUser
@@ -2320,7 +2453,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    @Suppress("LABEL_NAME_CLASH")
     override fun onPostInviteCancel(postInvite: PostInvite) {
 
         val currentUser = UserManager.currentUser
@@ -2363,7 +2495,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    @Suppress("LABEL_NAME_CLASH")
     override fun onPostInvitePostDeleted(postInvite: PostInvite) {
 
         fun onPostDelete(sender: User) {
@@ -2391,7 +2522,6 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
-    @Suppress("LABEL_NAME_CLASH")
     override fun onCheckForStaleData(postInvite: PostInvite) {
 
         fun updatePostInvite(changes: Map<String, Any?>) {
@@ -2759,6 +2889,11 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
                     archiveChatChannel(chatChannel)
                 }
             }
+            "Delete" -> {
+                if (chatChannel != null) {
+                    deleteChatChannel(chatChannel)
+                }
+            }
             UNARCHIVE_ -> {
                 if (chatChannel != null) {
                     unarchiveChatChannel(chatChannel)
@@ -2777,12 +2912,52 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         }
     }
 
+    private fun deleteChatChannel(chatChannel: ChatChannel) {
+        MessageDialogFragment.builder("Are you sure you want to delete this chat?")
+            .setTitle("Deleting chat channel ...")
+            .setPositiveButton("Delete") { _, _ ->
+                FireUtility.deletePrivateChat(chatChannel) {
+                    if (it.isSuccessful) {
+
+                        // delete chat channel locally
+                        viewModel.deleteLocalChatChannelById(chatChannel.chatChannelId)
+
+                        val (currentUser, otherUser) = if (chatChannel.data1!!.isCurrentUser()) {
+                            chatChannel.data1!! to chatChannel.data2!!
+                        } else {
+                            chatChannel.data2!! to chatChannel.data1!!
+                        }
+
+                        val content = UserManager.currentUser.name + " has deleted this chat."
+
+                        val receiverId = otherUser.userId
+
+                        val notification = Notification.createNotification(content, receiverId, userId = currentUser.userId)
+
+                        FireUtility.sendNotification(notification) { n ->
+                            if (n.isSuccessful) {
+                                Log.d(TAG, "deleteChatChannel: Sent a notification that the chat was deleted.")
+                            } else {
+                                Log.d(TAG, "deleteChatChannel: Something went wrong: ${n.exception}")
+                            }
+                        }
+                    } else {
+                        Log.e(TAG, "deleteChatChannel: deleted ${chatChannel.chatChannelId}")
+                    }
+                }
+            }.setNegativeButton("Cancel") { d, _ ->
+                d.dismiss()
+            }
+            .build()
+            .show(supportFragmentManager, "Delete Chat Dialog")
+
+    }
+
     private fun muteChatChannel(chatChannel: ChatChannel) {
         FireUtility.muteChatChannel(chatChannel) { task ->
             if (task.isSuccessful) {
                 chatChannel.mute = true
                 viewModel.insertChatChannels(listOf(chatChannel))
-                Log.d(TAG, "muteChatChannel: ${chatChannel.postTitle}")
             } else {
                 Log.e(TAG, "muteChatChannel: ${task.exception?.localizedMessage}")
             }
@@ -3073,7 +3248,7 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val d = MessageDialogFragment.builder("Are you sure you want to block ${user.name}")
             .setPositiveButton("Block") { _, _ ->
 
-                val hits = user.collaborations.intersect(UserManager.currentUser.posts)
+                val hits = user.collaborations.intersect(UserManager.currentUser.posts.toSet())
                 if (hits.isNotEmpty()) {
                     // there are posts where the blocked user is a collaborator, ask the current user to remove them first
                     val msg = "Cannot block ${user.name} because he/she is a collaborator in one of your posts. Remove them before blocking."
@@ -3141,6 +3316,8 @@ class MainActivity : LauncherActivity(), LocationItemClickListener, PostInviteLi
         val icons = arrayListOf(R.drawable.ic_round_archive_24/*, R.drawable.ic_round_volume_mute_24*/)
 
         val title = if (chatChannel.type == CHANNEL_PRIVATE) {
+            options.add("Delete")
+            icons.add(R.drawable.ic_round_delete_24)
             if (chatChannel.data1?.userId == UserManager.currentUserId) {
                 chatChannel.data2?.name
             } else {

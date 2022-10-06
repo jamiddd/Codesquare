@@ -2,6 +2,7 @@ package com.jamid.codesquare.listeners
 
 import com.jamid.codesquare.adapter.recyclerview.PostViewHolder
 import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
 import com.jamid.codesquare.data.PostMinimal2
 import com.jamid.codesquare.data.User
 // something simple
@@ -23,7 +24,7 @@ interface PostClickListener {
     fun onPostNotFound(post: Post) {}
     fun onPostLoad(post: Post) {}
     fun onAdInfoClick() {}
-    fun onAdError(post: Post) {}
+    fun onAdError(post: Post2, position: Int) {}
     fun onPostLocationClick(post: Post) {}
     fun onPostUpdate(newPost: Post) {}
 }

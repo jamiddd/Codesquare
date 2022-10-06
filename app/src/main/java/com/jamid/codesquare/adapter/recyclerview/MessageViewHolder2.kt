@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.drawee.backends.pipeline.Fresco
 import com.facebook.drawee.view.SimpleDraweeView
 import com.jamid.codesquare.*
-import com.jamid.codesquare.data.ListSeparator
 import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Message2
 import com.jamid.codesquare.databinding.*
@@ -44,22 +43,22 @@ class MessageViewHolder2<T: Any>(
         val today = Date(System.currentTimeMillis())
         when {
             isSameDay(today, dateSeparator.date) -> {
-                binding.dateItem.text = "Today"
+                binding.dateItem.text = view.context.getString(R.string.today)
             }
             isYesterday(dateSeparator.date) -> {
-                binding.dateItem.text = "Yesterday"
+                binding.dateItem.text = view.context.getString(R.string.yesterday)
             }
             isThisWeek(dateSeparator.date) -> {
                 val calendar = Calendar.getInstance()
                 calendar.time = dateSeparator.date
                 val dayS = when (calendar[Calendar.DAY_OF_WEEK]) {
-                    0 -> "Monday"
-                    1 -> "Tuesday"
-                    2 -> "Wednesday"
-                    3 -> "Thursday"
-                    4 -> "Friday"
-                    5 -> "Saturday"
-                    6 -> "Sunday"
+                    0 -> view.context.getString(R.string.monday)
+                    1 -> view.context.getString(R.string.tuesday)
+                    2 -> view.context.getString(R.string.wednesday)
+                    3 -> view.context.getString(R.string.thursday)
+                    4 -> view.context.getString(R.string.friday)
+                    5 -> view.context.getString(R.string.saturday)
+                    6 -> view.context.getString(R.string.sunday)
                     else -> "This week"
                 }
                 binding.dateItem.text = dayS
@@ -136,34 +135,16 @@ class MessageViewHolder2<T: Any>(
             }
         }
 
-        //        updateMessageUi(message.state)
-
         view.setOnClickListener {
             listener?.onMessageClick(message.copy())
-
-            /* // updating ui changes to cover database delay
-             if (message.state != MESSAGE_IDLE) {
-                 message.state = 1 - message.state
-             }
-             updateMessageUi(message.state)*/
         }
 
         view.setOnLongClickListener {
             listener?.onMessageContextClick(message.copy())
-
-            /* // updating ui changes to cover database delay
-             if (message.isDownloaded) {
-                 message.state = 1 - abs(message.state)
-                 updateMessageUi(message.state)
-             }*/
             true
         }
 
         listener?.onMessageRead(message)
-
-        /*listener?.onCheckForStaleData(message) {
-            bind(Message2.MessageItem(it))
-        }*/
 
     }
 
@@ -245,7 +226,7 @@ class MessageViewHolder2<T: Any>(
 
     private fun setMessageMiddleReplyRightItem(message: Message) {
         val binding = MessageMiddleReplyRightItemBinding.bind(view)
-        
+
         // setting original message
         binding.messageContent.text = message.content
 
@@ -412,13 +393,13 @@ class MessageViewHolder2<T: Any>(
             TextViewCompat.setAutoSizeTextTypeWithDefaults(binding.documentIcon, TextViewCompat.AUTO_SIZE_TEXT_TYPE_UNIFORM)
             binding.documentSize.text = android.text.format.Formatter.formatShortFileSize(binding.root.context, metadata.size)
             binding.documentIcon.text = metadata.ext.substring(1).uppercase()
-           /* val icon = when (message.metadata?.ext) {
-                ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
-                ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
-                ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
-                else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
-            }
-            binding.documentIcon.background = icon*/
+            /* val icon = when (message.metadata?.ext) {
+                 ".pdf" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pdf)
+                 ".docx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_docx)
+                 ".pptx" -> ContextCompat.getDrawable(view.context, R.drawable.ic_pptx)
+                 else -> ContextCompat.getDrawable(view.context, R.drawable.ic_round_insert_drive_file_24)
+             }
+             binding.documentIcon.background = icon*/
         }
 
         // set download button and progress
@@ -788,13 +769,6 @@ class MessageViewHolder2<T: Any>(
     private fun setTimeForTextView(tv: TextView, time: Long) {
         val timeText = getTextForTime(time)
         tv.text = timeText
-
-       /* val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(view.context)
-        val showChatTime = sharedPreferences.getBoolean("show_chat_time", true)
-        if (!showChatTime) {
-            tv.hide()
-        }*/
-
     }
 
     private fun setMessageImageBasedOnExtension(
@@ -836,10 +810,10 @@ class MessageViewHolder2<T: Any>(
         }
     }
 
-    private fun bind(listSeparator: ListSeparator) {
+    /*private fun bind(listSeparator: ListSeparator) {
         val binding = MessageTimeSeparatorBinding.bind(view)
         setTimeForTextView(binding.timeSeparatorText, listSeparator.time)
-    }
+    }*/
 
 }
 

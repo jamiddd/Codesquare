@@ -397,7 +397,7 @@ class ChatFragment2 : PagingDataFragment<FragmentChat2Binding, Message2, Message
     }
 
     private fun deleteChatAndBlockUser() {
-        FireUtility.deleteTempPrivateChat(chatChannel) {
+        FireUtility.deletePrivateChat(chatChannel) {
             if (it.isSuccessful) {
                 FireUtility.getUser(otherUserMinimal.userId) { user ->
                     if (user != null) {

@@ -10,12 +10,33 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.CHAT_CHANNELS
+import com.jamid.codesquare.CONTRIBUTORS
+import com.jamid.codesquare.FireUtility
+import com.jamid.codesquare.TAG
+import com.jamid.codesquare.UserManager
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.Interest
+import com.jamid.codesquare.data.InterestItem
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Notification
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.PostInvite
+import com.jamid.codesquare.data.PostRequest
+import com.jamid.codesquare.data.ReferenceItem
+import com.jamid.codesquare.data.SearchQuery
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.image
+import com.jamid.codesquare.processPosts
+import com.jamid.codesquare.processUsers
+import com.jamid.codesquare.randomId
+import com.jamid.codesquare.text
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File// something simple
+import java.io.File
 
 class MainRepository(private val db: CollabDatabase, private val scope: CoroutineScope, private val root: File) {
 
@@ -91,9 +112,6 @@ class MainRepository(private val db: CollabDatabase, private val scope: Coroutin
                 }
 
                 if (value != null && !value.isEmpty) {
-
-                    Log.d(TAG, "setChannelListener: Found channels (${value.size()})")
-
                     scope.launch(Dispatchers.IO) {
                         clearChatChannels()
 
@@ -454,7 +472,7 @@ class MainRepository(private val db: CollabDatabase, private val scope: Coroutin
     }
 
     suspend fun deleteLocalPost(post: Post) {
-        postDao.deletePost(post)
+        postDao.deletePostById(post.id)
     }
 
     suspend fun deleteAdPosts() {
