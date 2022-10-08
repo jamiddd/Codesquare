@@ -31,6 +31,10 @@ const val text = "text"
 const val document = "document"
 const val video = "video"
 
+
+const val AND = "AND"
+const val OR = "OR"
+
 const val VIDEO_SIZE_LIMIT = 15728640
 const val FILE_SIZE_LIMIT = 15728640
 

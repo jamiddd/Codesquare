@@ -1,8 +1,6 @@
 package com.jamid.codesquare.adapter.comparators
 
-import android.util.Log
 import androidx.recyclerview.widget.DiffUtil
-import com.jamid.codesquare.data.Message
 import com.jamid.codesquare.data.Message2
 
 class Message2Comparator: DiffUtil.ItemCallback<Message2>() {
@@ -35,19 +33,4 @@ class Message2Comparator: DiffUtil.ItemCallback<Message2>() {
         return oldItem == newItem
     }
 
-    init {
-        Log.d("Something", "Simple: ")
-    }
-
-}
-
-
-class MessageComparator: DiffUtil.ItemCallback<Message>() {
-    override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-        return oldItem.messageId == newItem.messageId
-    }
-
-    override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean {
-        return oldItem == newItem
-    }
 }
