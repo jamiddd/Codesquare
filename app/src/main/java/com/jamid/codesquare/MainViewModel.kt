@@ -7,7 +7,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.paging.*
+import androidx.paging.ExperimentalPagingApi
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.insertSeparators
+import androidx.paging.map
 import com.algolia.search.client.ClientSearch
 import com.algolia.search.helper.deserialize
 import com.algolia.search.model.APIKey
@@ -23,11 +29,51 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.ktx.storage
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.ChatChannelWrapper
+import com.jamid.codesquare.data.Comment
+import com.jamid.codesquare.data.Competition
+import com.jamid.codesquare.data.FeedOption
+import com.jamid.codesquare.data.FeedOrder
+import com.jamid.codesquare.data.FeedSort
+import com.jamid.codesquare.data.Feedback
+import com.jamid.codesquare.data.InterestItem
+import com.jamid.codesquare.data.Location
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Message2
+import com.jamid.codesquare.data.MessageMinimal
+import com.jamid.codesquare.data.Notification
+import com.jamid.codesquare.data.OneTimeProduct
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.Post2
+import com.jamid.codesquare.data.PostInvite
+import com.jamid.codesquare.data.PostMinimal2
+import com.jamid.codesquare.data.PostRequest
+import com.jamid.codesquare.data.QUERY_TYPE_INTEREST
+import com.jamid.codesquare.data.QUERY_TYPE_POST
+import com.jamid.codesquare.data.QUERY_TYPE_USER
+import com.jamid.codesquare.data.ReferenceItem
+import com.jamid.codesquare.data.Result
+import com.jamid.codesquare.data.SearchQuery
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal
+import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.data.form.LoginFormState
 import com.jamid.codesquare.data.form.RegisterFormState
 import com.jamid.codesquare.data.form.UpdateUserFormState
-import com.jamid.codesquare.db.*
+import com.jamid.codesquare.db.CollabDatabase
+import com.jamid.codesquare.db.CommentRemoteMediator
+import com.jamid.codesquare.db.InterestItemRemoteMediator
+import com.jamid.codesquare.db.LikedByRemoteMediator
+import com.jamid.codesquare.db.MainRepository
+import com.jamid.codesquare.db.MessageRemoteMediator
+import com.jamid.codesquare.db.NotificationRemoteMediator
+import com.jamid.codesquare.db.PostInviteRemoteMediator
+import com.jamid.codesquare.db.PostRemoteMediator
+import com.jamid.codesquare.db.PostRequestRemoteMediator
+import com.jamid.codesquare.db.ReferenceItemRemoteMediator
+import com.jamid.codesquare.db.UserRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -36,7 +82,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.Random
 import kotlin.collections.set
 
 typealias AlgoliaQuery = com.algolia.search.model.search.Query
@@ -65,7 +113,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             repo.clearPosts()
         }
 
-//        someFix()
 
     }
 
@@ -75,8 +122,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _readPermission = MutableLiveData<Boolean>()
     val readPermission: LiveData<Boolean> = _readPermission
 
-    fun someFix() = viewModelScope.launch(Dispatchers.IO) {
+    private fun someFix() = viewModelScope.launch(Dispatchers.IO) {
 //        chatRepository.messageDao.deleteMessagesAfter()
+
+        Firebase.firestore.collection(CHAT_CHANNELS)
+            .whereEqualTo("postImage", "null")
+            .get()
+            .addOnSuccessListener {
+                if (it != null && !it.isEmpty) {
+
+                    for (doc in it) {
+                        val postId = doc.get("postId") as String
+
+                        Firebase.firestore.collection(POSTS).document(postId).get()
+                            .addOnSuccessListener {postDoc ->
+                                val mediaList = postDoc.get("mediaList") as List<String>
+                                val image = mediaList[0]
+
+                                Firebase.firestore.collection(CHAT_CHANNELS).document(doc.id)
+                                    .update("postImage", image)
+
+                            }
+
+                    }
+                }
+            }.addOnFailureListener {
+                Log.e(TAG, "someFix: ${it.localizedMessage}")
+            }
+
 
         /*Firebase.firestore.collection(CHAT_CHANNELS)
             .get()
@@ -585,9 +658,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Pager(
                 config = PagingConfig(pageSize = 15),
                 remoteMediator = PostRemoteMediator(query, repo, true) {
-                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors)
+                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors.toSet())
                         .isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(
-                        it.contributors
+                        it.contributors.toSet()
                     ).isNotEmpty()))
                 }
             ) {
@@ -639,9 +712,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Pager(
                 config = PagingConfig(pageSize = 15),
                 remoteMediator = PostRemoteMediator(query, repo, true) {
-                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors)
+                    !((blockedUsers.contains(it.creator.userId) || blockedUsers.intersect(it.contributors.toSet())
                         .isNotEmpty()) || (blockedBy.contains(it.creator.userId) || blockedBy.intersect(
-                        it.contributors
+                        it.contributors.toSet()
                     ).isNotEmpty()))
                 }
             ) {

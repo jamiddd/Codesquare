@@ -1,7 +1,12 @@
 package com.jamid.codesquare.ui
 
 import android.content.Context
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import com.jamid.codesquare.data.ChatChannel
 import com.jamid.codesquare.data.MediaItemWrapper
 import com.jamid.codesquare.data.Message
@@ -57,7 +62,7 @@ class ChatViewModel(context: Context): ViewModel() {
         }
     }
 
-    private val _chatMediaList = MutableLiveData<List<MediaItemWrapper>>()
+    private val _chatMediaList = MutableLiveData<List<MediaItemWrapper>>().apply { value = emptyList() }
     val chatMediaList: LiveData<List<MediaItemWrapper>> = _chatMediaList
 
     val chatPhotosList: LiveData<List<MediaItemWrapper>> = Transformations.map(chatMediaList) {

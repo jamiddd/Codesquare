@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -14,7 +13,7 @@ import com.jamid.codesquare.data.MediaItemWrapper
 import com.jamid.codesquare.ui.ItemSelectType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-// something simple
+
 class FilesViewModel: ViewModel() {
 
     private val _selectMediaItems = MutableLiveData<List<MediaItemWrapper>>().apply { value = emptyList() }
@@ -51,10 +50,10 @@ class FilesViewModel: ViewModel() {
                 MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE
             }
             ItemSelectType.GALLERY_ONLY_VID -> {
-                MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") AND " + MediaStore.Files.FileColumns.SIZE + "< 15728640"
+                MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") $AND " + MediaStore.Files.FileColumns.SIZE + "< " + VIDEO_SIZE_LIMIT
             }
             ItemSelectType.GALLERY -> {
-                "(" + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE + " OR " + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") AND " + MediaStore.Files.FileColumns.SIZE + "< 15728640"     //Selection criteria
+                "(" + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE + " $OR " + MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO + ") $AND " + MediaStore.Files.FileColumns.SIZE + "< " + VIDEO_SIZE_LIMIT
             }
             ItemSelectType.DOCUMENT -> {
                 MediaStore.Files.FileColumns.MEDIA_TYPE + "=" + MediaStore.Files.FileColumns.MEDIA_TYPE_NONE
@@ -64,7 +63,7 @@ class FilesViewModel: ViewModel() {
         selection = if (selection.isBlank()) {
             MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
         } else {
-            selection + " AND " + MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
+            selection + " $AND " + MediaStore.Files.FileColumns.DATE_MODIFIED + "<" + lastItemSortAnchor
         }
 
         val selectionArgs = arrayOf<String>()
@@ -129,8 +128,6 @@ class FilesViewModel: ViewModel() {
                     }
                 }
 
-                Log.d(TAG, "loadItemsFromExternal: ${cursor.getString(nameCol)} -- ${cursor.getLong(modifiedCol)} -- ${cursor.getLong(sizeCol)}")
-
                 val name = cursor.getString(nameCol) ?: (randomId() + ".pdf")
                 val dateModified = cursor.getLong(modifiedCol)
                 val size = cursor.getLong(sizeCol)
@@ -139,7 +136,7 @@ class FilesViewModel: ViewModel() {
                 val ext = if (name.split('.').size > 1) {
                     "." +  name.substringAfterLast('.', "")
                 } else {
-                    if (mimeType.contains("video")) {
+                    if (mimeType.contains(video)) {
                         ".mp4"
                     } else {
                         ".jpg"

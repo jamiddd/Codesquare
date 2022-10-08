@@ -12,7 +12,11 @@ import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.palette.graphics.Palette
 import com.facebook.drawee.view.SimpleDraweeView
-import com.google.android.gms.ads.*
+import com.google.android.gms.ads.AdListener
+import com.google.android.gms.ads.AdLoader
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.VideoOptions
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.jamid.codesquare.darkenColor
 import com.jamid.codesquare.data.Post2
@@ -20,7 +24,7 @@ import com.jamid.codesquare.databinding.CustomPostAdBinding
 import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.PostClickListener
 import com.jamid.codesquare.show
-import java.util.*
+import java.util.Locale
 
 /* "ca-app-pub-2159166722829360/7384689864" For play store version */
 /* "ca-app-pub-3940256099942544/2247696110" For test version*/
@@ -65,7 +69,7 @@ class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPost
 
             adLoader = AdLoader.Builder(view.context, "ca-app-pub-3940256099942544/2247696110")
                 .forNativeAd { nativeAd ->
-
+                    
                     nativeAdView.headlineView = binding.adHeadline
                     nativeAdView.bodyView = binding.adSecondaryText
                     nativeAdView.mediaView = binding.adMediaView
@@ -164,8 +168,8 @@ class AdViewHolderSuper(v: View, listener: PostClickListener? = null): SuperPost
                         Log.e(TAG, error)
 
                         if (mPost != null) {
-                            if (mPost is Post2.Collab) {
-                                projectClickListener.onAdError(mPost.post)
+                            if (mPost is Post2.Advertise) {
+                                projectClickListener.onAdError(mPost, bindingAdapterPosition)
                             }
                         }
                     }

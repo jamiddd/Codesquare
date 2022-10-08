@@ -58,7 +58,11 @@ data class ChatChannel(
     )
 
     fun toChatChannelWrapper(): ChatChannelWrapper {
-        val isRead = this.lastMessage?.readList?.contains(UserManager.currentUserId) == true
+        val isRead = if (this.lastMessage == null) {
+            true
+        } else {
+            this.lastMessage!!.readList.contains(UserManager.currentUserId)
+        }
         val (name, thumbnail) = if (this.type != CHANNEL_PRIVATE) {this.postTitle to this.postImage} else {
             if (this.data1?.userId == UserManager.currentUserId) {
                 this.data2?.name to this.data2?.photo

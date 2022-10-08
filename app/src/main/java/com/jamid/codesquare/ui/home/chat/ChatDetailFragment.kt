@@ -12,14 +12,39 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.jamid.codesquare.*
+import com.jamid.codesquare.BaseFragment
+import com.jamid.codesquare.CHANNEL_PRIVATE
+import com.jamid.codesquare.CHAT_CHANNEL
+import com.jamid.codesquare.CHAT_CHANNELS
+import com.jamid.codesquare.FireUtility
+import com.jamid.codesquare.OPTION_1
+import com.jamid.codesquare.OPTION_12
+import com.jamid.codesquare.OPTION_13
+import com.jamid.codesquare.OPTION_14
+import com.jamid.codesquare.OPTION_15
+import com.jamid.codesquare.OPTION_2
+import com.jamid.codesquare.OPTION_6
+import com.jamid.codesquare.OPTION_7
+import com.jamid.codesquare.POST
+import com.jamid.codesquare.R
+import com.jamid.codesquare.USERS
+import com.jamid.codesquare.UserManager
 import com.jamid.codesquare.adapter.recyclerview.GridMediaAdapter
 import com.jamid.codesquare.adapter.recyclerview.MediaDocumentAdapter
 import com.jamid.codesquare.adapter.recyclerview.UserAdapter
-import com.jamid.codesquare.data.*
+import com.jamid.codesquare.convertMediaListToMediaItemList
+import com.jamid.codesquare.data.ChatChannel
+import com.jamid.codesquare.data.MediaItem
+import com.jamid.codesquare.data.MediaItemWrapper
+import com.jamid.codesquare.data.Message
+import com.jamid.codesquare.data.Post
+import com.jamid.codesquare.data.User
+import com.jamid.codesquare.data.UserMinimal2
 import com.jamid.codesquare.databinding.FragmentChatDetailBinding
+import com.jamid.codesquare.hide
 import com.jamid.codesquare.listeners.MediaClickListener
 import com.jamid.codesquare.listeners.UserClickListener
+import com.jamid.codesquare.show
 import com.jamid.codesquare.ui.ChatViewModel
 import com.jamid.codesquare.ui.ChatViewModelFactory
 import com.jamid.codesquare.ui.OptionsFragment
@@ -185,6 +210,8 @@ class ChatDetailFragment : BaseFragment<FragmentChatDetailBinding>(), UserClickL
     private fun setMediaRecyclerUi() {
         binding.chatMediaRecycler.hide()
         binding.chatMediaHeader.hide()
+
+        Log.d(TAG, "setMediaRecyclerUi:   func")
 
         chatViewModel.chatPhotosList.observe(viewLifecycleOwner) {
             if (!it.isNullOrEmpty()) {
